@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastrar Professor | Beehive</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container">
+    <h1 style="margin-bottom:10px;">Cadastrar Professor</h1>
+
+    <div id="msg" style="display:none; margin-bottom:10px;"></div>
+
+    <form class="form" id="form-professor">
+
+      <label style="margin-bottom:8px;">
+        Nome do professor
+        <input type="text" id="nomeProfessor" placeholder="Ex: Gretha" required style="padding:8px;">
+      </label>
+
+      <label style="margin-bottom:10px;">
+        E-mail (para login)
+        <input type="email" id="emailProfessor" placeholder="ex: gretha@beehive.com" required style="padding:8px;">
+      </label>
+
+      <label style="margin-bottom:10px;">
+        Valor por hora (R$) — (por enquanto, aulas particulares)
+        <input type="number" id="valorHora" step="0.01" min="0" value="25.00" required style="padding:8px;">
+      </label>
+
+      <hr style="margin: 6px 0 8px 0; border: none; border-top: 1px solid #eee;">
+
+      <h2 style="font-size:15px; text-align:left; margin-bottom:6px;">
+        Matérias que leciona
+      </h2>
+
+      <!-- checkboxes das matérias -->
+      <div id="listaMaterias" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
+        <div style="opacity:0.8; font-size:13px;">Carregando matérias...</div>
+      </div>
+
+      <button type="submit" class="btn" style="padding:12px;">Salvar professor</button>
+    </form>
+
+    <a href="home-admin.html" class="link-voltar" style="margin-top:10px;">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/professores.js"></script>
+</body>
+</html>

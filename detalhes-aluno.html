@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Detalhes do Aluno | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+    <h1 style="margin-bottom:8px;">Detalhes do Aluno</h1>
+
+    <div id="msg" style="display:none; margin-bottom:10px;"></div>
+
+    <!-- Cabeçalho do aluno -->
+    <div class="card" style="margin-bottom:14px;">
+      <h2 id="tituloAluno">Carregando...</h2>
+      <p style="font-size:13px; opacity:0.85; margin-top:6px;" id="subtituloAluno"></p>
+    </div>
+
+    <!-- Cards de contadores -->
+    <div class="dashboard">
+      <div class="card">
+        <h2>✅ Presenças</h2>
+        <p><b id="cPresente">0</b></p>
+      </div>
+
+      <div class="card">
+        <h2>⚠️ Ausências</h2>
+        <p><b id="cAusente">0</b></p>
+      </div>
+
+      <div class="card">
+        <h2>❌ Canceladas</h2>
+        <p><b id="cCancelada">0</b></p>
+      </div>
+
+      <div class="card">
+        <h2>⏸️ Trancadas</h2>
+        <p><b id="cTrancada">0</b></p>
+      </div>
+    </div>
+
+    <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
+
+    <!-- Notas -->
+    <div class="dashboard">
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>📝 Notas</h2>
+
+        <form class="form" id="form-nota" style="margin-top:10px;">
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+            <label>
+              Data
+              <input type="date" id="notaData" required>
+            </label>
+
+            <label>
+              Tipo
+              <input type="text" id="notaTipo" placeholder="Ex: Avaliação / Oral" required>
+            </label>
+
+            <label>
+              Nota
+              <input type="number" id="notaValor" step="0.01" min="0" max="10" placeholder="Ex: 8.5" required>
+            </label>
+          </div>
+
+          <label style="margin-top:10px;">
+            Observação (opcional)
+            <input type="text" id="notaObs" placeholder="Ex: Excelente participação">
+          </label>
+
+          <button type="submit" class="btn" style="margin-top:10px; padding:12px;">
+            Salvar nota
+          </button>
+        </form>
+
+        <p style="font-size:12px; opacity:0.85; margin-top:10px;">
+          Lista de notas (mais recente primeiro):
+        </p>
+
+        <ul id="listaNotas" style="margin-top:8px;"></ul>
+      </div>
+    </div>
+
+    <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
+
+    <!-- Histórico de aulas -->
+    <div class="card">
+      <h2>📚 Histórico de aulas</h2>
+      <p style="font-size:12px; opacity:0.85; margin-top:6px;">
+        Mostrando data — professor — conteúdo — lição de casa (se houver)
+      </p>
+      <ul id="listaAulas" style="margin-top:10px;"></ul>
+    </div>
+
+    <a href="resumo-professor.html" class="link-voltar">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/detalhes-aluno.js"></script>
+</body>
+</html>

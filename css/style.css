@@ -1,0 +1,261 @@
+/* ================================
+   RESET BÁSICO
+   Remove estilos padrão do navegador
+   ================================ */
+* {
+    margin: 0;                  /* remove margens automáticas */
+    padding: 0;                 /* remove espaçamentos automáticos */
+    box-sizing: border-box;     /* facilita cálculo de largura/altura */
+    font-family: Arial, sans-serif; /* fonte padrão do site */
+}
+
+/* ================================
+   FUNDO DA PÁGINA
+   Vale para TODAS as telas
+   ================================ */
+body {
+    min-height: 100vh;                          /* ocupa a tela toda */
+    background-color: #FFF5CC;                  /* cor base (mel claro) */
+    background-image: url("../images/FundoColmeiaEscuro.png"); /* imagem da colmeia */
+    background-size: cover;                     /* imagem cobre a tela */
+    background-position: center;                /* centraliza a imagem */
+    display: flex;                              /* permite centralizar conteúdo */
+    justify-content: center;                    /* centraliza horizontalmente */
+    align-items: center;                        /* centraliza verticalmente */
+    position: relative;                         /* necessário para o overlay */
+}
+
+/* ================================
+   OVERLAY (CAMADA DE TRANSPARÊNCIA)
+   Clareia o fundo da colmeia
+   ================================ */
+.overlay {
+    position: absolute;                         /* fica sobre o fundo */
+    top: 0;
+    left: 0;
+    width: 100%;                                /* largura total */
+    height: 100%;                               /* altura total */
+    background-color: rgba(255, 245, 204, 0.90);/* cor clara com transparência */
+    z-index: 1;                                 /* fica atrás do conteúdo */
+}
+
+/* ================================
+   CONTAINER CENTRAL
+   Caixa branca do conteúdo
+   ================================ */
+.container {
+    position: relative;                         /* para ficar acima do overlay */
+    z-index: 2;                                 /* garante que fique visível */
+    background-color: white;                    /* fundo branco */
+    padding: 40px;                              /* espaçamento interno */
+    border-radius: 16px;                        /* cantos arredondados */
+    text-align: center;                         /* centraliza textos */
+    max-width: 400px;                           /* largura máxima */
+    width: 100%;                                /* adapta em telas menores */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);   /* sombra elegante */
+}
+
+/* ================================
+   LOGO
+   ================================ */
+.logo {
+    max-width: 180px;       /* limita tamanho da logo */
+    margin-bottom: 20px;    /* espaço abaixo da logo */
+}
+
+/* ================================
+   TÍTULO
+   ================================ */
+h1 {
+    font-size: 22px;        /* tamanho da fonte */
+    margin-bottom: 30px;    /* espaço abaixo */
+    color: #000;            /* cor preta */
+}
+
+/* ================================
+   GRUPO DE BOTÕES
+   ================================ */
+.buttons {
+    display: flex;          /* organiza em coluna */
+    flex-direction: column;
+    gap: 15px;              /* espaço entre botões */
+}
+
+/* ================================
+   BOTÕES PADRÃO
+   ================================ */
+.btn {
+    background-color: #FDCC0C; /* amarelo da marca */
+    color: #000;               /* texto preto */
+    text-decoration: none;     /* remove sublinhado */
+    padding: 14px;             /* tamanho do botão */
+    border-radius: 10px;       /* cantos arredondados */
+    font-weight: bold;         /* texto em negrito */
+    transition: 0.3s;          /* animação suave */
+}
+
+/* efeito ao passar o mouse */
+.btn:hover {
+    background-color: #e0aa1f; /* amarelo mais escuro */
+}
+
+/* ================================
+   FORMULÁRIOS
+   ================================ */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;             /* espaço entre campos */
+    margin-top: 20px;
+}
+
+/* rótulos dos campos */
+label {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    font-size: 14px;
+    color: #000;
+}
+
+/* campos de texto e seleção */
+input, select {
+    margin-top: 5px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+/* ================================
+   LINK VOLTAR
+   ================================ */
+.link-voltar {
+    display: block;
+    margin-top: 20px;
+    text-decoration: none;
+    color: #000;
+    font-size: 14px;
+}
+
+/* ================================
+   DASHBOARD - RESUMO GERAL
+   ================================ */
+
+/* container principal do resumo geral
+   mais largo para comportar os cards */
+.container-resumo {
+    max-width: 900px;          /* largura máxima */
+    margin: 0 auto;            /* centraliza na tela */
+}
+
+/* grade do dashboard (cards em colunas automáticas) */
+.dashboard {
+    display: grid;             
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;                 /* espaço entre os cards */
+    margin-top: 30px;
+}
+
+/* card individual */
+.card {
+    background-color: #FFF5CC; /* fundo suave da identidade visual */
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    text-align: left;
+}
+
+/* título do card (abelhinha + texto) */
+.card h2 {
+    display: flex;             /* coloca imagem e texto lado a lado */
+    align-items: center;       /* alinha verticalmente */
+    gap: 8px;                  /* espaço entre abelha e texto */
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+/* imagem da abelhinha */
+.card h2 img {
+    width: 22px;               /* tamanho da abelha */
+    height: auto;              /* mantém proporção */
+}
+
+/* listas dentro dos cards */
+.card ul {
+    list-style: none;          /* remove bolinhas */
+    padding-left: 0;
+}
+
+/* itens da lista */
+.card li {
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+/* textos simples dentro do card */
+.card p {
+    font-size: 14px;
+}
+/* ================================
+   MENSAGEM "SALVO!" (SEM POPUP)
+   ================================ */
+   
+#msg {
+    margin: 10px 0 15px 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+/* Abelhinhas decorativas no login */
+.bee {
+  position: absolute;
+  width: 80px;
+  opacity: 0.35;
+  z-index: 0;
+}
+
+.bee-top-left {
+  top: 40px;
+  left: 40px;
+}
+
+.bee-bottom-right {
+  bottom: 40px;
+  right: 40px;
+}
+
+/* garante que o conteúdo fique acima */
+.container {
+  position: relative;
+  z-index: 2;
+}
+.saudacao {
+  margin-top: 10px;
+  font-size: 16px;
+  color: #000000; /* ajuste conforme seu layout */
+}
+.saudacao-container {
+  display: flex;
+  align-items: center;      /* alinha verticalmente */
+  justify-content: center;  /* centraliza o conjunto */
+  gap: 8px;                 /* espaço entre texto e imagem */
+  margin-bottom: 10px;
+}
+
+
+.icone-saudacao {
+  width: 28px;   /* tamanho da abelhinha */
+  height: auto;
+}
+/* Card de destaque (Avaliações) */
+.card-destaque {
+  background-color: #F1BC32; /* seu amarelinho principal */
+  border: 2px solid rgba(0,0,0,0.08);
+}
+
+.card-destaque h2,
+.card-destaque p,
+.card-destaque li,
+.card-destaque b {
+  color: #000;
+}

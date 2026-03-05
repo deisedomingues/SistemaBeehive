@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Resumo | Professor</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+    <h1 style="margin-bottom:10px;">Resumo do Professor</h1>
+
+    <!-- mensagem pequena -->
+    <div id="msg" style="display:none; margin-bottom:10px;"></div>
+
+    <!-- CARDS -->
+    <div class="dashboard">
+
+      <div class="card">
+        <h2>👥 Meus alunos por matéria</h2>
+        <p style="margin-bottom:6px;">Inglês: <b id="qtdIngles">0</b></p>
+        <p>Espanhol: <b id="qtdEspanhol">0</b></p>
+      </div>
+
+      <div class="card">
+        <h2>📅 Aulas (presenças) no mês</h2>
+        <p>Este mês já foram dadas <b id="qtdAulasMes">0</b> aulas.</p>
+        <p style="font-size:12px; margin-top:6px; opacity:0.8;">
+          (contando somente status “Presente”)
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>📌 Total de alunos</h2>
+        <p><b id="qtdTotalAlunos">0</b> alunos vinculados a você.</p>
+      </div>
+
+      <!-- ✅ NOVO: aniversários -->
+      <div class="card">
+        <h2>🎉 Aniversariantes de hoje</h2>
+        <div id="cardAniversarioHoje">
+          <p style="font-size:14px;">Carregando...</p>
+        </div>
+      </div>
+
+      <!-- ✅ NOVO: avaliações com destaque -->
+      <div class="card card-destaque">
+        <h2>📝 Avaliações previstas</h2>
+
+        <p style="font-size:12px; margin-top:-6px; margin-bottom:10px; opacity:0.85;">
+          Inglês: múltiplos de 14 presenças (14, 28, 42...)
+        </p>
+
+        <div style="margin-bottom:10px;">
+          <b>Inglês</b>
+          <ul id="listaAvalIngles" style="margin-top:6px;"></ul>
+        </div>
+
+        <div>
+          <b>Espanhol</b>
+          <ul id="listaAvalEspanhol" style="margin-top:6px;"></ul>
+        </div>
+      </div>
+
+    </div>
+
+    <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
+
+    <!-- SELECIONAR ALUNO -->
+    <h2 style="font-size:16px; text-align:left; margin-bottom:8px;">
+      Ver detalhes de um aluno
+    </h2>
+
+    <div class="form" style="margin-top:0;">
+      <label>
+        Aluno (curso)
+        <select id="selectMatricula" required>
+          <option value="">Carregando alunos...</option>
+        </select>
+      </label>
+
+      <button class="btn" id="btnDetalhes" type="button" style="padding:12px;">
+        Ver detalhes
+      </button>
+
+      <p style="font-size:12px; opacity:0.85; margin-top:-4px;">
+        (Vamos criar a tela “detalhes do aluno” na próxima etapa.)
+      </p>
+    </div>
+
+    <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
+
+    <!-- ALUNOS POR MÓDULO -->
+    <h2 style="font-size:16px; text-align:left; margin-bottom:8px;">
+      Alunos por módulo (por matéria)
+    </h2>
+
+    <div class="dashboard">
+      <div class="card">
+        <h2>Inglês</h2>
+        <ul id="listaModulosIngles"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Espanhol</h2>
+        <ul id="listaModulosEspanhol"></ul>
+      </div>
+    </div>
+
+    <a href="home-professor.html" class="link-voltar">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/resumo-professor.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Editar Aluno | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+    <h1 style="margin-bottom:10px;">Editar Aluno</h1>
+
+    <div id="msg" style="display:none; margin-bottom:10px;"></div>
+
+    <!-- 1) Escolher aluno -->
+    <div class="card" style="margin-bottom:14px;">
+      <h2>1) Escolha o aluno</h2>
+
+      <div class="form" style="margin-top:10px; gap:10px;">
+        <label>
+          Buscar por nome
+          <input
+            type="text"
+            id="busca"
+            placeholder="Digite para filtrar…"
+            style="padding:8px;"
+            autocomplete="off"
+          />
+        </label>
+
+        <label>
+          Aluno (com qtd. cursos)
+          <select id="selectAluno">
+            <option value="">Carregando alunos...</option>
+          </select>
+        </label>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button type="button" class="btn" id="btnVerMatriculas" disabled
+            style="padding:10px 12px; font-size:12px; background:#FFF5CC; border:1px solid #F1BC32; color:#000;">
+            Ver/Editar matrículas deste aluno
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2) Editar dados -->
+    <div class="card">
+      <h2>2) Editar dados</h2>
+
+      <form class="form" id="form-editar" style="margin-top:10px;">
+        <label style="margin-bottom:8px;">
+          Nome completo
+          <input type="text" id="nome" required style="padding:8px;" />
+        </label>
+
+        <label style="margin-bottom:8px;">
+          Data de nascimento
+          <input type="date" id="dataNascimento" required style="padding:8px;" />
+        </label>
+
+        <label style="margin-bottom:8px;">
+          E-mail (opcional)
+          <input type="email" id="email" style="padding:8px;" placeholder="ex: aluno@email.com" />
+        </label>
+
+        <label style="margin-bottom:10px;">
+          Telefone (opcional)
+          <input type="text" id="telefone" style="padding:8px;" placeholder="ex: (11) 99999-9999" />
+        </label>
+
+        <button type="submit" class="btn" id="btnSalvar" disabled style="padding:12px;">
+          Salvar alterações
+        </button>
+      </form>
+    </div>
+
+    <a href="home-admin.html" class="link-voltar" style="margin-top:10px;">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/editar-aluno.js"></script>
+</body>
+</html>

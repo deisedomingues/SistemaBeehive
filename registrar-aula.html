@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar Aula | Beehive</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="overlay"></div>
+
+    <main class="container">
+        <h1>Registrar Aula</h1>
+
+        <div id="msg" style="display:none;"></div>
+
+        <form class="form" id="form-aula">
+
+            <label>
+                Data da aula
+                <input type="date" id="dataAula" required>
+            </label>
+
+            <label>
+                Aluno (curso)
+                <select id="matricula" required>
+                    <option value="">Carregando alunos...</option>
+                </select>
+            </label>
+
+            <label>
+                Status da aula
+                <select id="status" required>
+                    <option value="">Selecione o status</option>
+                    <option value="Presente">Presente</option>
+                    <option value="Ausente">Ausente</option>
+                    <option value="Cancelada">Cancelada</option>
+                    <option value="Trancada">Trancada</option>
+                </select>
+            </label>
+
+            <!-- Justificativa só aparece quando status = Cancelada -->
+            <div id="boxJustificativa" style="display: none;">
+                <label>
+                    Justificativa (obrigatória para Cancelamento)
+                    <input
+                        type="text"
+                        id="justificativa"
+                        placeholder="Ex: feriado / professor doente / escola fechada"
+                    >
+                </label>
+            </div>
+
+            <label>
+                Conteúdo da aula
+                <input type="text" id="conteudo" placeholder="Ex: Unidade 3 – pág. 25">
+            </label>
+
+            <label>
+                Lição de casa
+                <input type="text" id="licaoCasa" placeholder="Ex: Exercícios da pág. 26">
+            </label>
+
+            <button type="submit" class="btn">Salvar aula</button>
+        </form>
+
+        <a href="home-professor.html" class="link-voltar">← Voltar</a>
+    </main>
+
+    <script type="module" src="js/registrar-aula.js"></script>
+</body>
+</html>
