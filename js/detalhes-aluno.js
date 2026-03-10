@@ -48,10 +48,8 @@ function addLi(ul, texto) {
 }
 
 function formatarDataBR(dataISO) {
-  // "YYYY-MM-DD" -> "DD/MM/YYYY"
   if (!dataISO) return "";
   const [yyyy, mm, dd] = dataISO.split("-");
-  if (!yyyy || !mm || !dd) return dataISO;
   return `${dd}/${mm}/${yyyy}`;
 }
 
@@ -63,24 +61,25 @@ function hojeISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-// ✅ Proteção: se não houver matrícula selecionada, voltar
+// proteção
 if (!matriculaId) {
   window.location.href = "resumo-professor.html";
 }
 
 // ===============================
-// 1) Carregar dados da matrícula (aluno/matéria/módulo/professor)
+// 1) Cabeçalho
 // ===============================
 async function carregarCabecalho() {
+
   const { data, error } = await supabase
     .from("matricula")
     .select(`
       id,
       professor_id,
-      aluno:aluno_id ( id, nome ),
-      materia:materia_id ( id, nome ),
-      modulo:modulo_id ( id, nome ),
-      professor:professor_id ( id, nome )
+      aluno:aluno_id ( nome ),
+      materia:materia_id ( nome ),
+      modulo:modulo_id ( nome ),
+      professor:professor_id ( nome )
     `)
     .eq("id", matriculaId)
     .single();
@@ -91,22 +90,25 @@ async function carregarCabecalho() {
     return null;
   }
 
-  // ✅ Segurança extra: professor só vê matrícula dele
+  // segurança: professor só pode abrir alunos dele
   if (String(data.professor_id) !== String(professorId)) {
     window.location.href = "home-professor.html";
     return null;
   }
 
   tituloAluno.textContent = data.aluno?.nome || "Aluno";
-  subtituloAluno.textContent = `${data.materia?.nome || ""} — ${data.modulo?.nome || ""} — Prof(a). ${data.professor?.nome || ""}`;
+
+  subtituloAluno.textContent =
+    `${data.materia?.nome || ""} — ${data.modulo?.nome || ""} — Prof(a). ${data.professor?.nome || ""}`;
 
   return data;
 }
 
 // ===============================
-// 2) Carregar aulas da matrícula (histórico)
+// 2) Carregar aulas (TODOS professores)
 // ===============================
 async function carregarAulas() {
+
   const { data, error } = await supabase
     .from("aula")
     .select(`
@@ -116,9 +118,7 @@ async function carregarAulas() {
       justificativa,
       conteudo,
       licao_casa,
-      matricula:matricula_id (
-        professor:professor_id ( nome )
-      )
+      professor:professor_id ( nome )
     `)
     .eq("matricula_id", matriculaId)
     .order("data_aula", { ascending: true });
@@ -133,16 +133,22 @@ async function carregarAulas() {
 }
 
 // ===============================
-// 3) Contadores por status
+// 3) Contadores
 // ===============================
 function preencherContadores(aulas) {
-  let p = 0, a = 0, c = 0, t = 0;
+
+  let p = 0;
+  let a = 0;
+  let c = 0;
+  let t = 0;
 
   aulas.forEach((x) => {
+
     if (x.status === "Presente") p++;
     else if (x.status === "Ausente") a++;
     else if (x.status === "Cancelada") c++;
     else if (x.status === "Trancada") t++;
+
   });
 
   cPresente.textContent = p;
@@ -152,9 +158,10 @@ function preencherContadores(aulas) {
 }
 
 // ===============================
-// 4) Render histórico de aulas
+// 4) Render histórico
 // ===============================
 function renderAulas(aulas) {
+
   limparLista(listaAulas);
 
   if (aulas.length === 0) {
@@ -163,23 +170,37 @@ function renderAulas(aulas) {
   }
 
   aulas.forEach((x) => {
+
     const dataBR = formatarDataBR(x.data_aula);
-    const profNome = x.matricula?.professor?.nome || "Professor(a)";
-    const conteudo = x.conteudo ? x.conteudo : "(sem conteúdo)";
-    const licao = x.licao_casa ? ` | Lição: ${x.licao_casa}` : "";
+
+    const professorNome =
+      x.professor?.nome || "Professor";
+
+    const conteudo =
+      x.conteudo || "(sem conteúdo)";
+
+    const licao =
+      x.licao_casa ? ` | Lição: ${x.licao_casa}` : "";
+
     const statusExtra =
       x.status !== "Presente"
         ? ` | ${x.status}${x.justificativa ? ` (${x.justificativa})` : ""}`
         : "";
 
-    addLi(listaAulas, `${dataBR} — ${profNome} — ${conteudo}${licao}${statusExtra}`);
+    addLi(
+      listaAulas,
+      `${dataBR} — ${professorNome} — ${conteudo}${licao}${statusExtra}`
+    );
+
   });
+
 }
 
 // ===============================
-// 5) Notas: listar e inserir
+// 5) NOTAS
 // ===============================
 async function carregarNotas() {
+
   const { data, error } = await supabase
     .from("nota")
     .select("id, data, tipo, valor, observacao")
@@ -196,6 +217,7 @@ async function carregarNotas() {
 }
 
 function renderNotas(notas) {
+
   limparLista(listaNotas);
 
   if (notas.length === 0) {
@@ -204,13 +226,21 @@ function renderNotas(notas) {
   }
 
   notas.forEach((n) => {
+
     const dataBR = formatarDataBR(n.data);
     const obs = n.observacao ? ` — ${n.observacao}` : "";
-    addLi(listaNotas, `${dataBR} — ${n.tipo}: ${n.valor}${obs}`);
+
+    addLi(
+      listaNotas,
+      `${dataBR} — ${n.tipo}: ${n.valor}${obs}`
+    );
+
   });
+
 }
 
 formNota.addEventListener("submit", async (e) => {
+
   e.preventDefault();
 
   const data = notaData.value;
@@ -240,19 +270,22 @@ formNota.addEventListener("submit", async (e) => {
   }
 
   mostrarMensagem("✅ Nota salva!");
+
   formNota.reset();
+
   notaData.value = hojeISO();
   notaTipo.value = "Avaliação";
 
   const notas = await carregarNotas();
   renderNotas(notas);
+
 });
 
 // ===============================
 // INIT
 // ===============================
 async function init() {
-  // valores padrão no form
+
   notaData.value = hojeISO();
   notaTipo.value = "Avaliação";
 
@@ -265,6 +298,7 @@ async function init() {
 
   const notas = await carregarNotas();
   renderNotas(notas);
+
 }
 
 init();
