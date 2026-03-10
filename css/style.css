@@ -1,115 +1,122 @@
 /* ================================
-   RESET BÁSICO
-   Remove estilos padrão do navegador
-   ================================ */
+RESET BÁSICO
+================================ */
 * {
-    margin: 0;                  /* remove margens automáticas */
-    padding: 0;                 /* remove espaçamentos automáticos */
-    box-sizing: border-box;     /* facilita cálculo de largura/altura */
-    font-family: Arial, sans-serif; /* fonte padrão do site */
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* imagens nunca ultrapassam o container */
+img {
+    max-width: 100%;
+    height: auto;
 }
 
 /* ================================
-   FUNDO DA PÁGINA
-   Vale para TODAS as telas
-   ================================ */
+FUNDO DA PÁGINA
+================================ */
 body {
-    min-height: 100vh;                          /* ocupa a tela toda */
-    background-color: #FFF5CC;                  /* cor base (mel claro) */
-    background-image: url("../images/FundoColmeiaEscuro.png"); /* imagem da colmeia */
-    background-size: cover;                     /* imagem cobre a tela */
-    background-position: center;                /* centraliza a imagem */
-    display: flex;                              /* permite centralizar conteúdo */
-    justify-content: center;                    /* centraliza horizontalmente */
-    align-items: center;                        /* centraliza verticalmente */
-    position: relative;                         /* necessário para o overlay */
+    min-height: 100vh;
+    background-color: #FFF5CC;
+    background-image: url("../images/FundoColmeiaEscuro.png");
+    background-size: cover;
+    background-position: center;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    position: relative;
 }
 
 /* ================================
-   OVERLAY (CAMADA DE TRANSPARÊNCIA)
-   Clareia o fundo da colmeia
-   ================================ */
+OVERLAY
+================================ */
 .overlay {
-    position: absolute;                         /* fica sobre o fundo */
+    position: absolute;
     top: 0;
     left: 0;
-    width: 100%;                                /* largura total */
-    height: 100%;                               /* altura total */
-    background-color: rgba(255, 245, 204, 0.90);/* cor clara com transparência */
-    z-index: 1;                                 /* fica atrás do conteúdo */
+    width: 100%;
+    height: 100%;
+
+    background-color: rgba(255, 245, 204, 0.90);
+    z-index: 1;
 }
 
 /* ================================
-   CONTAINER CENTRAL
-   Caixa branca do conteúdo
-   ================================ */
+CONTAINER PRINCIPAL
+================================ */
 .container {
-    position: relative;                         /* para ficar acima do overlay */
-    z-index: 2;                                 /* garante que fique visível */
-    background-color: white;                    /* fundo branco */
-    padding: 40px;                              /* espaçamento interno */
-    border-radius: 16px;                        /* cantos arredondados */
-    text-align: center;                         /* centraliza textos */
-    max-width: 400px;                           /* largura máxima */
-    width: 100%;                                /* adapta em telas menores */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);   /* sombra elegante */
+    position: relative;
+    z-index: 2;
+
+    background-color: white;
+    padding: 40px;
+
+    border-radius: 16px;
+    text-align: center;
+
+    max-width: 400px;
+    width: 90%;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
 /* ================================
-   LOGO
-   ================================ */
+LOGO
+================================ */
 .logo {
-    max-width: 180px;       /* limita tamanho da logo */
-    margin-bottom: 20px;    /* espaço abaixo da logo */
+    max-width: 180px;
+    margin-bottom: 20px;
 }
 
 /* ================================
-   TÍTULO
-   ================================ */
+TÍTULO
+================================ */
 h1 {
-    font-size: 22px;        /* tamanho da fonte */
-    margin-bottom: 30px;    /* espaço abaixo */
-    color: #000;            /* cor preta */
+    font-size: 22px;
+    margin-bottom: 30px;
+    color: #000;
 }
 
 /* ================================
-   GRUPO DE BOTÕES
-   ================================ */
+BOTÕES
+================================ */
 .buttons {
-    display: flex;          /* organiza em coluna */
+    display: flex;
     flex-direction: column;
-    gap: 15px;              /* espaço entre botões */
+    gap: 15px;
 }
 
-/* ================================
-   BOTÕES PADRÃO
-   ================================ */
 .btn {
-    background-color: #FDCC0C; /* amarelo da marca */
-    color: #000;               /* texto preto */
-    text-decoration: none;     /* remove sublinhado */
-    padding: 14px;             /* tamanho do botão */
-    border-radius: 10px;       /* cantos arredondados */
-    font-weight: bold;         /* texto em negrito */
-    transition: 0.3s;          /* animação suave */
+    background-color: #FDCC0C;
+    color: #000;
+    text-decoration: none;
+
+    padding: 14px;
+
+    border-radius: 10px;
+    font-weight: bold;
+
+    transition: 0.3s;
 }
 
-/* efeito ao passar o mouse */
 .btn:hover {
-    background-color: #e0aa1f; /* amarelo mais escuro */
+    background-color: #e0aa1f;
 }
 
 /* ================================
-   FORMULÁRIOS
-   ================================ */
+FORMULÁRIOS
+================================ */
 .form {
     display: flex;
     flex-direction: column;
-    gap: 15px;             /* espaço entre campos */
+    gap: 15px;
     margin-top: 20px;
 }
 
-/* rótulos dos campos */
 label {
     display: flex;
     flex-direction: column;
@@ -118,17 +125,19 @@ label {
     color: #000;
 }
 
-/* campos de texto e seleção */
 input, select {
     margin-top: 5px;
     padding: 10px;
+
     border-radius: 8px;
     border: 1px solid #ccc;
+
+    width: 100%;
 }
 
 /* ================================
-   LINK VOLTAR
-   ================================ */
+LINK VOLTAR
+================================ */
 .link-voltar {
     display: block;
     margin-top: 20px;
@@ -138,124 +147,197 @@ input, select {
 }
 
 /* ================================
-   DASHBOARD - RESUMO GERAL
-   ================================ */
-
-/* container principal do resumo geral
-   mais largo para comportar os cards */
+DASHBOARD
+================================ */
 .container-resumo {
-    max-width: 900px;          /* largura máxima */
-    margin: 0 auto;            /* centraliza na tela */
+    max-width: 900px;
+    margin: 0 auto;
 }
 
-/* grade do dashboard (cards em colunas automáticas) */
 .dashboard {
-    display: grid;             
+    display: grid;
+
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;                 /* espaço entre os cards */
+
+    gap: 20px;
     margin-top: 30px;
 }
 
-/* card individual */
+/* ================================
+CARDS
+================================ */
 .card {
-    background-color: #FFF5CC; /* fundo suave da identidade visual */
+    background-color: #FFF5CC;
+
     padding: 20px;
+
     border-radius: 14px;
+
     box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+
     text-align: left;
 }
 
-/* título do card (abelhinha + texto) */
 .card h2 {
-    display: flex;             /* coloca imagem e texto lado a lado */
-    align-items: center;       /* alinha verticalmente */
-    gap: 8px;                  /* espaço entre abelha e texto */
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
     font-size: 16px;
+
     margin-bottom: 10px;
 }
 
-/* imagem da abelhinha */
 .card h2 img {
-    width: 22px;               /* tamanho da abelha */
-    height: auto;              /* mantém proporção */
+    width: 22px;
+    height: auto;
 }
 
-/* listas dentro dos cards */
 .card ul {
-    list-style: none;          /* remove bolinhas */
+    list-style: none;
     padding-left: 0;
 }
 
-/* itens da lista */
 .card li {
     font-size: 14px;
     margin-bottom: 6px;
 }
 
-/* textos simples dentro do card */
 .card p {
     font-size: 14px;
 }
+
 /* ================================
-   MENSAGEM "SALVO!" (SEM POPUP)
-   ================================ */
-   
-#msg {
-    margin: 10px 0 15px 0;
-    padding: 10px 12px;
-    border-radius: 10px;
-    font-size: 14px;
-}
-/* Abelhinhas decorativas no login */
-.bee {
-  position: absolute;
-  width: 80px;
-  opacity: 0.35;
-  z-index: 0;
-}
-
-.bee-top-left {
-  top: 40px;
-  left: 40px;
-}
-
-.bee-bottom-right {
-  bottom: 40px;
-  right: 40px;
-}
-
-/* garante que o conteúdo fique acima */
-.container {
-  position: relative;
-  z-index: 2;
-}
-.saudacao {
-  margin-top: 10px;
-  font-size: 16px;
-  color: #000000; /* ajuste conforme seu layout */
-}
-.saudacao-container {
-  display: flex;
-  align-items: center;      /* alinha verticalmente */
-  justify-content: center;  /* centraliza o conjunto */
-  gap: 8px;                 /* espaço entre texto e imagem */
-  margin-bottom: 10px;
-}
-
-
-.icone-saudacao {
-  width: 28px;   /* tamanho da abelhinha */
-  height: auto;
-}
-/* Card de destaque (Avaliações) */
+CARD DESTAQUE
+================================ */
 .card-destaque {
-  background-color: #F1BC32; /* seu amarelinho principal */
-  border: 2px solid rgba(0,0,0,0.08);
+    background-color: #F1BC32;
+    border: 2px solid rgba(0,0,0,0.08);
 }
 
 .card-destaque h2,
 .card-destaque p,
 .card-destaque li,
 .card-destaque b {
-  color: #000;
+    color: #000;
+}
+
+/* ================================
+MENSAGEM SALVO
+================================ */
+#msg {
+    margin: 10px 0 15px 0;
+
+    padding: 10px 12px;
+
+    border-radius: 10px;
+
+    font-size: 14px;
+}
+
+/* ================================
+ABELHINHAS DECORATIVAS
+================================ */
+.bee {
+    position: absolute;
+
+    width: 80px;
+
+    opacity: 0.35;
+
+    z-index: 0;
+}
+
+.bee-top-left {
+    top: 40px;
+    left: 40px;
+}
+
+.bee-bottom-right {
+    bottom: 40px;
+    right: 40px;
+}
+
+/* ================================
+SAUDAÇÃO
+================================ */
+.saudacao {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #000000;
+}
+
+.saudacao-container {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    margin-bottom: 10px;
+}
+
+.icone-saudacao {
+    width: 28px;
+    height: auto;
+}
+
+/* ================================
+RESPONSIVIDADE
+================================ */
+
+@media (max-width: 768px) {
+
+    body {
+        padding: 20px;
+        align-items: flex-start;
+    }
+
+    .container {
+        padding: 25px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    .logo {
+        max-width: 150px;
+    }
+
+    .btn {
+        padding: 12px;
+        font-size: 14px;
+    }
+
+    .bee {
+        width: 50px;
+        opacity: 0.25;
+    }
+
+}
+
+/* celulares pequenos */
+
+@media (max-width: 480px) {
+
+    .container {
+        padding: 20px;
+        border-radius: 14px;
+    }
+
+    h1 {
+        font-size: 18px;
+    }
+
+    .logo {
+        max-width: 130px;
+    }
+
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+
 }
