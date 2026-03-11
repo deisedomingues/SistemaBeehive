@@ -1,6 +1,6 @@
 import { supabase } from "./supabase.js";
-import { exigirProfessor } from "./guard.js";
-await exigirProfessor();
+import { exigirAdmin } from "./guard.js";
+await exigirAdmin();
 
 const professorId = localStorage.getItem("professorId");
 const matriculaId = localStorage.getItem("matriculaSelecionada");
@@ -89,11 +89,6 @@ async function carregarCabecalho() {
     return null;
   }
 
-  // segurança: professor só pode abrir alunos dele
-  if (String(data.professor_id) !== String(professorId)) {
-    window.location.href = "home-professor.html";
-    return null;
-  }
 
   tituloAluno.textContent = data.aluno?.nome || "Aluno";
 
