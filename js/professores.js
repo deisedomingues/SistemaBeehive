@@ -125,7 +125,7 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  mostrarMensagem("✅ Salvo!");
+  mostrarMensagem("✅ Professor cadastrado com sucesso!");
   form.reset();
   valorHora.value = "25.00"; // padrão
   // desmarcar checks

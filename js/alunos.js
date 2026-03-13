@@ -369,7 +369,7 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  mostrarMensagem("✅ Salvo!");
+  mostrarMensagem("✅ Aluno cadastrado com sucesso!");
   form.reset();
   cursosDiv.innerHTML = "";
   adicionarCurso();

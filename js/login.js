@@ -86,7 +86,7 @@ form.addEventListener("submit", async (e) => {
     localStorage.removeItem("professorEmail");
   }
 
-  mostrarMensagem("✅ Entrou!");
+    //mostrarMensagem("✅ Entrou!");
 
   // 5) Redirecionar para a HOME correta
   setTimeout(() => {

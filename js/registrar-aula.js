@@ -8,6 +8,7 @@ const form = document.getElementById("form-aula");
 const inputDataAula = document.getElementById("dataAula");
 const selectMatricula = document.getElementById("matricula");
 const selectStatus = document.getElementById("status");
+const selectParte = document.getElementById("parteAula");
 
 const boxJustificativa = document.getElementById("boxJustificativa");
 const inputJustificativa = document.getElementById("justificativa");
@@ -104,6 +105,7 @@ async function carregarMatriculas() {
       professor_id
     `)
     .eq("professor_id", professorIdLogado)
+    .eq("ativa", true)
     .order("id", { ascending: true });
 
   if (error) {
@@ -130,6 +132,11 @@ async function carregarMatriculas() {
   }
 
   selectMatricula.disabled = false;
+
+  // ordenar alunos alfabeticamente
+  data.sort((a, b) =>
+    a.aluno.nome.localeCompare(b.aluno.nome)
+  );
 
   data.forEach((m) => {
 
@@ -173,6 +180,7 @@ form.addEventListener("submit", async (e) => {
   const dataAula = inputDataAula.value;
   const matriculaId = selectMatricula.value;
   const status = selectStatus.value;
+  const parte = Number(selectParte.value);
 
   const justificativa = inputJustificativa.value.trim();
   const conteudo = inputConteudo.value.trim();
@@ -192,15 +200,39 @@ form.addEventListener("submit", async (e) => {
 
   }
 
-  // 🔵 Dados que serão enviados ao banco
+  // 🔎 verificar duplicidade de parte
+  const { data: aulaExistente, error: erroBusca } = await supabase
+    .from("aula")
+    .select("id")
+    .eq("matricula_id", matriculaId)
+    .eq("data_aula", dataAula)
+    .eq("parte", parte)
+    .limit(1);
+
+  if (erroBusca) {
+
+    console.error(erroBusca);
+    mostrarMensagem("❌ Erro ao verificar aula existente.", false);
+    return;
+
+  }
+
+  if (aulaExistente.length > 0) {
+
+    mostrarMensagem("⚠️ Esta parte da aula já foi registrada neste dia.", false);
+    return;
+
+  }
+
+  // 🔵 Dados enviados ao banco
   const payload = {
 
     matricula_id: matriculaId,
-
-    // ⭐ NOVA COLUNA QUE VOCÊ CRIOU
     professor_id: professorIdLogado,
 
     data_aula: dataAula,
+    parte: parte,
+
     status: status,
 
     justificativa:
