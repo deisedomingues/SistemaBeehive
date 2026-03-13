@@ -18,6 +18,7 @@ const inputLicaoCasa = document.getElementById("licaoCasa");
 
 const msg = document.getElementById("msg");
 
+
 // ======================
 // Mensagem pequena
 // ======================
@@ -36,6 +37,7 @@ function mostrarMensagem(texto, ok = true) {
 
 }
 
+
 // ======================
 // Data de hoje automática
 // ======================
@@ -50,6 +52,44 @@ function setarDataHoje() {
   inputDataAula.value = `${yyyy}-${mm}-${dd}`;
 
 }
+
+
+// ======================
+// Sugerir próxima parte automaticamente
+// ======================
+async function sugerirProximaParte() {
+
+  const matriculaId = selectMatricula.value;
+  const dataAula = inputDataAula.value;
+
+  if (!matriculaId || !dataAula) return;
+
+  const { data, error } = await supabase
+    .from("aula")
+    .select("parte")
+    .eq("matricula_id", matriculaId)
+    .eq("data_aula", dataAula);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    selectParte.value = "1";
+    return;
+  }
+
+  const maiorParte = Math.max(...data.map(a => a.parte || 1));
+
+  let proximaParte = maiorParte + 1;
+
+  if (proximaParte > 4) proximaParte = 4;
+
+  selectParte.value = String(proximaParte);
+
+}
+
 
 // ======================
 // Regras por status
@@ -80,6 +120,7 @@ function atualizarTelaPorStatus() {
   }
 
 }
+
 
 // ======================
 // Carregar matrículas
@@ -152,6 +193,7 @@ async function carregarMatriculas() {
 
 }
 
+
 // ======================
 // Inicialização
 // ======================
@@ -160,6 +202,11 @@ carregarMatriculas();
 atualizarTelaPorStatus();
 
 selectStatus.addEventListener("change", atualizarTelaPorStatus);
+
+// quando mudar aluno ou data → sugerir parte
+selectMatricula.addEventListener("change", sugerirProximaParte);
+inputDataAula.addEventListener("change", sugerirProximaParte);
+
 
 // ======================
 // Salvar aula
@@ -200,6 +247,7 @@ form.addEventListener("submit", async (e) => {
 
   }
 
+
   // 🔎 verificar duplicidade de parte
   const { data: aulaExistente, error: erroBusca } = await supabase
     .from("aula")
@@ -223,6 +271,7 @@ form.addEventListener("submit", async (e) => {
     return;
 
   }
+
 
   // 🔵 Dados enviados ao banco
   const payload = {
