@@ -21,14 +21,27 @@
                 Data da aula
                 <input type="date" id="dataAula" required>
             </label>
+            
+            <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="aulaColetiva">
+                Aula coletiva
+            </label>
 
             <label>
                 Aluno (curso)
-                <select id="matricula" required>
+                <select id="matricula">
                     <option value="">Carregando alunos...</option>
                 </select>
             </label>
 
+            <!-- Lista de alunos escolhidos -->
+            <div id="listaAlunos" style="display:none; margin-top:10px;">
+                <strong>Alunos selecionados:</strong>
+                <div id="alunosSelecionados" style="margin-top:5px;"></div>
+            </div>
+
+
+            <div id="boxStatus">
             <label>
                 Status da aula
                 <select id="status" required>
@@ -39,6 +52,7 @@
                     <option value="Trancada">Trancada</option>
                 </select>
             </label>
+            </div>
                         <label>
                 Parte da aula
                 <select id="parteAula">
@@ -46,7 +60,7 @@
                     <option value="2">Parte 2</option>
                     <option value="3">Parte 3</option>
                     <option value="4">Parte 4</option>
-                    <option value="4">Parte 5</option>
+                    <option value="5">Parte 5</option>
                 </select>
             </label>
 
