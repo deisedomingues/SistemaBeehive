@@ -361,3 +361,29 @@ RESPONSIVIDADE
 .item-sugestao:hover{
   background:#f0f0f0;
 }
+
+/* ================================
+ALUNOS SELECIONADOS
+================================ */
+
+.aluno-box {
+    background-color: #FFF5CC; /* amarelinho da sua identidade */
+    padding: 10px;
+    margin: 5px;
+    border-radius: 10px;
+    border: 1px solid #FDCC0C;
+}
+
+.btn-remover-aluno {
+    margin-left: 10px;
+    border: none;
+    background-color: #ff6b6b;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-remover-aluno:hover {
+    background-color: #d94a4a;
+}

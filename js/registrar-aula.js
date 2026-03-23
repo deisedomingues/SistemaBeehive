@@ -1,10 +1,11 @@
 import { supabase } from "./supabase.js";
 import { exigirProfessor } from "./guard.js";
+
 await exigirProfessor();
 
 const form = document.getElementById("form-aula");
 
-// Campos
+// CAMPOS
 const inputDataAula = document.getElementById("dataAula");
 const selectMatricula = document.getElementById("matricula");
 const selectStatus = document.getElementById("status");
@@ -20,7 +21,6 @@ const inputLicaoCasa = document.getElementById("licaoCasa");
 
 const msg = document.getElementById("msg");
 
-// Aula coletiva
 const aulaColetivaCheckbox = document.getElementById("aulaColetiva");
 const listaAlunosBox = document.getElementById("listaAlunos");
 const alunosSelecionadosDiv = document.getElementById("alunosSelecionados");
@@ -29,9 +29,11 @@ let alunosSelecionados = [];
 
 
 // ======================
-// Mensagem
+// MENSAGEM
 // ======================
+
 function mostrarMensagem(texto, ok = true) {
+
   msg.textContent = texto;
   msg.style.display = "block";
 
@@ -40,13 +42,14 @@ function mostrarMensagem(texto, ok = true) {
 
   setTimeout(() => {
     msg.style.display = "none";
-  }, 2000);
+  }, 2500);
 }
 
 
 // ======================
-// Data automática
+// DATA
 // ======================
+
 function setarDataHoje() {
   const hoje = new Date();
   inputDataAula.value = hoje.toISOString().split("T")[0];
@@ -54,8 +57,60 @@ function setarDataHoje() {
 
 
 // ======================
-// Renderizar alunos (COM STATUS INDIVIDUAL)
+// PARTE AUTOMÁTICA
 // ======================
+
+async function atualizarParteAula() {
+
+  if (aulaColetivaCheckbox.checked) return;
+
+  const matriculaId = selectMatricula.value;
+  const dataAula = inputDataAula.value;
+
+  if (!matriculaId || !dataAula) return;
+
+  const { data } = await supabase
+    .from("aula")
+    .select("parte")
+    .eq("matricula_id", matriculaId)
+    .eq("data_aula", dataAula)
+    .order("parte", { ascending: false })
+    .limit(1);
+
+  if (data && data.length > 0) {
+
+    let proximaParte = data[0].parte + 1;
+
+    if (proximaParte > 5) proximaParte = 5;
+
+    selectParte.value = proximaParte;
+
+  } else {
+
+    selectParte.value = 1;
+
+  }
+}
+
+
+// ======================
+// VERIFICAR CANCELAMENTO
+// ======================
+
+function verificarCancelamentoColetivo() {
+
+  const temCancelada =
+    alunosSelecionados.some(a => a.status === "Cancelada");
+
+  boxJustificativa.style.display =
+    temCancelada ? "block" : "none";
+}
+
+
+// ======================
+// RENDERIZAR ALUNOS
+// ======================
+
 function renderizarAlunos() {
 
   alunosSelecionadosDiv.innerHTML = "";
@@ -63,24 +118,20 @@ function renderizarAlunos() {
   alunosSelecionados.forEach((aluno, index) => {
 
     const div = document.createElement("div");
-
-    div.style.background = "#e3f2fd";
-    div.style.padding = "10px";
-    div.style.margin = "5px";
-    div.style.borderRadius = "10px";
+    div.classList.add("aluno-box");
 
     div.innerHTML = `
       <strong>${aluno.nome}</strong><br>
 
       Status:
       <select class="status-individual" data-index="${index}">
-        <option value="Presente">Presente</option>
-        <option value="Ausente">Ausente</option>
-        <option value="Cancelada">Cancelada</option>
-        <option value="Trancada">Trancada</option>
+        <option value="Presente" ${aluno.status === "Presente" ? "selected" : ""}>Presente</option>
+        <option value="Ausente" ${aluno.status === "Ausente" ? "selected" : ""}>Ausente</option>
+        <option value="Cancelada" ${aluno.status === "Cancelada" ? "selected" : ""}>Cancelada</option>
+        <option value="Trancada" ${aluno.status === "Trancada" ? "selected" : ""}>Trancada</option>
       </select>
 
-      <button data-index="${index}" style="margin-left:10px;">❌</button>
+      <button class="btn-remover-aluno" data-index="${index}">✖</button>
     `;
 
     alunosSelecionadosDiv.appendChild(div);
@@ -88,40 +139,59 @@ function renderizarAlunos() {
 
   listaAlunosBox.style.display =
     alunosSelecionados.length ? "block" : "none";
+
+
+  // atualizar status
+  document.querySelectorAll(".status-individual")
+    .forEach(select => {
+
+      select.addEventListener("change", (e) => {
+
+        const index = e.target.dataset.index;
+        alunosSelecionados[index].status = e.target.value;
+
+        verificarCancelamentoColetivo();
+
+      });
+
+    });
+
 }
 
 
 // ======================
-// Carregar alunos
+// CARREGAR MATRÍCULAS
 // ======================
+
 async function carregarMatriculas() {
 
-  const professorId = Number(localStorage.getItem("professorId"));
+  const professorId =
+    Number(localStorage.getItem("professorId"));
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("matricula")
     .select(`
       id,
       aluno:aluno_id ( nome ),
-      materia:materia_id ( nome ),
-      modulo:modulo_id ( nome )
+      materia:materia_id ( nome )
     `)
     .eq("professor_id", professorId)
     .eq("ativa", true);
 
-  if (error) {
-    mostrarMensagem("Erro ao carregar alunos", false);
-    return;
-  }
+  selectMatricula.innerHTML =
+    `<option value="">Selecione o aluno</option>`;
 
-  selectMatricula.innerHTML = `<option value="">Selecione o aluno</option>`;
-
-  data.sort((a, b) => a.aluno.nome.localeCompare(b.aluno.nome));
+  data.sort((a, b) =>
+    a.aluno.nome.localeCompare(b.aluno.nome)
+  );
 
   data.forEach(m => {
+
     const opt = document.createElement("option");
     opt.value = m.id;
-    opt.textContent = `${m.aluno.nome} — ${m.materia.nome}`;
+    opt.textContent =
+      `${m.aluno.nome} — ${m.materia.nome}`;
+
     selectMatricula.appendChild(opt);
   });
 }
@@ -131,38 +201,47 @@ async function carregarMatriculas() {
 // EVENTOS
 // ======================
 
-// adicionar aluno (modo coletivo)
 selectMatricula.addEventListener("change", () => {
 
-  if (!aulaColetivaCheckbox.checked) return;
-
-  const id = selectMatricula.value;
-  const nome = selectMatricula.options[selectMatricula.selectedIndex].text;
-
-  if (!id) return;
-
-  if (alunosSelecionados.find(a => a.id === id)) {
-    selectMatricula.value = "";
+  if (!aulaColetivaCheckbox.checked) {
+    atualizarParteAula();
     return;
   }
 
-  alunosSelecionados.push({ id, nome });
+  const id = selectMatricula.value;
+  const nome =
+    selectMatricula.options[
+      selectMatricula.selectedIndex
+    ].text;
+
+  if (!id) return;
+
+  if (alunosSelecionados.find(a => a.id == id)) return;
+
+  alunosSelecionados.push({
+    id,
+    nome,
+    status: "Presente"
+  });
+
+  // remover do select
+  const opt =
+    selectMatricula.querySelector(
+      `option[value="${id}"]`
+    );
+
+  if (opt) opt.remove();
 
   renderizarAlunos();
 
-  // remover do select
-  const opt = selectMatricula.querySelector(`option[value="${id}"]`);
-  if (opt) opt.remove();
-
   selectMatricula.value = "";
-  selectMatricula.options[0].textContent = "Selecionar mais alunos...";
 });
 
 
 // remover aluno
 alunosSelecionadosDiv.addEventListener("click", (e) => {
 
-  if (e.target.tagName === "BUTTON") {
+  if (e.target.classList.contains("btn-remover-aluno")) {
 
     const index = e.target.dataset.index;
     const aluno = alunosSelecionados[index];
@@ -180,7 +259,7 @@ alunosSelecionadosDiv.addEventListener("click", (e) => {
 });
 
 
-// alternar aula coletiva
+// aula coletiva
 aulaColetivaCheckbox.addEventListener("change", () => {
 
   alunosSelecionados = [];
@@ -188,19 +267,37 @@ aulaColetivaCheckbox.addEventListener("change", () => {
 
   const coletivo = aulaColetivaCheckbox.checked;
 
-  // esconder status geral
   boxStatus.style.display = coletivo ? "none" : "block";
 
-  // required dinâmico
+  selectStatus.required = !coletivo;
+  selectStatus.disabled = coletivo;
+
   selectMatricula.required = !coletivo;
+
+  boxJustificativa.style.display = "none";
 
   carregarMatriculas();
 });
 
 
+// justificativa individual
+selectStatus.addEventListener("change", () => {
+
+  boxJustificativa.style.display =
+    selectStatus.value === "Cancelada"
+      ? "block"
+      : "none";
+});
+
+
+selectMatricula.addEventListener("change", atualizarParteAula);
+inputDataAula.addEventListener("change", atualizarParteAula);
+
+
 // ======================
 // INIT
 // ======================
+
 setarDataHoje();
 carregarMatriculas();
 
@@ -208,94 +305,141 @@ carregarMatriculas();
 // ======================
 // SALVAR
 // ======================
+
 form.addEventListener("submit", async (e) => {
 
   e.preventDefault();
 
-  const professorId = localStorage.getItem("professorId");
+  const professorId =
+    Number(localStorage.getItem("professorId"));
+
   const dataAula = inputDataAula.value;
   const parte = Number(selectParte.value);
 
-  const justificativa = inputJustificativa.value.trim();
-  const conteudo = inputConteudo.value.trim();
-  const licaoCasa = inputLicaoCasa.value.trim();
+  const justificativa =
+    inputJustificativa.value.trim();
+
+  const conteudo =
+    inputConteudo.value.trim();
+
+  const licaoCasa =
+    inputLicaoCasa.value.trim();
 
   let registros = [];
 
-  // ======================
-  // AULA COLETIVA
-  // ======================
-  if (aulaColetivaCheckbox.checked) {
 
-    if (alunosSelecionados.length === 0) {
-      mostrarMensagem("Adicione alunos", false);
-      return;
-    }
+// COLETIVA
+if (aulaColetivaCheckbox.checked) {
 
-    const selects = document.querySelectorAll(".status-individual");
-
-    alunosSelecionados.forEach((aluno, i) => {
-
-      const status = selects[i].value;
-
-      registros.push({
-        matricula_id: aluno.id,
-        professor_id: professorId,
-        data_aula: dataAula,
-        parte,
-        status,
-        justificativa: status === "Cancelada" ? justificativa : null,
-        conteudo: status === "Cancelada" ? null : conteudo,
-        licao_casa: status === "Cancelada" ? null : licaoCasa
-      });
-
-    });
-
+  if (alunosSelecionados.length === 0) {
+    mostrarMensagem("Adicione alunos", false);
+    return;
   }
 
-  // ======================
-  // AULA INDIVIDUAL
-  // ======================
-  else {
+  const temCancelada =
+    alunosSelecionados.some(
+      a => a.status === "Cancelada"
+    );
 
-    const matriculaId = selectMatricula.value;
-    const status = selectStatus.value;
-
-    if (!matriculaId) {
-      mostrarMensagem("Selecione um aluno", false);
-      return;
-    }
-
-    registros = [{
-      matricula_id: matriculaId,
-      professor_id: professorId,
-      data_aula: dataAula,
-      parte,
-      status,
-      justificativa: status === "Cancelada" ? justificativa : null,
-      conteudo: status === "Cancelada" ? null : conteudo,
-      licao_casa: status === "Cancelada" ? null : licaoCasa
-    }];
+  if (temCancelada && !justificativa) {
+    mostrarMensagem("Informe a justificativa", false);
+    return;
   }
 
-  // ======================
-  // SALVAR
-  // ======================
-  const { error } = await supabase
+  registros = alunosSelecionados.map(aluno => ({
+
+    matricula_id: aluno.id,
+    professor_id: professorId,
+    data_aula: dataAula,
+    parte,
+    status: aluno.status,
+
+    justificativa:
+      aluno.status === "Cancelada"
+        ? justificativa
+        : null,
+
+    conteudo:
+      aluno.status === "Cancelada"
+        ? null
+        : conteudo,
+
+    licao_casa:
+      aluno.status === "Cancelada"
+        ? null
+        : licaoCasa
+
+  }));
+
+}
+
+
+// INDIVIDUAL
+else {
+
+  const matriculaId = selectMatricula.value;
+  const status = selectStatus.value;
+
+  if (!matriculaId) {
+    mostrarMensagem("Selecione um aluno", false);
+    return;
+  }
+
+  if (status === "Cancelada" && !justificativa) {
+    mostrarMensagem("Informe a justificativa", false);
+    return;
+  }
+
+  registros = [{
+
+    matricula_id: matriculaId,
+    professor_id: professorId,
+    data_aula: dataAula,
+    parte,
+    status,
+
+    justificativa:
+      status === "Cancelada"
+        ? justificativa
+        : null,
+
+    conteudo:
+      status === "Cancelada"
+        ? null
+        : conteudo,
+
+    licao_casa:
+      status === "Cancelada"
+        ? null
+        : licaoCasa
+
+  }];
+
+}
+
+
+const { error } =
+  await supabase
     .from("aula")
     .insert(registros);
 
-  if (error) {
-    console.error(error);
-    mostrarMensagem("Erro ao salvar", false);
-  } else {
-    mostrarMensagem("Aula salva!");
+if (error) {
 
-    form.reset();
-    alunosSelecionados = [];
-    renderizarAlunos();
+  console.error(error);
+  mostrarMensagem("Erro ao salvar", false);
 
-    setarDataHoje();
-  }
+} else {
+
+  mostrarMensagem("Aula salva!");
+
+  form.reset();
+
+  alunosSelecionados = [];
+  renderizarAlunos();
+
+  setarDataHoje();
+  carregarMatriculas();
+
+}
 
 });
