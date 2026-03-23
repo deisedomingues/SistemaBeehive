@@ -387,3 +387,6 @@ ALUNOS SELECIONADOS
 .btn-remover-aluno:hover {
     background-color: #d94a4a;
 }
+.btn-excluir:hover {
+  background: #ffcdd2;
+}

@@ -24,6 +24,9 @@ const notaValor = document.getElementById("notaValor");
 const notaObs = document.getElementById("notaObs");
 const listaNotas = document.getElementById("listaNotas");
 
+// ===============================
+// MENSAGEM
+// ===============================
 function mostrarMensagem(texto, ok = true) {
   msg.textContent = texto;
   msg.style.display = "block";
@@ -36,6 +39,7 @@ function mostrarMensagem(texto, ok = true) {
   }, 2200);
 }
 
+// ===============================
 function limparLista(ul) {
   ul.innerHTML = "";
 }
@@ -66,6 +70,72 @@ if (!matriculaId) {
 }
 
 // ===============================
+// CONFIRMAR EXCLUSÃO (perto da aula)
+// ===============================
+function confirmarExclusao(li, aulaId, textoAula) {
+
+  // evita várias caixas abertas
+  const existente = li.querySelector(".confirmacao-exclusao");
+  if (existente) return;
+
+  const caixa = document.createElement("div");
+  caixa.className = "confirmacao-exclusao";
+
+  caixa.style.marginTop = "6px";
+  caixa.style.padding = "8px";
+  caixa.style.background = "#fff3e0";
+  caixa.style.border = "1px solid #ffe0b2";
+  caixa.style.borderRadius = "6px";
+  caixa.style.fontSize = "12px";
+
+  caixa.innerHTML = `
+    ⚠️ Confirma excluir esta aula?
+    <br>
+    <b>${textoAula}</b>
+    <br><br>
+    <button class="btnSimExcluir" style="margin-right:6px; padding:4px 10px; cursor:pointer;">
+      Sim
+    </button>
+    <button class="btnNaoExcluir" style="padding:4px 10px; cursor:pointer;">
+      Não
+    </button>
+  `;
+
+  li.appendChild(caixa);
+
+  caixa.querySelector(".btnSimExcluir").onclick = async () => {
+    await excluirAula(aulaId);
+  };
+
+  caixa.querySelector(".btnNaoExcluir").onclick = () => {
+    caixa.remove();
+  };
+}
+
+// ===============================
+// EXCLUIR AULA
+// ===============================
+async function excluirAula(aulaId) {
+
+  const { error } = await supabase
+    .from("aula")
+    .delete()
+    .eq("id", aulaId);
+
+  if (error) {
+    console.error(error);
+    mostrarMensagem("❌ Erro ao excluir aula.", false);
+    return;
+  }
+
+  mostrarMensagem("🗑️ Aula excluída com sucesso!");
+
+  const aulas = await carregarAulas();
+  preencherContadores(aulas);
+  renderAulas(aulas);
+}
+
+// ===============================
 // 1) Cabeçalho
 // ===============================
 async function carregarCabecalho() {
@@ -89,7 +159,6 @@ async function carregarCabecalho() {
     return null;
   }
 
-
   tituloAluno.textContent = data.aluno?.nome || "Aluno";
 
   subtituloAluno.textContent =
@@ -99,7 +168,7 @@ async function carregarCabecalho() {
 }
 
 // ===============================
-// 2) Carregar aulas (TODOS professores)
+// 2) Carregar aulas
 // ===============================
 async function carregarAulas() {
 
@@ -152,7 +221,7 @@ function preencherContadores(aulas) {
 }
 
 // ===============================
-// 4) Render histórico
+// 4) Render histórico com X
 // ===============================
 function renderAulas(aulas) {
 
@@ -165,29 +234,42 @@ function renderAulas(aulas) {
 
   aulas.forEach((x) => {
 
+    const li = document.createElement("li");
+    li.style.marginBottom = "8px";
+
     const dataBR = formatarDataBR(x.data_aula);
-
-    const professorNome =
-      x.professor?.nome || "Professor";
-
-    const conteudo =
-      x.conteudo || "(sem conteúdo)";
-
-    const licao =
-      x.licao_casa ? ` | Lição: ${x.licao_casa}` : "";
+    const professorNome = x.professor?.nome || "Professor";
+    const conteudo = x.conteudo || "(sem conteúdo)";
+    const licao = x.licao_casa ? ` | Lição: ${x.licao_casa}` : "";
 
     const statusExtra =
       x.status !== "Presente"
         ? ` | ${x.status}${x.justificativa ? ` (${x.justificativa})` : ""}`
         : "";
 
-    addLi(
-      listaAulas,
-      `${dataBR} — ${professorNome} — ${conteudo}${licao}${statusExtra}`
-    );
+    const texto =
+      `${dataBR} — ${professorNome} — ${conteudo}${licao}${statusExtra}`;
 
+    const span = document.createElement("span");
+    span.textContent = texto;
+
+    const btnExcluir = document.createElement("button");
+    btnExcluir.textContent = "✖";
+    btnExcluir.style.marginLeft = "10px";
+    btnExcluir.style.padding = "3px 7px";
+    btnExcluir.style.fontSize = "12px";
+    btnExcluir.style.background = "#ffebee";
+    btnExcluir.style.border = "1px solid #ffcdd2";
+    btnExcluir.style.cursor = "pointer";
+    btnExcluir.style.borderRadius = "5px";
+
+    btnExcluir.onclick = () => confirmarExclusao(li, x.id, texto);
+
+    li.appendChild(span);
+    li.appendChild(btnExcluir);
+
+    listaAulas.appendChild(li);
   });
-
 }
 
 // ===============================
@@ -230,7 +312,6 @@ function renderNotas(notas) {
     );
 
   });
-
 }
 
 formNota.addEventListener("submit", async (e) => {
@@ -272,7 +353,6 @@ formNota.addEventListener("submit", async (e) => {
 
   const notas = await carregarNotas();
   renderNotas(notas);
-
 });
 
 // ===============================
@@ -292,7 +372,6 @@ async function init() {
 
   const notas = await carregarNotas();
   renderNotas(notas);
-
 }
 
 init();
