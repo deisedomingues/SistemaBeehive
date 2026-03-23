@@ -25,7 +25,7 @@ function mostrarMensagem(texto, ok = true) {
 
 async function carregarBases() {
 
-  // matérias
+  // carregar matérias
   const { data: materias } = await supabase
     .from("materia")
     .select("id, nome")
@@ -33,7 +33,7 @@ async function carregarBases() {
 
   materiasCache = materias || [];
 
-  // vínculo professor x matéria
+  // carregar vínculo professor x matéria
   const { data: vinculos } = await supabase
     .from("professor_materia")
     .select(`
@@ -73,11 +73,9 @@ async function carregarModulosPorMateria(materiaId) {
 }
 
 function criarOption(value, label) {
-
   const opt = document.createElement("option");
   opt.value = value;
   opt.textContent = label;
-
   return opt;
 }
 
@@ -137,7 +135,7 @@ function adicionarCurso() {
 
     if (!materiaId) return;
 
-    // carregar módulos
+    // módulos
     const modulos =
       await carregarModulosPorMateria(materiaId);
 
@@ -148,14 +146,12 @@ function adicionarCurso() {
     );
 
     modulos.forEach((m) => {
-
       selModulo.appendChild(
         criarOption(m.id, m.nome)
       );
-
     });
 
-    // carregar professores
+    // professores
     const professores =
       professoresPorMateria[materiaId] || [];
 
@@ -166,11 +162,9 @@ function adicionarCurso() {
     );
 
     professores.forEach((p) => {
-
       selProfessor.appendChild(
         criarOption(p.id, p.nome)
       );
-
     });
 
   });
@@ -197,7 +191,12 @@ form.addEventListener("submit", async (e) => {
       .toLowerCase();
 
   const telefone =
-    document.getElementById("telefone").value.trim();
+    document.getElementById("telefone")
+      .value.trim();
+
+  const observacao =
+    document.getElementById("observacao")
+      .value.trim();
 
   if (!nome) {
     mostrarMensagem(
@@ -221,7 +220,7 @@ form.addEventListener("submit", async (e) => {
       box.querySelector(".professor").value
   }));
 
-  // inserir aluno
+  // salvar aluno
   const { data: alunoInserido, error: errAluno }
     = await supabase
       .from("aluno")
@@ -229,7 +228,8 @@ form.addEventListener("submit", async (e) => {
         nome,
         data_nascimento: dataNascimento || null,
         email: email || null,
-        telefone: telefone || null
+        telefone: telefone || null,
+        observacao: observacao || null
       }])
       .select("id")
       .single();
@@ -248,7 +248,7 @@ form.addEventListener("submit", async (e) => {
 
   const alunoId = alunoInserido.id;
 
-  // inserir matrículas
+  // salvar matrículas
   await supabase
     .from("matricula")
     .insert(
