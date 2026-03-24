@@ -390,3 +390,46 @@ ALUNOS SELECIONADOS
 .btn-excluir:hover {
   background: #ffcdd2;
 }
+
+.msg-salvar {
+  margin-top: 10px;
+  font-size: 14px;
+  display: none;
+}
+
+#msgSalvar {
+  display: none;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  width: fit-content;
+  animation: fadeIn 0.3s ease;
+}
+
+/* sucesso */
+.msg-sucesso {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #66bb6a;
+}
+
+/* erro */
+.msg-erro {
+  background-color: #ffebee;
+  color: #b71c1c;
+  border: 1px solid #ef5350;
+}
+
+/* animação suave */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
