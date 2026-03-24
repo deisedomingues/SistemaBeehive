@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório | Beehive</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<div class="overlay"></div>
+
+<main class="container">
+
+    <h1>Relatório de Presença</h1>
+
+    <form id="form-relatorio">
+
+        <label>Empresa parceira</label>
+        <select id="empresaparceira">
+            <option value="">Selecione a empresa</option>
+        </select>
+
+        <label>Data início</label>
+        <input type="date" id="inicio" required>
+
+        <label>Data fim</label>
+        <input type="date" id="fim" required>
+
+        <button type="submit">Gerar relatório</button>
+
+    </form>
+
+    <br>
+
+    <div id="msg" style="display:none;"></div>
+
+    <br>
+
+    <div id="area-relatorio" style="display:none;">
+
+        <h2 id="tituloRelatorio"></h2>
+
+        <table border="1" width="100%" id="tabela-relatorio">
+            <thead>
+                <tr>
+                    <th>Aluno</th>
+                    <th>Professor</th>
+                    <th>Curso</th>
+                    <th>Módulo</th>
+                    <th>Presenças</th>
+                    <th>Canceladas</th>
+                    <th>Total Aulas</th>
+                    <th>% Presença</th>
+                </tr>
+            </thead>
+
+            <tbody></tbody>
+        </table>
+
+        <br>
+
+        <button onclick="window.print()">Imprimir</button>
+
+    </div>
+
+</main>
+
+<script type="module" src="js/relatorio.js"></script>
+
+</body>
+</html>
+

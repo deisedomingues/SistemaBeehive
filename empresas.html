@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastrar Empresa | Beehive</title>
+
+  <link rel="stylesheet" href="css/style.css" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container">
+
+    <h1 style="margin-bottom: 12px;">
+      Cadastrar Empresa Parceira
+    </h1>
+
+    <form class="form" id="form-empresa">
+
+      <label style="margin-bottom:8px;">
+        CNPJ
+        <input
+          type="text"
+          id="cnpj"
+          placeholder="Ex: 12.345.678/0001-99"
+          required
+          style="padding:8px;"
+        />
+      </label>
+
+      <label style="margin-bottom:8px;">
+        Nome da empresa
+        <input
+          type="text"
+          id="nome"
+          placeholder="Ex: Empresa ABC"
+          required
+          style="padding:8px;"
+        />
+      </label>
+
+      <label style="margin-bottom:8px;">
+        E-mail (opcional)
+        <input
+          type="email"
+          id="email"
+          placeholder="Ex: contato@empresa.com"
+          style="padding:8px;"
+        />
+      </label>
+
+      <label style="margin-bottom:8px;">
+        Telefone (opcional)
+        <input
+          type="text"
+          id="telefone"
+          placeholder="Ex: (11) 99999-9999"
+          style="padding:8px;"
+        />
+      </label>
+
+      <label style="margin-bottom:10px;">
+        Observação (opcional)
+        <textarea
+          id="observacao"
+          placeholder="Ex: empresa exige relatório todo dia 05..."
+          style="padding:8px; min-height:80px; resize:vertical;"
+        ></textarea>
+      </label>
+
+      <button
+        type="submit"
+        class="btn"
+        style="margin-top:6px; padding:12px;"
+      >
+        Salvar empresa
+      </button>
+
+    </form>
+
+    <div id="msg" style="display:none; margin-bottom:8px;"></div>
+
+    <a
+      href="home-admin.html"
+      class="link-voltar"
+      style="margin-top:10px;"
+    >
+      ← Voltar
+    </a>
+
+  </main>
+
+  <script type="module" src="js/empresas.js"></script>
+
+</body>
+</html>

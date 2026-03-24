@@ -7,11 +7,13 @@ const form = document.getElementById("form-aluno");
 const msg = document.getElementById("msg");
 const cursosDiv = document.getElementById("cursos");
 const btnAddCurso = document.getElementById("btnAddCurso");
+const selectEmpresa = document.getElementById("empresa");
 
 let materiasCache = [];
 let professoresPorMateria = {};
 
 function mostrarMensagem(texto, ok = true) {
+
   msg.textContent = texto;
   msg.style.display = "block";
   msg.style.backgroundColor = ok ? "#e8f5e9" : "#ffebee";
@@ -23,9 +25,40 @@ function mostrarMensagem(texto, ok = true) {
   }, 2200);
 }
 
+// ======================
+// carregar empresas
+// ======================
+async function carregarEmpresas() {
+
+  const { data, error } = await supabase
+    .from("empresaparceira")
+    .select("cnpj, nome")
+    .order("nome");
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  (data || []).forEach(emp => {
+
+    const option = document.createElement("option");
+
+    option.value = emp.cnpj;
+    option.textContent = emp.nome;
+
+    selectEmpresa.appendChild(option);
+  });
+}
+
+// ======================
+// carregar bases
+// ======================
 async function carregarBases() {
 
-  // carregar matérias
+  await carregarEmpresas();
+
+  // matérias
   const { data: materias } = await supabase
     .from("materia")
     .select("id, nome")
@@ -33,7 +66,7 @@ async function carregarBases() {
 
   materiasCache = materias || [];
 
-  // carregar vínculo professor x matéria
+  // professor x matéria
   const { data: vinculos } = await supabase
     .from("professor_materia")
     .select(`
@@ -51,16 +84,21 @@ async function carregarBases() {
       professoresPorMateria[mid] = [];
 
     if (v.professor?.id) {
+
       professoresPorMateria[mid].push({
         id: v.professor.id,
         nome: v.professor.nome
       });
+
     }
   });
 
   adicionarCurso();
 }
 
+// ======================
+// módulos
+// ======================
 async function carregarModulosPorMateria(materiaId) {
 
   const { data } = await supabase
@@ -73,12 +111,16 @@ async function carregarModulosPorMateria(materiaId) {
 }
 
 function criarOption(value, label) {
+
   const opt = document.createElement("option");
   opt.value = value;
   opt.textContent = label;
   return opt;
 }
 
+// ======================
+// adicionar curso
+// ======================
 function adicionarCurso() {
 
   const wrapper = document.createElement("div");
@@ -111,12 +153,10 @@ function adicionarCurso() {
   const selModulo = wrapper.querySelector(".modulo");
   const selProfessor = wrapper.querySelector(".professor");
 
-  // opção inicial
   selMateria.appendChild(
     criarOption("", "Selecione a matéria")
   );
 
-  // carregar matérias
   materiasCache.forEach((m) => {
     selMateria.appendChild(
       criarOption(m.id, m.nome)
@@ -175,6 +215,9 @@ function adicionarCurso() {
 
 btnAddCurso.onclick = adicionarCurso;
 
+// ======================
+// salvar aluno
+// ======================
 form.addEventListener("submit", async (e) => {
 
   e.preventDefault();
@@ -191,18 +234,15 @@ form.addEventListener("submit", async (e) => {
       .toLowerCase();
 
   const telefone =
-    document.getElementById("telefone")
-      .value.trim();
+    document.getElementById("telefone").value.trim();
 
   const observacao =
-    document.getElementById("observacao")
-      .value.trim();
+    document.getElementById("observacao").value.trim();
+
+  const empresaCnpj = selectEmpresa.value || null;
 
   if (!nome) {
-    mostrarMensagem(
-      "⚠️ Preencha o nome.",
-      false
-    );
+    mostrarMensagem("Preencha o nome", false);
     return;
   }
 
@@ -220,7 +260,9 @@ form.addEventListener("submit", async (e) => {
       box.querySelector(".professor").value
   }));
 
+  // ======================
   // salvar aluno
+  // ======================
   const { data: alunoInserido, error: errAluno }
     = await supabase
       .from("aluno")
@@ -229,7 +271,8 @@ form.addEventListener("submit", async (e) => {
         data_nascimento: dataNascimento || null,
         email: email || null,
         telefone: telefone || null,
-        observacao: observacao || null
+        observacao: observacao || null,
+        empresa_cnpj: empresaCnpj
       }])
       .select("id")
       .single();
@@ -248,7 +291,9 @@ form.addEventListener("submit", async (e) => {
 
   const alunoId = alunoInserido.id;
 
+  // ======================
   // salvar matrículas
+  // ======================
   await supabase
     .from("matricula")
     .insert(
@@ -278,4 +323,5 @@ form.addEventListener("submit", async (e) => {
   adicionarCurso();
 });
 
+// iniciar
 carregarBases();
