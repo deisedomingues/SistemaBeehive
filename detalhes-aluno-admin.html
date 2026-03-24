@@ -11,6 +11,7 @@
   <div class="overlay"></div>
 
   <main class="container container-resumo">
+
     <h1 style="margin-bottom:8px;">Detalhes do Aluno</h1>
 
     <div id="msg" style="display:none; margin-bottom:10px;"></div>
@@ -21,59 +22,53 @@
       <p style="font-size:13px; opacity:0.85; margin-top:6px;" id="subtituloAluno"></p>
     </div>
 
-     <!-- Histórico de aulas -->
+    <!-- ================= MÉDIAS ================= -->
+    <div class="dashboard">
+
+      <div class="card">
+        <h2>📊 Média geral</h2>
+        <p style="font-size:22px; font-weight:bold;" id="mediaGeral">-</p>
+        <p style="font-size:12px;">Total de avaliações: <b id="totalNotas">0</b></p>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>📚 Média por módulo</h2>
+        <div id="mediaPorModulo" style="margin-top:10px;">
+          Nenhuma média calculada ainda
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Histórico de aulas -->
     <div class="card">
       <h2>📚 Histórico de aulas</h2>
+
       <p style="font-size:12px; opacity:0.85; margin-top:6px;">
         Mostrando data — professor — conteúdo — lição de casa (se houver)
       </p>
-      <ul id="listaAulas" style="margin-top:10px;"></ul>
-    </div> 
-    
 
-    <!-- Notas -->
+      <ul id="listaAulas" style="margin-top:10px;"></ul>
+    </div>
+
+    <!-- NOTAS (apenas visualização para admin) -->
     <div class="dashboard">
       <div class="card" style="grid-column: 1 / -1;">
+
         <h2>📝 Notas</h2>
 
-        <form class="form" id="form-nota" style="margin-top:10px;">
-          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
-            <label>
-              Data
-              <input type="date" id="notaData" required>
-            </label>
-
-            <label>
-              Tipo
-              <input type="text" id="notaTipo" placeholder="Ex: Avaliação / Oral" required>
-            </label>
-
-            <label>
-              Nota
-              <input type="number" id="notaValor" step="0.01" min="0" max="10" placeholder="Ex: 8.5" required>
-            </label>
-          </div>
-
-          <label style="margin-top:10px;">
-            Observação (opcional)
-            <input type="text" id="notaObs" placeholder="Ex: Excelente participação">
-          </label>
-
-          <button type="submit" class="btn" style="margin-top:10px; padding:12px;">
-            Salvar nota
-          </button>
-        </form>
-
-        <p style="font-size:12px; opacity:0.85; margin-top:10px;">
-          Lista de notas (mais recente primeiro):
+        <p style="font-size:12px; opacity:0.85; margin-top:6px;">
+          Data — Tipo — Módulo — Nota
         </p>
 
-        <ul id="listaNotas" style="margin-top:8px;"></ul>
+        <ul id="listaNotas" style="margin-top:10px;"></ul>
+
       </div>
     </div>
-    
-    <!-- Cards de contadores -->
+
+    <!-- Cards de presença -->
     <div class="dashboard">
+
       <div class="card">
         <h2>✅ Presenças</h2>
         <p><b id="cPresente">0</b></p>
@@ -93,18 +88,16 @@
         <h2>⏸️ Trancadas</h2>
         <p><b id="cTrancada">0</b></p>
       </div>
+
     </div>
 
     <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
 
-    
-
-    <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
-
-
     <a href="resumo-geral.html" class="link-voltar">← Voltar</a>
+
   </main>
 
   <script type="module" src="js/detalhes-aluno-admin.js"></script>
+
 </body>
 </html>

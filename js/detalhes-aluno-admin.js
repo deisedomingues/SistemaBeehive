@@ -1,35 +1,44 @@
 import { supabase } from "./supabase.js";
 import { exigirAdmin } from "./guard.js";
+
 await exigirAdmin();
 
-const professorId = localStorage.getItem("professorId");
 const matriculaId = localStorage.getItem("matriculaSelecionada");
 
-// elementos
+// ===============================
+// ELEMENTOS
+// ===============================
 const msg = document.getElementById("msg");
+
 const tituloAluno = document.getElementById("tituloAluno");
 const subtituloAluno = document.getElementById("subtituloAluno");
+
+const listaAulas = document.getElementById("listaAulas");
 
 const cPresente = document.getElementById("cPresente");
 const cAusente = document.getElementById("cAusente");
 const cCancelada = document.getElementById("cCancelada");
 const cTrancada = document.getElementById("cTrancada");
 
-const listaAulas = document.getElementById("listaAulas");
-
-const formNota = document.getElementById("form-nota");
-const notaData = document.getElementById("notaData");
-const notaTipo = document.getElementById("notaTipo");
-const notaValor = document.getElementById("notaValor");
-const notaObs = document.getElementById("notaObs");
 const listaNotas = document.getElementById("listaNotas");
+
+const mediaGeral = document.getElementById("mediaGeral");
+const totalNotas = document.getElementById("totalNotas");
+const mediaPorModulo = document.getElementById("mediaPorModulo");
+
+// proteção
+if (!matriculaId) {
+  window.location.href = "resumo-geral.html";
+}
 
 // ===============================
 // MENSAGEM
 // ===============================
 function mostrarMensagem(texto, ok = true) {
+
   msg.textContent = texto;
   msg.style.display = "block";
+
   msg.style.backgroundColor = ok ? "#e8f5e9" : "#ffebee";
   msg.style.color = ok ? "#1b5e20" : "#b71c1c";
 
@@ -39,6 +48,8 @@ function mostrarMensagem(texto, ok = true) {
   }, 2200);
 }
 
+// ===============================
+// UTIL
 // ===============================
 function limparLista(ul) {
   ul.innerHTML = "";
@@ -51,92 +62,16 @@ function addLi(ul, texto) {
 }
 
 function formatarDataBR(dataISO) {
+
   if (!dataISO) return "";
+
   const [yyyy, mm, dd] = dataISO.split("-");
+
   return `${dd}/${mm}/${yyyy}`;
 }
 
-function hojeISO() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-// proteção
-if (!matriculaId) {
-  window.location.href = "resumo-professor.html";
-}
-
 // ===============================
-// CONFIRMAR EXCLUSÃO (perto da aula)
-// ===============================
-function confirmarExclusao(li, aulaId, textoAula) {
-
-  // evita várias caixas abertas
-  const existente = li.querySelector(".confirmacao-exclusao");
-  if (existente) return;
-
-  const caixa = document.createElement("div");
-  caixa.className = "confirmacao-exclusao";
-
-  caixa.style.marginTop = "6px";
-  caixa.style.padding = "8px";
-  caixa.style.background = "#fff3e0";
-  caixa.style.border = "1px solid #ffe0b2";
-  caixa.style.borderRadius = "6px";
-  caixa.style.fontSize = "12px";
-
-  caixa.innerHTML = `
-    ⚠️ Confirma excluir esta aula?
-    <br>
-    <b>${textoAula}</b>
-    <br><br>
-    <button class="btnSimExcluir" style="margin-right:6px; padding:4px 10px; cursor:pointer;">
-      Sim
-    </button>
-    <button class="btnNaoExcluir" style="padding:4px 10px; cursor:pointer;">
-      Não
-    </button>
-  `;
-
-  li.appendChild(caixa);
-
-  caixa.querySelector(".btnSimExcluir").onclick = async () => {
-    await excluirAula(aulaId);
-  };
-
-  caixa.querySelector(".btnNaoExcluir").onclick = () => {
-    caixa.remove();
-  };
-}
-
-// ===============================
-// EXCLUIR AULA
-// ===============================
-async function excluirAula(aulaId) {
-
-  const { error } = await supabase
-    .from("aula")
-    .delete()
-    .eq("id", aulaId);
-
-  if (error) {
-    console.error(error);
-    mostrarMensagem("❌ Erro ao excluir aula.", false);
-    return;
-  }
-
-  mostrarMensagem("🗑️ Aula excluída com sucesso!");
-
-  const aulas = await carregarAulas();
-  preencherContadores(aulas);
-  renderAulas(aulas);
-}
-
-// ===============================
-// 1) Cabeçalho
+// CABEÇALHO
 // ===============================
 async function carregarCabecalho() {
 
@@ -144,7 +79,6 @@ async function carregarCabecalho() {
     .from("matricula")
     .select(`
       id,
-      professor_id,
       aluno:aluno_id ( nome ),
       materia:materia_id ( nome ),
       modulo:modulo_id ( nome ),
@@ -155,20 +89,18 @@ async function carregarCabecalho() {
 
   if (error || !data) {
     console.error(error);
-    mostrarMensagem("❌ Não foi possível carregar a matrícula.", false);
-    return null;
+    mostrarMensagem("Erro ao carregar aluno", false);
+    return;
   }
 
   tituloAluno.textContent = data.aluno?.nome || "Aluno";
 
   subtituloAluno.textContent =
     `${data.materia?.nome || ""} — ${data.modulo?.nome || ""} — Prof(a). ${data.professor?.nome || ""}`;
-
-  return data;
 }
 
 // ===============================
-// 2) Carregar aulas
+// AULAS
 // ===============================
 async function carregarAulas() {
 
@@ -188,15 +120,13 @@ async function carregarAulas() {
 
   if (error) {
     console.error(error);
-    mostrarMensagem("❌ Erro ao carregar aulas.", false);
+    mostrarMensagem("Erro ao carregar aulas", false);
     return [];
   }
 
   return data || [];
 }
 
-// ===============================
-// 3) Contadores
 // ===============================
 function preencherContadores(aulas) {
 
@@ -205,7 +135,7 @@ function preencherContadores(aulas) {
   let c = 0;
   let t = 0;
 
-  aulas.forEach((x) => {
+  aulas.forEach(x => {
 
     if (x.status === "Presente") p++;
     else if (x.status === "Ausente") a++;
@@ -221,25 +151,25 @@ function preencherContadores(aulas) {
 }
 
 // ===============================
-// 4) Render histórico com X
-// ===============================
 function renderAulas(aulas) {
 
   limparLista(listaAulas);
 
   if (aulas.length === 0) {
-    addLi(listaAulas, "Nenhuma aula registrada ainda.");
+    addLi(listaAulas, "Nenhuma aula registrada.");
     return;
   }
 
-  aulas.forEach((x) => {
+  aulas.forEach(x => {
 
     const li = document.createElement("li");
-    li.style.marginBottom = "8px";
 
     const dataBR = formatarDataBR(x.data_aula);
-    const professorNome = x.professor?.nome || "Professor";
+
+    const professor = x.professor?.nome || "Professor";
+
     const conteudo = x.conteudo || "(sem conteúdo)";
+
     const licao = x.licao_casa ? ` | Lição: ${x.licao_casa}` : "";
 
     const statusExtra =
@@ -248,7 +178,7 @@ function renderAulas(aulas) {
         : "";
 
     const texto =
-      `${dataBR} — ${professorNome} — ${conteudo}${licao}${statusExtra}`;
+      `${dataBR} — ${professor} — ${conteudo}${licao}${statusExtra}`;
 
     const span = document.createElement("span");
     span.textContent = texto;
@@ -256,14 +186,21 @@ function renderAulas(aulas) {
     const btnExcluir = document.createElement("button");
     btnExcluir.textContent = "✖";
     btnExcluir.style.marginLeft = "10px";
-    btnExcluir.style.padding = "3px 7px";
-    btnExcluir.style.fontSize = "12px";
-    btnExcluir.style.background = "#ffebee";
-    btnExcluir.style.border = "1px solid #ffcdd2";
     btnExcluir.style.cursor = "pointer";
-    btnExcluir.style.borderRadius = "5px";
 
-    btnExcluir.onclick = () => confirmarExclusao(li, x.id, texto);
+    btnExcluir.onclick = async () => {
+
+      if (!confirm("Excluir esta aula?")) return;
+
+      await supabase
+        .from("aula")
+        .delete()
+        .eq("id", x.id);
+
+      mostrarMensagem("Aula excluída");
+
+      init();
+    };
 
     li.appendChild(span);
     li.appendChild(btnExcluir);
@@ -273,98 +210,156 @@ function renderAulas(aulas) {
 }
 
 // ===============================
-// 5) NOTAS
+// NOTAS
 // ===============================
 async function carregarNotas() {
 
   const { data, error } = await supabase
     .from("nota")
-    .select("id, data, tipo, valor, observacao")
+    .select(`
+      id,
+      data,
+      tipo,
+      valor,
+      observacao,
+      matricula:matricula_id (
+        modulo:modulo_id ( nome )
+      )
+    `)
     .eq("matricula_id", matriculaId)
     .order("data", { ascending: false });
 
   if (error) {
     console.error(error);
-    mostrarMensagem("❌ Erro ao carregar notas.", false);
+    mostrarMensagem("Erro ao carregar notas", false);
     return [];
   }
 
   return data || [];
 }
 
+// ===============================
 function renderNotas(notas) {
 
   limparLista(listaNotas);
 
   if (notas.length === 0) {
-    addLi(listaNotas, "Nenhuma nota registrada ainda.");
+    addLi(listaNotas, "Nenhuma nota registrada.");
     return;
   }
 
-  notas.forEach((n) => {
+  notas.forEach(n => {
+
+    const li = document.createElement("li");
 
     const dataBR = formatarDataBR(n.data);
-    const obs = n.observacao ? ` — ${n.observacao}` : "";
 
-    addLi(
-      listaNotas,
-      `${dataBR} — ${n.tipo}: ${n.valor}${obs}`
-    );
+    const modulo =
+      n.matricula?.modulo?.nome || "Sem módulo";
 
+    const obs =
+      n.observacao ? ` — ${n.observacao}` : "";
+
+    const texto =
+      `${dataBR} — ${n.tipo} — ${modulo} — ${n.valor}${obs}`;
+
+    const span = document.createElement("span");
+    span.textContent = texto;
+
+    const btnExcluir = document.createElement("button");
+    btnExcluir.textContent = "🗑";
+    btnExcluir.style.marginLeft = "10px";
+    btnExcluir.style.cursor = "pointer";
+
+    btnExcluir.onclick = async () => {
+
+      if (!confirm("Excluir esta nota?")) return;
+
+      await supabase
+        .from("nota")
+        .delete()
+        .eq("id", n.id);
+
+      mostrarMensagem("Nota excluída");
+
+      init();
+    };
+
+    li.appendChild(span);
+    li.appendChild(btnExcluir);
+
+    listaNotas.appendChild(li);
   });
 }
 
-formNota.addEventListener("submit", async (e) => {
+// ===============================
+// MÉDIAS
+// ===============================
+function calcularMedias(notas) {
 
-  e.preventDefault();
+  if (notas.length === 0) {
 
-  const data = notaData.value;
-  const tipo = notaTipo.value.trim();
-  const valor = Number(notaValor.value);
-  const obs = notaObs.value.trim();
+    mediaGeral.textContent = "-";
+    totalNotas.textContent = "0";
+    mediaPorModulo.textContent = "Nenhuma média";
 
-  if (!data || !tipo || Number.isNaN(valor)) {
-    mostrarMensagem("⚠️ Preencha data, tipo e nota.", false);
     return;
   }
 
-  const { error } = await supabase
-    .from("nota")
-    .insert([{
-      matricula_id: matriculaId,
-      data,
-      tipo,
-      valor,
-      observacao: obs || null
-    }]);
+  // média geral
+  let soma = 0;
 
-  if (error) {
-    console.error(error);
-    mostrarMensagem("❌ Erro ao salvar nota.", false);
-    return;
-  }
+  notas.forEach(n => {
+    soma += Number(n.valor);
+  });
 
-  mostrarMensagem("✅ Nota salva!");
+  const media = soma / notas.length;
 
-  formNota.reset();
+  mediaGeral.textContent = media.toFixed(2);
+  totalNotas.textContent = notas.length;
 
-  notaData.value = hojeISO();
-  notaTipo.value = "Avaliação";
+  // média por módulo
+  const modulos = {};
 
-  const notas = await carregarNotas();
-  renderNotas(notas);
-});
+  notas.forEach(n => {
+
+    const nome =
+      n.matricula?.modulo?.nome || "Sem módulo";
+
+    if (!modulos[nome]) {
+      modulos[nome] = [];
+    }
+
+    modulos[nome].push(Number(n.valor));
+  });
+
+  mediaPorModulo.innerHTML = "";
+
+  Object.keys(modulos).forEach(m => {
+
+    const lista = modulos[m];
+
+    let somaModulo = 0;
+
+    lista.forEach(v => somaModulo += v);
+
+    const mediaModulo = somaModulo / lista.length;
+
+    const p = document.createElement("p");
+
+    p.textContent =
+      `${m}: ${mediaModulo.toFixed(2)} (${lista.length} avaliações)`;
+
+    mediaPorModulo.appendChild(p);
+  });
+}
 
 // ===============================
 // INIT
 // ===============================
 async function init() {
 
-  notaData.value = hojeISO();
-  notaTipo.value = "Avaliação";
-
-  const cab = await carregarCabecalho();
-  if (!cab) return;
+  await carregarCabecalho();
 
   const aulas = await carregarAulas();
   preencherContadores(aulas);
@@ -372,6 +367,7 @@ async function init() {
 
   const notas = await carregarNotas();
   renderNotas(notas);
+  calcularMedias(notas);
 }
 
 init();
