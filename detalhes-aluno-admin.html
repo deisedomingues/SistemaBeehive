@@ -21,30 +21,15 @@
       <p style="font-size:13px; opacity:0.85; margin-top:6px;" id="subtituloAluno"></p>
     </div>
 
-    <!-- Cards de contadores -->
-    <div class="dashboard">
-      <div class="card">
-        <h2>✅ Presenças</h2>
-        <p><b id="cPresente">0</b></p>
-      </div>
-
-      <div class="card">
-        <h2>⚠️ Ausências</h2>
-        <p><b id="cAusente">0</b></p>
-      </div>
-
-      <div class="card">
-        <h2>❌ Canceladas</h2>
-        <p><b id="cCancelada">0</b></p>
-      </div>
-
-      <div class="card">
-        <h2>⏸️ Trancadas</h2>
-        <p><b id="cTrancada">0</b></p>
-      </div>
-    </div>
-
-    <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
+     <!-- Histórico de aulas -->
+    <div class="card">
+      <h2>📚 Histórico de aulas</h2>
+      <p style="font-size:12px; opacity:0.85; margin-top:6px;">
+        Mostrando data — professor — conteúdo — lição de casa (se houver)
+      </p>
+      <ul id="listaAulas" style="margin-top:10px;"></ul>
+    </div> 
+    
 
     <!-- Notas -->
     <div class="dashboard">
@@ -86,17 +71,36 @@
         <ul id="listaNotas" style="margin-top:8px;"></ul>
       </div>
     </div>
+    
+    <!-- Cards de contadores -->
+    <div class="dashboard">
+      <div class="card">
+        <h2>✅ Presenças</h2>
+        <p><b id="cPresente">0</b></p>
+      </div>
+
+      <div class="card">
+        <h2>⚠️ Ausências</h2>
+        <p><b id="cAusente">0</b></p>
+      </div>
+
+      <div class="card">
+        <h2>❌ Canceladas</h2>
+        <p><b id="cCancelada">0</b></p>
+      </div>
+
+      <div class="card">
+        <h2>⏸️ Trancadas</h2>
+        <p><b id="cTrancada">0</b></p>
+      </div>
+    </div>
 
     <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
 
-    <!-- Histórico de aulas -->
-    <div class="card">
-      <h2>📚 Histórico de aulas</h2>
-      <p style="font-size:12px; opacity:0.85; margin-top:6px;">
-        Mostrando data — professor — conteúdo — lição de casa (se houver)
-      </p>
-      <ul id="listaAulas" style="margin-top:10px;"></ul>
-    </div>
+    
+
+    <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
+
 
     <a href="resumo-geral.html" class="link-voltar">← Voltar</a>
   </main>
