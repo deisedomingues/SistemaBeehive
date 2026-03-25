@@ -1,5 +1,6 @@
 import { supabase } from "./supabase.js";
 import { exigirProfessor } from "./guard.js";
+
 await exigirProfessor();
 
 const professorId = localStorage.getItem("professorId");
@@ -22,9 +23,17 @@ const notaData = document.getElementById("notaData");
 const notaTipo = document.getElementById("notaTipo");
 const notaValor = document.getElementById("notaValor");
 const notaObs = document.getElementById("notaObs");
+const notaModulo = document.getElementById("notaModulo");
+
 const listaNotas = document.getElementById("listaNotas");
 
+const mediaGeralEl = document.getElementById("mediaGeral");
+const filtroModulo = document.getElementById("filtroModulo");
+
+let todasNotas = [];
+
 function mostrarMensagem(texto, ok = true) {
+
   msg.textContent = texto;
   msg.style.display = "block";
   msg.style.backgroundColor = ok ? "#e8f5e9" : "#ffebee";
@@ -32,18 +41,11 @@ function mostrarMensagem(texto, ok = true) {
 
   setTimeout(() => {
     msg.style.display = "none";
-    msg.textContent = "";
   }, 2200);
 }
 
-function limparLista(ul) {
-  ul.innerHTML = "";
-}
-
-function addLi(ul, texto) {
-  const li = document.createElement("li");
-  li.textContent = texto;
-  ul.appendChild(li);
+function limparLista(el) {
+  el.innerHTML = "";
 }
 
 function formatarDataBR(dataISO) {
@@ -53,27 +55,25 @@ function formatarDataBR(dataISO) {
 }
 
 function hojeISO() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return new Date().toISOString().split("T")[0];
 }
 
-// proteção
 if (!matriculaId) {
   window.location.href = "resumo-professor.html";
 }
 
 // ===============================
-// 1) Cabeçalho
+// CABEÇALHO
 // ===============================
+
 async function carregarCabecalho() {
 
   const { data, error } = await supabase
     .from("matricula")
     .select(`
       id,
+      materia_id,
+      modulo_id,
       professor_id,
       aluno:aluno_id ( nome ),
       materia:materia_id ( nome ),
@@ -84,70 +84,90 @@ async function carregarCabecalho() {
     .single();
 
   if (error || !data) {
-    console.error(error);
-    mostrarMensagem("❌ Não foi possível carregar a matrícula.", false);
+    mostrarMensagem("Erro ao carregar aluno", false);
     return null;
   }
 
-  // segurança: professor só pode abrir alunos dele
-  if (String(data.professor_id) !== String(professorId)) {
-    window.location.href = "home-professor.html";
-    return null;
-  }
-
-  tituloAluno.textContent = data.aluno?.nome || "Aluno";
+  tituloAluno.textContent = data.aluno.nome;
 
   subtituloAluno.textContent =
-    `${data.materia?.nome || ""} — ${data.modulo?.nome || ""} — Prof(a). ${data.professor?.nome || ""}`;
+    `${data.materia.nome} — ${data.modulo.nome} — Prof(a). ${data.professor.nome}`;
+
+  await carregarModulos(data.materia_id, data.modulo_id);
 
   return data;
 }
 
 // ===============================
-// 2) Carregar aulas (TODOS professores)
+// MODULOS
 // ===============================
-async function carregarAulas() {
+
+async function carregarModulos(materiaId, moduloAtual) {
 
   const { data, error } = await supabase
+    .from("modulo")
+    .select("id, nome, ordem")
+    .eq("materia_id", materiaId)
+    .order("ordem");
+
+  if (error) {
+    mostrarMensagem("Erro ao carregar módulos", false);
+    return;
+  }
+
+  notaModulo.innerHTML = `<option value="">Selecione o módulo</option>`;
+  filtroModulo.innerHTML = `<option value="">Todos</option>`;
+
+  data.forEach(m => {
+
+    const opt = document.createElement("option");
+    opt.value = m.id;
+    opt.textContent = m.nome;
+
+    if (m.id == moduloAtual)
+      opt.selected = true;
+
+    notaModulo.appendChild(opt);
+
+    const optFiltro = document.createElement("option");
+    optFiltro.value = m.id;
+    optFiltro.textContent = m.nome;
+
+    filtroModulo.appendChild(optFiltro);
+  });
+}
+
+// ===============================
+// AULAS
+// ===============================
+
+async function carregarAulas() {
+
+  const { data } = await supabase
     .from("aula")
     .select(`
-      id,
       data_aula,
       status,
-      justificativa,
       conteudo,
       licao_casa,
       professor:professor_id ( nome )
     `)
     .eq("matricula_id", matriculaId)
-    .order("data_aula", { ascending: true });
-
-  if (error) {
-    console.error(error);
-    mostrarMensagem("❌ Erro ao carregar aulas.", false);
-    return [];
-  }
+    .order("data_aula");
 
   return data || [];
 }
 
-// ===============================
-// 3) Contadores
-// ===============================
 function preencherContadores(aulas) {
 
-  let p = 0;
-  let a = 0;
-  let c = 0;
-  let t = 0;
+  let p = 0, a = 0, c = 0, t = 0;
 
-  aulas.forEach((x) => {
+  aulas.forEach(x => {
 
     if (x.status === "Presente") p++;
     else if (x.status === "Ausente") a++;
     else if (x.status === "Cancelada") c++;
     else if (x.status === "Trancada") t++;
-
   });
 
   cPresente.textContent = p;
@@ -156,87 +176,113 @@ function preencherContadores(aulas) {
   cTrancada.textContent = t;
 }
 
-// ===============================
-// 4) Render histórico
-// ===============================
 function renderAulas(aulas) {
 
   limparLista(listaAulas);
 
-  if (aulas.length === 0) {
-    addLi(listaAulas, "Nenhuma aula registrada ainda.");
-    return;
-  }
+  aulas.forEach(x => {
 
-  aulas.forEach((x) => {
+    const li = document.createElement("li");
 
-    const dataBR = formatarDataBR(x.data_aula);
+    li.textContent =
+      `${formatarDataBR(x.data_aula)} — ${x.professor?.nome || ""} — ${x.conteudo || ""} ${x.licao_casa ? " — " + x.licao_casa : ""}`;
 
-    const professorNome =
-      x.professor?.nome || "Professor";
-
-    const conteudo =
-      x.conteudo || "(sem conteúdo)";
-
-    const licao =
-      x.licao_casa ? ` | Lição: ${x.licao_casa}` : "";
-
-    const statusExtra =
-      x.status !== "Presente"
-        ? ` | ${x.status}${x.justificativa ? ` (${x.justificativa})` : ""}`
-        : "";
-
-    addLi(
-      listaAulas,
-      `${dataBR} — ${professorNome} — ${conteudo}${licao}${statusExtra}`
-    );
-
+    listaAulas.appendChild(li);
   });
-
 }
 
 // ===============================
-// 5) NOTAS
+// NOTAS
 // ===============================
+
 async function carregarNotas() {
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("nota")
-    .select("id, data, tipo, valor, observacao")
+    .select(`
+      id,
+      data,
+      tipo,
+      valor,
+      observacao,
+      modulo_id,
+      modulo:modulo_id ( nome )
+    `)
     .eq("matricula_id", matriculaId)
     .order("data", { ascending: false });
 
-  if (error) {
-    console.error(error);
-    mostrarMensagem("❌ Erro ao carregar notas.", false);
-    return [];
-  }
+  todasNotas = data || [];
 
-  return data || [];
+  calcularMediaGeral(todasNotas);
+  renderNotas(todasNotas);
 }
+
+// ===============================
+// RENDER NOTAS
+// ===============================
 
 function renderNotas(notas) {
 
   limparLista(listaNotas);
 
-  if (notas.length === 0) {
-    addLi(listaNotas, "Nenhuma nota registrada ainda.");
+  if (!notas.length) {
+
+    listaNotas.innerHTML = "<li>Nenhuma nota registrada</li>";
     return;
   }
 
-  notas.forEach((n) => {
+  notas.forEach(n => {
 
-    const dataBR = formatarDataBR(n.data);
-    const obs = n.observacao ? ` — ${n.observacao}` : "";
+    const li = document.createElement("li");
 
-    addLi(
-      listaNotas,
-      `${dataBR} — ${n.tipo}: ${n.valor}${obs}`
-    );
+    li.textContent =
+      `${formatarDataBR(n.data)} — ${n.tipo} — ${n.valor} — ${n.modulo?.nome || ""} ${n.observacao ? " — " + n.observacao : ""}`;
 
+    listaNotas.appendChild(li);
   });
-
 }
+
+// ===============================
+// MEDIA GERAL
+// ===============================
+
+function calcularMediaGeral(notas) {
+
+  if (!notas.length) {
+    mediaGeralEl.textContent = "0.0";
+    return;
+  }
+
+  let soma = 0;
+
+  notas.forEach(n => soma += n.valor);
+
+  const media = soma / notas.length;
+
+  mediaGeralEl.textContent = media.toFixed(2);
+}
+
+// ===============================
+// FILTRO
+// ===============================
+
+filtroModulo.addEventListener("change", () => {
+
+  const moduloId = filtroModulo.value;
+
+  if (!moduloId) {
+    renderNotas(todasNotas);
+    return;
+  }
+
+  const filtradas = todasNotas.filter(n => n.modulo_id == moduloId);
+
+  renderNotas(filtradas);
+});
+
+// ===============================
+// SALVAR NOTA
+// ===============================
 
 formNota.addEventListener("submit", async (e) => {
 
@@ -246,9 +292,10 @@ formNota.addEventListener("submit", async (e) => {
   const tipo = notaTipo.value.trim();
   const valor = Number(notaValor.value);
   const obs = notaObs.value.trim();
+  const moduloId = notaModulo.value;
 
-  if (!data || !tipo || Number.isNaN(valor)) {
-    mostrarMensagem("⚠️ Preencha data, tipo e nota.", false);
+  if (!data || !tipo || !valor || !moduloId) {
+    mostrarMensagem("Preencha todos os campos", false);
     return;
   }
 
@@ -259,30 +306,28 @@ formNota.addEventListener("submit", async (e) => {
       data,
       tipo,
       valor,
-      observacao: obs || null
+      observacao: obs || null,
+      modulo_id: moduloId
     }]);
 
   if (error) {
-    console.error(error);
-    mostrarMensagem("❌ Erro ao salvar nota.", false);
+    mostrarMensagem("Erro ao salvar nota", false);
     return;
   }
 
-  mostrarMensagem("✅ Nota salva!");
+  mostrarMensagem("Nota salva!");
 
   formNota.reset();
-
   notaData.value = hojeISO();
   notaTipo.value = "Avaliação";
 
-  const notas = await carregarNotas();
-  renderNotas(notas);
-
+  await carregarNotas();
 });
 
 // ===============================
 // INIT
 // ===============================
+
 async function init() {
 
   notaData.value = hojeISO();
@@ -295,9 +340,7 @@ async function init() {
   preencherContadores(aulas);
   renderAulas(aulas);
 
-  const notas = await carregarNotas();
-  renderNotas(notas);
-
+  await carregarNotas();
 }
 
 init();

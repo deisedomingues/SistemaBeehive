@@ -30,48 +30,70 @@
       <ul id="listaAulas" style="margin-top:10px;"></ul>
     </div>
 
-     <!-- Notas -->
-    <div class="dashboard">
-      <div class="card" style="grid-column: 1 / -1;">
-        <h2>📝 Notas</h2>
+     <div class="card" style="grid-column: 1 / -1;">
+  <h2>📝 Notas</h2>
 
-        <form class="form" id="form-nota" style="margin-top:10px;">
-          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
-            <label>
-              Data
-              <input type="date" id="notaData" required>
-            </label>
+  <form class="form-nota-compacta" id="form-nota">
 
-            <label>
-              Tipo
-              <input type="text" id="notaTipo" placeholder="Ex: Avaliação / Oral" required>
-            </label>
+    <div class="linha-nota">
 
-            <label>
-              Nota
-              <input type="number" id="notaValor" step="0.01" min="0" max="10" placeholder="Ex: 8.5" required>
-            </label>
-          </div>
+      <label>
+        Data
+        <input type="date" id="notaData" required>
+      </label>
 
-          <label style="margin-top:10px;">
-            Observação (opcional)
-            <input type="text" id="notaObs" placeholder="Ex: Excelente participação">
-          </label>
+      <label>
+        Tipo
+        <input type="text" id="notaTipo" placeholder="Avaliação" required>
+      </label>
 
-          <button type="submit" class="btn" style="margin-top:10px; padding:12px;">
-            Salvar nota
-          </button>
-        </form>
+      <label>
+        Nota
+        <input type="number" id="notaValor" step="0.01" min="0" max="10" required>
+      </label>
 
-        <p style="font-size:12px; opacity:0.85; margin-top:10px;">
-          Lista de notas (mais recente primeiro):
-        </p>
+      <label>
+        Módulo
+        <select id="notaModulo" required></select>
+      </label>
 
-        <ul id="listaNotas" style="margin-top:8px;"></ul>
-        <div id="mediasNotas" style="margin-top:10px; font-size:13px; opacity:0.9;"></div>
+      <label>
+        Obs
+        <input type="text" id="notaObs" placeholder="Opcional">
+      </label>
 
-      </div>
+      <button type="submit" class="btn btn-salvar-nota">
+        Salvar
+      </button>
+
     </div>
+  </form>
+
+  <!-- MÉDIA GERAL FIXA -->
+  <div class="media-geral-box">
+
+    <div class="media-geral">
+      🐝 Média Geral:
+      <b id="mediaGeral">0.0</b>
+    </div>
+
+    <div class="filtro-modulo">
+      Filtrar módulo:
+
+      <select id="filtroModulo">
+        <option value="">Todos</option>
+      </select>
+    </div>
+
+  </div>
+
+  <p class="texto-lista-notas">
+    Lista de notas:
+  </p>
+
+  <div id="listaNotas" class="notas-grid"></div>
+
+</div>
     
 
     <!-- Cards de contadores -->

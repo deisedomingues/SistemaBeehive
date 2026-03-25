@@ -433,3 +433,128 @@ ALUNOS SELECIONADOS
     transform: translateY(0);
   }
 }
+#listaAulas li,
+#listaNotas li {
+
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.medias-hex {
+
+  margin-top: 10px;
+}
+
+.media-item {
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.abelha {
+
+  width: 22px;
+  height: 22px;
+}
+/* ================================
+FORMULÁRIO COMPACTO DE NOTAS
+================================ */
+
+.form-nota-compacta {
+
+  margin-top: 10px;
+}
+
+.linha-nota {
+
+  display: grid;
+
+  grid-template-columns: 120px 140px 80px 140px 1fr 100px;
+
+  gap: 10px;
+
+  align-items: end;
+}
+
+/* inputs menores */
+
+.linha-nota input,
+.linha-nota select {
+
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+/* botão salvar */
+
+.btn-salvar-nota {
+
+  padding: 8px;
+  height: 36px;
+}
+
+/* ================================
+MÉDIA E FILTRO
+================================ */
+
+.media-geral-box {
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-top: 15px;
+}
+
+.media-geral {
+
+  background: #FFF5CC;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+.filtro-modulo select {
+
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.texto-lista-notas {
+
+  font-size: 12px;
+  margin-top: 10px;
+  opacity: 0.8;
+}
+
+/* ================================
+RESPONSIVO CELULAR
+================================ */
+
+@media (max-width: 768px) {
+
+  .linha-nota {
+
+    grid-template-columns: 1fr;
+  }
+
+  .media-geral-box {
+
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .btn-salvar-nota {
+
+    width: 100%;
+  }
+
+}
+.container-resumo > .card {
+  margin-bottom: 20px;
+}
