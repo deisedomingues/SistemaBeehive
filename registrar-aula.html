@@ -49,6 +49,7 @@
                     <option value="Presente">Presente</option>
                     <option value="Ausente">Ausente</option>
                     <option value="Cancelada">Cancelada</option>
+                    <option value="Reposicao">Reposição</option>
                     <option value="Trancada">Trancada</option>
                 </select>
             </label>
@@ -75,6 +76,40 @@
                     >
                 </label>
             </div>
+            <!-- Regras de ausência -->
+<div id="boxAusencia" style="display:none;">
+
+    <label style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="aulaGravada">
+        Aula foi gravada (gera falta)
+    </label>
+
+    <label style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="precisaReposicao">
+        Precisa de reposição
+    </label>
+
+</div>
+<!-- Reposição -->
+<div id="boxReposicao" style="display:none;">
+
+    <label>
+        Aula faltada
+        <select id="aulaOriginalId">
+            <option value="">Selecione o aluno primeiro</option>
+        </select>
+
+        <small style="font-size:12px; color:#666;">
+            Selecione a aula que o aluno faltou para registrar a reposição
+        </small>
+    </label>
+
+    <label style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="reposicaoComCusto">
+        Reposição com custo
+    </label>
+
+</div>
 
             <label>
                 Conteúdo da aula

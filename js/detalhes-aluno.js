@@ -180,12 +180,17 @@ function renderAulas(aulas) {
 
   limparLista(listaAulas);
 
-  aulas.forEach(x => {
+  if (!aulas.length) {
+    listaAulas.innerHTML = "<li>Nenhuma aula registrada</li>";
+    return;
+  }
+
+  aulas.forEach((x, index) => {
 
     const li = document.createElement("li");
 
     li.textContent =
-      `${formatarDataBR(x.data_aula)} — ${x.professor?.nome || ""} — ${x.conteudo || ""} ${x.licao_casa ? " — " + x.licao_casa : ""}`;
+      `${index + 1} - ${formatarDataBR(x.data_aula)} — ${x.professor?.nome || ""} — ${x.conteudo || ""} ${x.licao_casa ? " — " + x.licao_casa : ""}`;
 
     listaAulas.appendChild(li);
   });
@@ -268,16 +273,18 @@ function calcularMediaGeral(notas) {
 
 filtroModulo.addEventListener("change", () => {
 
-  const moduloId = filtroModulo.value;
+  const moduloId = Number(filtroModulo.value);
 
   if (!moduloId) {
     renderNotas(todasNotas);
+    calcularMediaGeral(todasNotas);
     return;
   }
 
-  const filtradas = todasNotas.filter(n => n.modulo_id == moduloId);
+  const filtradas = todasNotas.filter(n => n.modulo_id === moduloId);
 
   renderNotas(filtradas);
+  calcularMediaGeral(filtradas);
 });
 
 // ===============================
