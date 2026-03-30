@@ -6,7 +6,10 @@ await exigirProfessor();
 const professorId = localStorage.getItem("professorId");
 const matriculaId = localStorage.getItem("matriculaSelecionada");
 
-// elementos
+// ===============================
+// ELEMENTOS
+// ===============================
+
 const msg = document.getElementById("msg");
 const tituloAluno = document.getElementById("tituloAluno");
 const subtituloAluno = document.getElementById("subtituloAluno");
@@ -15,8 +18,10 @@ const cPresente = document.getElementById("cPresente");
 const cAusente = document.getElementById("cAusente");
 const cCancelada = document.getElementById("cCancelada");
 const cTrancada = document.getElementById("cTrancada");
+const cReposicao = document.getElementById("cReposicao");
 
 const listaAulas = document.getElementById("listaAulas");
+const listaReposicoes = document.getElementById("listaReposicoes");
 
 const formNota = document.getElementById("form-nota");
 const notaData = document.getElementById("notaData");
@@ -32,6 +37,10 @@ const filtroModulo = document.getElementById("filtroModulo");
 
 let todasNotas = [];
 
+// ===============================
+// FUNÇÕES AUXILIARES
+// ===============================
+
 function mostrarMensagem(texto, ok = true) {
 
   msg.textContent = texto;
@@ -45,6 +54,7 @@ function mostrarMensagem(texto, ok = true) {
 }
 
 function limparLista(el) {
+  if (!el) return;
   el.innerHTML = "";
 }
 
@@ -150,6 +160,9 @@ async function carregarAulas() {
       status,
       conteudo,
       licao_casa,
+      justificativa,
+      precisa_reposicao,
+      aula_gravada,
       professor:professor_id ( nome )
     `)
     .eq("matricula_id", matriculaId)
@@ -158,15 +171,52 @@ async function carregarAulas() {
   return data || [];
 }
 
+// ===============================
+// CONTADORES + REPOSIÇÕES
+// ===============================
+
 function preencherContadores(aulas) {
 
-  let p = 0, a = 0, c = 0, t = 0;
+  let p = 0, a = 0, c = 0, t = 0, r = 0;
+
+  limparLista(listaReposicoes);
 
   aulas.forEach(x => {
 
     if (x.status === "Presente") p++;
-    else if (x.status === "Ausente") a++;
-    else if (x.status === "Cancelada") c++;
+
+    else if (x.status === "Ausente") {
+
+      if (x.aula_gravada) {
+        a++;
+      }
+      else if (x.precisa_reposicao) {
+
+        r++;
+
+        const li = document.createElement("li");
+        li.textContent =
+          `${formatarDataBR(x.data_aula)} — ${x.justificativa || "Reposição solicitada"}`;
+
+        listaReposicoes.appendChild(li);
+      }
+      else {
+        a++;
+      }
+    }
+
+    else if (x.status === "Cancelada") {
+
+      c++;
+      r++;
+
+      const li = document.createElement("li");
+      li.textContent =
+        `${formatarDataBR(x.data_aula)} — ${x.justificativa || "Aula cancelada"}`;
+
+      listaReposicoes.appendChild(li);
+    }
+
     else if (x.status === "Trancada") t++;
   });
 
@@ -174,7 +224,12 @@ function preencherContadores(aulas) {
   cAusente.textContent = a;
   cCancelada.textContent = c;
   cTrancada.textContent = t;
+  cReposicao.textContent = r;
 }
+
+// ===============================
+// RENDER AULAS
+// ===============================
 
 function renderAulas(aulas) {
 
@@ -189,8 +244,19 @@ function renderAulas(aulas) {
 
     const li = document.createElement("li");
 
-    li.textContent =
-      `${index + 1} - ${formatarDataBR(x.data_aula)} — ${x.professor?.nome || ""} — ${x.conteudo || ""} ${x.licao_casa ? " — " + x.licao_casa : ""}`;
+    let texto =
+      `${index + 1} - ${formatarDataBR(x.data_aula)} — ${x.professor?.nome || ""} — ${x.conteudo || ""}`;
+
+    if (x.licao_casa)
+      texto += " — " + x.licao_casa;
+
+    if (x.status === "Ausente" && x.precisa_reposicao)
+      texto += " (Reposição pendente)";
+
+    if (x.status === "Cancelada")
+      texto += " (Cancelada)";
+
+    li.textContent = texto;
 
     listaAulas.appendChild(li);
   });
@@ -231,7 +297,6 @@ function renderNotas(notas) {
   limparLista(listaNotas);
 
   if (!notas.length) {
-
     listaNotas.innerHTML = "<li>Nenhuma nota registrada</li>";
     return;
   }
@@ -344,6 +409,7 @@ async function init() {
   if (!cab) return;
 
   const aulas = await carregarAulas();
+
   preencherContadores(aulas);
   renderAulas(aulas);
 
