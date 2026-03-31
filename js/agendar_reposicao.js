@@ -5,6 +5,9 @@ await exigirAluno();
 
 const listaReposicoes = document.getElementById("listaReposicoes");
 const msg = document.getElementById("msg");
+const faltasAluno = document.getElementById("faltasAluno");
+
+let totalFaltas = 0;
 
 
 // =============================
@@ -36,7 +39,6 @@ async function buscarAluno() {
 
     const userId = userData.user.id;
 
-    // buscar perfil
     const { data: perfil, error: errPerfil } = await supabase
         .from("perfil")
         .select("aluno_id")
@@ -50,7 +52,6 @@ async function buscarAluno() {
         return null;
     }
 
-    // buscar aluno
     const { data: aluno, error: errAluno } = await supabase
         .from("aluno")
         .select("id, nome")
@@ -63,10 +64,9 @@ async function buscarAluno() {
         return null;
     }
 
-    // buscar matrícula ativa
     const { data: matricula, error: errMatricula } = await supabase
         .from("matricula")
-        .select("materia_id")
+        .select("id, materia_id")
         .eq("aluno_id", aluno.id)
         .eq("ativa", true)
         .single();
@@ -80,45 +80,53 @@ async function buscarAluno() {
     return {
         id: aluno.id,
         nome: aluno.nome,
-        materia_id: matricula.materia_id
+        materia_id: matricula.materia_id,
+        matricula_id: matricula.id
     };
 }
 
 
 
 // =============================
-// popup
+// carregar faltas
 // =============================
-function mostrarPopup(texto, callback) {
+async function carregarFaltas(matriculaId) {
 
-    const popup = document.createElement("div");
+    const { data, error } = await supabase
+        .from("aula")
+        .select("id, data_aula, status")
+        .eq("matricula_id", matriculaId)
+        .eq("status", "falta")
+        .order("data_aula", { ascending: false });
 
-    popup.style.position = "fixed";
-    popup.style.top = "0";
-    popup.style.left = "0";
-    popup.style.width = "100%";
-    popup.style.height = "100%";
-    popup.style.background = "rgba(0,0,0,0.4)";
-    popup.style.display = "flex";
-    popup.style.alignItems = "center";
-    popup.style.justifyContent = "center";
+    if (error) {
+        console.error(error);
+        faltasAluno.innerHTML = "Erro ao carregar faltas";
+        return;
+    }
 
-    popup.innerHTML = `
-        <div style="background:white;padding:20px;border-radius:8px;text-align:center;">
-            <p>${texto}</p>
-            <button id="confirmar">Confirmar</button>
-            <button id="cancelar">Cancelar</button>
-        </div>
-    `;
+    totalFaltas = data.length;
 
-    document.body.appendChild(popup);
+    if (!data.length) {
+        faltasAluno.innerHTML = "Você não possui faltas.";
+        return;
+    }
 
-    popup.querySelector("#confirmar").onclick = () => {
-        callback();
-        popup.remove();
-    };
+    let html = "<ul>";
 
-    popup.querySelector("#cancelar").onclick = () => popup.remove();
+    data.forEach(f => {
+
+        const [ano, mes, dia] = f.data_aula.split("-");
+        const dataBR = `${dia}/${mes}/${ano}`;
+
+        html += `<li>Falta em ${dataBR}</li>`;
+    });
+
+    html += "</ul>";
+
+    html += `<p><strong>Total de faltas: ${totalFaltas}</strong></p>`;
+
+    faltasAluno.innerHTML = html;
 }
 
 
@@ -131,6 +139,13 @@ async function carregarReposicoes() {
     const aluno = await buscarAluno();
 
     if (!aluno) return;
+
+    await carregarFaltas(aluno.matricula_id);
+
+    if (totalFaltas === 0) {
+        listaReposicoes.innerHTML = "Você não possui faltas para repor.";
+        return;
+    }
 
     const hoje = new Date().toISOString().split("T")[0];
 
@@ -159,7 +174,7 @@ async function carregarReposicoes() {
     listaReposicoes.innerHTML = "";
 
     if (!data.length) {
-        listaReposicoes.innerHTML = "Nenhum horário disponível no momento.";
+        listaReposicoes.innerHTML = "Nenhum horário disponível.";
         return;
     }
 
@@ -197,41 +212,40 @@ function ativarEscolha(alunoId) {
 
     document.querySelectorAll(".btnEscolher").forEach(btn => {
 
-        btn.onclick = () => {
+        btn.onclick = async () => {
+
+            if (totalFaltas === 0) {
+                mostrarMensagem("Você não possui faltas para repor", true);
+                return;
+            }
 
             const horarioId = btn.dataset.id;
-            const linha = btn.parentElement;
 
-            mostrarPopup(
-                "Deseja agendar esta reposição?",
-                async () => {
+            const confirmar = confirm("Deseja agendar esta reposição?");
 
-                    const { error } = await supabase
-                        .from("reposicao_agendada")
-                        .insert({
-                            horario_reposicao_id: horarioId,
-                            aluno_id: alunoId
-                        });
+            if (!confirmar) return;
 
-                    if (error) {
-                        console.error(error);
-                        mostrarMensagem("Erro ao agendar", true);
-                        return;
-                    }
+            const { error } = await supabase
+                .from("reposicao_agendada")
+                .insert({
+                    horario_reposicao_id: horarioId,
+                    aluno_id: alunoId
+                });
 
-                    await supabase
-                        .from("horarios_reposicao")
-                        .update({ disponivel: false })
-                        .eq("id", horarioId);
+            if (error) {
+                console.error(error);
+                mostrarMensagem("Erro ao agendar", true);
+                return;
+            }
 
-                    linha.innerHTML = "Reposição agendada";
-                    linha.style.color = "green";
+            await supabase
+                .from("horarios_reposicao")
+                .update({ disponivel: false })
+                .eq("id", horarioId);
 
-                    setTimeout(() => linha.remove(), 1500);
+            mostrarMensagem("Reposição agendada com sucesso!");
 
-                    mostrarMensagem("Reposição agendada com sucesso!");
-                }
-            );
+            carregarReposicoes();
         };
     });
 }
