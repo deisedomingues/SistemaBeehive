@@ -93,3 +93,28 @@ export async function exigirProfessorOuAdmin() {
   }
 
 }
+
+
+/* ===============================
+   3) Somente ALUNO
+================================ */
+export async function exigirAluno() {
+
+  const user = await exigirLogin();
+  if (!user) return;
+
+  const { data: perfil, error } = await supabase
+    .from("perfil")
+    .select("role, aluno_id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (error || !perfil || perfil.role !== "aluno") {
+    window.location.href = "index.html";
+    return;
+  }
+
+  // guarda id do aluno
+  localStorage.setItem("alunoId", perfil.aluno_id || "");
+
+}

@@ -21,7 +21,7 @@ form.addEventListener("submit", async (e) => {
   const email = document.getElementById("email").value.trim().toLowerCase();
   const senha = document.getElementById("senha").value;
 
-  // 1) Login no Auth
+  // 1️⃣ Login no Auth
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password: senha
@@ -33,8 +33,9 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  // 2) Pegar usuário logado
+  // 2️⃣ Pegar usuário logado
   const { data: userData, error: errUser } = await supabase.auth.getUser();
+
   if (errUser || !userData?.user) {
     console.error(errUser);
     mostrarMensagem("❌ Não foi possível validar o usuário logado.", false);
@@ -43,10 +44,10 @@ form.addEventListener("submit", async (e) => {
 
   const user = userData.user;
 
-  // 3) Buscar perfil (admin ou professor)
+  // 3️⃣ Buscar perfil (admin, professor ou aluno)
   const { data: perfil, error: errPerfil } = await supabase
     .from("perfil")
-    .select("role, professor_id")
+    .select("role, professor_id, aluno_id")
     .eq("user_id", user.id)
     .single();
 
@@ -56,11 +57,22 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  // Guardar role para as páginas saberem o que mostrar/permitir
+  // Guardar role
   localStorage.setItem("role", perfil.role);
 
-  // 4) Se for professor, salvar professorId e (opcional) nome
+  // Limpar dados antigos
+  localStorage.removeItem("professorId");
+  localStorage.removeItem("professorNome");
+  localStorage.removeItem("professorEmail");
+  localStorage.removeItem("alunoId");
+
+
+
+  // ===============================
+  // 👨‍🏫 PROFESSOR
+  // ===============================
   if (perfil.role === "professor") {
+
     if (!perfil.professor_id) {
       mostrarMensagem("⚠️ Professor sem vínculo (professor_id).", false);
       return;
@@ -68,7 +80,6 @@ form.addEventListener("submit", async (e) => {
 
     localStorage.setItem("professorId", perfil.professor_id);
 
-    // Buscar nome do professor (para mostrar na home, se quiser)
     const { data: prof, error: errProf } = await supabase
       .from("professor")
       .select("id, nome, email")
@@ -79,21 +90,66 @@ form.addEventListener("submit", async (e) => {
       localStorage.setItem("professorNome", prof.nome);
       localStorage.setItem("professorEmail", prof.email || "");
     }
-  } else {
-    // admin: limpa dados de professor, caso existam
-    localStorage.removeItem("professorId");
-    localStorage.removeItem("professorNome");
-    localStorage.removeItem("professorEmail");
   }
 
-    //mostrarMensagem("✅ Entrou!");
 
-  // 5) Redirecionar para a HOME correta
+
+  // ===============================
+  // 🎓 ALUNO
+  // ===============================
+  if (perfil.role === "aluno") {
+
+    if (!perfil.aluno_id) {
+      mostrarMensagem("⚠️ Aluno sem vínculo (aluno_id).", false);
+      return;
+    }
+
+    localStorage.setItem("alunoId", perfil.aluno_id);
+
+    const { data: aluno, error: errAluno } = await supabase
+      .from("aluno")
+      .select("id, nome, email")
+      .eq("id", perfil.aluno_id)
+      .single();
+
+    if (!errAluno && aluno) {
+      localStorage.setItem("alunoNome", aluno.nome);
+      localStorage.setItem("alunoEmail", aluno.email || "");
+    }
+  }
+
+
+
+  // ===============================
+  // ✅ Mensagem
+  // ===============================
+  mostrarMensagem("✅ Login realizado com sucesso");
+
+
+
+  // ===============================
+  // 🚀 Redirecionamento
+  // ===============================
   setTimeout(() => {
+
     if (perfil.role === "admin") {
       window.location.href = "home-admin.html";
-    } else {
-      window.location.href = "home-professor.html";
+      return;
     }
-  }, 400);
+
+    if (perfil.role === "professor") {
+      window.location.href = "home-professor.html";
+      return;
+    }
+
+    if (perfil.role === "aluno") {
+      window.location.href = "home-aluno.html";
+      return;
+    }
+
+    // fallback
+    window.location.href = "login.html";
+
+  }, 500);
+
 });

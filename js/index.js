@@ -14,53 +14,71 @@ function mostrar(id) {
   if (el) el.style.display = "";
 }
 
-// 👤 role vem do login.js (admin ou professor)
-const role = localStorage.getItem("role");
+// 👤 role vem do login.js
+let role = localStorage.getItem("role");
 
-// Se não tiver role no localStorage (caso raro), tenta buscar do perfil no banco
+// Se não tiver role no localStorage, busca no banco
 if (!role) {
+
   const { data: { user } } = await supabase.auth.getUser();
 
   const { data: perfil, error } = await supabase
     .from("perfil")
-    .select("role, professor_id")
+    .select("role, professor_id, aluno_id")
     .eq("user_id", user.id)
     .single();
 
   if (!error && perfil) {
     localStorage.setItem("role", perfil.role);
     localStorage.setItem("professorId", perfil.professor_id || "");
+    localStorage.setItem("alunoId", perfil.aluno_id || "");
   }
+
 }
 
 const roleFinal = localStorage.getItem("role");
 
+
+// 🎯 REDIRECIONAMENTO DO ALUNO
+if (roleFinal === "aluno") {
+  window.location.href = "home-aluno.html";
+}
+
+
 // 🎯 UI por perfil
 if (roleFinal === "professor") {
+
   // professor: esconder botões de admin
   esconder("btn-alunos");
   esconder("btn-professores");
   esconder("btn-resumo");
 
-  // (Opcional) se quiser, pode levar direto para registrar aula:
-  // window.location.href = "registrar-aula.html";
 } else {
+
   // admin: garantir visibilidade
   mostrar("btn-alunos");
   mostrar("btn-professores");
   mostrar("btn-resumo");
+
 }
+
 
 // 🚪 Logout
 const btnSair = document.getElementById("btnSair");
-btnSair.addEventListener("click", async () => {
-  await supabase.auth.signOut();
 
-  // limpa dados locais
-  localStorage.removeItem("role");
-  localStorage.removeItem("professorId");
-  localStorage.removeItem("professorNome");
-  localStorage.removeItem("professorEmail");
+if (btnSair) {
+  btnSair.addEventListener("click", async () => {
 
-  window.location.href = "login.html";
-});
+    await supabase.auth.signOut();
+
+    // limpa dados locais
+    localStorage.removeItem("role");
+    localStorage.removeItem("professorId");
+    localStorage.removeItem("alunoId");
+    localStorage.removeItem("professorNome");
+    localStorage.removeItem("professorEmail");
+
+    window.location.href = "login.html";
+
+  });
+}
