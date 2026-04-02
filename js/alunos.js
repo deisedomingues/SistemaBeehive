@@ -236,6 +236,12 @@ form.addEventListener("submit", async (e) => {
   const telefone =
     document.getElementById("telefone").value.trim();
 
+  const linkZoom =
+    document.getElementById("linkZoom").value.trim();
+
+  const linkYoutube =
+    document.getElementById("linkYoutube").value.trim();
+
   const observacao =
     document.getElementById("observacao").value.trim();
 
@@ -272,7 +278,9 @@ form.addEventListener("submit", async (e) => {
         email: email || null,
         telefone: telefone || null,
         observacao: observacao || null,
-        empresa_cnpj: empresaCnpj
+        empresa_cnpj: empresaCnpj,
+        link_zoom: linkZoom || null,
+        link_youtube: linkYoutube || null
       }])
       .select("id")
       .single();
