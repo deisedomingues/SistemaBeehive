@@ -6,38 +6,84 @@ await exigirAluno();
 const saudacao = document.getElementById("saudacao");
 const btnSair = document.getElementById("btnSair");
 
+const btnZoom = document.getElementById("btnZoom");
+const btnYoutube = document.getElementById("btnYoutube");
 
-// pegar usuário logado
-const { data: userData } = await supabase.auth.getUser();
+// ======================
+// pegar aluno logado
+// ======================
 
-const user = userData.user;
+const alunoId = localStorage.getItem("alunoId");
 
-if (!user) {
+if (!alunoId) {
   window.location.href = "login.html";
 }
 
+// ======================
+// carregar dados do aluno
+// ======================
 
-// buscar aluno
-const { data: aluno, error } = await supabase
-  .from("aluno")
-  .select("nome")
-  .eq("usuario_id", user.id)
-  .single();
+async function carregarAluno() {
 
-if (error) {
-  saudacao.textContent = "Olá aluno";
-} else {
-  saudacao.textContent = "Olá, " + aluno.nome;
+  const { data, error } = await supabase
+    .from("aluno")
+    .select("nome, link_zoom, link_youtube")
+    .eq("id", alunoId)
+    .single();
+
+  if (error || !data) {
+    console.error(error);
+    return;
+  }
+
+  // saudação
+  saudacao.textContent = `Olá, ${data.nome}`;
+
+  // ======================
+  // link zoom
+  // ======================
+
+  if (data.link_zoom) {
+
+    btnZoom.href = data.link_zoom;
+
+  } else {
+
+    btnZoom.style.opacity = "0.5";
+    btnZoom.style.pointerEvents = "none";
+    btnZoom.textContent = "🎓 Aula não disponível";
+
+  }
+
+  // ======================
+  // link youtube
+  // ======================
+
+  if (data.link_youtube) {
+
+    btnYoutube.href = data.link_youtube;
+
+  } else {
+
+    btnYoutube.style.opacity = "0.5";
+    btnYoutube.style.pointerEvents = "none";
+    btnYoutube.textContent = "🎥 Playlist não disponível";
+
+  }
+
 }
 
+// ======================
+// sair
+// ======================
 
-// botão sair
-btnSair.addEventListener("click", async () => {
+btnSair.addEventListener("click", () => {
 
-  await supabase.auth.signOut();
-
-  localStorage.clear();
+  localStorage.removeItem("alunoId");
 
   window.location.href = "login.html";
 
 });
+
+// iniciar
+carregarAluno();
