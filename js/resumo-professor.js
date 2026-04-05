@@ -1,165 +1,233 @@
 import { supabase } from "./supabase.js";
 import { exigirProfessor } from "./guard.js";
 
-// garante que é professor logado e preenche professorId no localStorage
 await exigirProfessor();
 
-const professorId = localStorage.getItem("professorId");
+const professorId = Number(localStorage.getItem("professorId"));
 
-// elementos
+/* =========================================================
+   ELEMENTOS
+========================================================= */
 const msg = document.getElementById("msg");
-const qtdIngles = document.getElementById("qtdIngles");
-const qtdEspanhol = document.getElementById("qtdEspanhol");
+
+const tituloResumoProfessor = document.getElementById("tituloResumoProfessor");
+const subtituloResumoProfessor = document.getElementById("subtituloResumoProfessor");
+
+const dataInicio = document.getElementById("dataInicio");
+const dataFim = document.getElementById("dataFim");
+const btnAplicarFiltro = document.getElementById("btnAplicarFiltro");
+const btnLimparFiltro = document.getElementById("btnLimparFiltro");
+
+const listaMateriasProfessor = document.getElementById("listaMateriasProfessor");
 const qtdTotalAlunos = document.getElementById("qtdTotalAlunos");
-const qtdAulasMes = document.getElementById("qtdAulasMes");
+const qtdAulasPeriodo = document.getElementById("qtdAulasPeriodo");
+
+const listaAvaliacoesContainer = document.getElementById("listaAvaliacoesContainer");
 
 const selectMatricula = document.getElementById("selectMatricula");
 const btnDetalhes = document.getElementById("btnDetalhes");
 
-const listaModulosIngles = document.getElementById("listaModulosIngles");
-const listaModulosEspanhol = document.getElementById("listaModulosEspanhol");
+const cardsAlunosPorMateria = document.getElementById("cardsAlunosPorMateria");
+const cardsModulosPorMateria = document.getElementById("cardsModulosPorMateria");
 
-// ✅ NOVOS (precisam existir no HTML)
-const cardAniversarioHoje = document.getElementById("cardAniversarioHoje");
-const listaAvalIngles = document.getElementById("listaAvalIngles");
-const listaAvalEspanhol = document.getElementById("listaAvalEspanhol");
+/* =========================================================
+   ESTADO
+========================================================= */
+let professorNome = "";
+let materiasProfessor = [];
+let materiaIdsProfessor = [];
+let matriculasFiltradas = [];
+let aulasFiltradasProfessor = [];
+let notasDoSistema = [];
 
+/* =========================================================
+   UTILITÁRIOS
+========================================================= */
 function mostrarMensagem(texto, ok = true) {
   msg.textContent = texto;
   msg.style.display = "block";
-  msg.style.backgroundColor = ok ? "#e8f5e9" : "#ffebee";
-  msg.style.color = ok ? "#1b5e20" : "#b71c1c";
+  msg.className = ok ? "msg-resumo-professor ok" : "msg-resumo-professor erro";
 
   setTimeout(() => {
     msg.style.display = "none";
     msg.textContent = "";
-  }, 2200);
+    msg.className = "msg-resumo-professor";
+  }, 2500);
 }
 
-function inicioFimMesAtualISO() {
+function hojeISO() {
   const hoje = new Date();
-  const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1); // primeiro dia do próximo mês
-
-  const toISODate = (d) => {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
-
-  return { inicio: toISODate(inicio), fim: toISODate(fim) };
+  const yyyy = hoje.getFullYear();
+  const mm = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dd = String(hoje.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
-function limparLista(ul) {
-  if (!ul) return;
-  ul.innerHTML = "";
+async function preencherFiltroInicial() {
+  const primeiraAula = await buscarPrimeiraAulaProfessor();
+  const hoje = hojeISO();
+
+  dataInicio.value = primeiraAula || hoje;
+  dataFim.value = hoje;
 }
 
-function addLi(ul, texto) {
-  if (!ul) return;
-  const li = document.createElement("li");
-  li.textContent = texto;
-  ul.appendChild(li);
+function statusContaComoAula(status) {
+  return String(status || "").trim().toLowerCase() === "presente";
 }
 
-// ===========================
-// Datas (aniversários)
-// ===========================
-function hojeDiaMes() {
-  const d = new Date();
-  return { dia: d.getDate(), mes: d.getMonth() + 1 }; // mês 1-12
+function criarParagrafoVazio(texto) {
+  return `<p style="font-size:14px;">${texto}</p>`;
 }
 
-function parseDiaMes(dataISO) {
-  // dataISO: "YYYY-MM-DD"
-  if (!dataISO || typeof dataISO !== "string") return null;
-
-  const partes = dataISO.split("-");
-  if (partes.length < 3) return null;
-
-  const mm = Number(partes[1]);
-  const dd = Number(partes[2]);
-
-  if (!mm || !dd) return null;
-  return { dia: dd, mes: mm };
+function normalizarTexto(valor) {
+  return String(valor || "").trim().toLowerCase();
 }
 
-// ===========================
-// 1) Carregar matrículas do professor
-//    ⚠️ Aqui agora puxamos data_nascimento também
-// ===========================
-async function carregarMatriculasProfessor() {
+function escapeHtml(texto) {
+  return String(texto ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+/* =========================================================
+   BUSCAS
+========================================================= */
+async function carregarProfessor() {
+  const { data, error } = await supabase
+    .from("professor")
+    .select("id, nome")
+    .eq("id", professorId)
+    .single();
+
+  if (error) throw error;
+
+  professorNome = data?.nome || "Professor(a)";
+  tituloResumoProfessor.textContent = `Olá, ${professorNome}!`;
+  subtituloResumoProfessor.textContent =
+    "Acompanhe seus alunos, aulas e notificações importantes.";
+}
+
+async function carregarMateriasProfessor() {
+  const { data, error } = await supabase
+    .from("professor_materia")
+    .select(`
+      materia_id,
+      materia:materia_id (
+        id,
+        nome
+      )
+    `)
+    .eq("professor_id", professorId);
+
+  if (error) throw error;
+
+  materiasProfessor = (data || [])
+    .map((item) => item.materia)
+    .filter(Boolean);
+
+  materiaIdsProfessor = materiasProfessor.map((m) => m.id);
+}
+
+async function carregarMatriculasRelacionadas() {
   const { data, error } = await supabase
     .from("matricula")
     .select(`
       id,
-      aluno:aluno_id ( id, nome, data_nascimento ),
-      materia:materia_id ( id, nome ),
-      modulo:modulo_id ( id, nome )
-    `)
-    .eq("professor_id", professorId);
+      aluno:aluno_id (
+        id,
+        nome
+      ),
+      modulo:modulo_id (
+        id,
+        nome,
+        materia_id,
+        materia:materia_id (
+          id,
+          nome
+        )
+      )
+    `);
 
-  if (error) {
-    console.error(error);
-    mostrarMensagem("❌ Erro ao carregar matrículas.", false);
-    return [];
-  }
+  if (error) throw error;
 
-  return data || [];
+  matriculasFiltradas = (data || []).filter((m) => {
+    const materiaId = m?.modulo?.materia_id;
+    return materiaIdsProfessor.includes(materiaId);
+  });
 }
 
-// ===========================
-// 2) Presenças do mês atual (do professor)
-// ===========================
-async function carregarPresencasMesAtual() {
-  const { inicio, fim } = inicioFimMesAtualISO();
-
+async function buscarPrimeiraAulaProfessor() {
   const { data, error } = await supabase
+    .from("aula")
+    .select("data_aula")
+    .eq("professor_id", professorId)
+    .not("data_aula", "is", null)
+    .order("data_aula", { ascending: true })
+    .limit(1);
+
+  if (error) throw error;
+
+  return data?.[0]?.data_aula || null;
+}
+
+async function carregarAulasProfessorPorPeriodo() {
+  const inicio = dataInicio.value || null;
+  const fim = dataFim.value || null;
+
+  let query = supabase
     .from("aula")
     .select(`
       id,
-      status,
       data_aula,
-      matricula:matricula_id ( professor_id )
+      status,
+      matricula_id,
+      professor_id
     `)
-    .gte("data_aula", inicio)
-    .lt("data_aula", fim);
+    .eq("professor_id", professorId);
 
-  if (error) {
-    console.error(error);
-    mostrarMensagem("❌ Erro ao carregar aulas do mês.", false);
-    return 0;
-  }
+  if (inicio) query = query.gte("data_aula", inicio);
+  if (fim) query = query.lte("data_aula", fim);
 
-  const lista = data || [];
-  const presencasDoProfessor = lista.filter((a) => {
-    return (
-      a.status === "Presente" &&
-      String(a.matricula?.professor_id) === String(professorId)
-    );
-  });
+  const { data, error } = await query;
 
-  return presencasDoProfessor.length;
+  if (error) throw error;
+
+  const matriculaIdsPermitidas = new Set(matriculasFiltradas.map((m) => m.id));
+
+  aulasFiltradasProfessor = (data || []).filter((aula) =>
+    matriculaIdsPermitidas.has(aula.matricula_id)
+  );
 }
 
-// ===========================
-// 3) Contar presenças por matrícula (para Avaliações)
-// ===========================
-async function carregarContagemPresencasPorMatricula(matriculaIds) {
-  if (!matriculaIds || matriculaIds.length === 0) return {};
+async function carregarNotasSistema() {
+  const { data, error } = await supabase
+    .from("nota")
+    .select("*");
+
+  if (error) {
+    console.warn("Não foi possível carregar notas:", error.message);
+    notasDoSistema = [];
+    return;
+  }
+
+  notasDoSistema = data || [];
+}
+
+async function carregarPresencasTotaisPorMatricula() {
+  const idsMatriculas = matriculasFiltradas.map((m) => m.id);
+  if (idsMatriculas.length === 0) return {};
 
   const { data, error } = await supabase
     .from("aula")
-    .select("id, matricula_id, status")
-    .in("matricula_id", matriculaIds)
+    .select("id, matricula_id, status, professor_id")
+    .in("matricula_id", idsMatriculas)
+    .eq("professor_id", professorId)
     .eq("status", "Presente");
 
-  if (error) {
-    console.error(error);
-    mostrarMensagem("❌ Erro ao carregar presenças (avaliações).", false);
-    return {};
-  }
+  if (error) throw error;
 
   const contagem = {};
   (data || []).forEach((a) => {
@@ -170,167 +238,269 @@ async function carregarContagemPresencasPorMatricula(matriculaIds) {
   return contagem;
 }
 
-// ===========================
-// 4) Render aniversariantes de hoje (dia + mês)
-// ===========================
-function renderAniversariantesHoje(matriculas) {
-  if (!cardAniversarioHoje) return;
-
-  const { dia, mes } = hojeDiaMes();
-
-  // alunos únicos (para não repetir quem faz 2 matérias)
-  const mapaAlunos = new Map();
-  matriculas.forEach((m) => {
-    if (m?.aluno?.id) mapaAlunos.set(m.aluno.id, m.aluno);
-  });
-
-  const aniversariantes = [];
-  for (const aluno of mapaAlunos.values()) {
-    const dm = parseDiaMes(aluno.data_nascimento);
-    if (dm && dm.dia === dia && dm.mes === mes) {
-      aniversariantes.push(aluno.nome);
-    }
-  }
-
-  if (aniversariantes.length === 0) {
-    cardAniversarioHoje.innerHTML = `
-      <p style="font-size:14px;">Não há aluno aniversariante no dia de hoje.</p>
-    `;
+/* =========================================================
+   RENDERIZAÇÃO
+========================================================= */
+function renderMateriasProfessor() {
+  if (!materiasProfessor.length) {
+    listaMateriasProfessor.innerHTML = criarParagrafoVazio(
+      "Este professor ainda não está vinculado a nenhuma matéria."
+    );
     return;
   }
 
-  aniversariantes.sort();
+  const html = materiasProfessor
+    .sort((a, b) => a.nome.localeCompare(b.nome))
+    .map((materia) => `<p>• <b>${escapeHtml(materia.nome)}</b></p>`)
+    .join("");
 
-  if (aniversariantes.length === 1) {
-    cardAniversarioHoje.innerHTML = `
-      <p style="font-size:14px;"><b>Hoje é o aniversário de:</b></p>
-      <p style="font-size:15px; margin-top:6px;">🎉 ${aniversariantes[0]}</p>
-    `;
-    return;
-  }
-
-  cardAniversarioHoje.innerHTML = `
-    <p style="font-size:14px;"><b>Hoje é aniversário de:</b></p>
-    <ul style="margin-top:6px;"></ul>
-  `;
-  const ul = cardAniversarioHoje.querySelector("ul");
-  aniversariantes.forEach((nome) => addLi(ul, `🎉 ${nome}`));
+  listaMateriasProfessor.innerHTML = html;
 }
 
-// ===========================
-// 5) Render avaliações (Inglês: múltiplos de 14)
-// ===========================
-function renderAvaliacoes(matriculas, presencasPorMatricula) {
-  limparLista(listaAvalIngles);
-  limparLista(listaAvalEspanhol);
+function renderTotalAlunos() {
+  const alunosUnicos = new Set(
+    matriculasFiltradas
+      .map((m) => m?.aluno?.id)
+      .filter(Boolean)
+  );
 
-  // Inglês: 14, 28, 42... por matrícula
-  const devidasIngles = [];
-
-  matriculas.forEach((m) => {
-    const mid = String(m.id);
-    const materiaNome = m.materia?.nome;
-    const pres = presencasPorMatricula[mid] || 0;
-
-    if (materiaNome === "Inglês" && pres > 0 && pres % 14 === 0) {
-      devidasIngles.push(`${m.aluno.nome} — ${pres} presenças`);
-    }
-  });
-
-  if (devidasIngles.length === 0) {
-    addLi(listaAvalIngles, "Nenhuma avaliação pendente no momento.");
-  } else {
-    devidasIngles.sort().forEach((txt) => addLi(listaAvalIngles, txt));
-  }
-
-  // Espanhol: placeholder (você vai me passar as regras por módulo)
-  addLi(listaAvalEspanhol, "Regras por módulo ainda não configuradas.");
+  qtdTotalAlunos.textContent = String(alunosUnicos.size);
 }
 
-// ===========================
-// 6) Montar tela
-// ===========================
-async function montarResumo() {
-  const matriculas = await carregarMatriculasProfessor();
+function renderAulasPeriodo() {
+  const total = aulasFiltradasProfessor.filter((a) => statusContaComoAula(a.status)).length;
+  qtdAulasPeriodo.textContent = String(total);
+}
 
-  // preencher select para detalhes
+function renderSelectMatriculas() {
   selectMatricula.innerHTML = `<option value="">Selecione o aluno (curso)</option>`;
-  matriculas
-    .sort((a, b) => a.aluno.nome.localeCompare(b.aluno.nome))
-    .forEach((m) => {
-      const opt = document.createElement("option");
-      opt.value = m.id;
-      opt.textContent = `${m.aluno.nome} — ${m.materia.nome} (${m.modulo.nome})`;
-      selectMatricula.appendChild(opt);
-    });
 
-  // contagem de alunos únicos (no total)
-  const alunosUnicos = new Set(matriculas.map((m) => m.aluno.id));
-  qtdTotalAlunos.textContent = alunosUnicos.size;
-
-  // contagem por matéria (alunos únicos por matéria)
-  const alunosPorMateria = {};
-  matriculas.forEach((m) => {
-    const nomeMateria = m.materia.nome;
-    if (!alunosPorMateria[nomeMateria]) alunosPorMateria[nomeMateria] = new Set();
-    alunosPorMateria[nomeMateria].add(m.aluno.id);
+  const listaOrdenada = [...matriculasFiltradas].sort((a, b) => {
+    const nomeA = a?.aluno?.nome || "";
+    const nomeB = b?.aluno?.nome || "";
+    return nomeA.localeCompare(nomeB);
   });
 
-  qtdIngles.textContent = (alunosPorMateria["Inglês"]?.size || 0);
-  qtdEspanhol.textContent = (alunosPorMateria["Espanhol"]?.size || 0);
-
-  // contagem por módulo dentro de cada matéria (alunos únicos)
-  const mapa = {};
-  matriculas.forEach((m) => {
-    const mat = m.materia.nome;
-    const mod = m.modulo.nome;
-    if (!mapa[mat]) mapa[mat] = {};
-    if (!mapa[mat][mod]) mapa[mat][mod] = new Set();
-    mapa[mat][mod].add(m.aluno.id);
+  listaOrdenada.forEach((m) => {
+    const opt = document.createElement("option");
+    opt.value = m.id;
+    opt.textContent = `${m.aluno?.nome || "Aluno"} — ${m.modulo?.materia?.nome || "Matéria"} (${m.modulo?.nome || "Módulo"})`;
+    selectMatricula.appendChild(opt);
   });
+}
 
-  limparLista(listaModulosIngles);
-  limparLista(listaModulosEspanhol);
+function renderCardsAlunosPorMateria() {
+  if (!materiasProfessor.length) {
+    cardsAlunosPorMateria.innerHTML = `<div class="card">${criarParagrafoVazio("Nenhuma matéria encontrada.")}</div>`;
+    return;
+  }
 
-  const renderMateria = (nomeMateria, ul) => {
-    const mods = mapa[nomeMateria] || {};
-    const nomesModulos = Object.keys(mods).sort((a, b) => a.localeCompare(b));
-    if (nomesModulos.length === 0) {
-      addLi(ul, "Nenhum aluno cadastrado nesta matéria.");
+  const html = materiasProfessor
+    .sort((a, b) => a.nome.localeCompare(b.nome))
+    .map((materia) => {
+      const alunos = new Set();
+
+      matriculasFiltradas.forEach((m) => {
+        if (m?.modulo?.materia?.id === materia.id && m?.aluno?.id) {
+          alunos.add(m.aluno.id);
+        }
+      });
+
+      return `
+        <div class="card">
+          <h2>${escapeHtml(materia.nome)}</h2>
+          <p><b>${alunos.size}</b> aluno(s)</p>
+        </div>
+      `;
+    })
+    .join("");
+
+  cardsAlunosPorMateria.innerHTML = html;
+}
+
+function renderCardsModulosPorMateria() {
+  if (!materiasProfessor.length) {
+    cardsModulosPorMateria.innerHTML = `<div class="card">${criarParagrafoVazio("Nenhuma matéria encontrada.")}</div>`;
+    return;
+  }
+
+  const html = materiasProfessor
+    .sort((a, b) => a.nome.localeCompare(b.nome))
+    .map((materia) => {
+      const mapaModulos = {};
+
+      matriculasFiltradas.forEach((m) => {
+        if (m?.modulo?.materia?.id !== materia.id) return;
+
+        const nomeModulo = m?.modulo?.nome || "Módulo sem nome";
+        const alunoId = m?.aluno?.id;
+
+        if (!mapaModulos[nomeModulo]) mapaModulos[nomeModulo] = new Set();
+        if (alunoId) mapaModulos[nomeModulo].add(alunoId);
+      });
+
+      const nomesModulos = Object.keys(mapaModulos).sort((a, b) => a.localeCompare(b));
+
+      return `
+        <div class="card">
+          <h2>${escapeHtml(materia.nome)}</h2>
+          ${
+            nomesModulos.length
+              ? `<ul class="lista-simples-resumo">
+                  ${nomesModulos
+                    .map((nomeModulo) => `<li>${escapeHtml(nomeModulo)}: ${mapaModulos[nomeModulo].size}</li>`)
+                    .join("")}
+                 </ul>`
+              : `<p>Nenhum aluno cadastrado nesta matéria.</p>`
+          }
+        </div>
+      `;
+    })
+    .join("");
+
+  cardsModulosPorMateria.innerHTML = html;
+}
+
+function existeNotaDaAvaliacao(matriculaId, numeroAvaliacao) {
+  return notasDoSistema.some((nota) => {
+    if (String(nota.matricula_id) !== String(matriculaId)) return false;
+
+    const tipo = normalizarTexto(
+      nota.tipo ?? nota.tipo_avaliacao ?? nota.avaliacao ?? ""
+    );
+
+    if (numeroAvaliacao === 1) return tipo.includes("1");
+    if (numeroAvaliacao === 2) return tipo.includes("2");
+
+    return false;
+  });
+}
+
+function renderAvaliacoes(presencasPorMatricula) {
+  const pendencias = [];
+
+  matriculasFiltradas.forEach((m) => {
+    const matriculaId = m.id;
+    const totalPresencas = presencasPorMatricula[String(matriculaId)] || 0;
+
+    if (totalPresencas >= 14 && !existeNotaDaAvaliacao(matriculaId, 1)) {
+      pendencias.push({
+        aluno: m?.aluno?.nome || "Aluno",
+        materia: m?.modulo?.materia?.nome || "Matéria",
+        modulo: m?.modulo?.nome || "Módulo",
+        avaliacao: "Avaliação 1",
+        presencas: totalPresencas
+      });
       return;
     }
-    nomesModulos.forEach((mod) => {
-      addLi(ul, `${mod}: ${mods[mod].size}`);
-    });
-  };
 
-  renderMateria("Inglês", listaModulosIngles);
-  renderMateria("Espanhol", listaModulosEspanhol);
+    if (totalPresencas >= 28 && !existeNotaDaAvaliacao(matriculaId, 2)) {
+      pendencias.push({
+        aluno: m?.aluno?.nome || "Aluno",
+        materia: m?.modulo?.materia?.nome || "Matéria",
+        modulo: m?.modulo?.nome || "Módulo",
+        avaliacao: "Avaliação 2",
+        presencas: totalPresencas
+      });
+    }
+  });
 
-  // presenças do mês
-  const presencasMes = await carregarPresencasMesAtual();
-  qtdAulasMes.textContent = presencasMes;
+  if (!pendencias.length) {
+    listaAvaliacoesContainer.innerHTML = criarParagrafoVazio(
+      "Nenhuma avaliação pendente no momento."
+    );
+    return;
+  }
 
-  // aniversariantes hoje (dia+mês)
-  renderAniversariantesHoje(matriculas);
+  pendencias.sort((a, b) => {
+    if (a.materia !== b.materia) return a.materia.localeCompare(b.materia);
+    return a.aluno.localeCompare(b.aluno);
+  });
 
-  // avaliações (Inglês: múltiplos de 14)
-  const idsMatriculas = matriculas.map((m) => m.id);
-  const presencasPorMatricula = await carregarContagemPresencasPorMatricula(idsMatriculas);
-  renderAvaliacoes(matriculas, presencasPorMatricula);
+  listaAvaliacoesContainer.innerHTML = pendencias
+    .map((item) => `
+      <div class="item-avaliacao-resumo">
+        <strong>${escapeHtml(item.aluno)} — ${escapeHtml(item.avaliacao)}</strong>
+        <p>${escapeHtml(item.materia)} • ${escapeHtml(item.modulo)}</p>
+        <p>${item.presencas} presença(s) registradas</p>
+      </div>
+    `)
+    .join("");
 }
 
-// botão detalhes
-btnDetalhes.addEventListener("click", () => {
+/* =========================================================
+   MONTAGEM
+========================================================= */
+async function montarResumo() {
+  try {
+    if (!professorId) {
+      mostrarMensagem("Professor não identificado. Faça login novamente.", false);
+      return;
+    }
+
+    await carregarProfessor();
+    await carregarMateriasProfessor();
+
+    renderMateriasProfessor();
+
+    if (!materiaIdsProfessor.length) {
+      qtdTotalAlunos.textContent = "0";
+      qtdAulasPeriodo.textContent = "0";
+      listaAvaliacoesContainer.innerHTML = criarParagrafoVazio("Sem dados para exibir.");
+      cardsAlunosPorMateria.innerHTML = `<div class="card"><p>Sem matérias vinculadas.</p></div>`;
+      cardsModulosPorMateria.innerHTML = `<div class="card"><p>Sem matérias vinculadas.</p></div>`;
+      selectMatricula.innerHTML = `<option value="">Nenhum aluno disponível</option>`;
+      return;
+    }
+
+    await carregarMatriculasRelacionadas();
+    await carregarAulasProfessorPorPeriodo();
+    await carregarNotasSistema();
+
+    renderTotalAlunos();
+    renderAulasPeriodo();
+    renderSelectMatriculas();
+    renderCardsAlunosPorMateria();
+    renderCardsModulosPorMateria();
+
+    const presencasPorMatricula = await carregarPresencasTotaisPorMatricula();
+    renderAvaliacoes(presencasPorMatricula);
+
+  } catch (error) {
+    console.error("Erro ao montar resumo do professor:", error);
+    mostrarMensagem(
+      "Erro ao carregar resumo. Confira se os relacionamentos e nomes das colunas estão corretos.",
+      false
+    );
+  }
+}
+
+/* =========================================================
+   EVENTOS
+========================================================= */
+btnAplicarFiltro?.addEventListener("click", async () => {
+  await montarResumo();
+});
+
+btnLimparFiltro?.addEventListener("click", async () => {
+  await preencherFiltroInicial();
+  await montarResumo();
+});
+
+btnDetalhes?.addEventListener("click", () => {
   const matriculaId = selectMatricula.value;
+
   if (!matriculaId) {
-    mostrarMensagem("⚠️ Selecione o aluno (curso).", false);
+    mostrarMensagem("Selecione o aluno (curso).", false);
     return;
   }
 
   localStorage.setItem("matriculaSelecionada", matriculaId);
-  mostrarMensagem("✅ Ok! Depois vamos abrir a tela de detalhes.");
-   window.location.href = "detalhes-aluno.html";
+  window.location.href = "detalhes-aluno.html";
 });
 
-montarResumo();
+/* =========================================================
+   INÍCIO
+========================================================= */
+await preencherFiltroInicial();
+await montarResumo();

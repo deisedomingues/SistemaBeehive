@@ -6,111 +6,200 @@
   <link rel="stylesheet" href="css/style.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body>
+<body class="pagina-resumo-professor">
 
   <div class="overlay"></div>
 
-  <main class="container container-resumo">
-    <h1 style="margin-bottom:10px;">Resumo do Professor</h1>
+  <main class="container container-resumo container-resumo-professor">
+    <header class="topo-resumo-professor">
+      <div>
+        <h1 id="tituloResumoProfessor" class="titulo-principal-resumo">Resumo do Professor</h1>
+        <p id="subtituloResumoProfessor" class="subtitulo-resumo-professor">
+          Acompanhe seus alunos, aulas e notificações importantes.
+        </p>
+      </div>
+
+      <a href="home-professor.html" class="link-voltar link-voltar-topo">← Voltar</a>
+    </header>
 
     <!-- mensagem pequena -->
-    <div id="msg" style="display:none; margin-bottom:10px;"></div>
+    <div id="msg" class="msg-resumo-professor" style="display:none;"></div>
 
-    <!-- CARDS -->
-    <div class="dashboard">
 
-      <div class="card">
-        <h2>👥 Meus alunos por matéria</h2>
-        <p style="margin-bottom:6px;">Inglês: <b id="qtdIngles">0</b></p>
-        <p>Espanhol: <b id="qtdEspanhol">0</b></p>
+    <!-- =========================
+         CONSULTA DE ALUNO
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>🔎 Consulta de aluno</h2>
+        <p>Abra rapidamente os detalhes de um aluno.</p>
       </div>
 
       <div class="card">
-        <h2>📅 Aulas (presenças) no mês</h2>
-        <p>Este mês já foram dadas <b id="qtdAulasMes">0</b> aulas.</p>
-        <p style="font-size:12px; margin-top:6px; opacity:0.8;">
-          (contando somente status “Presente”)
-        </p>
+        <div class="form form-resumo-professor" style="margin-top:0;">
+          <label>
+            Aluno (curso)
+            <select id="selectMatricula" required>
+              <option value="">Carregando alunos...</option>
+            </select>
+          </label>
+
+          <button class="btn" id="btnDetalhes" type="button" style="padding:12px;">
+            Ver detalhes
+          </button>
+
+          <p class="texto-ajuda-resumo">
+            Selecione um aluno para abrir a tela de detalhes.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  
+
+   
+
+      <section class="bloco-resumo-professor">
+  <div class="cabecalho-bloco-resumo">
+    <h2>🔔 Notificações</h2>
+    <p>Informações que merecem sua atenção agora.</p>
+  </div>
+
+  <div class="card card-destaque">
+    <h2>📝 Avaliações previstas</h2>
+    <p class="texto-ajuda-resumo">
+      A cada 14 aulas válidas, uma avaliação pode ficar pendente.
+    </p>
+
+
+    
+    <div id="listaAvaliacoesContainer" class="lista-interna-resumo">
+      <p style="font-size:14px;">Carregando...</p>
+    </div>
+  </div>
+</section>
+
+ <!-- =========================
+         AULAS
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>📅 Aulas</h2>
+        <p>Consulte a quantidade de aulas dadas em um período.</p>
       </div>
 
-      <div class="card">
-        <h2>📌 Total de alunos</h2>
-        <p><b id="qtdTotalAlunos">0</b> alunos vinculados a você.</p>
+      <div class="dashboard dashboard-resumo-professor">
+        <div class="card card-aulas-resumo">
+          <h2>📅 Aulas dadas no período</h2>
+          <p>Foram dadas <b id="qtdAulasPeriodo">0</b> aulas no período selecionado.</p>
+
+          <p class="texto-ajuda-resumo">
+            (contando somente status “Presente”)
+          </p>
+
+          <div class="filtro-interno-aulas">
+            <label>
+              Data inicial
+              <input type="date" id="dataInicio" />
+            </label>
+
+            <label>
+              Data final
+              <input type="date" id="dataFim" />
+            </label>
+
+            <div class="grupo-botoes-filtro">
+              <button id="btnAplicarFiltro" class="btn" type="button">Aplicar filtro</button>
+              <button id="btnLimparFiltro" class="btn btn-neutro" type="button">Limpar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+ <!-- =========================
+         VISÃO GERAL
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>📊 Visão geral</h2>
+        <p>Resumo rápido das suas matérias e dos seus alunos.</p>
       </div>
 
-      <!-- ✅ NOVO: aniversários -->
-      <div class="card">
-        <h2>🎉 Aniversariantes de hoje</h2>
-        <div id="cardAniversarioHoje">
-          <p style="font-size:14px;">Carregando...</p>
+      <div class="dashboard dashboard-resumo-professor">
+        <div class="card">
+          <h2>📚 Matérias ministradas</h2>
+          <div id="listaMateriasProfessor" class="lista-interna-resumo">
+            <p style="font-size:14px;">Carregando...</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>📌 Total de alunos</h2>
+          <p><b id="qtdTotalAlunos">0</b> alunos vinculados às suas matérias.</p>
         </div>
       </div>
 
-      <!-- ✅ NOVO: avaliações com destaque -->
-      <div class="card card-destaque">
-        <h2>📝 Avaliações previstas</h2>
-
-        <p style="font-size:12px; margin-top:-6px; margin-bottom:10px; opacity:0.85;">
-          Inglês: múltiplos de 14 presenças (14, 28, 42...)
-        </p>
-
-        <div style="margin-bottom:10px;">
-          <b>Inglês</b>
-          <ul id="listaAvalIngles" style="margin-top:6px;"></ul>
-        </div>
-
-        <div>
-          <b>Espanhol</b>
-          <ul id="listaAvalEspanhol" style="margin-top:6px;"></ul>
+      <div class="subbloco-resumo">
+        <h3>👥 Alunos por matéria</h3>
+        <div id="cardsAlunosPorMateria" class="dashboard dashboard-resumo-professor">
+          <div class="card">
+            <p style="font-size:14px;">Carregando...</p>
+          </div>
         </div>
       </div>
 
-    </div>
+      <div class="subbloco-resumo">
+        <h3>🧩 Quantidade de alunos por módulo</h3>
+        <div id="cardsModulosPorMateria" class="dashboard dashboard-resumo-professor">
+          <div class="card">
+            <p style="font-size:14px;">Carregando...</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
-
-    <!-- SELECIONAR ALUNO -->
-    <h2 style="font-size:16px; text-align:left; margin-bottom:8px;">
-      Ver detalhes de um aluno
-    </h2>
-
-    <div class="form" style="margin-top:0;">
-      <label>
-        Aluno (curso)
-        <select id="selectMatricula" required>
-          <option value="">Carregando alunos...</option>
-        </select>
-      </label>
-
-      <button class="btn" id="btnDetalhes" type="button" style="padding:12px;">
-        Ver detalhes
-      </button>
-
-      <p style="font-size:12px; opacity:0.85; margin-top:-4px;">
-        (Vamos criar a tela “detalhes do aluno” na próxima etapa.)
-      </p>
-    </div>
-
-    <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
-
-    <!-- ALUNOS POR MÓDULO -->
-    <h2 style="font-size:16px; text-align:left; margin-bottom:8px;">
-      Alunos por módulo (por matéria)
-    </h2>
-
-    <div class="dashboard">
-      <div class="card">
-        <h2>Inglês</h2>
-        <ul id="listaModulosIngles"></ul>
+   
+    
+    <!-- =========================
+         CONTATO
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>☎️ Contato com a escola</h2>
+        <p>Canais rápidos para suporte.</p>
       </div>
 
-      <div class="card">
-        <h2>Espanhol</h2>
-        <ul id="listaModulosEspanhol"></ul>
-      </div>
-    </div>
+      <div class="dashboard dashboard-resumo-professor">
+        <div class="card">
+          <h2>📱 WhatsApp</h2>
+          <a
+            href="https://wa.me/5511999999999?text=Olá!%20Preciso%20de%20ajuda%20na%20área%20do%20professor."
+            target="_blank"
+            class="btn btn-contato-resumo"
+          >
+            Falar no WhatsApp
+          </a>
+        </div>
 
-    <a href="home-professor.html" class="link-voltar">← Voltar</a>
+        <div class="card">
+          <h2>✉️ E-mail</h2>
+          <p>contato@beehiveidiomas.com.br</p>
+          <a href="mailto:contato@beehiveidiomas.com.br" class="link-contato-resumo">
+            Enviar e-mail
+          </a>
+        </div>
+
+        <div class="card">
+          <h2>☎️ Telefone</h2>
+          <p>(11) 99999-9999</p>
+          <a href="tel:+5511999999999" class="link-contato-resumo">
+            Ligar
+          </a>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script type="module" src="js/resumo-professor.js"></script>

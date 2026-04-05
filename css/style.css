@@ -913,3 +913,429 @@ select {
     font-size: 13px;
   }
 }
+/* =========================================================
+   RESUMO DO PROFESSOR
+========================================================= */
+
+.pagina-resumo-professor {
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(255, 245, 204, 0.90), rgba(255, 245, 204, 0.90)),
+    url("../images/FundoColmeiaEscuro.png") center/cover no-repeat fixed;
+}
+
+.container-resumo-professor {
+  max-width: 1150px;
+  width: 95%;
+  text-align: left;
+  padding: 28px;
+}
+
+.topo-resumo-professor {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.rotulo-area-professor {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8b6a00;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.subtitulo-resumo-professor {
+  font-size: 14px;
+  color: #555;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.topo-resumo-acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-topo-resumo {
+  display: inline-block;
+  background: #fff;
+  color: #5c4300;
+  border: 1px solid #F1BC32;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.btn-topo-resumo:hover {
+  background: #fff7db;
+}
+
+.msg-resumo-professor {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.msg-resumo-professor.ok {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #66bb6a;
+}
+
+.msg-resumo-professor.erro {
+  background-color: #ffebee;
+  color: #b71c1c;
+  border: 1px solid #ef5350;
+}
+
+.card-filtro-resumo {
+  margin-bottom: 20px;
+}
+
+.titulo-bloco-resumo h2 {
+  margin-bottom: 6px;
+}
+
+.titulo-bloco-resumo p {
+  font-size: 14px;
+  color: #666;
+}
+
+.filtro-periodo-resumo {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
+  margin-top: 14px;
+}
+
+.grupo-botoes-filtro {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-neutro {
+  background: #fff;
+  border: 1px solid #ccc;
+}
+
+.btn-neutro:hover {
+  background: #f5f5f5;
+}
+
+.dashboard-resumo-professor {
+  margin-top: 18px;
+}
+
+.lista-interna-resumo p {
+  margin-bottom: 6px;
+}
+
+.texto-ajuda-card {
+  font-size: 12px;
+  margin-top: 8px;
+  opacity: 0.85;
+  line-height: 1.5;
+}
+
+.divisor-resumo-professor {
+  margin: 18px 0;
+  border: none;
+  border-top: 1px solid #eee;
+}
+
+.subtitulo-bloco-resumo {
+  font-size: 16px;
+  text-align: left;
+  margin-bottom: 8px;
+  color: #5c4300;
+}
+
+.form-resumo-professor {
+  margin-top: 0;
+}
+
+.lista-simples-resumo {
+  margin-top: 8px;
+  padding-left: 18px;
+}
+
+.lista-simples-resumo li {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.item-avaliacao-resumo {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.item-avaliacao-resumo strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.item-avaliacao-resumo p {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.card-avaliacoes-professor {
+  background-color: #F1BC32;
+}
+
+.btn-contato-resumo {
+  display: inline-block;
+  text-align: center;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.link-contato-resumo {
+  display: inline-block;
+  margin-top: 8px;
+  color: #5c4300;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.link-contato-resumo:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .container-resumo-professor {
+    width: 100%;
+    padding: 20px;
+  }
+
+  .filtro-periodo-resumo {
+    grid-template-columns: 1fr;
+  }
+}
+/* =========================================================
+   ORGANIZAÇÃO POR TEMAS - RESUMO PROFESSOR
+========================================================= */
+
+.bloco-resumo {
+  margin-bottom: 26px;
+}
+
+.bloco-resumo-topo {
+  margin-bottom: 12px;
+}
+
+.bloco-resumo-topo h2 {
+  margin-bottom: 4px;
+  color: #5c4300;
+  font-size: 1.15rem;
+}
+
+.bloco-resumo-topo p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.subtitulo-interno-resumo {
+  margin: 18px 0 10px;
+  font-size: 15px;
+  color: #5c4300;
+}
+
+.card-aulas-resumo {
+  width: 100%;
+}
+
+.filtro-interno-aulas {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #eee3b9;
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
+}
+
+@media (max-width: 768px) {
+  .filtro-interno-aulas {
+    grid-template-columns: 1fr;
+  }
+}
+/* =========================================================
+   RESUMO DO PROFESSOR
+========================================================= */
+
+.pagina-resumo-professor {
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(255, 245, 204, 0.90), rgba(255, 245, 204, 0.90)),
+    url("../images/FundoColmeiaEscuro.png") center/cover no-repeat fixed;
+}
+
+.container-resumo-professor {
+  max-width: 1100px;
+  width: 95%;
+  text-align: left;
+  padding: 28px;
+}
+
+.topo-resumo-professor {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.titulo-principal-resumo {
+  margin-bottom: 8px;
+}
+
+.subtitulo-resumo-professor {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.link-voltar-topo {
+  margin-top: 4px;
+}
+
+.msg-resumo-professor {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.msg-resumo-professor.ok {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #66bb6a;
+}
+
+.msg-resumo-professor.erro {
+  background-color: #ffebee;
+  color: #b71c1c;
+  border: 1px solid #ef5350;
+}
+
+.bloco-resumo-professor {
+  margin-bottom: 28px;
+}
+
+.cabecalho-bloco-resumo {
+  margin-bottom: 12px;
+}
+
+.cabecalho-bloco-resumo h2 {
+  margin-bottom: 4px;
+  color: #5c4300;
+  font-size: 18px;
+}
+
+.cabecalho-bloco-resumo p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.dashboard-resumo-professor {
+  margin-top: 10px;
+}
+
+.subbloco-resumo {
+  margin-top: 18px;
+}
+
+.subbloco-resumo h3 {
+  font-size: 15px;
+  color: #5c4300;
+  margin-bottom: 10px;
+}
+
+.texto-ajuda-resumo {
+  font-size: 12px;
+  margin-top: 8px;
+  opacity: 0.85;
+  line-height: 1.5;
+}
+
+.lista-interna-resumo p {
+  margin-bottom: 6px;
+}
+
+.card-aulas-resumo {
+  width: 100%;
+}
+
+.filtro-interno-aulas {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #eee3b9;
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.grupo-botoes-filtro {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-neutro {
+  background: #fff;
+  border: 1px solid #ccc;
+}
+
+.btn-neutro:hover {
+  background: #f5f5f5;
+}
+
+.btn-contato-resumo {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.link-contato-resumo {
+  display: inline-block;
+  margin-top: 8px;
+  color: #5c4300;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.link-contato-resumo:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .container-resumo-professor {
+    width: 100%;
+    padding: 20px;
+  }
+
+  .filtro-interno-aulas {
+    grid-template-columns: 1fr;
+  }
+}
