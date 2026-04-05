@@ -558,3 +558,652 @@ RESPONSIVO CELULAR
 .container-resumo > .card {
   margin-bottom: 20px;
 }
+.container-reposicao {
+    max-width: 700px;
+    width: 95%;
+}
+
+.card-reposicao {
+    background-color: #FFF5CC;
+    padding: 18px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+    text-align: left;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+.container-reposicao {
+    max-width: 760px;
+    width: 95%;
+    text-align: left;
+}
+
+.card-reposicao {
+    background-color: #FFF5CC;
+    padding: 18px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+.texto-apoio {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.resumo-pendencias {
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.lista-aulas-pendentes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.item-pendente {
+    background: #fff;
+    border: 1px solid #f1d66b;
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.item-pendente-selecionado {
+    border: 2px solid #F1BC32;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.item-pendente-conteudo {
+    flex: 1;
+}
+
+.justificativa-aula {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #444;
+    line-height: 1.4;
+}
+
+.agendamentos-ativos {
+    margin-top: 18px;
+    font-size: 14px;
+}
+
+.agendamentos-ativos ul {
+    margin-top: 8px;
+    padding-left: 18px;
+}
+
+.card-horario {
+    margin-bottom: 14px;
+    text-align: left;
+}
+
+.card-horario p {
+    margin-bottom: 6px;
+}
+
+.prazo-agendamento {
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.prazo-encerrado {
+    margin-top: 12px;
+    color: #b71c1c;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.btnSelecionarAula,
+.btnEscolherHorario {
+    border: none;
+    cursor: pointer;
+    min-width: 170px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .container-reposicao {
+        width: 100%;
+        padding: 20px;
+    }
+
+    .item-pendente {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btnSelecionarAula,
+    .btnEscolherHorario {
+        width: 100%;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .card-reposicao {
+        padding: 14px;
+    }
+
+    .justificativa-aula,
+    .texto-apoio,
+    .prazo-agendamento,
+    .agendamentos-ativos,
+    .resumo-pendencias {
+        font-size: 13px;
+    }
+}
+.container-reposicao {
+    max-width: 760px;
+    width: 95%;
+    text-align: left;
+}
+
+.card-reposicao {
+    background-color: #FFF5CC;
+    padding: 18px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+.texto-apoio {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: #333;
+    line-height: 1.4;
+}
+
+.resumo-pendencias {
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.lista-aulas-pendentes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.item-pendente {
+    background: #fff;
+    border: 1px solid #f1d66b;
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.item-pendente-selecionado {
+    border: 2px solid #F1BC32;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.item-pendente-conteudo {
+    flex: 1;
+}
+
+.justificativa-aula {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #444;
+    line-height: 1.5;
+}
+
+.agendamentos-ativos {
+    margin-top: 18px;
+    font-size: 14px;
+}
+
+.agendamentos-ativos ul {
+    margin-top: 8px;
+    padding-left: 18px;
+}
+
+.card-horario {
+    margin-bottom: 14px;
+    text-align: left;
+}
+
+.card-horario p {
+    margin-bottom: 6px;
+}
+
+.prazo-agendamento {
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.prazo-encerrado {
+    margin-top: 12px;
+    color: #b71c1c;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.btnSelecionarAula,
+.btnEscolherHorario {
+    border: none;
+    cursor: pointer;
+    min-width: 170px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .container-reposicao {
+        width: 100%;
+        padding: 20px;
+    }
+
+    .item-pendente {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btnSelecionarAula,
+    .btnEscolherHorario {
+        width: 100%;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .card-reposicao {
+        padding: 14px;
+    }
+
+    .justificativa-aula,
+    .texto-apoio,
+    .prazo-agendamento,
+    .agendamentos-ativos,
+    .resumo-pendencias {
+        font-size: 13px;
+    }
+}
+.container-registro-aula {
+    max-width: 720px;
+    width: 95%;
+}
+
+@media (max-width: 768px) {
+    .container-registro-aula {
+        width: 100%;
+        padding: 20px;
+    }
+}
+
+/* =========================================================
+   PÁGINA: PAINEL ACADÊMICO
+   Esta classe no body serve para aplicar o fundo
+   parecido com as outras telas do sistema Beehive.
+========================================================= */
+.pagina-painel-academico {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(255, 245, 204, 0.88), rgba(255, 245, 204, 0.88)),
+    url("../images/FundoColmeiaEscuro.png") center/cover no-repeat fixed;
+}
+
+
+/* =========================================================
+   CONTAINER PRINCIPAL
+   Centraliza o conteúdo e cria o espaçamento interno.
+========================================================= */
+.painel-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   TOPO DA PÁGINA
+   Área do título, subtítulo e botão voltar.
+========================================================= */
+.painel-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.painel-topo h1 {
+  margin: 0;
+  color: #5c4300;
+  font-size: 2rem;
+}
+
+.painel-topo p {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+
+/* =========================================================
+   BOTÃO VOLTAR
+========================================================= */
+.btn-voltar {
+  background: #ffffff;
+  color: #5c4300;
+  border: 1px solid #f1bc32;
+  padding: 10px 16px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.btn-voltar:hover {
+  background: #fff7db;
+}
+
+
+/* =========================================================
+   MENSAGEM DE ERRO / AVISO
+   Usada pelo JS para mostrar mensagens na página.
+========================================================= */
+.msg-box {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  display: none;
+  font-weight: 500;
+}
+
+.msg-box.show {
+  display: block;
+}
+
+.msg-box.erro {
+  background: #fde8e8;
+  color: #9b1c1c;
+  border: 1px solid #f8b4b4;
+}
+
+.msg-box.ok {
+  background: #e8f5e9;
+  color: #256029;
+  border: 1px solid #b7dfb9;
+}
+
+
+/* =========================================================
+   GRADE PRINCIPAL
+   Divide a tela em duas colunas:
+   esquerda (dados, resumo, histórico)
+   direita (notas, contato, financeiro)
+========================================================= */
+.painel-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+}
+
+.coluna {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+
+/* =========================================================
+   CARDS DO PAINEL
+   Blocos brancos com borda suave e sombra leve.
+========================================================= */
+.card-painel {
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f6e3a8;
+  backdrop-filter: blur(2px);
+}
+
+.card-painel h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #5c4300;
+  font-size: 1.2rem;
+}
+
+
+/* =========================================================
+   GRIDS INTERNOS
+   Organizam os blocos de informações dentro dos cards.
+========================================================= */
+.dados-grid,
+.resumo-grid,
+.extras-grid,
+.contato-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.dados-grid,
+.resumo-grid,
+.extras-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.contato-grid {
+  grid-template-columns: 1fr;
+}
+
+
+/* =========================================================
+   BLOCOS DE INFORMAÇÃO
+   Cards menores usados em "Meus dados", "Contato"
+   e nos números de resumo.
+========================================================= */
+.info-item,
+.mini-card,
+.contato-item {
+  background: #fff9e9;
+  border: 1px solid #f6e3a8;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.info-item span,
+.contato-item span,
+.mini-card .rotulo {
+  display: block;
+  font-size: 0.88rem;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.info-item strong,
+.contato-item a,
+.contato-item strong {
+  color: #3f3f46;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+
+/* =========================================================
+   MINI CARDS NUMÉRICOS
+   Usados no resumo acadêmico e nas notas/reposições.
+========================================================= */
+.mini-card {
+  text-align: center;
+}
+
+.mini-card .numero {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: #5c4300;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+
+/* =========================================================
+   BARRA DE FREQUÊNCIA
+   Exibe o percentual de presença do aluno.
+========================================================= */
+.presenca-barra-wrap {
+  margin-top: 18px;
+}
+
+.presenca-barra-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #5f6368;
+}
+
+.presenca-barra {
+  width: 100%;
+  height: 14px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.presenca-barra-fill {
+  height: 100%;
+  width: 0%;
+  background: #f1bc32;
+  transition: width 0.3s ease;
+}
+
+
+/* =========================================================
+   HISTÓRICO DE AULAS
+========================================================= */
+.lista-historico {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item-historico {
+  border: 1px solid #eee3b9;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fffdf7;
+}
+
+.item-historico-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.item-historico-topo strong {
+  color: #3f3f46;
+}
+
+
+/* =========================================================
+   BADGES DE STATUS
+   Cores diferentes para presença, ausência, cancelamento,
+   trancamento etc.
+========================================================= */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.status-presente {
+  background: #e8f5e9;
+  color: #256029;
+}
+
+.status-ausente {
+  background: #fdecec;
+  color: #b42318;
+}
+
+.status-cancelada {
+  background: #fff4e5;
+  color: #9a6700;
+}
+
+.status-trancada {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+
+/* =========================================================
+   CAIXAS DE TEXTO SIMPLES
+   Usadas em estados vazios, como histórico vazio
+   ou financeiro em breve.
+========================================================= */
+.vazio-box {
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   BOTÃO DO WHATSAPP
+========================================================= */
+.btn-whatsapp {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  margin-top: 14px;
+  background: #25d366;
+  color: white;
+  text-decoration: none;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-weight: 700;
+  transition: 0.2s ease;
+  box-sizing: border-box;
+}
+
+.btn-whatsapp:hover {
+  filter: brightness(0.95);
+}
+
+
+/* =========================================================
+   RESPONSIVIDADE
+   Ajusta o layout para tablet e celular.
+========================================================= */
+@media (max-width: 900px) {
+  .painel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dados-grid,
+  .resumo-grid,
+  .extras-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .painel-topo h1 {
+    font-size: 1.65rem;
+  }
+
+  .painel-wrap {
+    padding: 20px 14px 32px;
+  }
+}

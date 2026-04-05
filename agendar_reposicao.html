@@ -3,28 +3,40 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Agendar Reposição</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Reposição | Beehive</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
-    <main class="container">
+    <div class="overlay"></div>
 
-        <h2>Agendar reposição</h2>
+    <main class="container container-reposicao">
 
-        <h3>Suas faltas</h3>
-        <div id="faltasAluno"></div>
+        <h1>Agendar reposição</h1>
 
-        <p>
-            Escolha um horário disponível do seu curso.
-        </p>
+        <section class="card-reposicao">
+            <h3>Reposições pendentes</h3>
+            <p class="texto-apoio">
+                Selecione abaixo a aula que você deseja repor.
+            </p>
 
-        <div id="listaReposicoes"></div>
+            <div id="faltasAluno">Carregando...</div>
+        </section>
+
+        <section class="card-reposicao">
+            <h3>Horários disponíveis</h3>
+            <p class="texto-apoio" id="textoSelecao">
+                Escolha uma aula pendente para visualizar os horários disponíveis.
+            </p>
+
+            <div id="listaReposicoes">Carregando horários...</div>
+        </section>
 
         <p id="msg"></p>
 
-        <a href="home-aluno.html" class="link-voltar" style="margin-top:10px;">
+        <a href="home-aluno.html" class="link-voltar">
             ← Voltar
         </a>
 

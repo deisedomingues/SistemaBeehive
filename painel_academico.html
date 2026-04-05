@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Acadêmico | Beehive</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="pagina-painel-academico">
+  <main class="painel-wrap">
+    <div class="painel-topo">
+      <div>
+        <h1>Painel Acadêmico</h1>
+        <p>Acompanhe suas aulas, notas e formas de contato com a escola.</p>
+      </div>
+
+      <a href="./home-aluno.html" class="btn-voltar">← Voltar</a>
+    </div>
+
+    <div id="msg" class="msg-box"></div>
+
+    <section class="painel-grid">
+      <div class="coluna">
+        <div class="card-painel">
+          <h2>Meus dados</h2>
+
+          <div class="dados-grid">
+            <div class="info-item">
+              <span>Aluno(a)</span>
+              <strong id="nomeAluno">Carregando...</strong>
+            </div>
+
+            <div class="info-item">
+              <span>Status da matrícula</span>
+              <strong id="statusMatricula">--</strong>
+            </div>
+
+            <div class="info-item">
+              <span>Curso</span>
+              <strong id="nomeCurso">--</strong>
+            </div>
+
+            <div class="info-item">
+              <span>Módulo</span>
+              <strong id="nomeModulo">--</strong>
+            </div>
+
+            <div class="info-item">
+              <span>Professor(a)</span>
+              <strong id="nomeProfessor">--</strong>
+            </div>
+
+            <div class="info-item">
+              <span>Data de início</span>
+              <strong id="dataInicio">--</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-painel">
+          <h2>Resumo acadêmico</h2>
+
+          <div class="resumo-grid">
+            <div class="mini-card">
+              <div id="totalAulas" class="numero">0</div>
+              <div class="rotulo">Total de aulas</div>
+            </div>
+
+            <div class="mini-card">
+              <div id="totalPresencas" class="numero">0</div>
+              <div class="rotulo">Presenças</div>
+            </div>
+
+            <div class="mini-card">
+              <div id="totalAusencias" class="numero">0</div>
+              <div class="rotulo">Ausências</div>
+            </div>
+
+            <div class="mini-card">
+              <div id="totalCanceladas" class="numero">0</div>
+              <div class="rotulo">Canceladas / Trancadas</div>
+            </div>
+          </div>
+
+          <div class="presenca-barra-wrap">
+            <div class="presenca-barra-label">
+              <span>Frequência</span>
+              <strong id="percentualPresenca">0%</strong>
+            </div>
+
+            <div class="presenca-barra">
+              <div id="barraPresenca" class="presenca-barra-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-painel">
+          <h2>Histórico recente de aulas</h2>
+          <div id="listaHistorico" class="lista-historico"></div>
+        </div>
+      </div>
+
+      <div class="coluna">
+        <div class="card-painel">
+          <h2>Notas e reposições</h2>
+
+          <div class="extras-grid">
+            <div class="mini-card">
+              <div id="mediaNotas" class="numero">--</div>
+              <div class="rotulo">Média das notas</div>
+            </div>
+
+            <div class="mini-card">
+              <div id="ultimaNota" class="numero">--</div>
+              <div class="rotulo">Última nota</div>
+            </div>
+
+            <div class="mini-card">
+              <div id="totalReposicoes" class="numero">0</div>
+              <div class="rotulo">Reposições agendadas</div>
+            </div>
+
+            <div class="mini-card">
+              <div id="aulasPrecisaReposicao" class="numero">0</div>
+              <div class="rotulo">Aulas com reposição</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-painel">
+          <h2>Contato da escola</h2>
+
+          <div class="contato-grid">
+            <div class="contato-item">
+              <span>E-mail</span>
+              <a id="emailEscola" href="mailto:contato@beehive.com.br">contato@beehive.com.br</a>
+            </div>
+
+            <div class="contato-item">
+              <span>Telefone</span>
+              <a id="telefoneEscola" href="tel:+5511999999999">(11) 99999-9999</a>
+            </div>
+          </div>
+
+          <a
+            id="btnWhatsapp"
+            class="btn-whatsapp"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Falar com a escola no WhatsApp
+          </a>
+        </div>
+
+        <div class="card-painel">
+          <h2>Financeiro</h2>
+          <div class="vazio-box">
+            Em breve você poderá acompanhar informações financeiras aqui.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/painel_academico.js"></script>
+</body>
+</html>

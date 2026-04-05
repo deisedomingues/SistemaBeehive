@@ -10,7 +10,7 @@
 
     <div class="overlay"></div>
 
-    <main class="container">
+    <main class="container container-registro-aula">
         <h1>Registrar Aula</h1>
 
         <div id="msg" style="display:none;"></div>
@@ -21,7 +21,7 @@
                 Data da aula
                 <input type="date" id="dataAula" required>
             </label>
-            
+
             <label style="display:flex; align-items:center; gap:8px;">
                 <input type="checkbox" id="aulaColetiva">
                 Aula coletiva
@@ -37,39 +37,38 @@
             <!-- Lista de alunos escolhidos -->
             <div id="listaAlunos" style="display:none; margin-top:10px;">
                 <strong>Alunos selecionados:</strong>
-                <div id="alunosSelecionados" style="margin-top:5px;"></div>
+                <div id="alunosSelecionados" style="margin-top:8px;"></div>
             </div>
 
             <div id="regrasColetivas" style="display:none; margin-top:10px;">
+                <strong>Regras da aula coletiva</strong>
 
-    <strong>Regras da aula coletiva</strong>
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="coletivaAulaGravada">
+                    Aula foi gravada
+                </label>
 
-    <label style="display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" id="coletivaAulaGravada">
-        Aula foi gravada
-    </label>
-
-    <label style="display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" id="coletivaPrecisaReposicao">
-        Precisa de reposição
-    </label>
-
-</div>
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="coletivaPrecisaReposicao">
+                    Precisa de reposição
+                </label>
+            </div>
 
             <div id="boxStatus">
-            <label>
-                Status da aula
-                <select id="status" required>
-                    <option value="">Selecione o status</option>
-                    <option value="Presente">Presente</option>
-                    <option value="Ausente">Ausente</option>
-                    <option value="Cancelada">Cancelada</option>
-                    <option value="Reposicao">Reposição</option>
-                    <option value="Trancada">Trancada</option>
-                </select>
-            </label>
+                <label>
+                    Status da aula
+                    <select id="status" required>
+                        <option value="">Selecione o status</option>
+                        <option value="Presente">Presente</option>
+                        <option value="Ausente">Ausente</option>
+                        <option value="Cancelada">Cancelada</option>
+                        <option value="Reposicao">Reposição</option>
+                        <option value="Trancada">Trancada</option>
+                    </select>
+                </label>
             </div>
-                        <label>
+
+            <label>
                 Parte da aula
                 <select id="parteAula">
                     <option value="1">Parte 1</option>
@@ -80,51 +79,57 @@
                 </select>
             </label>
 
-            <!-- Justificativa só aparece quando status = Cancelada -->
-            <div id="boxJustificativa" style="display: none;">
+            <!-- Justificativa -->
+            <div id="boxJustificativa" style="display:none;">
                 <label>
-                    Justificativa (obrigatória para Cancelamento)
+                    Justificativa
                     <input
                         type="text"
                         id="justificativa"
-                        placeholder="Ex: feriado / professor doente / escola fechada"
+                        placeholder="Ex: professor sem luz / reagendamento solicitado / feriado / escola fechada"
                     >
                 </label>
+
+                <small style="font-size:12px; color:#666; display:block; margin-top:6px;">
+                    Obrigatória para aula cancelada e para ausência com reposição.
+                </small>
             </div>
+
             <!-- Regras de ausência -->
-<div id="boxAusencia" style="display:none;">
+            <div id="boxAusencia" style="display:none;">
 
-    <label style="display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" id="aulaGravada">
-        Aula foi gravada (gera falta)
-    </label>
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="aulaGravada">
+                    Aula foi gravada
+                </label>
 
-    <label style="display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" id="precisaReposicao">
-        Precisa de reposição
-    </label>
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="precisaReposicao">
+                    Precisa de reposição
+                </label>
 
-</div>
-<!-- Reposição -->
-<div id="boxReposicao" style="display:none;">
+            </div>
 
-    <label>
-        Aula faltada
-        <select id="aulaOriginalId">
-            <option value="">Selecione o aluno primeiro</option>
-        </select>
+            <!-- Reposição -->
+            <div id="boxReposicao" style="display:none;">
 
-        <small style="font-size:12px; color:#666;">
-            Selecione a aula que o aluno faltou para registrar a reposição
-        </small>
-    </label>
+                <label>
+                    Aula faltada
+                    <select id="aulaOriginalId">
+                        <option value="">Selecione o aluno primeiro</option>
+                    </select>
 
-    <label style="display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" id="reposicaoComCusto">
-        Reposição com custo
-    </label>
+                    <small style="font-size:12px; color:#666;">
+                        Selecione a aula que o aluno faltou para registrar a reposição
+                    </small>
+                </label>
 
-</div>
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="reposicaoComCusto">
+                    Reposição com custo
+                </label>
+
+            </div>
 
             <label>
                 Conteúdo da aula
@@ -137,11 +142,10 @@
             </label>
 
             <label>
-            Módulo da aula
-            <select id="moduloAula" required>
-                <option value="">Selecione o módulo</option>
-                <!-- opções preenchidas via JS -->
-            </select>
+                Módulo da aula
+                <select id="moduloAula" required>
+                    <option value="">Selecione o módulo</option>
+                </select>
             </label>
 
             <button type="submit" class="btn">Salvar aula</button>
