@@ -1339,3 +1339,91 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   FILTRO DE MÓDULO - RESUMO GERAL (ADMIN)
+========================================================= */
+
+
+/* Labels (Matéria / Módulo) */
+.form-resumo-professor label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: #5c4300;
+  min-width: 180px;
+  flex: 1;
+}
+
+/* Selects */
+.form-resumo-professor select {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e6dca8;
+  background: #fffef8;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+/* Hover */
+.form-resumo-professor select:hover {
+  border-color: #f1bc32;
+}
+
+/* Focus */
+.form-resumo-professor select:focus {
+  border-color: #f1bc32;
+  box-shadow: 0 0 0 2px rgba(241, 188, 50, 0.2);
+}
+
+/* Select desabilitado */
+.form-resumo-professor select:disabled {
+  background: #f3f3f3;
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* Área de resultado */
+#resultadoModuloResumo {
+  background: #fffdf5;
+  border: 1px solid #f1e2a4;
+  border-radius: 12px;
+  padding: 14px;
+  transition: all 0.2s ease;
+}
+
+/* Quando tem resultado */
+#resultadoModuloResumo .item-avaliacao-resumo {
+  padding: 6px 4px;
+}
+
+/* Título do módulo */
+#resultadoModuloResumo strong {
+  color: #5c4300;
+  font-size: 15px;
+}
+
+/* Textos */
+#resultadoModuloResumo p {
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+/* Estado inicial / vazio */
+#resultadoModuloResumo p:only-child {
+  opacity: 0.8;
+}
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+  .form-resumo-professor {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .form-resumo-professor label {
+    width: 100%;
+  }
+}
