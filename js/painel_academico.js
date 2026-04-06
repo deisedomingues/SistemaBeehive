@@ -14,11 +14,11 @@ try {
 // CONFIGURAÇÕES DA ESCOLA
 // ========================================
 const CONFIG = {
-  WHATSAPP_NUMERO: "5511999999999",
+  WHATSAPP_NUMERO: "5511956177084",
   WHATSAPP_MENSAGEM: "teste de mensagem via link do whatsapp",
-  EMAIL: "contato@beehive.com.br",
-  TELEFONE_TEXTO: "(11) 99999-9999",
-  TELEFONE_LINK: "+5511999999999"
+  EMAIL: "contato.beehiveidiomas@gmail.com",
+  TELEFONE_TEXTO: "(11) 95617-7084", 
+  TELEFONE_LINK: "+5511956177084"
 };
 
 // ========================================
@@ -144,10 +144,14 @@ function obterAlunoId() {
 // ========================================
 // BUSCA DADOS DO ALUNO
 // ========================================
+// CORREÇÃO:
+// link_zoom e link_youtube NÃO estão na tabela aluno.
+// Eles estão na tabela matricula.
+// Por isso aqui buscamos apenas campos do aluno.
 async function carregarAluno(alunoId) {
   const { data, error } = await supabase
     .from("aluno")
-    .select("id, nome, email, telefone, link_zoom, link_youtube")
+    .select("id, nome, email")
     .eq("id", alunoId)
     .single();
 
@@ -164,10 +168,12 @@ async function carregarAluno(alunoId) {
 // ========================================
 // BUSCA MATRÍCULA DO ALUNO
 // ========================================
+// Aqui sim podemos buscar link_zoom e link_youtube,
+// porque esses campos pertencem à matrícula.
 async function carregarMatricula(alunoId) {
   const { data, error } = await supabase
     .from("matricula")
-    .select("id, ativa, data_inicio, data_fim, materia_id, modulo_id, professor_id")
+    .select("id, ativa, data_inicio, data_fim, materia_id, modulo_id, professor_id, link_zoom, link_youtube")
     .eq("aluno_id", alunoId)
     .order("ativa", { ascending: false })
     .order("id", { ascending: false })
@@ -478,7 +484,7 @@ async function init() {
   }
 
   try {
-    // já tenta mostrar o nome salvo no localStorage enquanto carrega
+    // Mostra o nome salvo no navegador enquanto os dados carregam
     const nomeSalvo = localStorage.getItem("alunoNome");
     if (nomeSalvo) {
       setTexto(nomeAluno, nomeSalvo);
