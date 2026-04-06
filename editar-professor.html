@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Editar Professor | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+    <h1>Editar Professor</h1>
+
+    <div id="msg" style="display:none;"></div>
+
+    <!-- CARD 1 -->
+    <section class="card" style="margin-bottom:16px;">
+      <h2>1) Escolha o professor</h2>
+
+      <form class="form" style="margin-top:10px;">
+        <label for="selectProfessor">
+          Professor(a)
+          <select id="selectProfessor">
+            <option value="">Carregando professores...</option>
+          </select>
+        </label>
+      </form>
+    </section>
+
+    <!-- CARD 2 -->
+    <section class="card">
+      <h2>2) Gerenciar professor</h2>
+
+      <div
+        id="resumoProfessor"
+        style="display:none; margin-top:12px; margin-bottom:16px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.45);"
+      >
+        <p style="margin:0; font-size:14px;">
+          <strong>Professor selecionado:</strong>
+          <span id="nomeProfessorResumo">—</span>
+        </p>
+      </div>
+
+      <div id="blocoEdicao" style="display:none; margin-top:20px;">
+        <div
+          style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;"
+        >
+          <div>
+            <h3 id="tituloEdicao" style="margin:0; font-size:17px; color:#5c4300;">Editar professor</h3>
+            <p id="subtituloEdicao" style="margin:4px 0 0 0; font-size:13px; opacity:0.85;">—</p>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button
+              type="button"
+              id="btnDesativarProfessor"
+              style="display:none; border:none; cursor:pointer; padding:10px 14px; border-radius:10px; font-weight:bold; background:#ffebee; color:#b71c1c;"
+            >
+              Desativar professor
+            </button>
+
+            <button
+              type="button"
+              id="btnReativarProfessor"
+              style="display:none; border:none; cursor:pointer; padding:10px 14px; border-radius:10px; font-weight:bold; background:#e8f5e9; color:#1b5e20;"
+            >
+              Reativar professor
+            </button>
+          </div>
+        </div>
+
+        <div
+          id="caixaStatusProfessor"
+          style="
+            margin: 8px 0 16px 0;
+            padding: 12px 14px;
+            border: 1px solid #f1d98a;
+            border-left: 4px solid #F1BC32;
+            border-radius: 10px;
+            background: #fff8e8;
+          "
+        >
+          <p id="textoStatusProfessor" style="margin:0; font-size:13px; line-height:1.45; color:#6b5200;">
+            —
+          </p>
+        </div>
+
+        <!-- BLOCO QUANDO PROFESSOR ESTÁ ATIVO -->
+        <div id="blocoProfessorAtivo" style="display:none;">
+          <form class="form" id="formEditarProfessor" style="margin-top:10px;">
+            <label for="nome">
+              Nome completo
+              <input
+                type="text"
+                id="nome"
+                placeholder="Digite o nome do professor(a)"
+                required
+              />
+            </label>
+
+            <label for="email">
+              E-mail
+              <input
+                type="email"
+                id="email"
+                placeholder="Digite o e-mail"
+              />
+            </label>
+
+            <div
+              style="
+                margin: 8px 0 6px 0;
+                padding: 10px 12px;
+                border: 1px solid #f1d98a;
+                border-left: 4px solid #F1BC32;
+                border-radius: 10px;
+                background: #fff8e8;
+              "
+            >
+              <p style="margin:0; font-size:13px; line-height:1.45; color:#6b5200;">
+                <strong>Matérias ministradas:</strong> marque abaixo as matérias que este professor pode lecionar e informe o valor/hora de cada uma.
+              </p>
+            </div>
+
+            <div
+              id="listaMaterias"
+              style="
+                display:grid;
+                gap:10px;
+                margin-top:8px;
+                margin-bottom:10px;
+              "
+            >
+              <p style="margin:0; font-size:14px;">Carregando matérias...</p>
+            </div>
+
+            <div style="font-size:13px; opacity:0.85; margin-top:2px;">
+              <span id="infoProfessor">—</span>
+            </div>
+
+            <button type="submit" class="btn" id="btnSalvar">
+              Salvar alterações
+            </button>
+          </form>
+        </div>
+
+        <!-- BLOCO QUANDO PROFESSOR ESTÁ INATIVO -->
+        <div id="blocoProfessorInativo" style="display:none; margin-top:8px;">
+          <div
+            style="
+              background:#fff8e8;
+              border:1px solid #f1d98a;
+              border-radius:12px;
+              padding:16px;
+            "
+          >
+            <h3 style="margin:0 0 10px 0; font-size:17px; color:#8b6a00;">
+              Professor inativo
+            </h3>
+
+            <p id="textoProfessorInativo" style="font-size:14px; line-height:1.5; margin-bottom:10px;">
+              —
+            </p>
+
+            <p id="infoProfessorInativo" style="font-size:13px; line-height:1.5; opacity:0.9; margin-bottom:0;">
+              —
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <a href="home-admin.html" class="link-voltar">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/editar-professor.js"></script>
+</body>
+</html>

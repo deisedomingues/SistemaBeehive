@@ -1427,3 +1427,313 @@ select {
     width: 100%;
   }
 }
+
+/* =========================================================
+   16) HOME ADMIN
+   Painel principal da área administrativa
+========================================================= */
+
+.home-admin-page {
+  max-width: 1100px;
+  width: 95%;
+  text-align: left;
+  padding: 32px;
+}
+
+.home-admin-page .logo {
+  display: block;
+  margin: 0 auto 20px auto;
+}
+
+.topo-admin {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.topo-admin h1 {
+  margin-bottom: 8px;
+}
+
+.subtitulo-admin {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.btn-sair-admin {
+  background: transparent;
+  border: 1px solid #F1BC32;
+  color: #5c4300;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: 0.2s ease;
+}
+
+.btn-sair-admin:hover {
+  background: #fff7db;
+}
+
+.painel-admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.card-admin-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.card-admin {
+  background: #fff9e8;
+  border: 1px solid #f1df9a;
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 150px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.card-admin:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  border-color: #F1BC32;
+}
+
+.card-admin-icone {
+  font-size: 28px;
+  margin-bottom: 14px;
+}
+
+.card-admin-conteudo h2 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: #5c4300;
+}
+
+.card-admin-conteudo p {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* Responsividade da home admin */
+@media (max-width: 768px) {
+  .home-admin-page {
+    width: 100%;
+    padding: 22px;
+  }
+
+  .topo-admin {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-sair-admin {
+    width: 100%;
+  }
+
+  .painel-admin-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .card-admin {
+    min-height: auto;
+  }
+}
+/* =========================================================
+   16) HOME ADMIN
+   Painel principal da área administrativa
+========================================================= */
+
+.home-admin-page {
+  max-width: 1100px;
+  width: 95%;
+  padding: 32px;
+  text-align: left;
+}
+
+.topo-acoes-admin {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.logo-admin-centralizada {
+  display: block;
+  margin: 0 auto 18px auto;
+  max-width: 190px;
+}
+
+.cabecalho-admin-central {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.rotulo-admin {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8b6a00;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.cabecalho-admin-central h1 {
+  margin-bottom: 10px;
+}
+
+.subtitulo-admin {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.btn-sair-admin {
+  background: #ffffff;
+  border: 1px solid #F1BC32;
+  color: #5c4300;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: 0.2s ease;
+}
+
+.btn-sair-admin:hover {
+  background: #fff7db;
+}
+
+.painel-admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.card-admin-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.card-admin {
+  background: linear-gradient(180deg, #fffdf7 0%, #fff7df 100%);
+  border: 1px solid #f1df9a;
+  border-radius: 18px;
+  padding: 22px;
+  min-height: 165px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.card-admin:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+  border-color: #F1BC32;
+}
+
+.card-admin-icone {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #fff2bf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.card-admin-conteudo h2 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: #5c4300;
+}
+
+.card-admin-conteudo p {
+  margin: 0;
+  font-size: 14px;
+  color: #5d5d5d;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   16.1) RESPONSIVIDADE - HOME ADMIN
+========================================================= */
+
+@media (max-width: 768px) {
+  .home-admin-page {
+    width: 100%;
+    padding: 22px;
+  }
+
+  .topo-acoes-admin {
+    justify-content: stretch;
+  }
+
+  .btn-sair-admin {
+    width: 100%;
+  }
+
+  .logo-admin-centralizada {
+    max-width: 160px;
+    margin-bottom: 16px;
+  }
+
+  .cabecalho-admin-central {
+    margin-bottom: 24px;
+  }
+
+  .painel-admin-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .card-admin {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-admin-page {
+    padding: 18px;
+  }
+
+  .card-admin {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .card-admin-icone {
+    width: 46px;
+    height: 46px;
+    font-size: 22px;
+  }
+
+  .card-admin-conteudo h2 {
+    font-size: 16px;
+  }
+
+  .card-admin-conteudo p,
+  .subtitulo-admin {
+    font-size: 13px;
+  }
+}

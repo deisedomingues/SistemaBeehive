@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Beehive | Área Admin</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -9,42 +10,86 @@
 
   <div class="overlay"></div>
 
-  <main class="container">
-    <img src="images/logo.png" alt="Beehive Escola de Idiomas" class="logo">
-
-    <h1 id="tituloAdmin">Área Administrativa</h1>
-
-    <div style="text-align:right; margin-bottom:10px;">
-      <button
-        id="btnSair"
-        style="
-          background: transparent;
-          border: 1px solid #F1BC32;
-          padding: 6px 12px;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 12px;
-        "
-      >
+  <main class="container home-admin-page">
+    <div class="topo-acoes-admin">
+      <button id="btnSair" class="btn-sair-admin" type="button">
         Sair
       </button>
     </div>
 
-    <div class="buttons">
-      <a href="alunos.html" class="btn">Cadastrar aluno</a>
-      <a href="professores.html" class="btn">Cadastrar professor</a>
-      <a href="empresas.html" class="btn">Cadastrar empresa parceira</a>
-      
-      <!-- 
-      <a href="registrar-aula.html" class="btn">Registrar aula</a>
-       -->
-      <a href="editar-aluno.html" class="btn">Editar aluno</a>
-      <a href="editar-matriculas.html" class="btn">Editar matrículas</a>
-      <a href="relatorio.html" class="btn">Geral relatórios</a>
-      <a href="resumo-geral.html" class="btn">Resumo Geral</a>
-      <a href="criar_horarios_reposicao.html" class="btn">Horários para reposição</a>
+    <img src="images/logo.png" alt="Beehive Escola de Idiomas" class="logo logo-admin-centralizada">
 
-    </div>
+    <section class="cabecalho-admin-central">
+      <p class="rotulo-admin">Painel administrativo</p>
+      <h1 id="tituloAdmin">Área Administrativa</h1>
+      <p class="subtitulo-admin">
+        Escolha uma área do sistema para continuar.
+      </p>
+    </section>
+
+    <section class="painel-admin-cards">
+
+      <a href="menu-cadastros.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">📁</div>
+          <div class="card-admin-conteudo">
+            <h2>Cadastros</h2>
+            <p>
+              Cadastre alunos, professores e empresas parceiras.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="menu-edicoes.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">✏️</div>
+          <div class="card-admin-conteudo">
+            <h2>Alterações cadastrais</h2>
+            <p>
+              Edite dados de alunos, professores e matrículas.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="relatorio.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">📊</div>
+          <div class="card-admin-conteudo">
+            <h2>Relatórios</h2>
+            <p>
+              Consulte relatórios gerais e informações administrativas.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="resumo-geral.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">🧠</div>
+          <div class="card-admin-conteudo">
+            <h2>Resumo Geral</h2>
+            <p>
+              Visualize indicadores acadêmicos e acompanhamentos da escola.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="criar_horarios_reposicao.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">🗓️</div>
+          <div class="card-admin-conteudo">
+            <h2>Reposições</h2>
+            <p>
+              Gerencie horários disponíveis para aulas de reposição.
+            </p>
+          </div>
+        </article>
+      </a>
+
+    </section>
   </main>
 
   <script type="module" src="js/home-admin.js"></script>
