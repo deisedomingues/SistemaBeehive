@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beehive | Alterações cadastrais</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container home-admin-page">
+    <div class="topo-acoes-admin topo-acoes-duplas">
+      <a href="home-admin.html" class="btn-topo-admin" aria-label="Voltar para a área administrativa">
+        ← Voltar
+      </a>
+
+      <button id="btnSair" class="btn-sair-admin" type="button">
+        Sair
+      </button>
+    </div>
+
+    <section class="cabecalho-admin-central">
+      <p class="rotulo-admin">Área administrativa</p>
+      <h1>Alterações cadastrais</h1>
+      <p class="subtitulo-admin">
+        Escolha abaixo a área que deseja editar.
+      </p>
+    </section>
+
+    <section class="painel-admin-cards">
+      <a href="editar-aluno.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">🧾</div>
+          <div class="card-admin-conteudo">
+            <h2>Editar aluno</h2>
+            <p>
+              Atualize dados cadastrais e informações do aluno.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="editar-professor.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">📝</div>
+          <div class="card-admin-conteudo">
+            <h2>Editar professor</h2>
+            <p>
+              Atualize dados e informações cadastrais dos professores.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="editar-matriculas.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">📚</div>
+          <div class="card-admin-conteudo">
+            <h2>Editar matrículas</h2>
+            <p>
+              Gerencie rematrículas, desmatrículas e dados da matrícula.
+            </p>
+          </div>
+        </article>
+      </a>
+    </section>
+  </main>
+
+  <script type="module" src="js/menu-edicoes.js"></script>
+</body>
+</html>

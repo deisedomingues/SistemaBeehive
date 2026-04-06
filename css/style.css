@@ -1737,3 +1737,45 @@ select {
     font-size: 13px;
   }
 }
+
+/* =========================================================
+   16.2) TOPO DOS SUBMENUS ADMIN
+========================================================= */
+
+.topo-acoes-duplas {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-topo-admin {
+  display: inline-block;
+  background: #ffffff;
+  color: #5c4300;
+  border: 1px solid #F1BC32;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: bold;
+  transition: 0.2s ease;
+}
+
+.btn-topo-admin:hover {
+  background: #fff7db;
+}
+
+@media (max-width: 768px) {
+  .topo-acoes-duplas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-topo-admin,
+  .btn-sair-admin {
+    width: 100%;
+    text-align: center;
+  }
+}

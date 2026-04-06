@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beehive | Cadastros</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container home-admin-page">
+    <div class="topo-acoes-admin topo-acoes-duplas">
+      <a href="home-admin.html" class="btn-topo-admin" aria-label="Voltar para a área administrativa">
+        ← Voltar
+      </a>
+
+      <button id="btnSair" class="btn-sair-admin" type="button">
+        Sair
+      </button>
+    </div>
+
+    <section class="cabecalho-admin-central">
+      <p class="rotulo-admin">Área administrativa</p>
+      <h1>Cadastros</h1>
+      <p class="subtitulo-admin">
+        Escolha abaixo o tipo de cadastro que deseja realizar.
+      </p>
+    </section>
+
+    <section class="painel-admin-cards">
+      <a href="alunos.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">🎓</div>
+          <div class="card-admin-conteudo">
+            <h2>Cadastrar aluno</h2>
+            <p>
+              Cadastre novos alunos e registre suas informações iniciais.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="professores.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">👩‍🏫</div>
+          <div class="card-admin-conteudo">
+            <h2>Cadastrar professor</h2>
+            <p>
+              Cadastre professores para acesso e organização acadêmica.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="empresas.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">🏢</div>
+          <div class="card-admin-conteudo">
+            <h2>Cadastrar empresa parceira</h2>
+            <p>
+              Registre empresas conveniadas ou parceiras da escola.
+            </p>
+          </div>
+        </article>
+      </a>
+    </section>
+  </main>
+
+  <script type="module" src="js/menu-cadastros.js"></script>
+</body>
+</html>
