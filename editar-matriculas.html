@@ -42,7 +42,7 @@
 
       <div>
         <label for="selectMatricula">
-         Selecione abaixo o curso que deseja gerenciar ou clique em "adicionar curso" para matricular o aluno em outra disciplina.
+          Selecione abaixo o curso que deseja gerenciar ou clique em "adicionar curso" para matricular o aluno em outra disciplina.
           <select id="selectMatricula" disabled>
             <option value="">Selecione um aluno acima</option>
           </select>
@@ -50,7 +50,7 @@
 
         <p id="infoCursosAluno" style="font-size:13px; opacity:0.85; margin-top:8px;"></p>
 
-        <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+        <div id="areaBotaoAdicionarCurso" style="display:flex; justify-content:flex-end; margin-top:10px;">
           <button
             type="button"
             class="btn"
@@ -62,7 +62,7 @@
         </div>
       </div>
 
-      <!-- BLOCO PARA MATRÍCULA ATIVA -->
+      <!-- BLOCO PARA MATRÍCULA ATIVA / EDIÇÃO -->
       <div id="blocoEdicao" style="display:none; margin-top:20px; padding-top:18px; border-top:1px solid rgba(0,0,0,0.08);">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
           <div>
@@ -95,10 +95,47 @@
           </label>
 
           <label for="professor">
-            Professor
+            Professor(a)
             <select id="professor" disabled>
               <option value="">Selecione uma matrícula</option>
             </select>
+          </label>
+
+          <div
+            style="
+              margin: 8px 0 6px 0;
+              padding: 10px 12px;
+              border: 1px solid #f1d98a;
+              border-left: 4px solid #F1BC32;
+              border-radius: 10px;
+              background: #fff8e8;
+            "
+          >
+            <p style="margin:0; font-size:13px; line-height:1.45; color:#6b5200;">
+              <strong>Links deste curso:</strong> você pode editar abaixo o acesso da <strong>aula ao vivo</strong> e da <strong>playlist gravada</strong>.
+            </p>
+          </div>
+
+          <label for="linkZoom">
+            Link da aula ao vivo (Zoom)
+            <input
+              type="text"
+              id="linkZoom"
+              placeholder="https://zoom.us/j/..."
+              disabled
+              style="padding:8px;"
+            />
+          </label>
+
+          <label for="linkYoutube">
+            Link da playlist (YouTube)
+            <input
+              type="text"
+              id="linkYoutube"
+              placeholder="https://youtube.com/playlist..."
+              disabled
+              style="padding:8px;"
+            />
           </label>
 
           <div style="font-size:13px; opacity:0.85; margin-top:2px;">
@@ -111,35 +148,36 @@
         </form>
       </div>
 
-      <!-- BLOCO PARA MATRÍCULA DESMATRICULADA -->
       <!-- BLOCO PARA CURSO DESATIVADO -->
-<div id="blocoRematricula" style="display:none; margin-top:20px; padding-top:18px; border-top:1px solid rgba(0,0,0,0.08);">
-  <div
-    id="caixaRematricula"
-    style="
-      background:#fff8e8;
-      border:1px solid #f1d98a;
-      border-radius:12px;
-      padding:16px;
-    "
-  >
-    <h3 style="margin:0 0 10px 0; font-size:17px; color:#8b6a00;">
-      Curso desativado
-    </h3>
+      <div id="blocoRematricula" style="display:none; margin-top:20px; padding-top:18px; border-top:1px solid rgba(0,0,0,0.08);">
+        <div
+          id="caixaRematricula"
+          style="
+            background:#fff8e8;
+            border:1px solid #f1d98a;
+            border-radius:12px;
+            padding:16px;
+          "
+        >
+          <h3 style="margin:0 0 10px 0; font-size:17px; color:#8b6a00;">
+            Curso desativado
+          </h3>
 
-    <p id="textoRematricula" style="font-size:14px; line-height:1.5; margin-bottom:10px;">
-      —
-    </p>
+          <p id="textoRematricula" style="font-size:14px; line-height:1.5; margin-bottom:10px;">
+            —
+          </p>
 
-    <p id="infoMatriculaInativa" style="font-size:13px; line-height:1.5; opacity:0.9; margin-bottom:14px;">
-      —
-    </p>
+          <p id="infoMatriculaInativa" style="font-size:13px; line-height:1.5; opacity:0.9; margin-bottom:14px;">
+            —
+          </p>
 
-    <button type="button" class="btn" id="btnRematricular">
-      Rematricular este curso
-    </button>
-  </div>
-</div>
+          <button type="button" class="btn" id="btnRematricular">
+            Rematricular este curso
+          </button>
+        </div>
+      </div>
+
+    </section>
 
     <a href="home-admin.html" class="link-voltar">← Voltar</a>
   </main>

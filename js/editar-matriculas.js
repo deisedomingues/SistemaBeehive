@@ -25,9 +25,13 @@ const formEditar = document.getElementById("formEditar");
 const materiaSel = document.getElementById("materia");
 const moduloSel = document.getElementById("modulo");
 const professorSel = document.getElementById("professor");
+const linkZoomInput = document.getElementById("linkZoom");
+const linkYoutubeInput = document.getElementById("linkYoutube");
+
 const infoMatricula = document.getElementById("infoMatricula");
 const btnSalvar = document.getElementById("btnSalvar");
 
+const areaBotaoAdicionarCurso = document.getElementById("areaBotaoAdicionarCurso");
 const btnAddCurso = document.getElementById("btnAddCurso");
 const btnDesmatricular = document.getElementById("btnDesmatricular");
 const btnRematricular = document.getElementById("btnRematricular");
@@ -46,6 +50,7 @@ let alunosCache = [];
 let matriculasAluno = [];
 let matriculaAtual = null;
 let modoCriacao = false;
+let modoRematriculaEdicao = false;
 
 // =====================
 // Helpers UI
@@ -53,6 +58,11 @@ let modoCriacao = false;
 function mostrarMensagem(texto, ok = true) {
   msg.textContent = texto;
   msg.style.display = "block";
+  msg.style.padding = "10px 12px";
+  msg.style.marginBottom = "14px";
+  msg.style.borderRadius = "10px";
+  msg.style.fontSize = "13px";
+  msg.style.fontWeight = "600";
   msg.style.backgroundColor = ok ? "#e8f5e9" : "#ffebee";
   msg.style.color = ok ? "#1b5e20" : "#b71c1c";
   msg.style.border = ok ? "1px solid #66bb6a" : "1px solid #ef5350";
@@ -76,6 +86,10 @@ function formatarDataBR(dataISO) {
   return `${dia}/${mes}/${ano}`;
 }
 
+function valorTextoOuTraco(valor) {
+  return valor && String(valor).trim() ? valor : "—";
+}
+
 function obterAlunoSelecionado() {
   const alunoId = selectAluno.value;
   return alunosCache.find((a) => String(a.id) === String(alunoId)) || null;
@@ -94,6 +108,20 @@ function atualizarResumoAluno() {
   nomeAlunoResumo.textContent = aluno.nome;
 }
 
+function atualizarTextoBotaoSalvar() {
+  if (modoCriacao) {
+    btnSalvar.textContent = "Salvar novo curso";
+    return;
+  }
+
+  if (modoRematriculaEdicao) {
+    btnSalvar.textContent = "Salvar rematrícula";
+    return;
+  }
+
+  btnSalvar.textContent = "Salvar alterações";
+}
+
 function preencherResumoDeCursos() {
   if (!selectAluno.value) {
     infoCursosAluno.textContent = "";
@@ -103,7 +131,7 @@ function preencherResumoDeCursos() {
   const ativas = matriculasAluno.filter((m) => m.ativa !== false);
   const inativas = matriculasAluno.filter((m) => m.ativa === false);
 
-  let partes = [];
+  const partes = [];
 
   if (ativas.length > 0) {
     const nomesAtivos = ativas.map((m) => m.materia?.nome).filter(Boolean);
@@ -118,18 +146,52 @@ function preencherResumoDeCursos() {
   infoCursosAluno.textContent = partes.join(" ");
 }
 
+function obterMateriasJaExistentesNoHistorico() {
+  return new Set(
+    matriculasAluno
+      .map((m) => String(m.materia?.id || ""))
+      .filter(Boolean)
+  );
+}
+
+function obterMateriasNuncaMatriculadas() {
+  const materiasJaExistentes = obterMateriasJaExistentesNoHistorico();
+
+  return materiasCache.filter(
+    (mat) => !materiasJaExistentes.has(String(mat.id))
+  );
+}
+
+function alunoAindaPodeReceberNovoCurso() {
+  return obterMateriasNuncaMatriculadas().length > 0;
+}
+
 function esconderBotaoAdicionarCurso() {
-  if (!btnAddCurso) return;
-  btnAddCurso.style.display = "none";
+  if (!areaBotaoAdicionarCurso) return;
+  areaBotaoAdicionarCurso.style.display = "none";
 }
 
 function mostrarBotaoAdicionarCurso() {
-  if (!btnAddCurso) return;
-  btnAddCurso.style.display = "inline-block";
+  if (!areaBotaoAdicionarCurso) return;
+  areaBotaoAdicionarCurso.style.display = "flex";
+}
+
+function atualizarVisibilidadeBotaoAdicionarCurso() {
+  if (!selectAluno.value) {
+    esconderBotaoAdicionarCurso();
+    return;
+  }
+
+  if (alunoAindaPodeReceberNovoCurso()) {
+    mostrarBotaoAdicionarCurso();
+  } else {
+    esconderBotaoAdicionarCurso();
+  }
 }
 
 function resetEdicao() {
   modoCriacao = false;
+  modoRematriculaEdicao = false;
   matriculaAtual = null;
 
   blocoEdicao.style.display = "none";
@@ -138,7 +200,7 @@ function resetEdicao() {
   btnDesmatricular.style.display = "none";
   btnDesmatricular.hidden = true;
 
-  mostrarBotaoAdicionarCurso();
+  atualizarVisibilidadeBotaoAdicionarCurso();
 
   tituloEdicao.textContent = "Editar matrícula";
   subtituloEdicao.textContent = "Selecione uma matrícula para editar.";
@@ -147,24 +209,21 @@ function resetEdicao() {
   moduloSel.innerHTML = `<option value="">Selecione uma matrícula</option>`;
   professorSel.innerHTML = `<option value="">Selecione uma matrícula</option>`;
 
+  linkZoomInput.value = "";
+  linkYoutubeInput.value = "";
+
   materiaSel.disabled = true;
   moduloSel.disabled = true;
   professorSel.disabled = true;
+  linkZoomInput.disabled = true;
+  linkYoutubeInput.disabled = true;
+
   btnSalvar.disabled = true;
+  atualizarTextoBotaoSalvar();
 
   infoMatricula.textContent = "—";
   textoRematricula.textContent = "—";
   infoMatriculaInativa.textContent = "—";
-}
-
-function obterMateriasNuncaMatriculadas() {
-  const materiasJaExistentes = new Set(
-    matriculasAluno.map((m) => String(m.materia?.id))
-  );
-
-  return materiasCache.filter(
-    (mat) => !materiasJaExistentes.has(String(mat.id))
-  );
 }
 
 function preencherModulosPorMateria(materiaId, moduloAtual = "") {
@@ -182,7 +241,7 @@ function preencherModulosPorMateria(materiaId, moduloAtual = "") {
 
 function preencherProfessoresPorMateria(materiaId, professorAtual = "") {
   professorSel.innerHTML = "";
-  professorSel.appendChild(criarOption("", "Selecione o professor"));
+  professorSel.appendChild(criarOption("", "Selecione o professor(a)"));
 
   const vistos = new Set();
 
@@ -209,7 +268,7 @@ async function carregarBases() {
 
   if (errMat) {
     console.error(errMat);
-    mostrarMensagem("❌ Erro ao carregar matérias.", false);
+    mostrarMensagem("Erro ao carregar matérias.", false);
     return;
   }
   materiasCache = materias || [];
@@ -221,7 +280,7 @@ async function carregarBases() {
 
   if (errMod) {
     console.error(errMod);
-    mostrarMensagem("❌ Erro ao carregar módulos.", false);
+    mostrarMensagem("Erro ao carregar módulos.", false);
     return;
   }
   modulosCache = modulos || [];
@@ -235,7 +294,7 @@ async function carregarBases() {
 
   if (errPM) {
     console.error(errPM);
-    mostrarMensagem("❌ Erro ao carregar professores.", false);
+    mostrarMensagem("Erro ao carregar professores.", false);
     return;
   }
 
@@ -255,7 +314,7 @@ async function carregarBases() {
 
   if (errAluno) {
     console.error(errAluno);
-    mostrarMensagem("❌ Erro ao carregar alunos.", false);
+    mostrarMensagem("Erro ao carregar alunos.", false);
     return;
   }
 
@@ -268,11 +327,15 @@ async function carregarBases() {
 
   const alunoPreSelecionado = localStorage.getItem("alunoSelecionadoAdmin");
   if (alunoPreSelecionado) {
-    const existe = alunosCache.some((a) => String(a.id) === String(alunoPreSelecionado));
+    const existe = alunosCache.some(
+      (a) => String(a.id) === String(alunoPreSelecionado)
+    );
+
     if (existe) {
       selectAluno.value = alunoPreSelecionado;
       selectAluno.dispatchEvent(new Event("change"));
     }
+
     localStorage.removeItem("alunoSelecionadoAdmin");
   }
 }
@@ -288,6 +351,8 @@ async function carregarMatriculasDoAluno(alunoId) {
       ativa,
       data_inicio,
       data_fim,
+      link_zoom,
+      link_youtube,
       aluno:aluno_id ( id, nome ),
       materia:materia_id ( id, nome ),
       modulo:modulo_id ( id, nome ),
@@ -298,7 +363,7 @@ async function carregarMatriculasDoAluno(alunoId) {
 
   if (error) {
     console.error(error);
-    mostrarMensagem("❌ Erro ao carregar matrículas do aluno.", false);
+    mostrarMensagem("Erro ao carregar matrículas do aluno.", false);
     return [];
   }
 
@@ -328,12 +393,13 @@ function preencherSelectMatriculas() {
 // =====================
 function preencherEdicaoDaMatricula(m) {
   modoCriacao = false;
+  modoRematriculaEdicao = false;
   matriculaAtual = m;
 
   blocoRematricula.style.display = "none";
   blocoEdicao.style.display = "block";
 
-  mostrarBotaoAdicionarCurso();
+  atualizarVisibilidadeBotaoAdicionarCurso();
 
   if (m.ativa === false) {
     btnDesmatricular.style.display = "none";
@@ -354,15 +420,25 @@ function preencherEdicaoDaMatricula(m) {
   preencherModulosPorMateria(materiaId, m.modulo?.id || "");
   preencherProfessoresPorMateria(materiaId, m.professor?.id || "");
 
+  linkZoomInput.value = m.link_zoom || "";
+  linkYoutubeInput.value = m.link_youtube || "";
+
   materiaSel.disabled = true;
   moduloSel.disabled = false;
   professorSel.disabled = false;
+  linkZoomInput.disabled = false;
+  linkYoutubeInput.disabled = false;
   btnSalvar.disabled = false;
+  atualizarTextoBotaoSalvar();
 
   const inicio = formatarDataBR(m.data_inicio);
   const fim = m.data_fim ? formatarDataBR(m.data_fim) : "—";
 
-  infoMatricula.textContent = `Status: Ativo | Início: ${inicio} | Fim: ${fim}`;
+  infoMatricula.innerHTML = `
+    <strong>Status:</strong> Ativo |
+    <strong>Início:</strong> ${inicio} |
+    <strong>Fim:</strong> ${fim}
+  `;
 }
 
 // =====================
@@ -370,6 +446,7 @@ function preencherEdicaoDaMatricula(m) {
 // =====================
 function preencherBlocoRematricula(m) {
   modoCriacao = false;
+  modoRematriculaEdicao = false;
   matriculaAtual = m;
 
   blocoEdicao.style.display = "none";
@@ -385,7 +462,7 @@ function preencherBlocoRematricula(m) {
 
   textoRematricula.innerHTML = `
     Este curso está desmatriculado no momento.<br>
-    <strong>Após rematrícula você poderá editar módulo e professor(a).</strong>
+    <strong>Após rematrícula você poderá editar módulo, professor(a) e links.</strong>
   `;
 
   infoMatriculaInativa.innerHTML = `
@@ -394,7 +471,9 @@ function preencherBlocoRematricula(m) {
     Módulo anterior: ${m.modulo?.nome || "—"} |
     Professor anterior: ${m.professor?.nome || "—"} |
     Início: ${inicio} |
-    Fim: ${fim}
+    Fim: ${fim}<br><br>
+    <strong>Link Zoom:</strong> ${valorTextoOuTraco(m.link_zoom)}<br>
+    <strong>Link YouTube:</strong> ${valorTextoOuTraco(m.link_youtube)}
   `;
 }
 
@@ -405,18 +484,23 @@ function entrarModoCriacao() {
   const alunoId = selectAluno.value;
 
   if (!alunoId) {
-    mostrarMensagem("⚠️ Selecione um aluno antes.", false);
+    mostrarMensagem("Selecione um aluno antes.", false);
     return;
   }
 
   const materiasDisponiveis = obterMateriasNuncaMatriculadas();
 
   if (materiasDisponiveis.length === 0) {
-    mostrarMensagem("⚠️ Este aluno já possui histórico em todos os cursos disponíveis. Para um curso já existente e desmatriculado, use a rematrícula.", false);
+    mostrarMensagem(
+      "Este aluno já possui histórico em todos os cursos disponíveis. Para um curso já existente e desmatriculado, use a rematrícula.",
+      false
+    );
+    atualizarVisibilidadeBotaoAdicionarCurso();
     return;
   }
 
   modoCriacao = true;
+  modoRematriculaEdicao = false;
   matriculaAtual = null;
 
   blocoRematricula.style.display = "none";
@@ -425,7 +509,7 @@ function entrarModoCriacao() {
   btnDesmatricular.style.display = "none";
   btnDesmatricular.hidden = true;
 
-  mostrarBotaoAdicionarCurso();
+  atualizarVisibilidadeBotaoAdicionarCurso();
 
   tituloEdicao.textContent = "Adicionar novo curso";
   subtituloEdicao.textContent = "Use esta opção apenas para um curso que o aluno nunca teve antes.";
@@ -433,6 +517,8 @@ function entrarModoCriacao() {
   materiaSel.disabled = false;
   moduloSel.disabled = true;
   professorSel.disabled = true;
+  linkZoomInput.disabled = false;
+  linkYoutubeInput.disabled = false;
   btnSalvar.disabled = false;
 
   materiaSel.innerHTML = `<option value="">Selecione a matéria</option>`;
@@ -443,8 +529,57 @@ function entrarModoCriacao() {
   moduloSel.innerHTML = `<option value="">Selecione a matéria primeiro</option>`;
   professorSel.innerHTML = `<option value="">Selecione a matéria primeiro</option>`;
 
+  linkZoomInput.value = "";
+  linkYoutubeInput.value = "";
+
   infoMatricula.textContent = "Novo curso ainda não salvo.";
   selectMatricula.value = "";
+  atualizarTextoBotaoSalvar();
+}
+
+function entrarModoEdicaoRematricula(m) {
+  modoCriacao = false;
+  modoRematriculaEdicao = true;
+  matriculaAtual = m;
+
+  blocoRematricula.style.display = "none";
+  blocoEdicao.style.display = "block";
+
+  btnDesmatricular.style.display = "none";
+  btnDesmatricular.hidden = true;
+
+  esconderBotaoAdicionarCurso();
+
+  tituloEdicao.textContent = "Rematricular curso";
+  subtituloEdicao.textContent = `Curso selecionado: ${m.materia?.nome || "—"}`;
+
+  materiaSel.innerHTML = "";
+  materiaSel.appendChild(criarOption(m.materia?.id || "", m.materia?.nome || "—"));
+
+  const materiaId = m.materia?.id;
+
+  preencherModulosPorMateria(materiaId, m.modulo?.id || "");
+  preencherProfessoresPorMateria(materiaId, m.professor?.id || "");
+
+  linkZoomInput.value = m.link_zoom || "";
+  linkYoutubeInput.value = m.link_youtube || "";
+
+  materiaSel.disabled = true;
+  moduloSel.disabled = false;
+  professorSel.disabled = false;
+  linkZoomInput.disabled = false;
+  linkYoutubeInput.disabled = false;
+  btnSalvar.disabled = false;
+  atualizarTextoBotaoSalvar();
+
+  const inicio = formatarDataBR(m.data_inicio);
+  const fim = m.data_fim ? formatarDataBR(m.data_fim) : "—";
+
+  infoMatricula.innerHTML = `
+    <strong>Status anterior:</strong> Desmatriculado |
+    <strong>Início anterior:</strong> ${inicio} |
+    <strong>Fim anterior:</strong> ${fim}
+  `;
 }
 
 materiaSel.addEventListener("change", () => {
@@ -483,12 +618,14 @@ selectAluno.addEventListener("change", async () => {
     selectMatricula.disabled = true;
     selectMatricula.innerHTML = `<option value="">Selecione um aluno acima</option>`;
     infoCursosAluno.textContent = "";
+    esconderBotaoAdicionarCurso();
     return;
   }
 
   matriculasAluno = await carregarMatriculasDoAluno(alunoId);
   preencherSelectMatriculas();
   preencherResumoDeCursos();
+  atualizarVisibilidadeBotaoAdicionarCurso();
 });
 
 selectMatricula.addEventListener("change", () => {
@@ -514,7 +651,7 @@ btnAddCurso.addEventListener("click", entrarModoCriacao);
 // =====================
 btnDesmatricular.addEventListener("click", async () => {
   if (!matriculaAtual) {
-    mostrarMensagem("⚠️ Selecione uma matrícula antes.", false);
+    mostrarMensagem("Selecione uma matrícula antes.", false);
     return;
   }
 
@@ -530,11 +667,11 @@ btnDesmatricular.addEventListener("click", async () => {
 
   if (error) {
     console.error(error);
-    mostrarMensagem("❌ Erro ao desmatricular este curso.", false);
+    mostrarMensagem("Erro ao desmatricular este curso.", false);
     return;
   }
 
-  mostrarMensagem("✅ Curso desmatriculado com sucesso.");
+  mostrarMensagem("Curso desmatriculado com sucesso.");
 
   const alunoId = selectAluno.value;
   const idAtual = matriculaAtual.id;
@@ -542,6 +679,7 @@ btnDesmatricular.addEventListener("click", async () => {
   matriculasAluno = await carregarMatriculasDoAluno(alunoId);
   preencherSelectMatriculas();
   preencherResumoDeCursos();
+  atualizarVisibilidadeBotaoAdicionarCurso();
   selectMatricula.value = idAtual;
 
   const atualizada = matriculasAluno.find((x) => String(x.id) === String(idAtual));
@@ -553,39 +691,20 @@ btnDesmatricular.addEventListener("click", async () => {
 // =====================
 btnRematricular.addEventListener("click", async () => {
   if (!matriculaAtual) {
-    mostrarMensagem("⚠️ Selecione um curso desmatriculado.", false);
+    mostrarMensagem("Selecione um curso desmatriculado.", false);
     return;
   }
 
-  const hojeISO = new Date().toISOString().slice(0, 10);
+  const atualizada = matriculasAluno.find(
+    (x) => String(x.id) === String(matriculaAtual.id)
+  );
 
-  const { error } = await supabase
-    .from("matricula")
-    .update({
-      ativa: true,
-      data_fim: null,
-      data_inicio: hojeISO
-    })
-    .eq("id", matriculaAtual.id);
-
-  if (error) {
-    console.error(error);
-    mostrarMensagem("❌ Erro ao rematricular este curso.", false);
+  if (!atualizada) {
+    mostrarMensagem("Não foi possível carregar esta matrícula.", false);
     return;
   }
 
-  mostrarMensagem("✅ Curso rematriculado com sucesso. Agora você já pode editar módulo e professor(a).");
-
-  const alunoId = selectAluno.value;
-  const idAtual = matriculaAtual.id;
-
-  matriculasAluno = await carregarMatriculasDoAluno(alunoId);
-  preencherSelectMatriculas();
-  preencherResumoDeCursos();
-  selectMatricula.value = idAtual;
-
-  const atualizada = matriculasAluno.find((x) => String(x.id) === String(idAtual));
-  if (atualizada) preencherEdicaoDaMatricula(atualizada);
+  entrarModoEdicaoRematricula(atualizada);
 });
 
 // =====================
@@ -596,7 +715,7 @@ formEditar.addEventListener("submit", async (e) => {
 
   const alunoId = selectAluno.value;
   if (!alunoId) {
-    mostrarMensagem("⚠️ Selecione um aluno.", false);
+    mostrarMensagem("Selecione um aluno.", false);
     return;
   }
 
@@ -606,9 +725,23 @@ formEditar.addEventListener("submit", async (e) => {
     const materiaId = materiaSel.value;
     const moduloId = moduloSel.value;
     const professorId = professorSel.value;
+    const linkZoom = linkZoomInput.value.trim();
+    const linkYoutube = linkYoutubeInput.value.trim();
 
     if (!materiaId || !moduloId || !professorId) {
-      mostrarMensagem("⚠️ Preencha matéria, módulo e professor.", false);
+      mostrarMensagem("Preencha matéria, módulo e professor(a).", false);
+      return;
+    }
+
+    const materiaJaExiste = matriculasAluno.some(
+      (m) => String(m.materia?.id) === String(materiaId)
+    );
+
+    if (materiaJaExiste) {
+      mostrarMensagem(
+        "Este aluno já possui histórico nesta matéria. Use a matrícula existente ou a rematrícula.",
+        false
+      );
       return;
     }
 
@@ -619,6 +752,8 @@ formEditar.addEventListener("submit", async (e) => {
         materia_id: materiaId,
         modulo_id: moduloId,
         professor_id: professorId,
+        link_zoom: linkZoom || null,
+        link_youtube: linkYoutube || null,
         data_inicio: hojeISO,
         data_fim: null,
         ativa: true
@@ -626,29 +761,67 @@ formEditar.addEventListener("submit", async (e) => {
 
     if (error) {
       console.error(error);
-      mostrarMensagem("❌ Erro ao adicionar curso.", false);
+      mostrarMensagem("Erro ao adicionar curso.", false);
       return;
     }
 
-    mostrarMensagem("✅ Novo curso adicionado com sucesso.");
+    mostrarMensagem("Novo curso adicionado com sucesso.");
 
     matriculasAluno = await carregarMatriculasDoAluno(alunoId);
     preencherSelectMatriculas();
     preencherResumoDeCursos();
+    atualizarVisibilidadeBotaoAdicionarCurso();
     resetEdicao();
     return;
   }
 
   if (!matriculaAtual) {
-    mostrarMensagem("⚠️ Selecione uma matrícula para editar.", false);
+    mostrarMensagem("Selecione uma matrícula para editar.", false);
     return;
   }
 
   const novoModuloId = moduloSel.value;
   const novoProfessorId = professorSel.value;
+  const novoLinkZoom = linkZoomInput.value.trim();
+  const novoLinkYoutube = linkYoutubeInput.value.trim();
 
   if (!novoModuloId || !novoProfessorId) {
-    mostrarMensagem("⚠️ Selecione módulo e professor.", false);
+    mostrarMensagem("Selecione módulo e professor(a).", false);
+    return;
+  }
+
+  if (modoRematriculaEdicao) {
+    const { error } = await supabase
+      .from("matricula")
+      .update({
+        ativa: true,
+        data_fim: null,
+        data_inicio: hojeISO,
+        modulo_id: novoModuloId,
+        professor_id: novoProfessorId,
+        link_zoom: novoLinkZoom || null,
+        link_youtube: novoLinkYoutube || null
+      })
+      .eq("id", matriculaAtual.id);
+
+    if (error) {
+      console.error(error);
+      mostrarMensagem("Erro ao salvar rematrícula.", false);
+      return;
+    }
+
+    mostrarMensagem("Rematrícula salva com sucesso.");
+
+    const midAtual = matriculaAtual.id;
+
+    matriculasAluno = await carregarMatriculasDoAluno(alunoId);
+    preencherSelectMatriculas();
+    preencherResumoDeCursos();
+    atualizarVisibilidadeBotaoAdicionarCurso();
+    selectMatricula.value = midAtual;
+
+    const atualizada = matriculasAluno.find((x) => String(x.id) === String(midAtual));
+    if (atualizada) preencherEdicaoDaMatricula(atualizada);
     return;
   }
 
@@ -656,23 +829,26 @@ formEditar.addEventListener("submit", async (e) => {
     .from("matricula")
     .update({
       modulo_id: novoModuloId,
-      professor_id: novoProfessorId
+      professor_id: novoProfessorId,
+      link_zoom: novoLinkZoom || null,
+      link_youtube: novoLinkYoutube || null
     })
     .eq("id", matriculaAtual.id);
 
   if (error) {
     console.error(error);
-    mostrarMensagem("❌ Erro ao salvar alterações.", false);
+    mostrarMensagem("Erro ao salvar alterações.", false);
     return;
   }
 
-  mostrarMensagem("✅ Alterações salvas.");
+  mostrarMensagem("Alterações salvas.");
 
   const midAtual = matriculaAtual.id;
 
   matriculasAluno = await carregarMatriculasDoAluno(alunoId);
   preencherSelectMatriculas();
   preencherResumoDeCursos();
+  atualizarVisibilidadeBotaoAdicionarCurso();
   selectMatricula.value = midAtual;
 
   const atualizada = matriculasAluno.find((x) => String(x.id) === String(midAtual));
@@ -680,4 +856,5 @@ formEditar.addEventListener("submit", async (e) => {
 });
 
 // init
+esconderBotaoAdicionarCurso();
 await carregarBases();
