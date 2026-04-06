@@ -1,83 +1,142 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Relatório | Beehive</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beehive | Relatório oficial</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
+<body class="pagina-relatorios-admin">
 
-<body>
+  <div class="overlay"></div>
 
-<div class="overlay"></div>
-
-<main class="container">
-
-    <h1>Relatório de Presença</h1>
-
-    <form id="form-relatorio">
-
-        <label>Empresa parceira</label>
-        <select id="empresaparceira">
-            <option value="">Selecione a empresa</option>
-        </select>
-
-        <label>Data início</label>
-        <input type="date" id="inicio" required>
-
-        <label>Data fim</label>
-        <input type="date" id="fim" required>
-
-
-        <button type="submit">Gerar relatório</button> 
-        
-
-         <a href="home-admin.html" class="link-voltar" style="margin-top:10px;">
-      ← Voltar
-    </a>
-
-
-    </form>
-
-    <br>
-
-    <div id="msg" style="display:none;"></div>
-
-    <br>
-
-    <div id="area-relatorio" style="display:none;">
-
-        <h2 id="tituloRelatorio"></h2>
-
-        <table border="1" width="100%" id="tabela-relatorio">
-            <thead>
-                <tr>
-                    <th>Aluno</th>
-                    <th>Professor</th>
-                    <th>Curso</th>
-                    <th>Módulo</th>
-                    <th>Presenças</th>
-                    <th>Canceladas</th>
-                    <th>Total Aulas</th>
-                    <th>% Presença</th>
-                </tr>
-            </thead>
-
-            <tbody></tbody>
-        </table>
-
-        <br>
-
-        <button onclick="window.print()">Imprimir</button>
-
+  <main class="container home-admin-page container-relatorios-admin">
+    <div class="topo-acoes-admin topo-acoes-duplas no-print">
+      <a href="home-admin.html" class="btn-topo-admin">← Voltar</a>
+      <button id="btnSair" class="btn-sair-admin" type="button">Sair</button>
     </div>
 
-   
-</main>
+    <section class="cabecalho-admin-central no-print">
+      <p class="rotulo-admin">Área administrativa</p>
+      <h1>Relatório oficial</h1>
+      <p class="subtitulo-admin">
+        Gere um relatório formal da Beehive para envio à empresa.
+      </p>
+    </section>
 
-<script type="module" src="js/relatorio.js"></script>
+    <div id="msg" class="msg-box no-print"></div>
 
+    <section class="card-relatorio-filtros no-print">
+      <div class="cabecalho-bloco-relatorio">
+        <h2>Filtros do relatório</h2>
+        <p>Escolha a empresa, o período e os alunos que devem aparecer no documento.</p>
+      </div>
 
+      <form id="form-relatorio" class="form-relatorio-admin">
+        <div class="grid-filtros-relatorio">
+          <label class="campo-relatorio">
+            <span>Tipo de relatório</span>
+            <select id="tipoRelatorio">
+              <option value="empresa">Relatório por empresa</option>
+              <option value="professor">Relatório por professor (em breve)</option>
+              <option value="aluno">Relatório por aluno (em breve)</option>
+            </select>
+          </label>
 
+          <label class="campo-relatorio">
+            <span>Empresa parceira</span>
+            <select id="empresaparceira" required>
+              <option value="">Selecione a empresa</option>
+            </select>
+          </label>
+
+          <label class="campo-relatorio">
+            <span>Data início</span>
+            <input type="date" id="inicio" required />
+          </label>
+
+          <label class="campo-relatorio">
+            <span>Data fim</span>
+            <input type="date" id="fim" required />
+          </label>
+        </div>
+
+        <div class="bloco-opcoes-relatorio espacamento-bloco-relatorio">
+          <div class="linha-opcao-relatorio">
+            <strong>Alunos da empresa</strong>
+            <p>Escolha se deseja gerar o documento com todos os alunos da empresa ou apenas com alguns nomes.</p>
+          </div>
+
+          <div class="opcoes-radio-relatorio">
+            <label class="radio-card">
+              <input type="radio" name="modoAlunosEmpresa" value="todos" checked />
+              <span>Todos os alunos da empresa</span>
+            </label>
+
+            <label class="radio-card">
+              <input type="radio" name="modoAlunosEmpresa" value="selecionados" />
+              <span>Selecionar alunos específicos</span>
+            </label>
+          </div>
+
+          <div id="areaAlunosEmpresa" class="area-alunos-relatorio" style="display:none;">
+            <p class="texto-ajuda-relatorio">
+              Marque somente os alunos que devem entrar no relatório.
+            </p>
+
+            <div id="listaAlunosEmpresa" class="lista-checkbox-relatorio">
+              <p class="texto-vazio-relatorio">Selecione uma empresa para carregar os alunos.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bloco-opcoes-relatorio espacamento-bloco-relatorio">
+          <div class="linha-opcao-relatorio">
+            <strong>Texto institucional</strong>
+            <p>O texto base é preenchido automaticamente para relatório por empresa.</p>
+          </div>
+
+          <label class="campo-relatorio campo-relatorio-full">
+            <span>Texto principal do relatório</span>
+            <textarea id="textoDeclaracao" rows="5" readonly>
+Declaramos, para os devidos fins, que os alunos citados neste relatório estão devidamente matriculados nos cursos regulares de língua inglesa e/ou espanhola, e que as informações contidas nele se baseiam em documentações oficiais da escola, as quais estão disponíveis para consulta caso haja necessidade.
+            </textarea>
+          </label>
+
+          <label class="campo-relatorio campo-relatorio-full">
+            <span>Observação complementar (opcional)</span>
+            <textarea id="observacaoComplementar" rows="4" placeholder="Ex.: Relatório emitido a pedido do setor de Recursos Humanos referente à competência do mês informado."></textarea>
+          </label>
+        </div>
+
+        <div class="acoes-relatorio">
+          <button type="submit" class="btn btn-relatorio-primario">
+            Gerar documento
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section id="area-relatorio" class="card-relatorio-resultado" style="display:none;">
+      <div class="topo-resultado-relatorio no-print">
+        <div>
+          <h2>Pré-visualização do documento</h2>
+          <p class="subtitulo-resultado-relatorio">
+            Revise o conteúdo abaixo antes de imprimir ou salvar em PDF.
+          </p>
+        </div>
+
+        <div class="acoes-resultado-relatorio">
+          <button id="btnImprimir" type="button" class="btn-topo-admin">
+            Imprimir / Salvar PDF
+          </button>
+        </div>
+      </div>
+
+      <div id="documentoRelatorio" class="documento-relatorio-oficial"></div>
+    </section>
+  </main>
+
+  <script type="module" src="js/relatorio.js"></script>
 </body>
 </html>
-
