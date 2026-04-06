@@ -410,7 +410,7 @@ btnDetalhesAdmin?.addEventListener("click", () => {
   }
 
   localStorage.setItem("matriculaSelecionada", matriculaId);
-  window.location.href = "detalhes_aluno_admin.html";
+  window.location.href = "detalhes-aluno-admin.html";
 });
 
 selectMateriaResumo?.addEventListener("change", () => {

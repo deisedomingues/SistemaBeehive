@@ -13,81 +13,133 @@
   <main class="container container-resumo">
     <h1>Editar Matrículas</h1>
 
-    <!-- Mensagem pequena (sem popup) -->
-    <div id="msg" style="display:none; margin-bottom:10px;"></div>
+    <div id="msg" style="display:none;"></div>
 
-    <!-- 1) Escolher aluno -->
-    <div class="card" style="margin-bottom:14px;">
+    <!-- CARD 1 -->
+    <section class="card" style="margin-bottom:16px;">
       <h2>1) Escolha o aluno</h2>
 
       <form class="form" style="margin-top:10px;">
-        <label>
+        <label for="selectAluno">
           Aluno
           <select id="selectAluno">
             <option value="">Carregando alunos...</option>
           </select>
         </label>
       </form>
-    </div>
+    </section>
 
-    <!-- 2) Escolher matrícula do aluno -->
-    <div class="card" style="margin-bottom:14px;">
-      <h2>2) Escolha o curso (matrícula)</h2>
+    <!-- CARD 2 -->
+    <section class="card">
+      <h2>2) Gerenciar matrícula</h2>
 
-      <form class="form" style="margin-top:10px;">
-        <label>
-          Matrículas do aluno
+      <div id="resumoAluno" style="display:none; margin-top:12px; margin-bottom:16px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.45);">
+        <p style="margin:0; font-size:14px;">
+          <strong>Aluno selecionado:</strong>
+          <span id="nomeAlunoResumo">—</span>
+        </p>
+      </div>
+
+      <div>
+        <label for="selectMatricula">
+         Selecione abaixo o curso que deseja gerenciar ou clique em "adicionar curso" para matricular o aluno em outra disciplina.
           <select id="selectMatricula" disabled>
             <option value="">Selecione um aluno acima</option>
           </select>
         </label>
 
-        <div style="display:flex; justify-content:flex-end; margin-top:8px;">
-  <button type="button" class="btn" id="btnAddCurso" style="padding:8px 10px; font-size:12px; background:#FFF5CC;">
-    + Adicionar curso
-  </button>
+        <p id="infoCursosAluno" style="font-size:13px; opacity:0.85; margin-top:8px;"></p>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+          <button
+            type="button"
+            class="btn"
+            id="btnAddCurso"
+            style="padding:10px 14px; font-size:13px;"
+          >
+            + Adicionar curso
+          </button>
+        </div>
+      </div>
+
+      <!-- BLOCO PARA MATRÍCULA ATIVA -->
+      <div id="blocoEdicao" style="display:none; margin-top:20px; padding-top:18px; border-top:1px solid rgba(0,0,0,0.08);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+          <div>
+            <h3 id="tituloEdicao" style="margin:0; font-size:17px; color:#5c4300;">Editar matrícula</h3>
+            <p id="subtituloEdicao" style="margin:4px 0 0 0; font-size:13px; opacity:0.85;">—</p>
+          </div>
+
+          <button
+            type="button"
+            id="btnDesmatricular"
+            style="display:none; border:none; cursor:pointer; padding:10px 14px; border-radius:10px; font-weight:bold; background:#ffebee; color:#b71c1c;"
+          >
+            Desmatricular este curso
+          </button>
+        </div>
+
+        <form class="form" id="formEditar" style="margin-top:10px;">
+          <label for="materia">
+            Matéria
+            <select id="materia" disabled>
+              <option value="">—</option>
+            </select>
+          </label>
+
+          <label for="modulo">
+            Módulo
+            <select id="modulo" disabled>
+              <option value="">Selecione uma matrícula</option>
+            </select>
+          </label>
+
+          <label for="professor">
+            Professor
+            <select id="professor" disabled>
+              <option value="">Selecione uma matrícula</option>
+            </select>
+          </label>
+
+          <div style="font-size:13px; opacity:0.85; margin-top:2px;">
+            <span id="infoMatricula">—</span>
+          </div>
+
+          <button type="submit" class="btn" id="btnSalvar" disabled>
+            Salvar alterações
+          </button>
+        </form>
+      </div>
+
+      <!-- BLOCO PARA MATRÍCULA DESMATRICULADA -->
+      <!-- BLOCO PARA CURSO DESATIVADO -->
+<div id="blocoRematricula" style="display:none; margin-top:20px; padding-top:18px; border-top:1px solid rgba(0,0,0,0.08);">
+  <div
+    id="caixaRematricula"
+    style="
+      background:#fff8e8;
+      border:1px solid #f1d98a;
+      border-radius:12px;
+      padding:16px;
+    "
+  >
+    <h3 style="margin:0 0 10px 0; font-size:17px; color:#8b6a00;">
+      Curso desativado
+    </h3>
+
+    <p id="textoRematricula" style="font-size:14px; line-height:1.5; margin-bottom:10px;">
+      —
+    </p>
+
+    <p id="infoMatriculaInativa" style="font-size:13px; line-height:1.5; opacity:0.9; margin-bottom:14px;">
+      —
+    </p>
+
+    <button type="button" class="btn" id="btnRematricular">
+      Rematricular este curso
+    </button>
+  </div>
 </div>
-
-        <p id="infoMatricula" style="font-size:12px; opacity:0.85; margin-top:-6px;"></p>
-      </form>
-    </div>
-
-    <!-- 3) Editar dados da matrícula -->
-    <div class="card">
-      <h2>3) Editar</h2>
-
-      <form class="form" id="formEditar" style="margin-top:10px;">
-        <label>
-          Matéria
-          <select id="materia" disabled>
-            <option value="">—</option>
-          </select>
-        </label>
-
-        <label>
-          Módulo
-          <select id="modulo" disabled>
-            <option value="">Selecione uma matrícula</option>
-          </select>
-        </label>
-
-        <label>
-          Professor
-          <select id="professor" disabled>
-            <option value="">Selecione uma matrícula</option>
-          </select>
-        </label>
-
-        <label style="display:flex; flex-direction:row; gap:10px; align-items:center; margin-top:6px;">
-          <input type="checkbox" id="ativa" checked />
-          Matrícula ativa
-        </label>
-
-        <button type="submit" class="btn" id="btnSalvar" disabled>
-          Salvar alterações
-        </button>
-      </form>
-    </div>
 
     <a href="home-admin.html" class="link-voltar">← Voltar</a>
   </main>
