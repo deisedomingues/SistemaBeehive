@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Eventos da Escola | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container">
+    <h1 style="margin-bottom:8px;">Eventos da Escola</h1>
+    <p style="margin-bottom:18px; opacity:0.9;">
+      Confira os eventos disponíveis para você e confirme presença.
+    </p>
+
+    <div id="msg" style="display:none; margin-bottom:12px;"></div>
+
+    <section class="card" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:6px;">Como funciona</h2>
+      <p style="margin:0;">
+        Os eventos mostrados aqui são filtrados conforme seu curso e seu módulo atual.
+        Ao confirmar presença, seu nome aparecerá para a administração da escola.
+      </p>
+    </section>
+
+    <section>
+      <div id="listaEventos" style="display:grid; gap:14px;">
+        <div class="card">
+          <p style="margin:0;">Carregando eventos...</p>
+        </div>
+      </div>
+    </section>
+
+    <a href="home-aluno.html" class="link-voltar">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/evento-confirmacao.js"></script>
+</body>
+</html>

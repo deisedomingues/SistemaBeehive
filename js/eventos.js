@@ -53,7 +53,6 @@ function esconderMensagem() {
 
 function formatarData(dataStr) {
   if (!dataStr) return "-";
-
   const [ano, mes, dia] = dataStr.split("-");
   return `${dia}/${mes}/${ano}`;
 }
@@ -63,20 +62,26 @@ function formatarHora(horaStr) {
   return horaStr.slice(0, 5);
 }
 
+function formatarDataHoraBR(dataHoraStr) {
+  if (!dataHoraStr) return "-";
+
+  const data = new Date(dataHoraStr);
+
+  return data.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 function obterSituacaoEvento(evento) {
   const agora = new Date();
-
-  // monta data/hora do evento
   const dataHoraEvento = new Date(`${evento.data_evento}T${evento.hora_evento}`);
 
-  // se quiser considerar "ativo" false como inativo/encerrado visualmente
-  if (!evento.ativo) {
-    return "inativo";
-  }
-
-  if (dataHoraEvento < agora) {
-    return "encerrado";
-  }
+  if (!evento.ativo) return "inativo";
+  if (dataHoraEvento < agora) return "encerrado";
 
   return "ativo";
 }
@@ -96,6 +101,15 @@ function normalizarTexto(texto) {
   return (texto || "").toLowerCase().trim();
 }
 
+function escaparHtml(texto) {
+  return String(texto ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 /* =========================================================
    BUSCA DE DADOS
 ========================================================= */
@@ -113,15 +127,14 @@ async function carregarEventos() {
     .select(`
       id,
       titulo,
-      tipo_evento,
       descricao,
-      local,
+      tipo_evento,
       data_evento,
       hora_evento,
+      local,
       publico_alvo,
       materia_id,
       modulo_id,
-      ordem_minima,
       limite_confirmacao,
       ativo
     `)
@@ -141,39 +154,51 @@ async function carregarEventos() {
 async function carregarConfirmacoes() {
   confirmacoesPorEvento = {};
 
-  const idsEventos = eventos.map((e) => e.id);
+  const idsEventos = eventos.map((evento) => evento.id);
 
   if (!idsEventos.length) return;
 
   const { data, error } = await supabase
     .from("evento_confirmacao")
-    .select("evento_id, status_confirmacao")
-    .in("evento_id", idsEventos);
+    .select(`
+      evento_id,
+      aluno_id,
+      aluno:aluno_id (
+        id,
+        nome
+      )
+    `)
+    .in("evento_id", idsEventos)
+    .order("created_at", { ascending: true });
 
   if (error) {
-    console.warn("Não foi possível carregar confirmações:", error);
+    console.error("Erro ao carregar confirmações:", error);
+    mostrarMensagem("Os eventos foram carregados, mas houve erro ao buscar as confirmações.", "erro");
     return;
   }
 
   for (const item of data || []) {
     if (!confirmacoesPorEvento[item.evento_id]) {
       confirmacoesPorEvento[item.evento_id] = {
-        confirmado: 0,
-        recusado: 0,
-        pendente: 0
+        total: 0,
+        alunos: []
       };
     }
 
-    const status = item.status_confirmacao || "pendente";
+    confirmacoesPorEvento[item.evento_id].total += 1;
 
-    if (status === "confirmado") {
-      confirmacoesPorEvento[item.evento_id].confirmado += 1;
-    } else if (status === "recusado") {
-      confirmacoesPorEvento[item.evento_id].recusado += 1;
-    } else {
-      confirmacoesPorEvento[item.evento_id].pendente += 1;
+    if (item.aluno?.nome) {
+      confirmacoesPorEvento[item.evento_id].alunos.push({
+        id: item.aluno.id,
+        nome: item.aluno.nome
+      });
     }
   }
+
+  // ordena os nomes alfabeticamente
+  Object.values(confirmacoesPorEvento).forEach((grupo) => {
+    grupo.alunos.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  });
 }
 
 /* =========================================================
@@ -198,7 +223,7 @@ function atualizarResumo() {
 }
 
 /* =========================================================
-   FILTRO
+   FILTROS
 ========================================================= */
 function obterEventosFiltrados() {
   const busca = normalizarTexto(filtroBusca.value);
@@ -250,11 +275,33 @@ function renderizarEventos() {
 
   listaEventos.innerHTML = lista.map((evento) => {
     const situacao = obterSituacaoEvento(evento);
-    const contagem = confirmacoesPorEvento[evento.id] || {
-      confirmado: 0,
-      recusado: 0,
-      pendente: 0
+
+    const confirmacoes = confirmacoesPorEvento[evento.id] || {
+      total: 0,
+      alunos: []
     };
+
+    const nomesConfirmadosHtml = confirmacoes.alunos.length
+      ? `
+        <div style="margin-top:10px;">
+          <strong>Alunos confirmados:</strong>
+          <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;">
+            ${confirmacoes.alunos
+              .map((aluno) => `
+                <span style="display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,0.55); font-size:13px;">
+                  ${escaparHtml(aluno.nome)}
+                </span>
+              `)
+              .join("")}
+          </div>
+        </div>
+      `
+      : `
+        <div style="margin-top:10px;">
+          <strong>Alunos confirmados:</strong>
+          <p style="margin:6px 0 0 0;">Nenhum aluno confirmou presença ainda.</p>
+        </div>
+      `;
 
     const badgeSituacao =
       situacao === "ativo"
@@ -265,9 +312,9 @@ function renderizarEventos() {
       <article class="card">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
           <div>
-            <h2 style="margin-bottom:6px;">${evento.titulo || "-"}</h2>
+            <h2 style="margin-bottom:6px;">${escaparHtml(evento.titulo || "-")}</h2>
             <p style="margin:0; opacity:0.85;">
-              ${evento.tipo_evento || "Evento"} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
+              ${escaparHtml(evento.tipo_evento || "Evento")} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
             </p>
           </div>
           <div>
@@ -278,42 +325,34 @@ function renderizarEventos() {
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:12px;">
           <div>
             <strong>Local:</strong><br>
-            <span>${evento.local || "-"}</span>
+            <span>${escaparHtml(evento.local || "-")}</span>
           </div>
 
           <div>
             <strong>Público:</strong><br>
-            <span>${obterRotuloPublico(evento)}</span>
+            <span>${escaparHtml(obterRotuloPublico(evento))}</span>
           </div>
 
           <div>
             <strong>Confirma até:</strong><br>
-            <span>${evento.limite_confirmacao ? new Date(evento.limite_confirmacao).toLocaleString("pt-BR") : "-"}</span>
+            <span>${formatarDataHoraBR(evento.limite_confirmacao)}</span>
           </div>
         </div>
 
         <div style="margin-bottom:12px;">
           <strong>Descrição:</strong>
           <p style="margin:6px 0 0 0;">
-            ${evento.descricao || "Sem descrição informada."}
+            ${escaparHtml(evento.descricao || "Sem descrição informada.")}
           </p>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px;">
-          <div style="padding:10px; border-radius:12px; background:rgba(255,255,255,0.45);">
-            <strong>Confirmados</strong>
-            <p style="font-size:22px; font-weight:bold; margin:6px 0 0 0;">${contagem.confirmado}</p>
-          </div>
+        <div style="padding:12px; border-radius:14px; background:rgba(255,255,255,0.35); margin-bottom:12px;">
+          <strong>Total de confirmados</strong>
+          <p style="font-size:24px; font-weight:bold; margin:6px 0 0 0;">${confirmacoes.total}</p>
+        </div>
 
-          <div style="padding:10px; border-radius:12px; background:rgba(255,255,255,0.45);">
-            <strong>Recusaram</strong>
-            <p style="font-size:22px; font-weight:bold; margin:6px 0 0 0;">${contagem.recusado}</p>
-          </div>
-
-          <div style="padding:10px; border-radius:12px; background:rgba(255,255,255,0.45);">
-            <strong>Pendentes</strong>
-            <p style="font-size:22px; font-weight:bold; margin:6px 0 0 0;">${contagem.pendente}</p>
-          </div>
+        <div style="padding:12px; border-radius:14px; background:rgba(255,255,255,0.25);">
+          ${nomesConfirmadosHtml}
         </div>
       </article>
     `;
@@ -321,7 +360,7 @@ function renderizarEventos() {
 }
 
 /* =========================================================
-   EVENTOS DE FILTRO
+   EVENTOS DOS FILTROS
 ========================================================= */
 filtroBusca.addEventListener("input", renderizarEventos);
 filtroSituacao.addEventListener("change", renderizarEventos);
