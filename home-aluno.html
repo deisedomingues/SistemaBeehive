@@ -11,59 +11,104 @@
 
   <div class="overlay"></div>
 
-  <main class="container">
+  <main class="container home-aluno-page">
 
-    <h1>Área do Aluno</h1>
-
-    <img src="images/logo.png" alt="Beehive Escola de Idiomas" class="logo">
-
-    <div class="saudacao-container">
-      <p id="saudacao" class="saudacao"></p>
-      <img src="images/AbelhinhaBranca.png" alt="Abelhinha" class="icone-saudacao">
-    </div>
-
-
-    <div class="buttons">
-
-  <a id="btnZoom" class="btn" target="_blank">
-    🎓 Entrar na aula ao vivo
-  </a>
-
-  <a id="btnYoutube" class="btn" target="_blank">
-    🎥 Assistir aulas gravadas
-  </a>
-
-  <a href="evento-confirmacao.html" class="btn">
-    🎈 Eventos
-  </a>
-
-  <a href="agendar_reposicao.html" class="btn">
-    📅 Agendar reposição
-  </a>
-
-  <a href="painel_academico.html" class="btn">
-    📊 Meu painel acadêmico
-  </a>
-
-</div>
-
-  
-
-    <div style="text-align:right; margin-top:20px;">
-      <button
-        id="btnSair"
-        style="
-          background: transparent;
-          border: 1px solid #F1BC32;
-          padding: 6px 12px;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 12px;
-        "
-      >
+    <div class="topo-acoes-aluno">
+      <button id="btnSair" class="btn-sair-admin" type="button">
         Sair
       </button>
     </div>
+
+    <img
+      src="images/logo.png"
+      alt="Beehive Escola de Idiomas"
+      class="logo logo-aluno-centralizada"
+    >
+
+    <section class="cabecalho-aluno-central">
+      <p class="rotulo-admin">Área do aluno</p>
+
+      <h1>Bem-vindo(a)!</h1>
+
+      <div class="saudacao-card">
+        <div class="saudacao-card-texto">
+          <p id="saudacao" class="saudacao saudacao-aluno"></p>
+          <p class="subtitulo-admin">
+            Escolha uma opção para continuar na sua área.
+          </p>
+        </div>
+
+        <img
+          src="images/AbelhinhaBranca.png"
+          alt="Abelhinha"
+          class="icone-saudacao-aluno"
+        >
+      </div>
+    </section>
+
+    <section class="painel-aluno-cards">
+
+      <a id="btnZoom" class="card-admin-link" target="_blank" rel="noopener noreferrer">
+        <article class="card-admin card-aluno">
+          <div class="card-admin-icone">🎓</div>
+          <div class="card-admin-conteudo">
+            <h2>Entrar na aula ao vivo</h2>
+            <p>
+              Acesse rapidamente o link da sua aula online.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a id="btnYoutube" class="card-admin-link" target="_blank" rel="noopener noreferrer">
+        <article class="card-admin card-aluno">
+          <div class="card-admin-icone">🎥</div>
+          <div class="card-admin-conteudo">
+            <h2>Assistir aulas gravadas</h2>
+            <p>
+              Veja ou reveja as aulas disponíveis para seu curso.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="evento-confirmacao.html" class="card-admin-link">
+        <article class="card-admin card-aluno">
+          <div class="card-admin-icone">🎈</div>
+          <div class="card-admin-conteudo">
+            <h2>Eventos</h2>
+            <p>
+              Consulte os eventos da escola e confirme sua participação.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="agendar_reposicao.html" class="card-admin-link">
+        <article class="card-admin card-aluno">
+          <div class="card-admin-icone">📅</div>
+          <div class="card-admin-conteudo">
+            <h2>Agendar reposição</h2>
+            <p>
+              Veja horários disponíveis para marcar suas reposições.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="painel_academico.html" class="card-admin-link">
+        <article class="card-admin card-aluno">
+          <div class="card-admin-icone">📊</div>
+          <div class="card-admin-conteudo">
+            <h2>Meu painel acadêmico</h2>
+            <p>
+              Acompanhe frequência, histórico e informações da sua jornada.
+            </p>
+          </div>
+        </article>
+      </a>
+
+    </section>
 
   </main>
 
