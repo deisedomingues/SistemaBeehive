@@ -2727,3 +2727,202 @@ textarea {
     font-size: 15px;
   }
 }
+/* =========================================================
+   18) HOME ALUNO
+========================================================= */
+
+.home-aluno-page {
+  max-width: 1100px;
+  width: 95%;
+  padding: 32px;
+  text-align: left;
+}
+
+.topo-acoes-aluno {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.logo-aluno-centralizada {
+  display: block;
+  margin: 0 auto 18px auto;
+  max-width: 180px;
+}
+
+.cabecalho-aluno-central {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.saudacao-card {
+  margin: 18px auto 0 auto;
+  max-width: 620px;
+  background: linear-gradient(180deg, #fffdf7 0%, #fff7df 100%);
+  border: 1px solid #f1df9a;
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+  text-align: left;
+}
+
+.saudacao-card-texto {
+  flex: 1;
+}
+
+.saudacao-aluno {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  color: #2f2f2f;
+  font-weight: bold;
+}
+
+.subtitulo-aluno {
+  max-width: none;
+}
+
+.icone-saudacao-aluno {
+  width: 46px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.painel-aluno-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.card-aluno {
+  min-height: 145px;
+}
+
+.card-admin-link.link-indisponivel {
+  pointer-events: none;
+  opacity: 0.72;
+}
+
+.card-admin-link.link-indisponivel .card-admin {
+  background: linear-gradient(180deg, #f8f8f8 0%, #f1f1f1 100%);
+  border-color: #dddddd;
+}
+
+.card-admin-link.link-indisponivel .card-admin-conteudo h2,
+.card-admin-link.link-indisponivel .card-admin-conteudo p {
+  color: #777;
+}
+
+/* =========================================================
+   RESPONSIVIDADE - HOME ALUNO
+========================================================= */
+
+@media (max-width: 768px) {
+  .home-aluno-page {
+    width: 100%;
+    padding: 20px;
+  }
+
+  .topo-acoes-aluno {
+    justify-content: stretch;
+  }
+
+  .btn-sair-admin {
+    width: 100%;
+  }
+
+  .logo-aluno-centralizada {
+    max-width: 145px;
+    margin-bottom: 14px;
+  }
+
+  .cabecalho-aluno-central h1 {
+    margin-bottom: 14px;
+  }
+
+  .saudacao-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 14px 14px;
+    gap: 10px;
+    border-radius: 16px;
+    margin-top: 14px;
+  }
+
+  .saudacao-aluno {
+    font-size: 15px;
+  }
+
+  .icone-saudacao-aluno {
+    width: 34px;
+  }
+
+  .painel-aluno-cards {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .card-aluno {
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .card-aluno .card-admin-icone {
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .card-aluno .card-admin-conteudo h2 {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+
+  .card-aluno .card-admin-conteudo p {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-aluno-page {
+    padding: 16px;
+  }
+
+  .saudacao-card {
+    padding: 12px;
+  }
+
+  .saudacao-aluno {
+    font-size: 14px;
+  }
+
+  .icone-saudacao-aluno {
+    width: 28px;
+  }
+
+  .card-aluno {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .card-aluno .card-admin-icone {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+    border-radius: 12px;
+  }
+
+  .card-aluno .card-admin-conteudo h2 {
+    font-size: 15px;
+  }
+
+  .card-aluno .card-admin-conteudo p {
+    font-size: 12px;
+  }
+}
