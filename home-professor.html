@@ -10,42 +10,69 @@
 
   <div class="overlay"></div>
 
-  <main class="container">
+  <main class="container home-professor-page">
 
-      <h1 id="tituloProfessor">Área do Professor</h1>
-    <img src="images/logo.png" alt="Beehive Escola de Idiomas" class="logo">
- 
-    
-    <div class="saudacao-container">
-  <p id="saudacao" class="saudacao"></p>
-  <img src="images/AbelhinhaBranca.png" alt="Abelhinha" class="icone-saudacao">
-</div>
-
-
-    
-
-    <div class="buttons">
-      <a href="registrar-aula.html" class="btn">Registrar aula</a>
-      <a href="resumo-professor.html" class="btn">Resumo</a>
-      <div style="text-align:right; margin-bottom:10px;">
-      <button
-        id="btnSair"
-        style="
-          background: transparent;
-          border: 1px solid #F1BC32;
-          padding: 6px 12px;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 12px;
-        "
-      >
+    <div class="topo-acoes-professor">
+      <button id="btnSair" class="btn-sair-admin" type="button">
         Sair
       </button>
     </div>
-    </div>
-  </main>
 
-  
+    <img
+      src="images/logo.png"
+      alt="Beehive Escola de Idiomas"
+      class="logo logo-professor-centralizada"
+    >
+
+    <section class="cabecalho-professor-central">
+      <p class="rotulo-admin">Área do professor</p>
+      <h1 id="tituloProfessor">Área do Professor</h1>
+
+      <div class="saudacao-card saudacao-card-professor">
+        <div class="saudacao-card-texto">
+          <p id="saudacao" class="saudacao saudacao-professor"></p>
+          <p class="subtitulo-admin subtitulo-professor">
+            Escolha uma opção para continuar no sistema.
+          </p>
+        </div>
+
+        <img
+          src="images/AbelhinhaBranca.png"
+          alt="Abelhinha"
+          class="icone-saudacao-professor"
+        >
+      </div>
+    </section>
+
+    <section class="painel-professor-cards">
+
+      <a href="registrar-aula.html" class="card-admin-link">
+        <article class="card-admin card-professor">
+          <div class="card-admin-icone">📝</div>
+          <div class="card-admin-conteudo">
+            <h2>Registrar aula</h2>
+            <p>
+              Lance presença, ausência, cancelamento e demais informações da aula.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="resumo-professor.html" class="card-admin-link">
+        <article class="card-admin card-professor">
+          <div class="card-admin-icone">📊</div>
+          <div class="card-admin-conteudo">
+            <h2>Resumo</h2>
+            <p>
+              Visualize seu acompanhamento acadêmico e informações gerais dos alunos.
+            </p>
+          </div>
+        </article>
+      </a>
+
+    </section>
+
+  </main>
 
   <script type="module" src="js/home-professor.js"></script>
 </body>
