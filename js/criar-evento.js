@@ -1,0 +1,362 @@
+import { supabase } from "./supabase.js";
+
+/* =========================================================
+   ELEMENTOS
+========================================================= */
+const form = document.getElementById("form-evento");
+const msg = document.getElementById("msg");
+
+const tituloInput = document.getElementById("titulo");
+const tipoEventoSelect = document.getElementById("tipoEvento");
+const descricaoInput = document.getElementById("descricao");
+const localInput = document.getElementById("local");
+const dataEventoInput = document.getElementById("dataEvento");
+const horaEventoInput = document.getElementById("horaEvento");
+
+const publicoAlvoSelect = document.getElementById("publicoAlvo");
+const blocoMateria = document.getElementById("blocoMateria");
+const blocoModulo = document.getElementById("blocoModulo");
+const materiaSelect = document.getElementById("materiaId");
+const moduloSelect = document.getElementById("moduloId");
+const textoAjudaModulo = document.getElementById("textoAjudaModulo");
+
+const limiteConfirmacaoPreview = document.getElementById("limiteConfirmacaoPreview");
+const ativoCheckbox = document.getElementById("ativo");
+
+/* =========================================================
+   INICIALIZAÇÃO
+========================================================= */
+document.addEventListener("DOMContentLoaded", async () => {
+  definirDataMinima();
+  await carregarMaterias();
+  controlarCamposPublico();
+  atualizarPreviewLimiteConfirmacao();
+});
+
+/* =========================================================
+   UTILITÁRIOS
+========================================================= */
+function mostrarMensagem(texto, tipo = "sucesso") {
+  msg.style.display = "block";
+  msg.textContent = texto;
+  msg.style.padding = "10px";
+  msg.style.borderRadius = "10px";
+  msg.style.marginBottom = "12px";
+
+  if (tipo === "erro") {
+    msg.style.background = "#ffe5e5";
+    msg.style.border = "1px solid #e7b4b4";
+    msg.style.color = "#7a1f1f";
+  } else {
+    msg.style.background = "#e8f7e8";
+    msg.style.border = "1px solid #b8deb8";
+    msg.style.color = "#1d5e1d";
+  }
+}
+
+function esconderMensagem() {
+  msg.style.display = "none";
+  msg.textContent = "";
+}
+
+function limparSelect(select, textoPadrao) {
+  select.innerHTML = `<option value="">${textoPadrao}</option>`;
+}
+
+function definirDataMinima() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+  dataEventoInput.min = `${ano}-${mes}-${dia}`;
+}
+
+function calcularLimiteConfirmacao(dataEventoStr) {
+  if (!dataEventoStr) return null;
+
+  const [ano, mes, dia] = dataEventoStr.split("-").map(Number);
+
+  const dataLimite = new Date(ano, mes - 1, dia);
+  dataLimite.setDate(dataLimite.getDate() - 1);
+  dataLimite.setHours(23, 59, 59, 0);
+
+  return dataLimite;
+}
+
+function atualizarPreviewLimiteConfirmacao() {
+  const dataEventoStr = dataEventoInput.value;
+
+  if (!dataEventoStr) {
+    limiteConfirmacaoPreview.value = "";
+    return;
+  }
+
+  const limite = calcularLimiteConfirmacao(dataEventoStr);
+
+  if (!limite) {
+    limiteConfirmacaoPreview.value = "";
+    return;
+  }
+
+  const dia = String(limite.getDate()).padStart(2, "0");
+  const mes = String(limite.getMonth() + 1).padStart(2, "0");
+  const ano = limite.getFullYear();
+
+  limiteConfirmacaoPreview.value = `${dia}/${mes}/${ano} às 23:59`;
+}
+
+function dateToISOString(date) {
+  return date ? date.toISOString() : null;
+}
+
+function limparFormularioVisual() {
+  form.reset();
+  ativoCheckbox.checked = true;
+
+  blocoMateria.style.display = "none";
+  blocoModulo.style.display = "none";
+  textoAjudaModulo.textContent = "";
+
+  materiaSelect.required = false;
+  moduloSelect.required = false;
+
+  limparSelect(moduloSelect, "Selecione o módulo");
+  atualizarPreviewLimiteConfirmacao();
+}
+
+/* =========================================================
+   CARREGAMENTO DE DADOS
+========================================================= */
+async function carregarMaterias() {
+  limparSelect(materiaSelect, "Selecione a matéria");
+
+  const { data, error } = await supabase
+    .from("materia")
+    .select("id, nome")
+    .order("nome", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao carregar matérias:", error);
+    mostrarMensagem("Erro ao carregar as matérias.", "erro");
+    return;
+  }
+
+  (data || []).forEach((materia) => {
+    const option = document.createElement("option");
+    option.value = materia.id;
+    option.textContent = materia.nome;
+    materiaSelect.appendChild(option);
+  });
+}
+
+async function carregarModulosPorMateria(materiaId) {
+  limparSelect(moduloSelect, "Selecione o módulo");
+
+  if (!materiaId) return;
+
+  const { data, error } = await supabase
+    .from("modulo")
+    .select("id, nome, materia_id, ordem")
+    .eq("materia_id", materiaId)
+    .order("ordem", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao carregar módulos:", error);
+    mostrarMensagem("Erro ao carregar os módulos.", "erro");
+    return;
+  }
+
+  (data || []).forEach((modulo) => {
+    const option = document.createElement("option");
+    option.value = modulo.id;
+    option.textContent = modulo.nome;
+    option.dataset.ordem = modulo.ordem;
+    moduloSelect.appendChild(option);
+  });
+}
+
+/* =========================================================
+   CONTROLE DE EXIBIÇÃO
+========================================================= */
+function controlarCamposPublico() {
+  const publico = publicoAlvoSelect.value;
+
+  blocoMateria.style.display = "none";
+  blocoModulo.style.display = "none";
+  textoAjudaModulo.textContent = "";
+
+  materiaSelect.required = false;
+  moduloSelect.required = false;
+
+  if (publico === "todos") {
+    return;
+  }
+
+  if (publico === "materia") {
+    blocoMateria.style.display = "block";
+    materiaSelect.required = true;
+    return;
+  }
+
+  if (publico === "modulo_exato") {
+    blocoMateria.style.display = "block";
+    blocoModulo.style.display = "block";
+    materiaSelect.required = true;
+    moduloSelect.required = true;
+    textoAjudaModulo.textContent =
+      "Somente alunos matriculados exatamente neste módulo poderão visualizar e confirmar presença.";
+    return;
+  }
+
+  if (publico === "modulo_a_partir") {
+    blocoMateria.style.display = "block";
+    blocoModulo.style.display = "block";
+    materiaSelect.required = true;
+    moduloSelect.required = true;
+    textoAjudaModulo.textContent =
+      "O evento aparecerá para alunos deste módulo e dos módulos acima, dentro do mesmo curso.";
+  }
+}
+
+/* =========================================================
+   EVENTOS DA TELA
+========================================================= */
+publicoAlvoSelect.addEventListener("change", async () => {
+  controlarCamposPublico();
+  limparSelect(moduloSelect, "Selecione o módulo");
+
+  const publico = publicoAlvoSelect.value;
+  const materiaId = materiaSelect.value;
+
+  if ((publico === "modulo_exato" || publico === "modulo_a_partir") && materiaId) {
+    await carregarModulosPorMateria(materiaId);
+  }
+});
+
+materiaSelect.addEventListener("change", async () => {
+  limparSelect(moduloSelect, "Selecione o módulo");
+
+  const publico = publicoAlvoSelect.value;
+  const materiaId = materiaSelect.value;
+
+  if ((publico === "modulo_exato" || publico === "modulo_a_partir") && materiaId) {
+    await carregarModulosPorMateria(materiaId);
+  }
+});
+
+dataEventoInput.addEventListener("change", atualizarPreviewLimiteConfirmacao);
+
+/* =========================================================
+   VALIDAÇÕES
+========================================================= */
+function validarFormulario() {
+  const titulo = tituloInput.value.trim();
+  const tipoEvento = tipoEventoSelect.value;
+  const dataEvento = dataEventoInput.value;
+  const horaEvento = horaEventoInput.value;
+  const publico = publicoAlvoSelect.value;
+  const materiaId = materiaSelect.value;
+  const moduloId = moduloSelect.value;
+
+  if (!titulo) {
+    mostrarMensagem("Informe o título do evento.", "erro");
+    return false;
+  }
+
+  if (!tipoEvento) {
+    mostrarMensagem("Selecione o tipo do evento.", "erro");
+    return false;
+  }
+
+  if (!dataEvento) {
+    mostrarMensagem("Selecione a data do evento.", "erro");
+    return false;
+  }
+
+  if (!horaEvento) {
+    mostrarMensagem("Selecione a hora do evento.", "erro");
+    return false;
+  }
+
+  if (!publico) {
+    mostrarMensagem("Selecione o público do evento.", "erro");
+    return false;
+  }
+
+  if (publico !== "todos" && !materiaId) {
+    mostrarMensagem("Selecione a matéria do evento.", "erro");
+    return false;
+  }
+
+  if ((publico === "modulo_exato" || publico === "modulo_a_partir") && !moduloId) {
+    mostrarMensagem("Selecione o módulo.", "erro");
+    return false;
+  }
+
+  const limite = calcularLimiteConfirmacao(dataEvento);
+  const agora = new Date();
+
+  if (limite && limite < agora) {
+    mostrarMensagem(
+      "Escolha uma data futura maior, porque o prazo de confirmação já ficaria vencido.",
+      "erro"
+    );
+    return false;
+  }
+
+  return true;
+}
+
+/* =========================================================
+   SALVAR
+========================================================= */
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  esconderMensagem();
+
+  if (!validarFormulario()) return;
+
+  const titulo = tituloInput.value.trim();
+  const tipoEvento = tipoEventoSelect.value;
+  const descricao = descricaoInput.value.trim();
+  const local = localInput.value.trim();
+  const dataEvento = dataEventoInput.value;
+  const horaEvento = horaEventoInput.value;
+  const publico = publicoAlvoSelect.value;
+
+  const materiaId = materiaSelect.value ? Number(materiaSelect.value) : null;
+  const moduloId = moduloSelect.value ? Number(moduloSelect.value) : null;
+  const ativo = ativoCheckbox.checked;
+
+  const limiteConfirmacao = calcularLimiteConfirmacao(dataEvento);
+
+  const payload = {
+    titulo,
+    descricao: descricao || null,
+    tipo_evento: tipoEvento,
+    data_evento: dataEvento,
+    hora_evento: horaEvento,
+    local: local || null,
+    publico_alvo: publico,
+    materia_id: publico === "todos" ? null : materiaId,
+    modulo_id:
+      publico === "modulo_exato" || publico === "modulo_a_partir"
+        ? moduloId
+        : null,
+    limite_confirmacao: dateToISOString(limiteConfirmacao),
+    ativo
+  };
+
+  const { error } = await supabase
+    .from("evento")
+    .insert([payload]);
+
+  if (error) {
+    console.error("Erro ao salvar evento:", error);
+    mostrarMensagem("Erro ao salvar evento. Verifique a estrutura da tabela.", "erro");
+    return;
+  }
+
+  mostrarMensagem("✅ Evento cadastrado com sucesso!");
+  limparFormularioVisual();
+});

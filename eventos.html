@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Eventos | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container">
+    <h1 style="margin-bottom: 8px;">Eventos</h1>
+    <p style="margin-bottom: 18px; opacity: 0.9;">
+      Visualize os eventos cadastrados, acompanhe confirmações e crie novos eventos.
+    </p>
+
+    <div id="msg" style="display:none; margin-bottom:12px;"></div>
+
+    <!-- AÇÕES PRINCIPAIS -->
+    <section class="card" style="margin-bottom: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div>
+          <h2 style="margin-bottom:6px;">Central de eventos</h2>
+          <p style="margin:0; opacity:0.85;">
+            Aqui você acompanha os eventos ativos, futuros e já encerrados.
+          </p>
+        </div>
+
+        <a href="criar-evento.html" class="btn" style="text-decoration:none; display:inline-block;">
+          + Criar novo evento
+        </a>
+      </div>
+    </section>
+
+    <!-- RESUMO -->
+    <section style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px;">
+      <div class="card">
+        <h3 style="margin-bottom:6px;">Total</h3>
+        <p id="totalEventos" style="font-size:26px; font-weight:bold; margin:0;">0</p>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom:6px;">Acontecendo / futuros</h3>
+        <p id="eventosAtivos" style="font-size:26px; font-weight:bold; margin:0;">0</p>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom:6px;">Encerrados</h3>
+        <p id="eventosEncerrados" style="font-size:26px; font-weight:bold; margin:0;">0</p>
+      </div>
+    </section>
+
+    <!-- FILTROS -->
+    <section class="card" style="margin-bottom: 16px;">
+      <h2 style="margin-bottom: 12px;">Filtros</h2>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+        <label>
+          Buscar por título
+          <input type="text" id="filtroBusca" placeholder="Ex: imersão, oficina, workshop..." />
+        </label>
+
+        <label>
+          Situação
+          <select id="filtroSituacao">
+            <option value="todos">Todos</option>
+            <option value="ativos">Somente ativos/futuros</option>
+            <option value="encerrados">Somente encerrados</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <!-- LISTA -->
+    <section>
+      <div id="listaEventos" style="display:grid; gap:14px;">
+        <div class="card">
+          <p style="margin:0;">Carregando eventos...</p>
+        </div>
+      </div>
+    </section>
+
+    <a href="home-admin.html" class="link-voltar">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/eventos.js"></script>
+</body>
+</html>

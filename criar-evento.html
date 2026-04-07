@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastrar Evento | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container">
+    <h1>Cadastrar Evento</h1>
+
+    <div id="msg" style="display:none;"></div>
+
+    <form class="form" id="form-evento">
+
+      <label>
+        Título do evento
+        <input
+          type="text"
+          id="titulo"
+          placeholder="Ex: Imersão de Conversação"
+          required
+        />
+      </label>
+
+      <label>
+        Tipo do evento
+        <select id="tipoEvento" required>
+          <option value="">Selecione</option>
+          <option value="Imersão">Imersão</option>
+          <option value="Workshop">Workshop</option>
+          <option value="Aula temática">Aula temática</option>
+          <option value="Oficina">Oficina</option>
+          <option value="Evento especial">Evento especial</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </label>
+
+      <label>
+        Descrição
+        <textarea
+          id="descricao"
+          rows="4"
+          placeholder="Explique o objetivo do evento, público, observações, materiais, dinâmica etc."
+        ></textarea>
+      </label>
+
+      <label>
+        Local
+        <input
+          type="text"
+          id="local"
+          placeholder="Ex: Unidade Beehive / Sala 2 / Online"
+        />
+      </label>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+        <label>
+          Data do evento
+          <input type="date" id="dataEvento" required />
+        </label>
+
+        <label>
+          Hora do evento
+          <input type="time" id="horaEvento" required />
+        </label>
+      </div>
+
+      <label>
+        Público do evento
+        <select id="publicoAlvo" required>
+          <option value="">Selecione</option>
+          <option value="todos">Todos os alunos</option>
+          <option value="materia">Somente um curso</option>
+          <option value="modulo_exato">Somente um módulo específico</option>
+          <option value="modulo_a_partir">A partir de um módulo</option>
+        </select>
+      </label>
+
+      <div id="blocoMateria" style="display:none;">
+        <label>
+          Curso / matéria
+          <select id="materiaId">
+            <option value="">Selecione a matéria</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="blocoModulo" style="display:none;">
+        <label>
+          Módulo
+          <select id="moduloId">
+            <option value="">Selecione o módulo</option>
+          </select>
+        </label>
+
+        <small id="textoAjudaModulo" style="display:block; margin-top:6px; opacity:0.85;"></small>
+      </div>
+
+      <label>
+        Limite para confirmação
+        <input
+          type="text"
+          id="limiteConfirmacaoPreview"
+          readonly
+          placeholder="Será calculado automaticamente"
+        />
+      </label>
+
+      <label style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="ativo" checked />
+        Evento ativo
+      </label>
+
+      <button type="submit" class="btn">Salvar evento</button>
+    </form>
+
+    <a href="eventos.html" class="link-voltar">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/criar-evento.js"></script>
+</body>
+</html>
