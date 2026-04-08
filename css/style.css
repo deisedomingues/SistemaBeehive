@@ -1,6 +1,5 @@
 /* =========================================================
    1) RESET E BASE GLOBAL
-   Regras iniciais para toda a aplicação.
 ========================================================= */
 * {
   margin: 0;
@@ -14,14 +13,12 @@ img {
   height: auto;
 }
 
-
 /* =========================================================
    2) FUNDO GLOBAL DA APLICAÇÃO
-   Fundo padrão das telas do sistema Beehive.
 ========================================================= */
 body {
   min-height: 100vh;
-  background-color: #FFF5CC;
+  background-color: #fff5cc;
   background-image: url("../images/FundoColmeiaEscuro.png");
   background-size: cover;
   background-position: center;
@@ -34,19 +31,17 @@ body {
 .overlay {
   position: absolute;
   inset: 0;
-  background-color: rgba(255, 245, 204, 0.90);
+  background-color: rgba(255, 245, 204, 0.9);
   z-index: 1;
 }
 
-
 /* =========================================================
    3) CONTAINERS PRINCIPAIS
-   Estruturas centrais usadas em várias páginas.
 ========================================================= */
 .container {
   position: relative;
   z-index: 2;
-  background-color: white;
+  background-color: #ffffff;
   padding: 40px;
   border-radius: 16px;
   text-align: center;
@@ -75,6 +70,19 @@ body {
   text-align: left;
 }
 
+.container-relatorios-admin {
+  max-width: 1220px;
+  width: 95%;
+  text-align: left;
+  padding: 30px;
+}
+
+.container-eventos-admin {
+  max-width: 1180px;
+  width: 95%;
+  text-align: left;
+  padding: 28px;
+}
 
 /* =========================================================
    4) LOGO, TÍTULOS E TEXTOS GERAIS
@@ -93,7 +101,7 @@ h1 {
 .saudacao {
   margin-top: 10px;
   font-size: 16px;
-  color: #000000;
+  color: #000;
 }
 
 .saudacao-container {
@@ -116,7 +124,6 @@ h1 {
   line-height: 1.4;
 }
 
-
 /* =========================================================
    5) BOTÕES E LINKS
 ========================================================= */
@@ -127,7 +134,7 @@ h1 {
 }
 
 .btn {
-  background-color: #FDCC0C;
+  background-color: #fdcc0c;
   color: #000;
   text-decoration: none;
   padding: 14px;
@@ -148,6 +155,27 @@ h1 {
   text-decoration: none;
   color: #000;
   font-size: 14px;
+}
+
+.btn-voltar,
+.btn-topo-resumo,
+.btn-topo-admin {
+  display: inline-block;
+  background: #ffffff;
+  color: #5c4300;
+  border: 1px solid #f1bc32;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: bold;
+  transition: 0.2s ease;
+}
+
+.btn-voltar:hover,
+.btn-topo-resumo:hover,
+.btn-topo-admin:hover {
+  background: #fff7db;
 }
 
 .btn-remover-aluno {
@@ -176,6 +204,83 @@ h1 {
   text-align: center;
 }
 
+.btn-neutro {
+  background: #fff;
+  border: 1px solid #ccc;
+}
+
+.btn-neutro:hover {
+  background: #f5f5f5;
+}
+
+.btn-sair-admin {
+  background: #ffffff;
+  border: 1px solid #f1bc32;
+  color: #5c4300;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: 0.2s ease;
+}
+
+.btn-sair-admin:hover {
+  background: #fff7db;
+}
+
+.btn-cancelar-evento {
+  background: #b93b3b;
+  color: #fff;
+}
+
+.btn-cancelar-evento:hover {
+  filter: brightness(0.96);
+}
+
+.btn-whatsapp {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  margin-top: 14px;
+  background: #25d366;
+  color: white;
+  text-decoration: none;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-weight: 700;
+  transition: 0.2s ease;
+  box-sizing: border-box;
+}
+
+.btn-whatsapp:hover {
+  filter: brightness(0.95);
+}
+
+.link-ver-menos {
+  background: transparent;
+  border: none;
+  color: #7a6a2f;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.75;
+  transition: all 0.2s ease;
+}
+
+.link-ver-menos::before {
+  content: "▲";
+  font-size: 10px;
+}
+
+.link-ver-menos:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
 
 /* =========================================================
    6) FORMULÁRIOS GERAIS
@@ -196,7 +301,8 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   margin-top: 5px;
   padding: 10px;
   border-radius: 8px;
@@ -204,6 +310,22 @@ select {
   width: 100%;
 }
 
+textarea {
+  margin-top: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e6dca8;
+  background: #fff;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 110px;
+}
+
+textarea[readonly] {
+  background: #fffef8;
+  color: #333;
+}
 
 /* =========================================================
    7) MENSAGENS E FEEDBACK VISUAL
@@ -244,6 +366,49 @@ select {
   border: 1px solid #ef5350;
 }
 
+.msg-box {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  display: none;
+  font-weight: 500;
+}
+
+.msg-box.show {
+  display: block;
+}
+
+.msg-box.erro {
+  background: #fde8e8;
+  color: #9b1c1c;
+  border: 1px solid #f8b4b4;
+}
+
+.msg-box.ok {
+  background: #e8f5e9;
+  color: #256029;
+  border: 1px solid #b7dfb9;
+}
+
+.msg-resumo-professor {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.msg-resumo-professor.ok {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #66bb6a;
+}
+
+.msg-resumo-professor.erro {
+  background-color: #ffebee;
+  color: #b71c1c;
+  border: 1px solid #ef5350;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -254,7 +419,6 @@ select {
     transform: translateY(0);
   }
 }
-
 
 /* =========================================================
    8) CARDS E DASHBOARD
@@ -267,7 +431,7 @@ select {
 }
 
 .card {
-  background-color: #FFF5CC;
+  background-color: #fff5cc;
   padding: 20px;
   border-radius: 14px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
@@ -302,7 +466,7 @@ select {
 }
 
 .card-destaque {
-  background-color: #F1BC32;
+  background-color: #f1bc32;
   border: 2px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -313,6 +477,54 @@ select {
   color: #000;
 }
 
+.card-admin-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.card-admin {
+  background: linear-gradient(180deg, #fffdf7 0%, #fff7df 100%);
+  border: 1px solid #f1df9a;
+  border-radius: 18px;
+  padding: 22px;
+  min-height: 165px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.card-admin:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+  border-color: #f1bc32;
+}
+
+.card-admin-icone {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #fff2bf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.card-admin-conteudo h2 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: #5c4300;
+}
+
+.card-admin-conteudo p {
+  margin: 0;
+  font-size: 14px;
+  color: #5d5d5d;
+  line-height: 1.5;
+}
 
 /* =========================================================
    9) DECORAÇÕES
@@ -339,7 +551,6 @@ select {
   height: 22px;
 }
 
-
 /* =========================================================
    10) AUTOCOMPLETE / SUGESTÕES
 ========================================================= */
@@ -363,18 +574,16 @@ select {
   background: #f0f0f0;
 }
 
-
 /* =========================================================
    11) ALUNOS SELECIONADOS
 ========================================================= */
 .aluno-box {
-  background-color: #FFF5CC;
+  background-color: #fff5cc;
   padding: 10px;
   margin: 5px;
   border-radius: 10px;
-  border: 1px solid #FDCC0C;
+  border: 1px solid #fdcc0c;
 }
-
 
 /* =========================================================
    12) NOTAS
@@ -397,7 +606,6 @@ select {
   margin-bottom: 6px;
 }
 
-/* formulário compacto de notas */
 .form-nota-compacta {
   margin-top: 10px;
 }
@@ -420,7 +628,6 @@ select {
   height: 36px;
 }
 
-/* média e filtro */
 .media-geral-box {
   display: flex;
   justify-content: space-between;
@@ -429,7 +636,7 @@ select {
 }
 
 .media-geral {
-  background: #FFF5CC;
+  background: #fff5cc;
   padding: 8px 12px;
   border-radius: 10px;
   font-weight: bold;
@@ -446,13 +653,11 @@ select {
   opacity: 0.8;
 }
 
-
 /* =========================================================
    13) REPOSIÇÕES
-   Bloco consolidado, removendo duplicações.
 ========================================================= */
 .card-reposicao {
-  background-color: #FFF5CC;
+  background-color: #fff5cc;
   padding: 18px;
   border-radius: 14px;
   margin-bottom: 18px;
@@ -482,7 +687,7 @@ select {
 }
 
 .item-pendente-selecionado {
-  border: 2px solid #F1BC32;
+  border: 2px solid #f1bc32;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
@@ -529,7 +734,6 @@ select {
   font-size: 14px;
 }
 
-
 /* =========================================================
    14) PAINEL ACADÊMICO
 ========================================================= */
@@ -566,45 +770,6 @@ select {
 .painel-topo p {
   margin: 6px 0 0;
   color: #6b7280;
-}
-
-.btn-voltar {
-  background: #ffffff;
-  color: #5c4300;
-  border: 1px solid #f1bc32;
-  padding: 10px 16px;
-  border-radius: 12px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: 0.2s ease;
-}
-
-.btn-voltar:hover {
-  background: #fff7db;
-}
-
-.msg-box {
-  margin-bottom: 18px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  display: none;
-  font-weight: 500;
-}
-
-.msg-box.show {
-  display: block;
-}
-
-.msg-box.erro {
-  background: #fde8e8;
-  color: #9b1c1c;
-  border: 1px solid #f8b4b4;
-}
-
-.msg-box.ok {
-  background: #e8f5e9;
-  color: #256029;
-  border: 1px solid #b7dfb9;
 }
 
 .painel-grid {
@@ -776,156 +941,18 @@ select {
   line-height: 1.5;
 }
 
-.btn-whatsapp {
-  display: inline-block;
-  width: 100%;
-  text-align: center;
-  margin-top: 14px;
-  background: #25d366;
-  color: white;
-  text-decoration: none;
-  padding: 14px 16px;
-  border-radius: 14px;
-  font-weight: 700;
-  transition: 0.2s ease;
-  box-sizing: border-box;
-}
-
-.btn-whatsapp:hover {
-  filter: brightness(0.95);
-}
-
-
 /* =========================================================
-   15) RESPONSIVIDADE GERAL
+   15) RESUMO DO PROFESSOR
 ========================================================= */
-@media (max-width: 768px) {
-  body {
-    padding: 20px;
-    align-items: flex-start;
-  }
-
-  .container {
-    padding: 25px;
-  }
-
-  h1 {
-    font-size: 20px;
-  }
-
-  .logo {
-    max-width: 150px;
-  }
-
-  .btn {
-    padding: 12px;
-    font-size: 14px;
-  }
-
-  .bee {
-    width: 50px;
-    opacity: 0.25;
-  }
-
-  .linha-nota {
-    grid-template-columns: 1fr;
-  }
-
-  .media-geral-box {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .btn-salvar-nota {
-    width: 100%;
-  }
-
-  .container-reposicao {
-    width: 100%;
-    padding: 20px;
-  }
-
-  .item-pendente {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .btnSelecionarAula,
-  .btnEscolherHorario {
-    width: 100%;
-    min-width: auto;
-  }
-
-  .container-registro-aula {
-    width: 100%;
-    padding: 20px;
-  }
-
-  .painel-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .dados-grid,
-  .resumo-grid,
-  .extras-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .painel-topo h1 {
-    font-size: 1.65rem;
-  }
-
-  .painel-wrap {
-    padding: 20px 14px 32px;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: 20px;
-    border-radius: 14px;
-  }
-
-  h1 {
-    font-size: 18px;
-  }
-
-  .logo {
-    max-width: 130px;
-  }
-
-  .dashboard {
-    grid-template-columns: 1fr;
-  }
-
-  .card-reposicao {
-    padding: 14px;
-  }
-
-  .justificativa-aula,
-  .texto-apoio,
-  .prazo-agendamento,
-  .agendamentos-ativos,
-  .resumo-pendencias {
-    font-size: 13px;
-  }
-}
-/* =========================================================
-   RESUMO DO PROFESSOR
-========================================================= */
-
 .pagina-resumo-professor {
   min-height: 100vh;
   background:
-    linear-gradient(rgba(255, 245, 204, 0.90), rgba(255, 245, 204, 0.90)),
+    linear-gradient(rgba(255, 245, 204, 0.9), rgba(255, 245, 204, 0.9)),
     url("../images/FundoColmeiaEscuro.png") center/cover no-repeat fixed;
 }
 
 .container-resumo-professor {
-  max-width: 1150px;
+  max-width: 1100px;
   width: 95%;
   text-align: left;
   padding: 28px;
@@ -949,11 +976,15 @@ select {
   margin-bottom: 6px;
 }
 
+.titulo-principal-resumo {
+  margin-bottom: 8px;
+}
+
 .subtitulo-resumo-professor {
   font-size: 14px;
   color: #555;
-  margin-top: 4px;
   line-height: 1.5;
+  margin: 0;
 }
 
 .topo-resumo-acoes {
@@ -962,38 +993,8 @@ select {
   gap: 10px;
 }
 
-.btn-topo-resumo {
-  display: inline-block;
-  background: #fff;
-  color: #5c4300;
-  border: 1px solid #F1BC32;
-  padding: 10px 14px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-.btn-topo-resumo:hover {
-  background: #fff7db;
-}
-
-.msg-resumo-professor {
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  font-size: 14px;
-}
-
-.msg-resumo-professor.ok {
-  background-color: #e8f5e9;
-  color: #1b5e20;
-  border: 1px solid #66bb6a;
-}
-
-.msg-resumo-professor.erro {
-  background-color: #ffebee;
-  color: #b71c1c;
-  border: 1px solid #ef5350;
+.link-voltar-topo {
+  margin-top: 4px;
 }
 
 .card-filtro-resumo {
@@ -1009,37 +1010,51 @@ select {
   color: #666;
 }
 
-.filtro-periodo-resumo {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 14px;
-  align-items: end;
-  margin-top: 14px;
+.bloco-resumo-professor,
+.bloco-resumo {
+  margin-bottom: 28px;
 }
 
-.grupo-botoes-filtro {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+.cabecalho-bloco-resumo,
+.bloco-resumo-topo {
+  margin-bottom: 12px;
 }
 
-.btn-neutro {
-  background: #fff;
-  border: 1px solid #ccc;
+.cabecalho-bloco-resumo h2,
+.bloco-resumo-topo h2 {
+  margin-bottom: 4px;
+  color: #5c4300;
+  font-size: 18px;
 }
 
-.btn-neutro:hover {
-  background: #f5f5f5;
+.cabecalho-bloco-resumo p,
+.bloco-resumo-topo p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.subbloco-resumo {
+  margin-top: 18px;
+}
+
+.subbloco-resumo h3,
+.subtitulo-interno-resumo,
+.subtitulo-bloco-resumo {
+  font-size: 15px;
+  color: #5c4300;
+  margin-bottom: 10px;
 }
 
 .dashboard-resumo-professor {
-  margin-top: 18px;
+  margin-top: 10px;
 }
 
 .lista-interna-resumo p {
   margin-bottom: 6px;
 }
 
+.texto-ajuda-resumo,
 .texto-ajuda-card {
   font-size: 12px;
   margin-top: 8px;
@@ -1053,15 +1068,63 @@ select {
   border-top: 1px solid #eee;
 }
 
-.subtitulo-bloco-resumo {
-  font-size: 16px;
-  text-align: left;
-  margin-bottom: 8px;
-  color: #5c4300;
-}
-
 .form-resumo-professor {
   margin-top: 0;
+}
+
+.form-resumo-professor label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: #5c4300;
+  min-width: 180px;
+  flex: 1;
+}
+
+.form-resumo-professor select {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e6dca8;
+  background: #fffef8;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-resumo-professor select:hover {
+  border-color: #f1bc32;
+}
+
+.form-resumo-professor select:focus {
+  border-color: #f1bc32;
+  box-shadow: 0 0 0 2px rgba(241, 188, 50, 0.2);
+}
+
+.form-resumo-professor select:disabled {
+  background: #f3f3f3;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.filtro-periodo-resumo,
+.filtro-interno-aulas {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.filtro-interno-aulas {
+  padding-top: 14px;
+  border-top: 1px solid #eee3b9;
+}
+
+.grupo-botoes-filtro {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .lista-simples-resumo {
@@ -1094,220 +1157,7 @@ select {
 }
 
 .card-avaliacoes-professor {
-  background-color: #F1BC32;
-}
-
-.btn-contato-resumo {
-  display: inline-block;
-  text-align: center;
-  width: 100%;
-  margin-top: 8px;
-}
-
-.link-contato-resumo {
-  display: inline-block;
-  margin-top: 8px;
-  color: #5c4300;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.link-contato-resumo:hover {
-  text-decoration: underline;
-}
-
-@media (max-width: 768px) {
-  .container-resumo-professor {
-    width: 100%;
-    padding: 20px;
-  }
-
-  .filtro-periodo-resumo {
-    grid-template-columns: 1fr;
-  }
-}
-/* =========================================================
-   ORGANIZAÇÃO POR TEMAS - RESUMO PROFESSOR
-========================================================= */
-
-.bloco-resumo {
-  margin-bottom: 26px;
-}
-
-.bloco-resumo-topo {
-  margin-bottom: 12px;
-}
-
-.bloco-resumo-topo h2 {
-  margin-bottom: 4px;
-  color: #5c4300;
-  font-size: 1.15rem;
-}
-
-.bloco-resumo-topo p {
-  font-size: 14px;
-  color: #666;
-  line-height: 1.4;
-}
-
-.subtitulo-interno-resumo {
-  margin: 18px 0 10px;
-  font-size: 15px;
-  color: #5c4300;
-}
-
-.card-aulas-resumo {
-  width: 100%;
-}
-
-.filtro-interno-aulas {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid #eee3b9;
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 14px;
-  align-items: end;
-}
-
-@media (max-width: 768px) {
-  .filtro-interno-aulas {
-    grid-template-columns: 1fr;
-  }
-}
-/* =========================================================
-   RESUMO DO PROFESSOR
-========================================================= */
-
-.pagina-resumo-professor {
-  min-height: 100vh;
-  background:
-    linear-gradient(rgba(255, 245, 204, 0.90), rgba(255, 245, 204, 0.90)),
-    url("../images/FundoColmeiaEscuro.png") center/cover no-repeat fixed;
-}
-
-.container-resumo-professor {
-  max-width: 1100px;
-  width: 95%;
-  text-align: left;
-  padding: 28px;
-}
-
-.topo-resumo-professor {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
-}
-
-.titulo-principal-resumo {
-  margin-bottom: 8px;
-}
-
-.subtitulo-resumo-professor {
-  font-size: 14px;
-  color: #555;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.link-voltar-topo {
-  margin-top: 4px;
-}
-
-.msg-resumo-professor {
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  font-size: 14px;
-}
-
-.msg-resumo-professor.ok {
-  background-color: #e8f5e9;
-  color: #1b5e20;
-  border: 1px solid #66bb6a;
-}
-
-.msg-resumo-professor.erro {
-  background-color: #ffebee;
-  color: #b71c1c;
-  border: 1px solid #ef5350;
-}
-
-.bloco-resumo-professor {
-  margin-bottom: 28px;
-}
-
-.cabecalho-bloco-resumo {
-  margin-bottom: 12px;
-}
-
-.cabecalho-bloco-resumo h2 {
-  margin-bottom: 4px;
-  color: #5c4300;
-  font-size: 18px;
-}
-
-.cabecalho-bloco-resumo p {
-  font-size: 14px;
-  color: #666;
-  line-height: 1.4;
-}
-
-.dashboard-resumo-professor {
-  margin-top: 10px;
-}
-
-.subbloco-resumo {
-  margin-top: 18px;
-}
-
-.subbloco-resumo h3 {
-  font-size: 15px;
-  color: #5c4300;
-  margin-bottom: 10px;
-}
-
-.texto-ajuda-resumo {
-  font-size: 12px;
-  margin-top: 8px;
-  opacity: 0.85;
-  line-height: 1.5;
-}
-
-.lista-interna-resumo p {
-  margin-bottom: 6px;
-}
-
-.card-aulas-resumo {
-  width: 100%;
-}
-
-.filtro-interno-aulas {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid #eee3b9;
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 14px;
-  align-items: end;
-}
-
-.grupo-botoes-filtro {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.btn-neutro {
-  background: #fff;
-  border: 1px solid #ccc;
-}
-
-.btn-neutro:hover {
-  background: #f5f5f5;
+  background-color: #f1bc32;
 }
 
 .btn-contato-resumo {
@@ -1329,63 +1179,6 @@ select {
   text-decoration: underline;
 }
 
-@media (max-width: 768px) {
-  .container-resumo-professor {
-    width: 100%;
-    padding: 20px;
-  }
-
-  .filtro-interno-aulas {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* =========================================================
-   FILTRO DE MÓDULO - RESUMO GERAL (ADMIN)
-========================================================= */
-
-
-/* Labels (Matéria / Módulo) */
-.form-resumo-professor label {
-  display: flex;
-  flex-direction: column;
-  font-size: 13px;
-  color: #5c4300;
-  min-width: 180px;
-  flex: 1;
-}
-
-/* Selects */
-.form-resumo-professor select {
-  margin-top: 6px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid #e6dca8;
-  background: #fffef8;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-/* Hover */
-.form-resumo-professor select:hover {
-  border-color: #f1bc32;
-}
-
-/* Focus */
-.form-resumo-professor select:focus {
-  border-color: #f1bc32;
-  box-shadow: 0 0 0 2px rgba(241, 188, 50, 0.2);
-}
-
-/* Select desabilitado */
-.form-resumo-professor select:disabled {
-  background: #f3f3f3;
-  color: #999;
-  cursor: not-allowed;
-}
-
-/* Área de resultado */
 #resultadoModuloResumo {
   background: #fffdf5;
   border: 1px solid #f1e2a4;
@@ -1394,50 +1187,32 @@ select {
   transition: all 0.2s ease;
 }
 
-/* Quando tem resultado */
 #resultadoModuloResumo .item-avaliacao-resumo {
   padding: 6px 4px;
 }
 
-/* Título do módulo */
 #resultadoModuloResumo strong {
   color: #5c4300;
   font-size: 15px;
 }
 
-/* Textos */
 #resultadoModuloResumo p {
   margin: 4px 0;
   font-size: 13px;
 }
 
-/* Estado inicial / vazio */
 #resultadoModuloResumo p:only-child {
   opacity: 0.8;
 }
 
-/* RESPONSIVO */
-@media (max-width: 768px) {
-  .form-resumo-professor {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .form-resumo-professor label {
-    width: 100%;
-  }
-}
-
 /* =========================================================
    16) HOME ADMIN
-   Painel principal da área administrativa
 ========================================================= */
-
 .home-admin-page {
   max-width: 1100px;
   width: 95%;
-  text-align: left;
   padding: 32px;
+  text-align: left;
 }
 
 .home-admin-page .logo {
@@ -1458,118 +1233,18 @@ select {
   margin-bottom: 8px;
 }
 
-.subtitulo-admin {
-  font-size: 14px;
-  color: #555;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.btn-sair-admin {
-  background: transparent;
-  border: 1px solid #F1BC32;
-  color: #5c4300;
-  padding: 10px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  transition: 0.2s ease;
-}
-
-.btn-sair-admin:hover {
-  background: #fff7db;
-}
-
-.painel-admin-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px;
-  margin-top: 10px;
-}
-
-.card-admin-link {
-  text-decoration: none;
-  color: inherit;
-}
-
-.card-admin {
-  background: #fff9e8;
-  border: 1px solid #f1df9a;
-  border-radius: 16px;
-  padding: 20px;
-  min-height: 150px;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-
-.card-admin:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
-  border-color: #F1BC32;
-}
-
-.card-admin-icone {
-  font-size: 28px;
-  margin-bottom: 14px;
-}
-
-.card-admin-conteudo h2 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  color: #5c4300;
-}
-
-.card-admin-conteudo p {
-  margin: 0;
-  font-size: 14px;
-  color: #555;
-  line-height: 1.5;
-}
-
-/* Responsividade da home admin */
-@media (max-width: 768px) {
-  .home-admin-page {
-    width: 100%;
-    padding: 22px;
-  }
-
-  .topo-admin {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .btn-sair-admin {
-    width: 100%;
-  }
-
-  .painel-admin-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .card-admin {
-    min-height: auto;
-  }
-}
-/* =========================================================
-   16) HOME ADMIN
-   Painel principal da área administrativa
-========================================================= */
-
-.home-admin-page {
-  max-width: 1100px;
-  width: 95%;
-  padding: 32px;
-  text-align: left;
-}
-
 .topo-acoes-admin {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 10px;
+}
+
+.topo-acoes-duplas {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .logo-admin-centralizada {
@@ -1604,22 +1279,6 @@ select {
   margin: 0 auto;
 }
 
-.btn-sair-admin {
-  background: #ffffff;
-  border: 1px solid #F1BC32;
-  color: #5c4300;
-  padding: 10px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  transition: 0.2s ease;
-}
-
-.btn-sair-admin:hover {
-  background: #fff7db;
-}
-
 .painel-admin-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -1627,169 +1286,9 @@ select {
   margin-top: 10px;
 }
 
-.card-admin-link {
-  text-decoration: none;
-  color: inherit;
-}
-
-.card-admin {
-  background: linear-gradient(180deg, #fffdf7 0%, #fff7df 100%);
-  border: 1px solid #f1df9a;
-  border-radius: 18px;
-  padding: 22px;
-  min-height: 165px;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
-  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-
-.card-admin:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
-  border-color: #F1BC32;
-}
-
-.card-admin-icone {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  background: #fff2bf;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  margin-bottom: 16px;
-}
-
-.card-admin-conteudo h2 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  color: #5c4300;
-}
-
-.card-admin-conteudo p {
-  margin: 0;
-  font-size: 14px;
-  color: #5d5d5d;
-  line-height: 1.5;
-}
-
 /* =========================================================
-   16.1) RESPONSIVIDADE - HOME ADMIN
+   17) RELATÓRIO OFICIAL
 ========================================================= */
-
-@media (max-width: 768px) {
-  .home-admin-page {
-    width: 100%;
-    padding: 22px;
-  }
-
-  .topo-acoes-admin {
-    justify-content: stretch;
-  }
-
-  .btn-sair-admin {
-    width: 100%;
-  }
-
-  .logo-admin-centralizada {
-    max-width: 160px;
-    margin-bottom: 16px;
-  }
-
-  .cabecalho-admin-central {
-    margin-bottom: 24px;
-  }
-
-  .painel-admin-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .card-admin {
-    min-height: auto;
-  }
-}
-
-@media (max-width: 480px) {
-  .home-admin-page {
-    padding: 18px;
-  }
-
-  .card-admin {
-    padding: 18px;
-    border-radius: 16px;
-  }
-
-  .card-admin-icone {
-    width: 46px;
-    height: 46px;
-    font-size: 22px;
-  }
-
-  .card-admin-conteudo h2 {
-    font-size: 16px;
-  }
-
-  .card-admin-conteudo p,
-  .subtitulo-admin {
-    font-size: 13px;
-  }
-}
-
-/* =========================================================
-   16.2) TOPO DOS SUBMENUS ADMIN
-========================================================= */
-
-.topo-acoes-duplas {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.btn-topo-admin {
-  display: inline-block;
-  background: #ffffff;
-  color: #5c4300;
-  border: 1px solid #F1BC32;
-  padding: 10px 14px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: bold;
-  transition: 0.2s ease;
-}
-
-.btn-topo-admin:hover {
-  background: #fff7db;
-}
-
-@media (max-width: 768px) {
-  .topo-acoes-duplas {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .btn-topo-admin,
-  .btn-sair-admin {
-    width: 100%;
-    text-align: center;
-  }
-}
-/* =========================================================
-   17) RELATÓRIO OFICIAL - AJUSTE VISUAL
-========================================================= */
-
-.container-relatorios-admin {
-  max-width: 1220px;
-  width: 95%;
-  text-align: left;
-  padding: 30px;
-}
-
 .card-relatorio-filtros,
 .card-relatorio-resultado {
   background: rgba(255, 255, 255, 0.98);
@@ -2021,13 +1520,13 @@ select {
 
 .dados-escola-documento h2 {
   margin: 0 0 8px 0;
-  font-size: 22px;
+  font-size: 19px;
   color: #222;
 }
 
 .dados-escola-documento p {
   margin: 3px 0;
-  font-size: 14px;
+  font-size: 13px;
   color: #333;
   line-height: 1.45;
 }
@@ -2039,197 +1538,19 @@ select {
 
 .titulo-documento-wrap h1 {
   margin: 0;
-  font-size: 22px;
+  font-size: 19px;
   letter-spacing: 0.04em;
   color: #111;
 }
 
 .texto-declaracao-documento,
 .texto-observacao-documento {
-  font-size: 15px;
-  line-height: 1.8;
+  font-size: 14px;
+  line-height: 1.7;
   text-align: justify;
   color: #222;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
-
-.bloco-aluno-documento {
-  margin-top: 22px;
-}
-
-.grade-info-aluno-documento {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(260px, 1fr));
-  gap: 12px 28px;
-  margin-bottom: 20px;
-}
-
-.grade-info-aluno-documento p {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.6;
-  color: #222;
-}
-
-.ocorrencias-documento {
-  border-top: 1px solid #e8dfbf;
-  padding-top: 16px;
-}
-
-.ocorrencias-documento p {
-  margin: 0 0 8px 0;
-  font-size: 15px;
-  line-height: 1.7;
-  color: #222;
-}
-
-.rodape-documento {
-  margin-top: 32px;
-}
-
-.rodape-documento > p {
-  margin-bottom: 34px;
-  font-size: 15px;
-  color: #222;
-}
-
-.assinatura-documento {
-  max-width: 340px;
-}
-
-.linha-assinatura {
-  border-top: 1px solid #000;
-  margin-bottom: 8px;
-}
-
-.assinatura-documento p {
-  margin: 0;
-  font-size: 14px;
-  color: #222;
-  line-height: 1.5;
-}
-
-textarea[readonly] {
-  background: #fffef8;
-  color: #333;
-}
-
-textarea {
-  margin-top: 0;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid #e6dca8;
-  background: #fff;
-  font-size: 14px;
-  line-height: 1.6;
-  width: 100%;
-  resize: vertical;
-  min-height: 110px;
-}
-
-/* =========================================================
-   RESPONSIVIDADE
-========================================================= */
-
-@media (max-width: 900px) {
-  .grid-filtros-relatorio,
-  .lista-checkbox-relatorio,
-  .grade-info-aluno-documento {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .container-relatorios-admin {
-    width: 100%;
-    padding: 20px;
-  }
-
-  .card-relatorio-filtros,
-  .card-relatorio-resultado {
-    padding: 20px;
-    border-radius: 16px;
-  }
-
-  .opcoes-radio-relatorio {
-    flex-direction: column;
-  }
-
-  .radio-card,
-  .item-checkbox-relatorio {
-    width: 100%;
-  }
-
-  .cabecalho-documento-linha {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .logo-documento {
-    width: 88px;
-  }
-
-  .pagina-documento {
-    padding: 22px;
-    border-radius: 16px;
-  }
-
-  .acoes-relatorio {
-    justify-content: stretch;
-  }
-
-  .btn-relatorio-primario {
-    width: 100%;
-  }
-}
-
-/* =========================================================
-   IMPRESSÃO
-========================================================= */
-
-@media print {
-  body * {
-    visibility: hidden;
-  }
-
-  #documentoRelatorio,
-  #documentoRelatorio * {
-    visibility: visible;
-  }
-
-  #documentoRelatorio {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-  }
-
-  .pagina-documento {
-    box-shadow: none;
-    border: none;
-    border-radius: 0;
-    padding: 0;
-    margin: 0 0 24px 0;
-    page-break-after: always;
-  }
-
-  .pagina-documento:last-child {
-    page-break-after: auto;
-  }
-
-  .no-print,
-  .overlay {
-    display: none !important;
-  }
-
-  .logo-documento {
-    width: 90px;
-  }
-}
-/* =========================================================
-   17.1) AJUSTES DO BLOCO DO ALUNO NO RELATÓRIO
-========================================================= */
 
 .resumo-geral-documento {
   margin-top: 18px;
@@ -2241,91 +1562,10 @@ textarea {
 
 .resumo-geral-documento p {
   margin: 4px 0;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
   color: #222;
 }
-
-.lista-alunos-documento {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  margin-top: 26px;
-}
-
-.bloco-aluno-documento {
-  border-top: 1px solid #e8dfbf;
-  padding-top: 20px;
-}
-
-.titulo-aluno-documento {
-  margin-bottom: 14px;
-  font-size: 18px;
-  color: #111;
-}
-
-.titulo-aluno-documento strong {
-  font-weight: 700;
-}
-/* =========================================================
-   17.2) AJUSTE DA LINHA DIVISÓRIA ENTRE ALUNOS
-========================================================= */
-
-.lista-alunos-documento {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-top: 26px;
-}
-
-.bloco-aluno-documento {
-  padding: 22px 0;
-  border-top: 1px solid #d9d9d9;
-}
-
-.bloco-aluno-documento:first-child {
-  border-top: none;
-  padding-top: 0;
-}
-
-.titulo-aluno-documento {
-  margin-bottom: 14px;
-  font-size: 18px;
-  color: #111;
-}
-
-.titulo-aluno-documento strong {
-  font-weight: 700;
-}
-
-.grade-info-aluno-documento {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(260px, 1fr));
-  gap: 12px 28px;
-  margin-bottom: 14px;
-}
-
-.ocorrencias-documento {
-  border-top: none;
-  padding-top: 0;
-  margin-top: 6px;
-}
-
-.ocorrencias-documento p {
-  margin: 0 0 8px 0;
-  font-size: 15px;
-  line-height: 1.7;
-  color: #222;
-}
-
-@media (max-width: 900px) {
-  .grade-info-aluno-documento {
-    grid-template-columns: 1fr;
-  }
-}
-/* =========================================================
-   17.3) REFINO VISUAL DO DOCUMENTO OFICIAL
-========================================================= */
 
 .lista-alunos-documento {
   display: flex;
@@ -2335,13 +1575,27 @@ textarea {
 }
 
 .bloco-aluno-documento {
-  padding: 24px 0;
+  padding: 18px 0;
   border-top: 1px solid #d9d9d9;
 }
 
 .bloco-aluno-documento:first-child {
   border-top: none;
   padding-top: 0;
+}
+
+.bloco-dados-aluno-documento {
+  padding: 16px 18px;
+  background: #fff8e1;
+  border: 1px solid #f1df9a;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+.nome-aluno-documento {
+  margin: 0 0 10px 0;
+  font-size: 15px;
+  color: #2f2f2f;
 }
 
 .titulo-aluno-documento {
@@ -2354,7 +1608,7 @@ textarea {
 
 .titulo-aluno-documento strong {
   display: block;
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 700;
   color: #2f2f2f;
   line-height: 1.4;
@@ -2362,34 +1616,30 @@ textarea {
 
 .grade-info-aluno-documento {
   display: grid;
-  grid-template-columns: repeat(2, minmax(260px, 1fr));
-  gap: 14px 24px;
-  margin-bottom: 18px;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: 6px 20px;
+  margin-bottom: 14px;
 }
 
 .grade-info-aluno-documento p {
   margin: 0;
-  padding: 10px 12px;
-  background: #fffdf7;
-  border: 1px solid #efe4c2;
-  border-radius: 10px;
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.5;
   color: #222;
 }
 
 .ocorrencias-documento {
-  margin-top: 6px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   background: #fcfcfc;
   border: 1px solid #ececec;
-  border-radius: 12px;
+  border-radius: 10px;
+  margin-top: 6px;
 }
 
 .ocorrencias-documento p {
-  margin: 0 0 10px 0;
-  font-size: 15px;
-  line-height: 1.7;
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  line-height: 1.55;
   color: #222;
 }
 
@@ -2397,32 +1647,14 @@ textarea {
   margin-bottom: 0;
 }
 
-.resumo-geral-documento {
-  margin-top: 18px;
-  padding: 14px 16px;
-  border: 1px solid #eadcae;
-  border-radius: 12px;
-  background: #fffaf0;
-}
-
-.resumo-geral-documento p {
-  margin: 4px 0;
-  font-size: 15px;
-  line-height: 1.6;
-  color: #222;
-}
-
-.texto-declaracao-documento,
-.texto-observacao-documento {
-  font-size: 15px;
-  line-height: 1.8;
-  text-align: justify;
-  color: #222;
-  margin-bottom: 14px;
-}
-
 .rodape-documento {
   margin-top: 34px;
+}
+
+.rodape-documento > p,
+.assinatura-documento p {
+  font-size: 13px;
+  color: #222;
 }
 
 .assinatura-documento {
@@ -2435,302 +1667,8 @@ textarea {
 }
 
 /* =========================================================
-   RESPONSIVO
-========================================================= */
-
-@media (max-width: 900px) {
-  .grade-info-aluno-documento {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .titulo-aluno-documento {
-    padding: 10px 12px;
-  }
-
-  .titulo-aluno-documento strong {
-    font-size: 17px;
-  }
-
-  .grade-info-aluno-documento p,
-  .ocorrencias-documento p,
-  .resumo-geral-documento p {
-    font-size: 14px;
-  }
-
-  .ocorrencias-documento {
-    padding: 12px 14px;
-  }
-}
-/* =========================================================
-   17.4) AJUSTE DE TAMANHO DE FONTE NO RELATÓRIO
-========================================================= */
-
-.dados-escola-documento h2 {
-  font-size: 19px;
-}
-
-.dados-escola-documento p {
-  font-size: 13px;
-}
-
-.titulo-documento-wrap h1 {
-  font-size: 19px;
-}
-
-.texto-declaracao-documento,
-.texto-observacao-documento {
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-.resumo-geral-documento p {
-  font-size: 14px;
-}
-
-.titulo-aluno-documento strong {
-  font-size: 17px;
-}
-
-.grade-info-aluno-documento p {
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.ocorrencias-documento p {
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.rodape-documento > p,
-.assinatura-documento p {
-  font-size: 13px;
-}
-@page {
-  size: A4;
-  margin: 12mm;
-}
-
-/* =========================================================
-   17.7) BLOCO ÚNICO DO ALUNO (COMPACTO E PROFISSIONAL)
-========================================================= */
-
-.bloco-dados-aluno-documento {
-  padding: 16px 18px;
-  background: #fff8e1;
-  border: 1px solid #f1df9a;
-  border-radius: 12px;
-  margin-bottom: 10px;
-}
-
-/* Nome do aluno dentro do bloco */
-.nome-aluno-documento {
-  margin: 0 0 10px 0;
-  font-size: 15px;
-  color: #2f2f2f;
-}
-
-/* Grade de informações */
-.grade-info-aluno-documento {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(240px, 1fr));
-  gap: 6px 20px;
-}
-
-.grade-info-aluno-documento p {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #222;
-}
-
-/* Ocorrências */
-.ocorrencias-documento {
-  padding: 12px 14px;
-  background: #fcfcfc;
-  border: 1px solid #ececec;
-  border-radius: 10px;
-}
-
-.ocorrencias-documento p {
-  margin: 0 0 6px 0;
-  font-size: 13px;
-  line-height: 1.55;
-}
-
-.ocorrencias-documento p:last-child {
-  margin-bottom: 0;
-}
-
-/* Separação entre alunos */
-.bloco-aluno-documento {
-  padding: 18px 0;
-  border-top: 1px solid #d9d9d9;
-}
-
-.bloco-aluno-documento:first-child {
-  border-top: none;
-  padding-top: 0;
-}
-
-/* Responsivo */
-@media (max-width: 900px) {
-  .grade-info-aluno-documento {
-    grid-template-columns: 1fr;
-  }
-}
-/* =========================================================
-   18) HOME ALUNO
-   Visual inspirado na home admin
-========================================================= */
-
-.home-aluno-page {
-  max-width: 1100px;
-  width: 95%;
-  padding: 32px;
-  text-align: left;
-}
-
-.topo-acoes-aluno {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-}
-
-.logo-aluno-centralizada {
-  display: block;
-  margin: 0 auto 18px auto;
-  max-width: 190px;
-}
-
-.cabecalho-aluno-central {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.saudacao-card {
-  margin: 18px auto 0 auto;
-  max-width: 620px;
-  background: linear-gradient(180deg, #fffdf7 0%, #fff7df 100%);
-  border: 1px solid #f1df9a;
-  border-radius: 18px;
-  padding: 18px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
-  text-align: left;
-}
-
-.saudacao-card-texto {
-  flex: 1;
-}
-
-.saudacao-aluno {
-  margin: 0 0 8px 0;
-  font-size: 16px;
-  color: #2f2f2f;
-  font-weight: bold;
-}
-
-.icone-saudacao-aluno {
-  width: 58px;
-  height: auto;
-  flex-shrink: 0;
-}
-
-.painel-aluno-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px;
-  margin-top: 10px;
-}
-
-.card-aluno {
-  min-height: 165px;
-}
-
-/* Deixa links desabilitados visualmente, se o JS não preencher */
-.card-admin-link.link-indisponivel {
-  pointer-events: none;
-  opacity: 0.65;
-}
-
-.card-admin-link.link-indisponivel .card-admin {
-  background: linear-gradient(180deg, #f8f8f8 0%, #f1f1f1 100%);
-  border-color: #dddddd;
-}
-
-.card-admin-link.link-indisponivel .card-admin-conteudo h2,
-.card-admin-link.link-indisponivel .card-admin-conteudo p {
-  color: #777;
-}
-
-/* =========================================================
-   RESPONSIVIDADE - HOME ALUNO
-========================================================= */
-
-@media (max-width: 768px) {
-  .home-aluno-page {
-    width: 100%;
-    padding: 22px;
-  }
-
-  .topo-acoes-aluno {
-    justify-content: stretch;
-  }
-
-  .logo-aluno-centralizada {
-    max-width: 160px;
-    margin-bottom: 16px;
-  }
-
-  .saudacao-card {
-    flex-direction: column;
-    text-align: center;
-    padding: 16px;
-  }
-
-  .saudacao-card-texto {
-    text-align: center;
-  }
-
-  .painel-aluno-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .card-aluno {
-    min-height: auto;
-  }
-
-  .btn-sair-admin {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .home-aluno-page {
-    padding: 18px;
-  }
-
-  .saudacao-card {
-    border-radius: 16px;
-  }
-
-  .icone-saudacao-aluno {
-    width: 50px;
-  }
-
-  .saudacao-aluno {
-    font-size: 15px;
-  }
-}
-/* =========================================================
    18) HOME ALUNO
 ========================================================= */
-
 .home-aluno-page {
   max-width: 1100px;
   width: 95%;
@@ -2818,118 +1756,8 @@ textarea {
 }
 
 /* =========================================================
-   RESPONSIVIDADE - HOME ALUNO
-========================================================= */
-
-@media (max-width: 768px) {
-  .home-aluno-page {
-    width: 100%;
-    padding: 20px;
-  }
-
-  .topo-acoes-aluno {
-    justify-content: stretch;
-  }
-
-  .btn-sair-admin {
-    width: 100%;
-  }
-
-  .logo-aluno-centralizada {
-    max-width: 145px;
-    margin-bottom: 14px;
-  }
-
-  .cabecalho-aluno-central h1 {
-    margin-bottom: 14px;
-  }
-
-  .saudacao-card {
-    flex-direction: row;
-    align-items: center;
-    padding: 14px 14px;
-    gap: 10px;
-    border-radius: 16px;
-    margin-top: 14px;
-  }
-
-  .saudacao-aluno {
-    font-size: 15px;
-  }
-
-  .icone-saudacao-aluno {
-    width: 34px;
-  }
-
-  .painel-aluno-cards {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .card-aluno {
-    min-height: auto;
-    padding: 16px;
-  }
-
-  .card-aluno .card-admin-icone {
-    width: 42px;
-    height: 42px;
-    font-size: 20px;
-    margin-bottom: 12px;
-  }
-
-  .card-aluno .card-admin-conteudo h2 {
-    font-size: 16px;
-    margin-bottom: 6px;
-  }
-
-  .card-aluno .card-admin-conteudo p {
-    font-size: 13px;
-    line-height: 1.4;
-  }
-}
-
-@media (max-width: 480px) {
-  .home-aluno-page {
-    padding: 16px;
-  }
-
-  .saudacao-card {
-    padding: 12px;
-  }
-
-  .saudacao-aluno {
-    font-size: 14px;
-  }
-
-  .icone-saudacao-aluno {
-    width: 28px;
-  }
-
-  .card-aluno {
-    padding: 14px;
-    border-radius: 14px;
-  }
-
-  .card-aluno .card-admin-icone {
-    width: 38px;
-    height: 38px;
-    font-size: 18px;
-    border-radius: 12px;
-  }
-
-  .card-aluno .card-admin-conteudo h2 {
-    font-size: 15px;
-  }
-
-  .card-aluno .card-admin-conteudo p {
-    font-size: 12px;
-  }
-}
-/* =========================================================
    19) HOME PROFESSOR
 ========================================================= */
-
 .home-professor-page {
   max-width: 1100px;
   width: 95%;
@@ -2998,114 +1826,8 @@ textarea {
 }
 
 /* =========================================================
-   RESPONSIVIDADE - HOME PROFESSOR
+   20) BADGE DE EVENTOS - HOME ALUNO
 ========================================================= */
-
-@media (max-width: 768px) {
-  .home-professor-page {
-    width: 100%;
-    padding: 20px;
-  }
-
-  .topo-acoes-professor {
-    justify-content: stretch;
-  }
-
-  .btn-sair-admin {
-    width: 100%;
-  }
-
-  .logo-professor-centralizada {
-    max-width: 150px;
-    margin-bottom: 14px;
-  }
-
-  .cabecalho-professor-central {
-    margin-bottom: 24px;
-  }
-
-  .saudacao-card-professor {
-    padding: 14px;
-    gap: 10px;
-    border-radius: 16px;
-  }
-
-  .saudacao-professor {
-    font-size: 15px;
-  }
-
-  .icone-saudacao-professor {
-    width: 32px;
-  }
-
-  .painel-professor-cards {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .card-professor {
-    min-height: auto;
-    padding: 16px;
-  }
-
-  .card-professor .card-admin-icone {
-    width: 42px;
-    height: 42px;
-    font-size: 20px;
-    margin-bottom: 12px;
-  }
-
-  .card-professor .card-admin-conteudo h2 {
-    font-size: 16px;
-    margin-bottom: 6px;
-  }
-
-  .card-professor .card-admin-conteudo p {
-    font-size: 13px;
-    line-height: 1.4;
-  }
-}
-
-@media (max-width: 480px) {
-  .home-professor-page {
-    padding: 16px;
-  }
-
-  .saudacao-card-professor {
-    padding: 12px;
-  }
-
-  .saudacao-professor {
-    font-size: 14px;
-  }
-
-  .icone-saudacao-professor {
-    width: 28px;
-  }
-
-  .card-professor {
-    padding: 14px;
-    border-radius: 14px;
-  }
-
-  .card-professor .card-admin-icone {
-    width: 38px;
-    height: 38px;
-    font-size: 18px;
-    border-radius: 12px;
-  }
-
-  .card-professor .card-admin-conteudo h2 {
-    font-size: 15px;
-  }
-
-  .card-professor .card-admin-conteudo p {
-    font-size: 12px;
-  }
-}
-/* =========================================
-   BADGE DE EVENTOS - HOME DO ALUNO
-========================================= */
 .card-eventos-link {
   position: relative;
 }
@@ -3132,140 +1854,11 @@ textarea {
   justify-content: center;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
   z-index: 5;
-}
-/* =========================================
-   HOME ALUNO - BADGE EVENTOS
-========================================= */
-.card-eventos-link {
-  position: relative;
-}
-
-.card-eventos-aluno {
-  position: relative;
-  overflow: visible;
-}
-
-.badge-eventos {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: #d64545;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-  z-index: 5;
-}
-
-/* =========================================
-   EVENTOS ADMIN
-========================================= */
-.grid-eventos-admin {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 14px;
-}
-
-.card-evento-admin-futuro {
-  height: 100%;
-}
-
-.badge-evento {
-  display: inline-block;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.badge-evento-ativo {
-  background: #e8f7e8;
-  color: #1d5e1d;
-}
-
-.badge-evento-encerrado {
-  background: #f3f3f3;
-  color: #555;
-}
-
-.badge-evento-cancelado {
-  background: #ffe5e5;
-  color: #8b1e1e;
-}
-
-.mini-card-evento {
-  padding: 12px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.35);
-}
-
-.mini-card-evento p {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 6px 0 0 0;
-}
-
-.lista-historico-eventos {
-  display: grid;
-  gap: 12px;
-}
-
-.item-historico-evento {
-  background: rgba(255, 245, 204, 0.92);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.item-historico-evento summary {
-  list-style: none;
-  cursor: pointer;
-  padding: 14px 16px;
-}
-
-.item-historico-evento summary::-webkit-details-marker {
-  display: none;
-}
-
-.item-historico-resumo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.item-historico-conteudo {
-  padding: 0 16px 16px 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.btn-cancelar-evento {
-  background: #b93b3b;
-}
-
-.btn-cancelar-evento:hover {
-  filter: brightness(0.95);
 }
 
 /* =========================================================
-   EVENTOS ADMIN - NOVA UI MAIS COMPACTA
+   21) EVENTOS ADMIN
 ========================================================= */
-
-.container-eventos-admin {
-  max-width: 1180px;
-  width: 95%;
-  text-align: left;
-  padding: 28px;
-}
-
 .resumo-eventos-topo {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -3334,6 +1927,10 @@ textarea {
   border-radius: 18px;
 }
 
+.card-evento-admin-futuro {
+  height: 100%;
+}
+
 .topo-card-evento-compacto {
   display: flex;
   justify-content: space-between;
@@ -3380,7 +1977,6 @@ textarea {
   color: #8b1e1e;
 }
 
-/* fundo dos cards conforme situação */
 .evento-visual-ativo {
   background: linear-gradient(180deg, #f7fff7 0%, #ecfaec 100%);
   border: 1px solid #cde8cd;
@@ -3394,6 +1990,18 @@ textarea {
 .evento-visual-cancelado {
   background: linear-gradient(180deg, #fff8f8 0%, #ffe7e7 100%);
   border: 1px solid #efb9b9;
+}
+
+.mini-card-evento {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.mini-card-evento p {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 6px 0 0 0;
 }
 
 .detalhes-evento-box {
@@ -3464,20 +2072,44 @@ textarea {
   margin-top: 14px;
   display: flex;
   justify-content: flex-start;
-}
-
-.btn-cancelar-evento {
-  background: #b93b3b;
-  color: #fff;
-}
-
-.btn-cancelar-evento:hover {
-  filter: brightness(0.96);
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .lista-historico-eventos {
   display: grid;
   gap: 12px;
+}
+
+.item-historico-evento {
+  background: rgba(255, 245, 204, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.item-historico-evento summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+}
+
+.item-historico-evento summary::-webkit-details-marker {
+  display: none;
+}
+
+.item-historico-resumo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.item-historico-conteudo {
+  padding: 0 16px 16px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .item-historico-evento-compacto {
@@ -3527,10 +2159,249 @@ textarea {
   margin-top: 12px;
 }
 
+/* =========================================================
+   22) RESPONSIVIDADE GERAL
+========================================================= */
+@media (max-width: 900px) {
+  .grid-filtros-relatorio,
+  .lista-checkbox-relatorio,
+  .grade-info-aluno-documento {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
-  .container-eventos-admin {
+  body {
+    padding: 20px;
+    align-items: flex-start;
+  }
+
+  .container,
+  .container-reposicao,
+  .container-registro-aula,
+  .container-resumo-professor,
+  .container-relatorios-admin,
+  .container-eventos-admin,
+  .home-admin-page,
+  .home-aluno-page,
+  .home-professor-page {
     width: 100%;
     padding: 20px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .logo {
+    max-width: 150px;
+  }
+
+  .btn {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .btn-sair-admin,
+  .btn-topo-admin,
+  .btn-voltar {
+    width: 100%;
+    text-align: center;
+  }
+
+  .bee {
+    width: 50px;
+    opacity: 0.25;
+  }
+
+  .linha-nota {
+    grid-template-columns: 1fr;
+  }
+
+  .media-geral-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .btn-salvar-nota {
+    width: 100%;
+  }
+
+  .item-pendente {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btnSelecionarAula,
+  .btnEscolherHorario {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .painel-grid,
+  .painel-admin-cards,
+  .painel-aluno-cards,
+  .painel-professor-cards,
+  .grid-eventos-admin {
+    grid-template-columns: 1fr;
+  }
+
+  .dados-grid,
+  .resumo-grid,
+  .extras-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .painel-topo h1 {
+    font-size: 1.65rem;
+  }
+
+  .painel-wrap {
+    padding: 20px 14px 32px;
+  }
+
+  .filtro-periodo-resumo,
+  .filtro-interno-aulas,
+  .form-resumo-professor {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .form-resumo-professor label {
+    width: 100%;
+  }
+
+  .topo-acoes-admin,
+  .topo-acoes-aluno,
+  .topo-acoes-professor {
+    justify-content: stretch;
+  }
+
+  .topo-acoes-duplas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .logo-admin-centralizada {
+    max-width: 160px;
+    margin-bottom: 16px;
+  }
+
+  .cabecalho-admin-central {
+    margin-bottom: 24px;
+  }
+
+  .logo-aluno-centralizada {
+    max-width: 145px;
+    margin-bottom: 14px;
+  }
+
+  .cabecalho-aluno-central h1 {
+    margin-bottom: 14px;
+  }
+
+  .saudacao-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 14px 14px;
+    gap: 10px;
+    border-radius: 16px;
+    margin-top: 14px;
+  }
+
+  .saudacao-aluno {
+    font-size: 15px;
+  }
+
+  .icone-saudacao-aluno {
+    width: 34px;
+  }
+
+  .card-aluno,
+  .card-professor,
+  .card-admin {
+    min-height: auto;
+  }
+
+  .card-aluno {
+    padding: 16px;
+  }
+
+  .card-aluno .card-admin-icone,
+  .card-professor .card-admin-icone {
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .card-aluno .card-admin-conteudo h2,
+  .card-professor .card-admin-conteudo h2 {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+
+  .card-aluno .card-admin-conteudo p,
+  .card-professor .card-admin-conteudo p {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .logo-professor-centralizada {
+    max-width: 150px;
+    margin-bottom: 14px;
+  }
+
+  .cabecalho-professor-central {
+    margin-bottom: 24px;
+  }
+
+  .saudacao-card-professor {
+    padding: 14px;
+    gap: 10px;
+    border-radius: 16px;
+  }
+
+  .saudacao-professor {
+    font-size: 15px;
+  }
+
+  .icone-saudacao-professor {
+    width: 32px;
+  }
+
+  .opcoes-radio-relatorio {
+    flex-direction: column;
+  }
+
+  .radio-card,
+  .item-checkbox-relatorio {
+    width: 100%;
+  }
+
+  .cabecalho-documento-linha {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .logo-documento {
+    width: 88px;
+  }
+
+  .pagina-documento {
+    padding: 22px;
+    border-radius: 16px;
+  }
+
+  .acoes-relatorio {
+    justify-content: stretch;
+  }
+
+  .btn-relatorio-primario {
+    width: 100%;
   }
 
   .item-historico-evento-topo {
@@ -3541,7 +2412,165 @@ textarea {
     justify-content: flex-start;
   }
 
-  .grid-eventos-admin {
+  .acoes-evento-detalhe {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .painel-topo h1 {
+    font-size: 1.65rem;
+  }
+
+  .painel-wrap {
+    padding: 20px 14px 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .logo {
+    max-width: 130px;
+  }
+
+  .dashboard {
     grid-template-columns: 1fr;
+  }
+
+  .card-reposicao {
+    padding: 14px;
+  }
+
+  .justificativa-aula,
+  .texto-apoio,
+  .prazo-agendamento,
+  .agendamentos-ativos,
+  .resumo-pendencias {
+    font-size: 13px;
+  }
+
+  .home-admin-page,
+  .home-aluno-page,
+  .home-professor-page {
+    padding: 16px;
+  }
+
+  .card-admin,
+  .card-aluno,
+  .card-professor {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .card-admin-icone,
+  .card-aluno .card-admin-icone,
+  .card-professor .card-admin-icone {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+    border-radius: 12px;
+  }
+
+  .card-admin-conteudo h2,
+  .card-aluno .card-admin-conteudo h2,
+  .card-professor .card-admin-conteudo h2 {
+    font-size: 15px;
+  }
+
+  .card-admin-conteudo p,
+  .card-aluno .card-admin-conteudo p,
+  .card-professor .card-admin-conteudo p,
+  .subtitulo-admin {
+    font-size: 12px;
+  }
+
+  .saudacao-card,
+  .saudacao-card-professor {
+    padding: 12px;
+  }
+
+  .saudacao-aluno,
+  .saudacao-professor {
+    font-size: 14px;
+  }
+
+  .icone-saudacao-aluno,
+  .icone-saudacao-professor {
+    width: 28px;
+  }
+
+  .titulo-aluno-documento {
+    padding: 10px 12px;
+  }
+
+  .titulo-aluno-documento strong {
+    font-size: 17px;
+  }
+
+  .grade-info-aluno-documento p,
+  .ocorrencias-documento p,
+  .resumo-geral-documento p {
+    font-size: 14px;
+  }
+
+  .ocorrencias-documento {
+    padding: 12px 14px;
+  }
+}
+
+/* =========================================================
+   23) IMPRESSÃO
+========================================================= */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #documentoRelatorio,
+  #documentoRelatorio * {
+    visibility: visible;
+  }
+
+  #documentoRelatorio {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .pagina-documento {
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 0 0 24px 0;
+    page-break-after: always;
+  }
+
+  .pagina-documento:last-child {
+    page-break-after: auto;
+  }
+
+  .no-print,
+  .overlay {
+    display: none !important;
+  }
+
+  .logo-documento {
+    width: 90px;
   }
 }

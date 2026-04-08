@@ -129,6 +129,13 @@ function obterBadgeSituacao(situacao) {
   return `<span class="badge-evento badge-evento-encerrado">Encerrado</span>`;
 }
 
+function fecharDetalhesPorEventoId(eventoId) {
+  const details = document.querySelector(`details[data-evento-id="${eventoId}"]`);
+  if (details) {
+    details.open = false;
+  }
+}
+
 /* =========================================================
    BUSCA DE DADOS
 ========================================================= */
@@ -416,10 +423,10 @@ function montarDetalhesEvento(evento) {
 
     ${nomesConfirmadosHtml}
 
-    ${
-      situacao === "ativo"
-        ? `
-          <div class="acoes-evento-detalhe">
+    <div class="acoes-evento-detalhe">
+      ${
+        situacao === "ativo"
+          ? `
             <button
               type="button"
               class="btn btn-cancelar-evento"
@@ -427,10 +434,18 @@ function montarDetalhesEvento(evento) {
             >
               Cancelar evento
             </button>
-          </div>
-        `
-        : ""
-    }
+          `
+          : ""
+      }
+
+      <button
+        type="button"
+        class="link-ver-menos"
+        data-fechar-evento-id="${evento.id}"
+      >
+      Recolher
+      </button>
+    </div>
   `;
 }
 
@@ -469,8 +484,8 @@ function renderizarEventos() {
             </p>
           </div>
 
-          <details class="detalhes-evento-box">
-            <summary>Ver detalhes</summary>
+          <details class="detalhes-evento-box" data-evento-id="${evento.id}">
+            <summary>Ver mais</summary>
             <div class="conteudo-detalhes-evento">
               ${montarDetalhesEvento(evento)}
             </div>
@@ -507,8 +522,8 @@ function renderizarEventos() {
             </div>
           </div>
 
-          <details class="detalhes-evento-box detalhes-evento-historico">
-            <summary>Ver detalhes</summary>
+          <details class="detalhes-evento-box detalhes-evento-historico" data-evento-id="${evento.id}">
+            <summary>Ver mais</summary>
             <div class="conteudo-detalhes-evento">
               ${montarDetalhesEvento(evento)}
             </div>
@@ -522,6 +537,13 @@ function renderizarEventos() {
     botao.addEventListener("click", async () => {
       const eventoId = Number(botao.dataset.eventoId);
       await cancelarEvento(eventoId);
+    });
+  });
+
+  document.querySelectorAll(".link-ver-menos").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      const eventoId = Number(botao.dataset.fecharEventoId);
+      fecharDetalhesPorEventoId(eventoId);
     });
   });
 }
