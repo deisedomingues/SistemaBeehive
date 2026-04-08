@@ -124,6 +124,14 @@ function limparFormularioVisual() {
   atualizarPreviewLimiteConfirmacao();
 }
 
+function obterOrdemDoModuloSelecionado() {
+  const optionSelecionada = moduloSelect.options[moduloSelect.selectedIndex];
+  if (!optionSelecionada) return null;
+
+  const ordem = optionSelecionada.dataset.ordem;
+  return ordem ? Number(ordem) : null;
+}
+
 /* =========================================================
    CARREGAMENTO DE DADOS
 ========================================================= */
@@ -216,6 +224,121 @@ function controlarCamposPublico() {
     textoAjudaModulo.textContent =
       "O evento aparecerá para alunos deste módulo e dos módulos acima, dentro do mesmo curso.";
   }
+}
+
+/* =========================================================
+   REGRAS DE CONVITE
+========================================================= */
+async function buscarMatriculasAtivasRelacionadas() {
+  const { data, error } = await supabase
+    .from("matricula")
+    .select(`
+      id,
+      aluno_id,
+      materia_id,
+      modulo_id,
+      ativa,
+      modulo:modulo_id (
+        id,
+        nome,
+        ordem,
+        materia_id
+      )
+    `)
+    .eq("ativa", true);
+
+  if (error) {
+    console.error("Erro ao buscar matrículas ativas:", error);
+    throw new Error("Não foi possível buscar as matrículas ativas.");
+  }
+
+  return data || [];
+}
+
+function obterAlunosUnicosPorListaDeMatriculas(listaMatriculas) {
+  const mapa = new Map();
+
+  for (const matricula of listaMatriculas) {
+    const alunoId = Number(matricula.aluno_id);
+    if (!mapa.has(alunoId)) {
+      mapa.set(alunoId, alunoId);
+    }
+  }
+
+  return Array.from(mapa.values());
+}
+
+function filtrarAlunosElegiveis(matriculas, evento) {
+  const publico = evento.publico_alvo;
+  const materiaId = evento.materia_id ? Number(evento.materia_id) : null;
+  const moduloId = evento.modulo_id ? Number(evento.modulo_id) : null;
+  const ordemBase = evento.ordem_modulo_base ?? null;
+
+  if (publico === "todos") {
+    return obterAlunosUnicosPorListaDeMatriculas(matriculas);
+  }
+
+  if (publico === "materia") {
+    const lista = matriculas.filter(
+      (matricula) => Number(matricula.materia_id) === materiaId
+    );
+    return obterAlunosUnicosPorListaDeMatriculas(lista);
+  }
+
+  if (publico === "modulo_exato") {
+    const lista = matriculas.filter(
+      (matricula) =>
+        Number(matricula.materia_id) === materiaId &&
+        Number(matricula.modulo_id) === moduloId
+    );
+    return obterAlunosUnicosPorListaDeMatriculas(lista);
+  }
+
+  if (publico === "modulo_a_partir") {
+    const lista = matriculas.filter((matricula) => {
+      const mesmaMateria = Number(matricula.materia_id) === materiaId;
+      const ordemAluno = matricula.modulo?.ordem ?? null;
+
+      return (
+        mesmaMateria &&
+        ordemAluno !== null &&
+        ordemBase !== null &&
+        Number(ordemAluno) >= Number(ordemBase)
+      );
+    });
+
+    return obterAlunosUnicosPorListaDeMatriculas(lista);
+  }
+
+  return [];
+}
+
+async function gerarConvitesParaEvento(evento) {
+  const matriculasAtivas = await buscarMatriculasAtivasRelacionadas();
+  const alunosIds = filtrarAlunosElegiveis(matriculasAtivas, evento);
+
+  if (!alunosIds.length) {
+    return 0;
+  }
+
+  const payloadConvites = alunosIds.map((alunoId) => ({
+    evento_id: evento.id,
+    aluno_id: alunoId
+  }));
+
+  const { error } = await supabase
+    .from("evento_convite_aluno")
+    .upsert(payloadConvites, {
+      onConflict: "evento_id,aluno_id",
+      ignoreDuplicates: true
+    });
+
+  if (error) {
+    console.error("Erro ao gerar convites do evento:", error);
+    throw new Error("O evento foi salvo, mas houve erro ao gerar os convites dos alunos.");
+  }
+
+  return payloadConvites.length;
 }
 
 /* =========================================================
@@ -329,6 +452,8 @@ form.addEventListener("submit", async (e) => {
   const ativo = ativoCheckbox.checked;
 
   const limiteConfirmacao = calcularLimiteConfirmacao(dataEvento);
+  const ordemModuloBase =
+    publico === "modulo_a_partir" ? obterOrdemDoModuloSelecionado() : null;
 
   const payload = {
     titulo,
@@ -347,9 +472,11 @@ form.addEventListener("submit", async (e) => {
     ativo
   };
 
-  const { error } = await supabase
+  const { data: eventoSalvo, error } = await supabase
     .from("evento")
-    .insert([payload]);
+    .insert([payload])
+    .select()
+    .single();
 
   if (error) {
     console.error("Erro ao salvar evento:", error);
@@ -357,6 +484,21 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  mostrarMensagem("✅ Evento cadastrado com sucesso!");
-  limparFormularioVisual();
+  try {
+    const totalConvites = await gerarConvitesParaEvento({
+      ...eventoSalvo,
+      ordem_modulo_base: ordemModuloBase
+    });
+
+    mostrarMensagem(
+      `✅ Evento cadastrado com sucesso! ${totalConvites} convite(s) interno(s) foram gerados para alunos aptos.`
+    );
+    limparFormularioVisual();
+  } catch (erroConvite) {
+    console.error(erroConvite);
+    mostrarMensagem(
+      "O evento foi salvo, mas houve problema ao gerar os convites dos alunos.",
+      "erro"
+    );
+  }
 });

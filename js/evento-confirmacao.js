@@ -13,6 +13,7 @@ let alunoId = null;
 let matriculasAtivas = [];
 let eventosDisponiveis = [];
 let confirmacoesSet = new Set();
+let convitesMap = new Map();
 
 /* =========================================================
    INICIALIZAÇÃO
@@ -29,6 +30,7 @@ function mostrarMensagem(texto, tipo = "sucesso") {
   msg.textContent = texto;
   msg.style.padding = "10px";
   msg.style.borderRadius = "10px";
+  msg.style.marginBottom = "12px";
 
   if (tipo === "erro") {
     msg.style.background = "#ffe5e5";
@@ -106,11 +108,21 @@ function obterRotuloPublico(evento) {
   return "-";
 }
 
-/* =========================================================
-   REGRAS DE VISIBILIDADE
-========================================================= */
+function eventoPrazoConfirmacaoVencido(evento) {
+  if (!evento?.limite_confirmacao) return false;
+  return new Date(evento.limite_confirmacao) < new Date();
+}
+
+function eventoJaAconteceu(evento) {
+  if (!evento?.data_evento || !evento?.hora_evento) return false;
+  const dataHoraEvento = new Date(`${evento.data_evento}T${evento.hora_evento}`);
+  return dataHoraEvento < new Date();
+}
+
 function alunoPodeVerEvento(evento) {
+  if (!evento?.ativo) return false;
   if (!matriculasAtivas.length) return false;
+  if (eventoJaAconteceu(evento)) return false;
 
   if (evento.publico_alvo === "todos") {
     return true;
@@ -124,14 +136,15 @@ function alunoPodeVerEvento(evento) {
 
   if (evento.publico_alvo === "modulo_exato") {
     return matriculasAtivas.some(
-      (matricula) => Number(matricula.modulo_id) === Number(evento.modulo_id)
+      (matricula) =>
+        Number(matricula.materia_id) === Number(evento.materia_id) &&
+        Number(matricula.modulo_id) === Number(evento.modulo_id)
     );
   }
 
   if (evento.publico_alvo === "modulo_a_partir") {
-    const ordemEvento = evento.modulo?.ordem;
-
-    if (!ordemEvento || !evento.materia_id) return false;
+    const ordemEvento = evento.modulo?.ordem ?? null;
+    if (ordemEvento === null) return false;
 
     return matriculasAtivas.some((matricula) => {
       const mesmaMateria = Number(matricula.materia_id) === Number(evento.materia_id);
@@ -167,8 +180,10 @@ async function iniciarTela() {
 
   await carregarMatriculasAtivas();
   await carregarEventosDisponiveis();
+  await sincronizarConvitesDoAluno();
   await carregarConfirmacoesDoAluno();
   renderizarEventos();
+  await marcarConvitesComoVisualizados();
 }
 
 async function carregarMatriculasAtivas() {
@@ -176,6 +191,7 @@ async function carregarMatriculasAtivas() {
     .from("matricula")
     .select(`
       id,
+      aluno_id,
       materia_id,
       modulo_id,
       ativa,
@@ -204,8 +220,6 @@ async function carregarMatriculasAtivas() {
 }
 
 async function carregarEventosDisponiveis() {
-  const agoraIso = new Date().toISOString();
-
   const { data, error } = await supabase
     .from("evento")
     .select(`
@@ -233,7 +247,6 @@ async function carregarEventosDisponiveis() {
       )
     `)
     .eq("ativo", true)
-    .gte("limite_confirmacao", agoraIso)
     .order("data_evento", { ascending: true })
     .order("hora_evento", { ascending: true });
 
@@ -245,6 +258,64 @@ async function carregarEventosDisponiveis() {
   }
 
   eventosDisponiveis = (data || []).filter(alunoPodeVerEvento);
+}
+
+async function sincronizarConvitesDoAluno() {
+  convitesMap = new Map();
+
+  if (!eventosDisponiveis.length) return;
+
+  const idsEventos = eventosDisponiveis.map((evento) => evento.id);
+
+  const { data: convitesExistentes, error: erroBusca } = await supabase
+    .from("evento_convite_aluno")
+    .select("id, evento_id, visualizado, visualizado_em")
+    .eq("aluno_id", alunoId)
+    .in("evento_id", idsEventos);
+
+  if (erroBusca) {
+    console.error("Erro ao buscar convites existentes do aluno:", erroBusca);
+    return;
+  }
+
+  const idsComConvite = new Set(
+    (convitesExistentes || []).map((item) => Number(item.evento_id))
+  );
+
+  const convitesFaltantes = idsEventos
+    .filter((eventoId) => !idsComConvite.has(Number(eventoId)))
+    .map((eventoId) => ({
+      evento_id: Number(eventoId),
+      aluno_id: Number(alunoId)
+    }));
+
+  if (convitesFaltantes.length) {
+    const { error: erroUpsert } = await supabase
+      .from("evento_convite_aluno")
+      .upsert(convitesFaltantes, {
+        onConflict: "evento_id,aluno_id",
+        ignoreDuplicates: true
+      });
+
+    if (erroUpsert) {
+      console.error("Erro ao criar convites faltantes do aluno:", erroUpsert);
+    }
+  }
+
+  const { data: convitesAtualizados, error: erroAtualizados } = await supabase
+    .from("evento_convite_aluno")
+    .select("id, evento_id, visualizado, visualizado_em")
+    .eq("aluno_id", alunoId)
+    .in("evento_id", idsEventos);
+
+  if (erroAtualizados) {
+    console.error("Erro ao recarregar convites do aluno:", erroAtualizados);
+    return;
+  }
+
+  (convitesAtualizados || []).forEach((convite) => {
+    convitesMap.set(Number(convite.evento_id), convite);
+  });
 }
 
 async function carregarConfirmacoesDoAluno() {
@@ -262,12 +333,50 @@ async function carregarConfirmacoesDoAluno() {
 
   if (error) {
     console.error("Erro ao carregar confirmações do aluno:", error);
-    mostrarMensagem("Os eventos foram carregados, mas houve erro ao verificar suas confirmações.", "erro");
+    mostrarMensagem(
+      "Os eventos foram carregados, mas houve erro ao verificar suas confirmações.",
+      "erro"
+    );
     return;
   }
 
   (data || []).forEach((item) => {
     confirmacoesSet.add(Number(item.evento_id));
+  });
+}
+
+async function marcarConvitesComoVisualizados() {
+  const idsNaoVisualizados = Array.from(convitesMap.values())
+    .filter((convite) => !convite.visualizado)
+    .map((convite) => convite.id);
+
+  if (!idsNaoVisualizados.length) return;
+
+  const agoraIso = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("evento_convite_aluno")
+    .update({
+      visualizado: true,
+      visualizado_em: agoraIso
+    })
+    .in("id", idsNaoVisualizados);
+
+  if (error) {
+    console.error("Erro ao marcar convites como visualizados:", error);
+    return;
+  }
+
+  idsNaoVisualizados.forEach((idConvite) => {
+    for (const [eventoId, convite] of convitesMap.entries()) {
+      if (convite.id === idConvite) {
+        convitesMap.set(eventoId, {
+          ...convite,
+          visualizado: true,
+          visualizado_em: agoraIso
+        });
+      }
+    }
   });
 }
 
@@ -277,7 +386,9 @@ async function carregarConfirmacoesDoAluno() {
 async function confirmarPresenca(eventoId) {
   esconderMensagem();
 
-  const evento = eventosDisponiveis.find((item) => Number(item.id) === Number(eventoId));
+  const evento = eventosDisponiveis.find(
+    (item) => Number(item.id) === Number(eventoId)
+  );
 
   if (!evento) {
     mostrarMensagem("Evento não encontrado.", "erro");
@@ -286,6 +397,12 @@ async function confirmarPresenca(eventoId) {
 
   if (eventoJaConfirmado(eventoId)) {
     mostrarMensagem("Você já confirmou presença neste evento.");
+    return;
+  }
+
+  if (eventoPrazoConfirmacaoVencido(evento)) {
+    mostrarMensagem("O prazo de confirmação deste evento já foi encerrado.", "erro");
+    renderizarEventos();
     return;
   }
 
@@ -301,7 +418,6 @@ async function confirmarPresenca(eventoId) {
   if (error) {
     console.error("Erro ao confirmar presença:", error);
 
-    // caso a unique impeça duplicado
     if (String(error.message || "").toLowerCase().includes("duplicate")) {
       confirmacoesSet.add(Number(eventoId));
       renderizarEventos();
@@ -326,7 +442,7 @@ function renderizarEventos() {
     listaEventos.innerHTML = `
       <div class="card">
         <p style="margin:0;">
-          No momento não há eventos disponíveis para você confirmar.
+          No momento não há eventos disponíveis para você.
         </p>
       </div>
     `;
@@ -335,6 +451,7 @@ function renderizarEventos() {
 
   listaEventos.innerHTML = eventosDisponiveis.map((evento) => {
     const confirmado = eventoJaConfirmado(evento.id);
+    const prazoVencido = eventoPrazoConfirmacaoVencido(evento);
 
     const publicoDetalhe =
       evento.publico_alvo === "materia" && evento.materia?.nome
@@ -345,13 +462,22 @@ function renderizarEventos() {
         ? `${obterRotuloPublico(evento)} • ${evento.modulo.nome}`
         : obterRotuloPublico(evento);
 
-    const botaoHtml = confirmado
-      ? `
+    let botaoHtml = "";
+
+    if (confirmado) {
+      botaoHtml = `
         <button type="button" class="btn" disabled style="opacity:0.75; cursor:default;">
           Presença confirmada
         </button>
-      `
-      : `
+      `;
+    } else if (prazoVencido) {
+      botaoHtml = `
+        <button type="button" class="btn" disabled style="opacity:0.75; cursor:default;">
+          Prazo encerrado
+        </button>
+      `;
+    } else {
+      botaoHtml = `
         <button
           type="button"
           class="btn btn-confirmar-evento"
@@ -360,6 +486,7 @@ function renderizarEventos() {
           Confirmar presença
         </button>
       `;
+    }
 
     return `
       <article class="card">

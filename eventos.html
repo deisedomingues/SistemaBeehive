@@ -10,7 +10,7 @@
 
   <div class="overlay"></div>
 
-  <main class="container">
+  <main class="container container-eventos-admin">
     <h1 style="margin-bottom: 8px;">Eventos</h1>
     <p style="margin-bottom: 18px; opacity: 0.9;">
       Visualize os eventos cadastrados, acompanhe confirmações e crie novos eventos.
@@ -24,7 +24,7 @@
         <div>
           <h2 style="margin-bottom:6px;">Central de eventos</h2>
           <p style="margin:0; opacity:0.85;">
-            Aqui você acompanha os eventos ativos, futuros e já encerrados.
+            Acompanhe eventos ativos, encerrados e cancelados com uma visualização mais leve.
           </p>
         </div>
 
@@ -35,28 +35,28 @@
     </section>
 
     <!-- RESUMO -->
-    <section style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px;">
-      <div class="card">
-        <h3 style="margin-bottom:6px;">Total</h3>
-        <p id="totalEventos" style="font-size:26px; font-weight:bold; margin:0;">0</p>
+    <section class="resumo-eventos-topo">
+      <div class="card card-resumo-evento">
+        <h3>Total</h3>
+        <p id="totalEventos">0</p>
       </div>
 
-      <div class="card">
-        <h3 style="margin-bottom:6px;">Ativos / futuros</h3>
-        <p id="eventosAtivos" style="font-size:26px; font-weight:bold; margin:0;">0</p>
+      <div class="card card-resumo-evento">
+        <h3>Ativos / futuros</h3>
+        <p id="eventosAtivos">0</p>
       </div>
 
-      <div class="card">
-        <h3 style="margin-bottom:6px;">Encerrados</h3>
-        <p id="eventosEncerrados" style="font-size:26px; font-weight:bold; margin:0;">0</p>
+      <div class="card card-resumo-evento">
+        <h3>Encerrados / cancelados</h3>
+        <p id="eventosEncerrados">0</p>
       </div>
     </section>
 
     <!-- FILTROS -->
-    <section class="card" style="margin-bottom: 16px;">
+    <section class="card" style="margin-bottom: 20px;">
       <h2 style="margin-bottom: 12px;">Filtros</h2>
 
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+      <div class="filtros-eventos-admin">
         <label>
           Buscar por título
           <input type="text" id="filtroBusca" placeholder="Ex: imersão, oficina, workshop..." />
@@ -67,17 +67,36 @@
           <select id="filtroSituacao">
             <option value="todos">Todos</option>
             <option value="ativos">Somente ativos/futuros</option>
-            <option value="encerrados">Somente encerrados</option>
+            <option value="encerrados">Somente encerrados/cancelados</option>
           </select>
         </label>
       </div>
     </section>
 
-    <!-- LISTA -->
-    <section>
-      <div id="listaEventos" style="display:grid; gap:14px;">
+    <!-- FUTUROS -->
+    <section class="secao-eventos-admin">
+      <div class="topo-secao-eventos-admin">
+        <h2>Próximos eventos</h2>
+        <p>Cards compactos com as ações principais.</p>
+      </div>
+
+      <div id="gridEventosFuturos" class="grid-eventos-admin">
         <div class="card">
           <p style="margin:0;">Carregando eventos...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTÓRICO -->
+    <section class="secao-eventos-admin">
+      <div class="topo-secao-eventos-admin">
+        <h2>Histórico</h2>
+        <p>Eventos encerrados ou cancelados. Clique em “Ver detalhes” para expandir.</p>
+      </div>
+
+      <div id="listaHistoricoEventos" class="lista-historico-eventos">
+        <div class="card">
+          <p style="margin:0;">Carregando histórico...</p>
         </div>
       </div>
     </section>

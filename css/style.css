@@ -3103,3 +3103,445 @@ textarea {
     font-size: 12px;
   }
 }
+/* =========================================
+   BADGE DE EVENTOS - HOME DO ALUNO
+========================================= */
+.card-eventos-link {
+  position: relative;
+}
+
+.card-eventos-aluno {
+  position: relative;
+  overflow: visible;
+}
+
+.badge-eventos {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #d64545;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  z-index: 5;
+}
+/* =========================================
+   HOME ALUNO - BADGE EVENTOS
+========================================= */
+.card-eventos-link {
+  position: relative;
+}
+
+.card-eventos-aluno {
+  position: relative;
+  overflow: visible;
+}
+
+.badge-eventos {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #d64545;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  z-index: 5;
+}
+
+/* =========================================
+   EVENTOS ADMIN
+========================================= */
+.grid-eventos-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.card-evento-admin-futuro {
+  height: 100%;
+}
+
+.badge-evento {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge-evento-ativo {
+  background: #e8f7e8;
+  color: #1d5e1d;
+}
+
+.badge-evento-encerrado {
+  background: #f3f3f3;
+  color: #555;
+}
+
+.badge-evento-cancelado {
+  background: #ffe5e5;
+  color: #8b1e1e;
+}
+
+.mini-card-evento {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.mini-card-evento p {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 6px 0 0 0;
+}
+
+.lista-historico-eventos {
+  display: grid;
+  gap: 12px;
+}
+
+.item-historico-evento {
+  background: rgba(255, 245, 204, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.item-historico-evento summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+}
+
+.item-historico-evento summary::-webkit-details-marker {
+  display: none;
+}
+
+.item-historico-resumo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.item-historico-conteudo {
+  padding: 0 16px 16px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.btn-cancelar-evento {
+  background: #b93b3b;
+}
+
+.btn-cancelar-evento:hover {
+  filter: brightness(0.95);
+}
+
+/* =========================================================
+   EVENTOS ADMIN - NOVA UI MAIS COMPACTA
+========================================================= */
+
+.container-eventos-admin {
+  max-width: 1180px;
+  width: 95%;
+  text-align: left;
+  padding: 28px;
+}
+
+.resumo-eventos-topo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.card-resumo-evento {
+  min-height: auto;
+  padding: 18px 20px;
+}
+
+.card-resumo-evento h3 {
+  margin: 0 0 10px 0;
+  font-size: 15px;
+  color: #000;
+}
+
+.card-resumo-evento p {
+  margin: 0;
+  font-size: 22px;
+  font-weight: bold;
+  color: #000;
+}
+
+.filtros-eventos-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.secao-eventos-admin {
+  margin-bottom: 24px;
+}
+
+.topo-secao-eventos-admin {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.topo-secao-eventos-admin h2 {
+  margin: 0;
+  color: #5c4300;
+  font-size: 20px;
+}
+
+.topo-secao-eventos-admin p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.grid-eventos-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 14px;
+}
+
+.card-evento-compacto {
+  min-height: auto;
+  padding: 18px;
+  border-radius: 18px;
+}
+
+.topo-card-evento-compacto {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.topo-card-evento-compacto h2 {
+  margin: 0;
+  font-size: 17px;
+  color: #5c4300;
+}
+
+.meta-evento-compacto {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.45;
+}
+
+.badge-evento {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-evento-ativo {
+  background: #e8f7e8;
+  color: #1d5e1d;
+}
+
+.badge-evento-encerrado {
+  background: #fff4d6;
+  color: #8a6500;
+}
+
+.badge-evento-cancelado {
+  background: #ffe5e5;
+  color: #8b1e1e;
+}
+
+/* fundo dos cards conforme situação */
+.evento-visual-ativo {
+  background: linear-gradient(180deg, #f7fff7 0%, #ecfaec 100%);
+  border: 1px solid #cde8cd;
+}
+
+.evento-visual-encerrado {
+  background: linear-gradient(180deg, #fffdf4 0%, #fff4cf 100%);
+  border: 1px solid #f1df9a;
+}
+
+.evento-visual-cancelado {
+  background: linear-gradient(180deg, #fff8f8 0%, #ffe7e7 100%);
+  border: 1px solid #efb9b9;
+}
+
+.detalhes-evento-box {
+  margin-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 12px;
+}
+
+.detalhes-evento-box summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  color: #5c4300;
+  list-style: none;
+}
+
+.detalhes-evento-box summary::-webkit-details-marker {
+  display: none;
+}
+
+.conteudo-detalhes-evento {
+  margin-top: 14px;
+}
+
+.detalhes-evento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.bloco-detalhe-evento {
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.bloco-detalhe-evento strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #5c4300;
+  font-size: 13px;
+}
+
+.bloco-detalhe-evento p {
+  margin: 0;
+  font-size: 13px;
+  color: #444;
+  line-height: 1.5;
+}
+
+.chips-confirmados-evento {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-confirmado-evento {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  color: #444;
+}
+
+.acoes-evento-detalhe {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.btn-cancelar-evento {
+  background: #b93b3b;
+  color: #fff;
+}
+
+.btn-cancelar-evento:hover {
+  filter: brightness(0.96);
+}
+
+.lista-historico-eventos {
+  display: grid;
+  gap: 12px;
+}
+
+.item-historico-evento-compacto {
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+}
+
+.item-historico-evento-topo {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.item-historico-evento-icone {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.item-historico-evento-texto h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: #5c4300;
+}
+
+.item-historico-evento-texto p {
+  margin: 0;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.45;
+}
+
+.item-historico-evento-lado {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.detalhes-evento-historico {
+  margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .container-eventos-admin {
+    width: 100%;
+    padding: 20px;
+  }
+
+  .item-historico-evento-topo {
+    grid-template-columns: 1fr;
+  }
+
+  .item-historico-evento-lado {
+    justify-content: flex-start;
+  }
+
+  .grid-eventos-admin {
+    grid-template-columns: 1fr;
+  }
+}

@@ -4,7 +4,8 @@ import { supabase } from "./supabase.js";
    ELEMENTOS
 ========================================================= */
 const msg = document.getElementById("msg");
-const listaEventos = document.getElementById("listaEventos");
+const gridEventosFuturos = document.getElementById("gridEventosFuturos");
+const listaHistoricoEventos = document.getElementById("listaHistoricoEventos");
 
 const totalEventosEl = document.getElementById("totalEventos");
 const eventosAtivosEl = document.getElementById("eventosAtivos");
@@ -18,6 +19,7 @@ const filtroSituacao = document.getElementById("filtroSituacao");
 ========================================================= */
 let eventos = [];
 let confirmacoesPorEvento = {};
+let convitesPorEvento = {};
 
 /* =========================================================
    INICIALIZAÇÃO
@@ -80,9 +82,8 @@ function obterSituacaoEvento(evento) {
   const agora = new Date();
   const dataHoraEvento = new Date(`${evento.data_evento}T${evento.hora_evento}`);
 
-  if (!evento.ativo) return "inativo";
+  if (!evento.ativo) return "cancelado";
   if (dataHoraEvento < agora) return "encerrado";
-
   return "ativo";
 }
 
@@ -110,6 +111,24 @@ function escaparHtml(texto) {
     .replaceAll("'", "&#39;");
 }
 
+function obterClasseVisualEvento(situacao) {
+  if (situacao === "ativo") return "evento-visual-ativo";
+  if (situacao === "cancelado") return "evento-visual-cancelado";
+  return "evento-visual-encerrado";
+}
+
+function obterBadgeSituacao(situacao) {
+  if (situacao === "ativo") {
+    return `<span class="badge-evento badge-evento-ativo">Ativo / futuro</span>`;
+  }
+
+  if (situacao === "cancelado") {
+    return `<span class="badge-evento badge-evento-cancelado">Cancelado</span>`;
+  }
+
+  return `<span class="badge-evento badge-evento-encerrado">Encerrado</span>`;
+}
+
 /* =========================================================
    BUSCA DE DADOS
 ========================================================= */
@@ -117,6 +136,7 @@ async function carregarTudo() {
   esconderMensagem();
   await carregarEventos();
   await carregarConfirmacoes();
+  await carregarConvites();
   atualizarResumo();
   renderizarEventos();
 }
@@ -155,7 +175,6 @@ async function carregarConfirmacoes() {
   confirmacoesPorEvento = {};
 
   const idsEventos = eventos.map((evento) => evento.id);
-
   if (!idsEventos.length) return;
 
   const { data, error } = await supabase
@@ -195,10 +214,49 @@ async function carregarConfirmacoes() {
     }
   }
 
-  // ordena os nomes alfabeticamente
   Object.values(confirmacoesPorEvento).forEach((grupo) => {
     grupo.alunos.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   });
+}
+
+async function carregarConvites() {
+  convitesPorEvento = {};
+
+  const idsEventos = eventos.map((evento) => evento.id);
+  if (!idsEventos.length) return;
+
+  const { data, error } = await supabase
+    .from("evento_convite_aluno")
+    .select(`
+      evento_id,
+      aluno_id,
+      visualizado
+    `)
+    .in("evento_id", idsEventos);
+
+  if (error) {
+    console.error("Erro ao carregar convites:", error);
+    mostrarMensagem("Os eventos foram carregados, mas houve erro ao buscar os convites dos alunos.", "erro");
+    return;
+  }
+
+  for (const item of data || []) {
+    if (!convitesPorEvento[item.evento_id]) {
+      convitesPorEvento[item.evento_id] = {
+        total: 0,
+        visualizados: 0,
+        naoVisualizados: 0
+      };
+    }
+
+    convitesPorEvento[item.evento_id].total += 1;
+
+    if (item.visualizado) {
+      convitesPorEvento[item.evento_id].visualizados += 1;
+    } else {
+      convitesPorEvento[item.evento_id].naoVisualizados += 1;
+    }
+  }
 }
 
 /* =========================================================
@@ -214,7 +272,7 @@ function atualizarResumo() {
     const situacao = obterSituacaoEvento(evento);
 
     if (situacao === "ativo") ativos += 1;
-    if (situacao === "encerrado" || situacao === "inativo") encerrados += 1;
+    if (situacao === "encerrado" || situacao === "cancelado") encerrados += 1;
   });
 
   totalEventosEl.textContent = total;
@@ -251,7 +309,7 @@ function obterEventosFiltrados() {
     }
 
     if (situacaoFiltro === "encerrados") {
-      return situacao === "encerrado" || situacao === "inativo";
+      return situacao === "encerrado" || situacao === "cancelado";
     }
 
     return true;
@@ -259,104 +317,213 @@ function obterEventosFiltrados() {
 }
 
 /* =========================================================
-   RENDER
+   AÇÕES
 ========================================================= */
-function renderizarEventos() {
-  const lista = obterEventosFiltrados();
+async function cancelarEvento(eventoId) {
+  const confirmar = window.confirm("Deseja realmente cancelar este evento?");
+  if (!confirmar) return;
 
-  if (!lista.length) {
-    listaEventos.innerHTML = `
-      <div class="card">
-        <p style="margin:0;">Nenhum evento encontrado com os filtros selecionados.</p>
-      </div>
-    `;
+  esconderMensagem();
+
+  const { error } = await supabase
+    .from("evento")
+    .update({ ativo: false })
+    .eq("id", eventoId);
+
+  if (error) {
+    console.error("Erro ao cancelar evento:", error);
+    mostrarMensagem("Não foi possível cancelar o evento.", "erro");
     return;
   }
 
-  listaEventos.innerHTML = lista.map((evento) => {
-    const situacao = obterSituacaoEvento(evento);
+  mostrarMensagem("✅ Evento cancelado com sucesso.");
+  await carregarTudo();
+}
 
-    const confirmacoes = confirmacoesPorEvento[evento.id] || {
-      total: 0,
-      alunos: []
-    };
+/* =========================================================
+   RENDER
+========================================================= */
+function montarDetalhesEvento(evento) {
+  const situacao = obterSituacaoEvento(evento);
 
-    const nomesConfirmadosHtml = confirmacoes.alunos.length
-      ? `
-        <div style="margin-top:10px;">
-          <strong>Alunos confirmados:</strong>
-          <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;">
-            ${confirmacoes.alunos
-              .map((aluno) => `
-                <span style="display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,0.55); font-size:13px;">
-                  ${escaparHtml(aluno.nome)}
-                </span>
-              `)
-              .join("")}
-          </div>
+  const confirmacoes = confirmacoesPorEvento[evento.id] || {
+    total: 0,
+    alunos: []
+  };
+
+  const convites = convitesPorEvento[evento.id] || {
+    total: 0,
+    visualizados: 0,
+    naoVisualizados: 0
+  };
+
+  const totalPendentes = Math.max(convites.total - confirmacoes.total, 0);
+
+  const nomesConfirmadosHtml = confirmacoes.alunos.length
+    ? `
+      <div class="bloco-detalhe-evento">
+        <strong>Alunos confirmados</strong>
+        <div class="chips-confirmados-evento">
+          ${confirmacoes.alunos
+            .map((aluno) => `
+              <span class="chip-confirmado-evento">
+                ${escaparHtml(aluno.nome)}
+              </span>
+            `)
+            .join("")}
         </div>
-      `
-      : `
-        <div style="margin-top:10px;">
-          <strong>Alunos confirmados:</strong>
-          <p style="margin:6px 0 0 0;">Nenhum aluno confirmou presença ainda.</p>
-        </div>
-      `;
+      </div>
+    `
+    : `
+      <div class="bloco-detalhe-evento">
+        <strong>Alunos confirmados</strong>
+        <p>Nenhum aluno confirmou presença ainda.</p>
+      </div>
+    `;
 
-    const badgeSituacao =
+  return `
+    <div class="detalhes-evento-grid">
+      <div class="bloco-detalhe-evento">
+        <strong>Descrição</strong>
+        <p>${escaparHtml(evento.descricao || "Sem descrição informada.")}</p>
+      </div>
+
+      <div class="bloco-detalhe-evento">
+        <strong>Público</strong>
+        <p>${escaparHtml(obterRotuloPublico(evento))}</p>
+      </div>
+
+      <div class="bloco-detalhe-evento">
+        <strong>Confirma até</strong>
+        <p>${formatarDataHoraBR(evento.limite_confirmacao)}</p>
+      </div>
+
+      <div class="bloco-detalhe-evento">
+        <strong>Convidados</strong>
+        <p>${convites.total}</p>
+      </div>
+
+      <div class="bloco-detalhe-evento">
+        <strong>Confirmados</strong>
+        <p>${confirmacoes.total}</p>
+      </div>
+
+      <div class="bloco-detalhe-evento">
+        <strong>Pendentes</strong>
+        <p>${totalPendentes}</p>
+      </div>
+    </div>
+
+    ${nomesConfirmadosHtml}
+
+    ${
       situacao === "ativo"
-        ? `<span style="display:inline-block; padding:6px 10px; border-radius:999px; background:#e8f7e8; color:#1d5e1d; font-size:12px; font-weight:bold;">Ativo / futuro</span>`
-        : `<span style="display:inline-block; padding:6px 10px; border-radius:999px; background:#f3f3f3; color:#555; font-size:12px; font-weight:bold;">Encerrado</span>`;
+        ? `
+          <div class="acoes-evento-detalhe">
+            <button
+              type="button"
+              class="btn btn-cancelar-evento"
+              data-evento-id="${evento.id}"
+            >
+              Cancelar evento
+            </button>
+          </div>
+        `
+        : ""
+    }
+  `;
+}
 
-    return `
-      <article class="card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
-          <div>
-            <h2 style="margin-bottom:6px;">${escaparHtml(evento.titulo || "-")}</h2>
-            <p style="margin:0; opacity:0.85;">
+function renderizarEventos() {
+  const lista = obterEventosFiltrados();
+
+  const futuros = lista.filter((evento) => obterSituacaoEvento(evento) === "ativo");
+  const historico = lista.filter((evento) => obterSituacaoEvento(evento) !== "ativo");
+
+  if (!futuros.length) {
+    gridEventosFuturos.innerHTML = `
+      <div class="card">
+        <p style="margin:0;">Nenhum evento futuro encontrado.</p>
+      </div>
+    `;
+  } else {
+    gridEventosFuturos.innerHTML = futuros.map((evento) => {
+      const situacao = obterSituacaoEvento(evento);
+
+      return `
+        <article class="card-admin card-evento-compacto ${obterClasseVisualEvento(situacao)}">
+          <div class="card-admin-icone">🎈</div>
+
+          <div class="card-admin-conteudo">
+            <div class="topo-card-evento-compacto">
+              <h2>${escaparHtml(evento.titulo || "-")}</h2>
+              ${obterBadgeSituacao(situacao)}
+            </div>
+
+            <p class="meta-evento-compacto">
               ${escaparHtml(evento.tipo_evento || "Evento")} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
             </p>
-          </div>
-          <div>
-            ${badgeSituacao}
-          </div>
-        </div>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:12px;">
-          <div>
-            <strong>Local:</strong><br>
-            <span>${escaparHtml(evento.local || "-")}</span>
+            <p class="meta-evento-compacto">
+              Local: ${escaparHtml(evento.local || "-")}
+            </p>
           </div>
 
-          <div>
-            <strong>Público:</strong><br>
-            <span>${escaparHtml(obterRotuloPublico(evento))}</span>
-          </div>
+          <details class="detalhes-evento-box">
+            <summary>Ver detalhes</summary>
+            <div class="conteudo-detalhes-evento">
+              ${montarDetalhesEvento(evento)}
+            </div>
+          </details>
+        </article>
+      `;
+    }).join("");
+  }
 
-          <div>
-            <strong>Confirma até:</strong><br>
-            <span>${formatarDataHoraBR(evento.limite_confirmacao)}</span>
-          </div>
-        </div>
-
-        <div style="margin-bottom:12px;">
-          <strong>Descrição:</strong>
-          <p style="margin:6px 0 0 0;">
-            ${escaparHtml(evento.descricao || "Sem descrição informada.")}
-          </p>
-        </div>
-
-        <div style="padding:12px; border-radius:14px; background:rgba(255,255,255,0.35); margin-bottom:12px;">
-          <strong>Total de confirmados</strong>
-          <p style="font-size:24px; font-weight:bold; margin:6px 0 0 0;">${confirmacoes.total}</p>
-        </div>
-
-        <div style="padding:12px; border-radius:14px; background:rgba(255,255,255,0.25);">
-          ${nomesConfirmadosHtml}
-        </div>
-      </article>
+  if (!historico.length) {
+    listaHistoricoEventos.innerHTML = `
+      <div class="card">
+        <p style="margin:0;">Nenhum evento encerrado ou cancelado encontrado.</p>
+      </div>
     `;
-  }).join("");
+  } else {
+    listaHistoricoEventos.innerHTML = historico.map((evento) => {
+      const situacao = obterSituacaoEvento(evento);
+
+      return `
+        <article class="item-historico-evento-compacto ${obterClasseVisualEvento(situacao)}">
+          <div class="item-historico-evento-topo">
+            <div class="item-historico-evento-icone">🎈</div>
+
+            <div class="item-historico-evento-texto">
+              <h3>${escaparHtml(evento.titulo || "-")}</h3>
+              <p>
+                ${escaparHtml(evento.tipo_evento || "Evento")} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
+              </p>
+            </div>
+
+            <div class="item-historico-evento-lado">
+              ${obterBadgeSituacao(situacao)}
+            </div>
+          </div>
+
+          <details class="detalhes-evento-box detalhes-evento-historico">
+            <summary>Ver detalhes</summary>
+            <div class="conteudo-detalhes-evento">
+              ${montarDetalhesEvento(evento)}
+            </div>
+          </details>
+        </article>
+      `;
+    }).join("");
+  }
+
+  document.querySelectorAll(".btn-cancelar-evento").forEach((botao) => {
+    botao.addEventListener("click", async () => {
+      const eventoId = Number(botao.dataset.eventoId);
+      await cancelarEvento(eventoId);
+    });
+  });
 }
 
 /* =========================================================
