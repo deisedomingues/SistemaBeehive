@@ -2607,3 +2607,320 @@ textarea[readonly] {
 .detalhes-evento-box[open] .texto-toggle-detalhes {
   opacity: 0.9;
 }
+
+/* =========================================================
+   25) DETALHES DO ALUNO
+========================================================= */
+.container-detalhes-aluno {
+  max-width: 980px;
+  width: 95%;
+  text-align: left;
+  padding: 24px;
+}
+
+.card-detalhe-topo {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding: 18px;
+  min-height: auto;
+}
+
+.card-detalhe-topo .card-admin-icone {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 20px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.card-detalhe-topo-conteudo {
+  flex: 1;
+}
+
+.topo-aluno-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.card-detalhe-topo-conteudo h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #5c4300;
+}
+
+.subtitulo-detalhe-aluno {
+  margin: 5px 0 0 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.badge-aniversario {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff2bf;
+  border: 1px solid #f1bc32;
+  color: #5c4300;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.grade-info-aluno-topo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.mini-info-aluno {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #f1df9a;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.mini-info-aluno span {
+  display: block;
+  font-size: 11px;
+  color: #777;
+  margin-bottom: 5px;
+}
+
+.mini-info-aluno strong {
+  color: #3f3f46;
+  font-size: 13px;
+}
+
+.dashboard-detalhes-aluno {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.card-resumo-aluno {
+  min-height: auto;
+  padding: 16px;
+}
+
+.card-resumo-aluno .card-admin-icone {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.card-resumo-aluno .card-admin-conteudo h2 {
+  font-size: 14px;
+  margin: 0 0 4px 0;
+}
+
+.card-resumo-aluno .card-admin-conteudo p {
+  font-size: 20px;
+  color: #3f3f46;
+  margin-top: 4px;
+}
+
+.card-resumo-eventos-aluno {
+  padding: 16px 18px;
+  min-height: auto;
+  margin-bottom: 16px;
+}
+
+.card-resumo-eventos-aluno .card-admin-icone {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.card-resumo-eventos-aluno .card-admin-conteudo h2 {
+  font-size: 15px;
+  margin: 0 0 4px 0;
+}
+
+.card-resumo-eventos-aluno .card-admin-conteudo p {
+  font-size: 16px;
+  margin: 0;
+}
+
+.topo-card-eventos-aluno {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-link-expansao {
+  background: transparent;
+  border: none;
+  color: #7a5a00;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 3px 0;
+}
+
+.btn-link-expansao:hover {
+  text-decoration: underline;
+}
+
+.box-eventos-aluno {
+  margin-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 12px;
+}
+
+.lista-eventos-aluno {
+  display: grid;
+  gap: 8px;
+}
+
+.item-evento-aluno {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #f1df9a;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.item-evento-aluno-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.item-evento-aluno strong {
+  color: #5c4300;
+  font-size: 13px;
+}
+
+.item-evento-aluno p {
+  margin: 3px 0 0 0;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.4;
+}
+
+.badge-evento-aluno {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fff4d6;
+  color: #8a6500;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.filtros-historico-aluno {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.filtros-historico-aluno label {
+  font-size: 13px;
+}
+
+.filtros-historico-aluno select {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.status-reposicao {
+  background: #eef6ff;
+  color: #1d4f91;
+}
+
+.status-instrumental {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+.status-plantao {
+  background: #fff7d6;
+  color: #8a6500;
+}
+
+.lista-historico {
+  gap: 10px;
+}
+
+.item-historico {
+  border: 1px solid #eee3b9;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fffdf7;
+}
+
+.item-historico-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.item-historico-topo strong {
+  font-size: 14px;
+  color: #3f3f46;
+}
+
+.item-historico p {
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 4px 0 0 0;
+}
+
+.status-badge {
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .container-detalhes-aluno {
+    width: 100%;
+    padding: 18px;
+  }
+
+  .card-detalhe-topo {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .dashboard-detalhes-aluno {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard-detalhes-aluno {
+    grid-template-columns: 1fr;
+  }
+
+  .card-detalhe-topo .card-admin-icone,
+  .card-resumo-aluno .card-admin-icone,
+  .card-resumo-eventos-aluno .card-admin-icone {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+}

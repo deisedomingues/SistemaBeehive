@@ -14,14 +14,26 @@ const msg = document.getElementById("msg");
 const tituloAluno = document.getElementById("tituloAluno");
 const subtituloAluno = document.getElementById("subtituloAluno");
 
+const infoMateria = document.getElementById("infoMateria");
+const infoModuloAtual = document.getElementById("infoModuloAtual");
+const infoProfessor = document.getElementById("infoProfessor");
+const infoNascimento = document.getElementById("infoNascimento");
+const badgeAniversario = document.getElementById("badgeAniversario");
+
 const cPresente = document.getElementById("cPresente");
 const cAusente = document.getElementById("cAusente");
 const cCancelada = document.getElementById("cCancelada");
-const cTrancada = document.getElementById("cTrancada");
 const cReposicao = document.getElementById("cReposicao");
+const cInstrumental = document.getElementById("cInstrumental");
+const cPlantao = document.getElementById("cPlantao");
+const cEventos = document.getElementById("cEventos");
 
 const listaAulas = document.getElementById("listaAulas");
 const listaReposicoes = document.getElementById("listaReposicoes");
+
+const btnToggleEventos = document.getElementById("btnToggleEventos");
+const boxEventosAluno = document.getElementById("boxEventosAluno");
+const listaEventosAluno = document.getElementById("listaEventosAluno");
 
 const formNota = document.getElementById("form-nota");
 const notaData = document.getElementById("notaData");
@@ -31,17 +43,33 @@ const notaObs = document.getElementById("notaObs");
 const notaModulo = document.getElementById("notaModulo");
 
 const listaNotas = document.getElementById("listaNotas");
-
 const mediaGeralEl = document.getElementById("mediaGeral");
 
-// filtro das notas
 const filtroModulo = document.getElementById("filtroModulo");
-
-// filtro do histórico de aulas
 const filtroModuloAula = document.getElementById("filtroModuloAula");
+const filtroStatusAula = document.getElementById("filtroStatusAula");
+
+// ===============================
+// ESTADO
+// ===============================
 
 let todasNotas = [];
 let todasAulas = [];
+let eventosAluno = [];
+let dadosCabecalho = null;
+
+// ===============================
+// STATUS
+// ===============================
+
+const STATUS = {
+  PRESENTE: "Presente",
+  AUSENTE: "Ausente",
+  CANCELADA: "Cancelada",
+  REPOSICAO: "Reposição",
+  AULA_INSTRUMENTAL: "Aula Instrumental",
+  PLANTAO_DUVIDAS: "Plantão de dúvidas"
+};
 
 // ===============================
 // FUNÇÕES AUXILIARES
@@ -64,13 +92,73 @@ function limparLista(el) {
 }
 
 function formatarDataBR(dataISO) {
-  if (!dataISO) return "";
+  if (!dataISO) return "-";
   const [yyyy, mm, dd] = dataISO.split("-");
   return `${dd}/${mm}/${yyyy}`;
 }
 
 function hojeISO() {
   return new Date().toISOString().split("T")[0];
+}
+
+function escaparHtml(texto) {
+  return String(texto ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function normalizarTexto(valor) {
+  return String(valor || "").trim().toLowerCase();
+}
+
+function obterClasseStatus(status) {
+  if (status === STATUS.PRESENTE) return "status-presente";
+  if (status === STATUS.AUSENTE) return "status-ausente";
+  if (status === STATUS.CANCELADA) return "status-cancelada";
+  if (status === STATUS.REPOSICAO) return "status-reposicao";
+  if (status === STATUS.AULA_INSTRUMENTAL) return "status-instrumental";
+  if (status === STATUS.PLANTAO_DUVIDAS) return "status-plantao";
+  return "";
+}
+
+function ehAniversarioHoje(dataNascimento) {
+  if (!dataNascimento) return false;
+
+  const hoje = new Date();
+  const [ano, mes, dia] = dataNascimento.split("-").map(Number);
+
+  return hoje.getMonth() + 1 === mes && hoje.getDate() === dia;
+}
+
+function obterTextoStatusExtra(aula) {
+  if (aula.status === STATUS.AUSENTE && aula.aula_gravada) {
+    return "Ausência com aula gravada";
+  }
+
+  if (aula.status === STATUS.AUSENTE && aula.precisa_reposicao) {
+    return "Ausência com reposição pendente";
+  }
+
+  if (aula.status === STATUS.CANCELADA) {
+    return "Cancelada pela escola";
+  }
+
+  if (aula.status === STATUS.REPOSICAO) {
+    return "Reposição realizada";
+  }
+
+  if (aula.status === STATUS.AULA_INSTRUMENTAL) {
+    return "Benefício extra do aluno";
+  }
+
+  if (aula.status === STATUS.PLANTAO_DUVIDAS) {
+    return "Atendimento de dúvidas";
+  }
+
+  return "";
 }
 
 if (!matriculaId) {
@@ -89,10 +177,20 @@ async function carregarCabecalho() {
       materia_id,
       modulo_id,
       professor_id,
-      aluno:aluno_id ( nome ),
-      materia:materia_id ( nome ),
-      modulo:modulo_id ( nome ),
-      professor:professor_id ( nome )
+      aluno:aluno_id (
+        id,
+        nome,
+        data_nascimento
+      ),
+      materia:materia_id (
+        nome
+      ),
+      modulo:modulo_id (
+        nome
+      ),
+      professor:professor_id (
+        nome
+      )
     `)
     .eq("id", matriculaId)
     .single();
@@ -103,10 +201,27 @@ async function carregarCabecalho() {
     return null;
   }
 
-  tituloAluno.textContent = data.aluno?.nome || "Aluno";
+  dadosCabecalho = data;
 
-  subtituloAluno.textContent =
-    `${data.materia?.nome || ""} — ${data.modulo?.nome || ""} — Prof(a). ${data.professor?.nome || ""}`;
+  const nomeAluno = data.aluno?.nome || "Aluno";
+  const nomeMateria = data.materia?.nome || "-";
+  const nomeModulo = data.modulo?.nome || "-";
+  const nomeProfessor = data.professor?.nome || "-";
+  const nascimento = data.aluno?.data_nascimento || null;
+
+  tituloAluno.textContent = nomeAluno;
+  subtituloAluno.textContent = `${nomeMateria} — ${nomeModulo} — Prof(a). ${nomeProfessor}`;
+
+  infoMateria.textContent = nomeMateria;
+  infoModuloAtual.textContent = nomeModulo;
+  infoProfessor.textContent = nomeProfessor;
+  infoNascimento.textContent = nascimento ? formatarDataBR(nascimento) : "-";
+
+  if (ehAniversarioHoje(nascimento)) {
+    badgeAniversario.style.display = "inline-flex";
+  } else {
+    badgeAniversario.style.display = "none";
+  }
 
   await carregarModulos(data.materia_id, data.modulo_id);
 
@@ -132,19 +247,11 @@ async function carregarModulos(materiaId, moduloAtual) {
 
   const modulos = data || [];
 
-  // select do cadastro de nota
   notaModulo.innerHTML = `<option value="">Selecione o módulo</option>`;
-
-  // filtro das notas
   filtroModulo.innerHTML = `<option value="">Todos</option>`;
-
-  // filtro das aulas
-  if (filtroModuloAula) {
-    filtroModuloAula.innerHTML = `<option value="">Todos</option>`;
-  }
+  filtroModuloAula.innerHTML = `<option value="">Todos</option>`;
 
   modulos.forEach((m) => {
-    // option da nota
     const optNota = document.createElement("option");
     optNota.value = m.id;
     optNota.textContent = m.nome;
@@ -155,19 +262,15 @@ async function carregarModulos(materiaId, moduloAtual) {
 
     notaModulo.appendChild(optNota);
 
-    // option do filtro de notas
     const optFiltroNota = document.createElement("option");
     optFiltroNota.value = m.id;
     optFiltroNota.textContent = m.nome;
     filtroModulo.appendChild(optFiltroNota);
 
-    // option do filtro de aulas
-    if (filtroModuloAula) {
-      const optFiltroAula = document.createElement("option");
-      optFiltroAula.value = m.id;
-      optFiltroAula.textContent = m.nome;
-      filtroModuloAula.appendChild(optFiltroAula);
-    }
+    const optFiltroAula = document.createElement("option");
+    optFiltroAula.value = m.id;
+    optFiltroAula.textContent = m.nome;
+    filtroModuloAula.appendChild(optFiltroAula);
   });
 }
 
@@ -187,12 +290,13 @@ async function carregarAulas() {
       justificativa,
       precisa_reposicao,
       aula_gravada,
+      aula_original_id,
       modulo_id,
       modulo:modulo_id ( nome ),
       professor:professor_id ( nome )
     `)
     .eq("matricula_id", matriculaId)
-    .order("data_aula", { ascending: true });
+    .order("data_aula", { ascending: false });
 
   if (error) {
     console.error(error);
@@ -204,6 +308,99 @@ async function carregarAulas() {
 }
 
 // ===============================
+// EVENTOS DO ALUNO
+// ===============================
+
+async function carregarEventosAluno() {
+  const alunoId = dadosCabecalho?.aluno?.id;
+
+  if (!alunoId) {
+    eventosAluno = [];
+    atualizarCardEventos();
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("evento_confirmacao")
+    .select(`
+      evento_id,
+      aluno_id,
+      evento:evento_id (
+        id,
+        titulo,
+        tipo_evento,
+        data_evento,
+        hora_evento,
+        local,
+        ativo
+      )
+    `)
+    .eq("aluno_id", alunoId);
+
+  if (error) {
+    console.error("Erro ao carregar eventos do aluno:", error);
+    eventosAluno = [];
+    atualizarCardEventos();
+    return;
+  }
+
+  eventosAluno = (data || [])
+    .map((item) => item.evento)
+    .filter(Boolean)
+    .sort((a, b) => {
+      const dataA = `${a.data_evento || ""} ${a.hora_evento || "00:00"}`;
+      const dataB = `${b.data_evento || ""} ${b.hora_evento || "00:00"}`;
+      return dataB.localeCompare(dataA);
+    });
+
+  atualizarCardEventos();
+}
+
+function atualizarCardEventos() {
+  cEventos.textContent = eventosAluno.length;
+
+  if (!eventosAluno.length) {
+    btnToggleEventos.style.display = "none";
+    boxEventosAluno.style.display = "none";
+    listaEventosAluno.innerHTML = `<p style="font-size:13px; color:#666; margin-top:10px;">Nenhum evento participado até agora.</p>`;
+    return;
+  }
+
+  btnToggleEventos.style.display = "inline-flex";
+  renderEventosAluno();
+}
+
+function renderEventosAluno() {
+  if (!eventosAluno.length) {
+    listaEventosAluno.innerHTML = `<p style="font-size:13px; color:#666;">Nenhum evento encontrado.</p>`;
+    return;
+  }
+
+  listaEventosAluno.innerHTML = eventosAluno.map((evento) => {
+    const situacao = evento.ativo ? "Ativo" : "Encerrado/Cancelado";
+
+    return `
+      <div class="item-evento-aluno">
+        <div class="item-evento-aluno-topo">
+          <strong>${escaparHtml(evento.titulo || "Evento")}</strong>
+          <span class="badge-evento-aluno">${escaparHtml(situacao)}</span>
+        </div>
+
+        <p>
+          ${escaparHtml(evento.tipo_evento || "Evento")} •
+          ${formatarDataBR(evento.data_evento)}
+          ${evento.hora_evento ? ` às ${escaparHtml(evento.hora_evento.slice(0, 5))}` : ""}
+        </p>
+
+        <p>
+          Local: ${escaparHtml(evento.local || "Não informado")}
+        </p>
+      </div>
+    `;
+  }).join("");
+}
+
+// ===============================
 // CONTADORES + REPOSIÇÕES
 // ===============================
 
@@ -211,18 +408,19 @@ function preencherContadores(aulas) {
   let p = 0;
   let a = 0;
   let c = 0;
-  let t = 0;
   let r = 0;
+  let instrumental = 0;
+  let plantao = 0;
 
   limparLista(listaReposicoes);
 
   aulas.forEach((x) => {
-    if (x.status === "Presente") {
+    if (x.status === STATUS.PRESENTE) {
       p++;
-    } else if (x.status === "Ausente") {
-      if (x.aula_gravada) {
-        a++;
-      } else if (x.precisa_reposicao) {
+    } else if (x.status === STATUS.AUSENTE) {
+      a++;
+
+      if (x.precisa_reposicao) {
         r++;
 
         const li = document.createElement("li");
@@ -230,10 +428,8 @@ function preencherContadores(aulas) {
           `${formatarDataBR(x.data_aula)} — ${x.justificativa || "Reposição solicitada"}`;
 
         listaReposicoes.appendChild(li);
-      } else {
-        a++;
       }
-    } else if (x.status === "Cancelada") {
+    } else if (x.status === STATUS.CANCELADA) {
       c++;
       r++;
 
@@ -242,16 +438,23 @@ function preencherContadores(aulas) {
         `${formatarDataBR(x.data_aula)} — ${x.justificativa || "Aula cancelada"}`;
 
       listaReposicoes.appendChild(li);
-    } else if (x.status === "Trancada") {
-      t++;
+    } else if (x.status === STATUS.AULA_INSTRUMENTAL) {
+      instrumental++;
+    } else if (x.status === STATUS.PLANTAO_DUVIDAS) {
+      plantao++;
     }
   });
+
+  if (!listaReposicoes.innerHTML.trim()) {
+    listaReposicoes.innerHTML = `<li>Nenhuma reposição pendente.</li>`;
+  }
 
   cPresente.textContent = p;
   cAusente.textContent = a;
   cCancelada.textContent = c;
-  cTrancada.textContent = t;
   cReposicao.textContent = r;
+  cInstrumental.textContent = instrumental;
+  cPlantao.textContent = plantao;
 }
 
 // ===============================
@@ -262,46 +465,49 @@ function renderAulas(aulas) {
   limparLista(listaAulas);
 
   if (!aulas.length) {
-    listaAulas.innerHTML = "<li>Nenhuma aula registrada</li>";
+    listaAulas.innerHTML = `<div class="vazio-box">Nenhuma aula encontrada com os filtros selecionados.</div>`;
     return;
   }
 
-  aulas.forEach((x, index) => {
-    const li = document.createElement("li");
+  aulas.forEach((aula) => {
+    const observacaoStatus = obterTextoStatusExtra(aula);
 
-    let texto = `${index + 1} - ${formatarDataBR(x.data_aula)}`;
+    const html = `
+      <article class="item-historico">
+        <div class="item-historico-topo">
+          <div>
+            <strong>${formatarDataBR(aula.data_aula)}</strong>
+            <p style="margin:6px 0 0 0; font-size:13px; color:#666;">
+              ${escaparHtml(aula.modulo?.nome || "-")} • ${escaparHtml(aula.professor?.nome || "-")}
+            </p>
+          </div>
 
-    // agora mostra o módulo no histórico
-    if (x.modulo?.nome) {
-      texto += ` — Módulo: ${x.modulo.nome}`;
-    }
+          <span class="status-badge ${obterClasseStatus(aula.status)}">
+            ${escaparHtml(aula.status || "-")}
+          </span>
+        </div>
 
-    if (x.professor?.nome) {
-      texto += ` — ${x.professor.nome}`;
-    }
+        ${observacaoStatus ? `
+          <p style="font-size:13px; margin-bottom:8px; color:#7a5a00;">
+            ${escaparHtml(observacaoStatus)}
+          </p>
+        ` : ""}
 
-    if (x.conteudo) {
-      texto += ` — ${x.conteudo}`;
-    }
+        ${aula.conteudo ? `
+          <p><b>Conteúdo:</b> ${escaparHtml(aula.conteudo)}</p>
+        ` : ""}
 
-    if (x.licao_casa) {
-      texto += ` — ${x.licao_casa}`;
-    }
+        ${aula.licao_casa ? `
+          <p><b>Lição de casa:</b> ${escaparHtml(aula.licao_casa)}</p>
+        ` : ""}
 
-    if (x.status === "Ausente" && x.precisa_reposicao) {
-      texto += " (Reposição pendente)";
-    }
+        ${aula.justificativa ? `
+          <p><b>Justificativa:</b> ${escaparHtml(aula.justificativa)}</p>
+        ` : ""}
+      </article>
+    `;
 
-    if (x.status === "Cancelada") {
-      texto += " (Cancelada)";
-    }
-
-    if (x.status === "Trancada") {
-      texto += " (Trancada)";
-    }
-
-    li.textContent = texto;
-    listaAulas.appendChild(li);
+    listaAulas.insertAdjacentHTML("beforeend", html);
   });
 }
 
@@ -310,23 +516,24 @@ function renderAulas(aulas) {
 // ===============================
 
 function aplicarFiltroAulas() {
-  if (!filtroModuloAula) {
-    renderAulas(todasAulas);
-    return;
-  }
-
   const moduloId = Number(filtroModuloAula.value);
+  const status = filtroStatusAula.value;
 
-  if (!moduloId) {
-    renderAulas(todasAulas);
-    return;
+  let filtradas = [...todasAulas];
+
+  if (moduloId) {
+    filtradas = filtradas.filter(
+      (aula) => Number(aula.modulo_id) === moduloId
+    );
   }
 
-  const aulasFiltradas = todasAulas.filter(
-    (aula) => Number(aula.modulo_id) === moduloId
-  );
+  if (status) {
+    filtradas = filtradas.filter(
+      (aula) => normalizarTexto(aula.status) === normalizarTexto(status)
+    );
+  }
 
-  renderAulas(aulasFiltradas);
+  renderAulas(filtradas);
 }
 
 // ===============================
@@ -360,10 +567,6 @@ async function carregarNotas() {
   renderNotas(todasNotas);
 }
 
-// ===============================
-// RENDER NOTAS
-// ===============================
-
 function renderNotas(notas) {
   limparLista(listaNotas);
 
@@ -383,10 +586,6 @@ function renderNotas(notas) {
   });
 }
 
-// ===============================
-// MÉDIA GERAL
-// ===============================
-
 function calcularMediaGeral(notas) {
   if (!notas.length) {
     mediaGeralEl.textContent = "0.0";
@@ -402,6 +601,22 @@ function calcularMediaGeral(notas) {
   const media = soma / notas.length;
   mediaGeralEl.textContent = media.toFixed(2);
 }
+
+// ===============================
+// EVENTOS
+// ===============================
+
+btnToggleEventos?.addEventListener("click", () => {
+  const aberto = boxEventosAluno.style.display === "block";
+
+  if (aberto) {
+    boxEventosAluno.style.display = "none";
+    btnToggleEventos.textContent = "Ver mais";
+  } else {
+    boxEventosAluno.style.display = "block";
+    btnToggleEventos.textContent = "Ver menos";
+  }
+});
 
 // ===============================
 // FILTRO DAS NOTAS
@@ -425,12 +640,11 @@ filtroModulo.addEventListener("change", () => {
 });
 
 // ===============================
-// EVENTO DO FILTRO DE AULAS
+// FILTROS DAS AULAS
 // ===============================
 
-if (filtroModuloAula) {
-  filtroModuloAula.addEventListener("change", aplicarFiltroAulas);
-}
+filtroModuloAula?.addEventListener("change", aplicarFiltroAulas);
+filtroStatusAula?.addEventListener("change", aplicarFiltroAulas);
 
 // ===============================
 // SALVAR NOTA
@@ -494,6 +708,7 @@ async function init() {
   preencherContadores(todasAulas);
   renderAulas(todasAulas);
 
+  await carregarEventosAluno();
   await carregarNotas();
 }
 
