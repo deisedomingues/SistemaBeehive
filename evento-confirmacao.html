@@ -10,7 +10,7 @@
 
   <div class="overlay"></div>
 
-  <main class="container">
+  <main class="container container-eventos-admin">
     <h1 style="margin-bottom:8px;">Eventos da Escola</h1>
     <p style="margin-bottom:18px; opacity:0.9;">
       Confira os eventos disponíveis para você e confirme presença.
@@ -19,15 +19,23 @@
     <div id="msg" style="display:none; margin-bottom:12px;"></div>
 
     <section class="card" style="margin-bottom:16px;">
-      <h2 style="margin-bottom:6px;">Como funciona</h2>
-      <p style="margin:0;">
-        Os eventos mostrados aqui são filtrados conforme seus convites.
-        Ao confirmar presença, seu nome aparecerá para a administração da escola.
-      </p>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div>
+          <h2 style="margin-bottom:6px;">Central de eventos</h2>
+          <p style="margin:0; opacity:0.85;">
+            Aqui você visualiza os eventos disponíveis para seu perfil e pode confirmar sua presença.
+          </p>
+        </div>
+      </div>
     </section>
 
-    <section>
-      <div id="listaEventos" style="display:grid; gap:14px;">
+    <section class="secao-eventos-admin">
+      <div class="topo-secao-eventos-admin">
+        <h2>Eventos disponíveis para você</h2>
+        <p>Cards compactos no mesmo estilo visual da área administrativa.</p>
+      </div>
+
+      <div id="listaEventos" class="grid-eventos-admin">
         <div class="card">
           <p style="margin:0;">Carregando eventos...</p>
         </div>

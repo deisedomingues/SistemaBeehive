@@ -2574,3 +2574,36 @@ textarea[readonly] {
     width: 90px;
   }
 }
+
+/* =========================================================
+   24) EVENTOS ALUNO
+========================================================= */
+.btn-evento-aluno-confirmado,
+.btn-evento-aluno-encerrado {
+  opacity: 0.82;
+  cursor: default;
+}
+
+.btn-evento-aluno-confirmado {
+  background: #dff3df;
+  color: #1d5e1d;
+  border: 1px solid #b7dbb7;
+}
+
+.btn-evento-aluno-confirmado:hover {
+  background: #dff3df;
+}
+
+.btn-evento-aluno-encerrado {
+  background: #f5ead0;
+  color: #8a6500;
+  border: 1px solid #e5d2a2;
+}
+
+.btn-evento-aluno-encerrado:hover {
+  background: #f5ead0;
+}
+
+.detalhes-evento-box[open] .texto-toggle-detalhes {
+  opacity: 0.9;
+}

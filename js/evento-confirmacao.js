@@ -108,6 +108,22 @@ function obterRotuloPublico(evento) {
   return "-";
 }
 
+function obterPublicoDetalhado(evento) {
+  if (evento.publico_alvo === "materia" && evento.materia?.nome) {
+    return `${obterRotuloPublico(evento)} • ${evento.materia.nome}`;
+  }
+
+  if (
+    (evento.publico_alvo === "modulo_exato" ||
+      evento.publico_alvo === "modulo_a_partir") &&
+    evento.modulo?.nome
+  ) {
+    return `${obterRotuloPublico(evento)} • ${evento.modulo.nome}`;
+  }
+
+  return obterRotuloPublico(evento);
+}
+
 function eventoPrazoConfirmacaoVencido(evento) {
   if (!evento?.limite_confirmacao) return false;
   return new Date(evento.limite_confirmacao) < new Date();
@@ -170,6 +186,7 @@ async function iniciarTela() {
       "Não foi possível identificar o aluno logado. Verifique se o ID do aluno está salvo no login.",
       "erro"
     );
+
     listaEventos.innerHTML = `
       <div class="card">
         <p style="margin:0;">Não foi possível carregar os eventos.</p>
@@ -434,6 +451,37 @@ async function confirmarPresenca(eventoId) {
   mostrarMensagem("✅ Presença confirmada com sucesso!");
 }
 
+function adicionarEventosDeInterface() {
+  document.querySelectorAll(".btn-confirmar-evento").forEach((botao) => {
+    botao.addEventListener("click", async () => {
+      const eventoId = Number(botao.dataset.eventoId);
+      await confirmarPresenca(eventoId);
+    });
+  });
+
+  document.querySelectorAll(".detalhes-evento-box").forEach((details) => {
+    const summary = details.querySelector("summary");
+    const texto = summary?.querySelector(".texto-toggle-detalhes");
+    const verMenos = details.querySelector(".link-ver-menos");
+
+    function atualizarRotulo() {
+      if (texto) {
+        texto.textContent = details.open ? "Ver menos" : "Ver mais";
+      }
+    }
+
+    atualizarRotulo();
+
+    details.addEventListener("toggle", atualizarRotulo);
+
+    if (verMenos) {
+      verMenos.addEventListener("click", () => {
+        details.open = false;
+      });
+    }
+  });
+}
+
 /* =========================================================
    RENDER
 ========================================================= */
@@ -452,31 +500,54 @@ function renderizarEventos() {
   listaEventos.innerHTML = eventosDisponiveis.map((evento) => {
     const confirmado = eventoJaConfirmado(evento.id);
     const prazoVencido = eventoPrazoConfirmacaoVencido(evento);
+    const publicoDetalhe = obterPublicoDetalhado(evento);
 
-    const publicoDetalhe =
-      evento.publico_alvo === "materia" && evento.materia?.nome
-        ? `${obterRotuloPublico(evento)} • ${evento.materia.nome}`
-        : evento.publico_alvo === "modulo_exato" && evento.modulo?.nome
-        ? `${obterRotuloPublico(evento)} • ${evento.modulo.nome}`
-        : evento.publico_alvo === "modulo_a_partir" && evento.modulo?.nome
-        ? `${obterRotuloPublico(evento)} • ${evento.modulo.nome}`
-        : obterRotuloPublico(evento);
-
+    let badgeStatus = "";
+    let statusInfo = "";
     let botaoHtml = "";
 
     if (confirmado) {
+      badgeStatus = `<span class="badge-evento badge-evento-ativo">Confirmado</span>`;
+      statusInfo = `
+        <div class="mini-card-evento">
+          <strong>Situação</strong>
+          <p style="font-size:16px; margin-top:6px;">Sua presença já foi confirmada</p>
+        </div>
+      `;
       botaoHtml = `
-        <button type="button" class="btn" disabled style="opacity:0.75; cursor:default;">
+        <button
+          type="button"
+          class="btn btn-evento-aluno-confirmado"
+          disabled
+        >
           Presença confirmada
         </button>
       `;
     } else if (prazoVencido) {
+      badgeStatus = `<span class="badge-evento badge-evento-encerrado">Prazo encerrado</span>`;
+      statusInfo = `
+        <div class="mini-card-evento">
+          <strong>Situação</strong>
+          <p style="font-size:16px; margin-top:6px;">O prazo de confirmação terminou</p>
+        </div>
+      `;
       botaoHtml = `
-        <button type="button" class="btn" disabled style="opacity:0.75; cursor:default;">
+        <button
+          type="button"
+          class="btn btn-evento-aluno-encerrado"
+          disabled
+        >
           Prazo encerrado
         </button>
       `;
     } else {
+      badgeStatus = `<span class="badge-evento badge-evento-ativo">Disponível</span>`;
+      statusInfo = `
+        <div class="mini-card-evento">
+          <strong>Situação</strong>
+          <p style="font-size:16px; margin-top:6px;">Aguardando sua confirmação</p>
+        </div>
+      `;
       botaoHtml = `
         <button
           type="button"
@@ -489,51 +560,60 @@ function renderizarEventos() {
     }
 
     return `
-      <article class="card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+      <article class="card card-evento-compacto card-evento-admin-futuro evento-visual-ativo">
+        <div class="topo-card-evento-compacto">
           <div>
-            <h2 style="margin-bottom:6px;">${escaparHtml(evento.titulo || "-")}</h2>
-            <p style="margin:0; opacity:0.85;">
-              ${escaparHtml(evento.tipo_evento || "Evento")} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
+            <h2>${escaparHtml(evento.titulo || "-")}</h2>
+            <p class="meta-evento-compacto">
+              ${escaparHtml(evento.tipo_evento || "Evento")} •
+              ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
             </p>
           </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:12px;">
-          <div>
-            <strong>Local:</strong><br>
-            <span>${escaparHtml(evento.local || "-")}</span>
-          </div>
 
           <div>
-            <strong>Público:</strong><br>
-            <span>${escaparHtml(publicoDetalhe)}</span>
-          </div>
-
-          <div>
-            <strong>Confirmar até:</strong><br>
-            <span>${formatarDataHoraBR(evento.limite_confirmacao)}</span>
+            ${badgeStatus}
           </div>
         </div>
 
-        <div style="margin-bottom:14px;">
-          <strong>Descrição:</strong>
-          <p style="margin:6px 0 0 0;">
-            ${escaparHtml(evento.descricao || "Sem descrição informada.")}
-          </p>
-        </div>
+        ${statusInfo}
 
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          ${botaoHtml}
-        </div>
+        <details class="detalhes-evento-box">
+          <summary>
+            <span class="texto-toggle-detalhes">Ver mais</span>
+          </summary>
+
+          <div class="conteudo-detalhes-evento">
+            <div class="detalhes-evento-grid">
+              <div class="bloco-detalhe-evento">
+                <strong>Local</strong>
+                <p>${escaparHtml(evento.local || "-")}</p>
+              </div>
+
+              <div class="bloco-detalhe-evento">
+                <strong>Público</strong>
+                <p>${escaparHtml(publicoDetalhe)}</p>
+              </div>
+
+              <div class="bloco-detalhe-evento">
+                <strong>Confirmar até</strong>
+                <p>${formatarDataHoraBR(evento.limite_confirmacao)}</p>
+              </div>
+            </div>
+
+            <div class="bloco-detalhe-evento">
+              <strong>Descrição</strong>
+              <p>${escaparHtml(evento.descricao || "Sem descrição informada.")}</p>
+            </div>
+
+            <div class="acoes-evento-detalhe">
+              ${botaoHtml}
+              <button type="button" class="link-ver-menos">Ver menos</button>
+            </div>
+          </div>
+        </details>
       </article>
     `;
   }).join("");
 
-  document.querySelectorAll(".btn-confirmar-evento").forEach((botao) => {
-    botao.addEventListener("click", async () => {
-      const eventoId = Number(botao.dataset.eventoId);
-      await confirmarPresenca(eventoId);
-    });
-  });
+  adicionarEventosDeInterface();
 }
