@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Registrar Participação no Evento | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+    <h1 style="margin-bottom:8px;">Registrar participação no evento</h1>
+    <p style="margin-bottom:18px; opacity:0.9;">
+      Remova da lista quem confirmou presença, mas não participou de fato. Depois clique em registrar.
+    </p>
+
+    <div id="msg" style="display:none; margin-bottom:12px;"></div>
+
+    <section class="card" style="margin-bottom:16px;">
+      <h2 id="tituloEvento" style="margin-bottom:8px;">Carregando evento...</h2>
+      <p id="subtituloEvento" style="margin:0; opacity:0.85;"></p>
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:8px;">Participantes confirmados</h2>
+      <p style="margin-top:0; opacity:0.85;">
+        Esta lista começa com os alunos que aceitaram o convite. Remova quem não compareceu.
+      </p>
+
+      <div id="listaParticipantes">
+        <p style="margin:0;">Carregando participantes...</p>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+        <div>
+          <strong>Total que será registrado:</strong>
+          <span id="totalSelecionados">0</span>
+        </div>
+
+        <button type="button" id="btnRegistrarEvento" class="btn">
+          Registrar participação
+        </button>
+      </div>
+    </section>
+
+    <a href="eventos.html" class="link-voltar">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/registrar-evento.js"></script>
+</body>
+</html>

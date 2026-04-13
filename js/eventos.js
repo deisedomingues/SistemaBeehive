@@ -1,4 +1,7 @@
 import { supabase } from "./supabase.js";
+import { exigirAdmin } from "./guard.js";
+
+await exigirAdmin();
 
 /* =========================================================
    ELEMENTOS
@@ -24,9 +27,20 @@ let convitesPorEvento = {};
 /* =========================================================
    INICIALIZAÇÃO
 ========================================================= */
-document.addEventListener("DOMContentLoaded", async () => {
-  await carregarTudo();
-});
+async function init() {
+  try {
+    await carregarTudo();
+  } catch (erro) {
+    console.error("Erro na inicialização da página de eventos:", erro);
+    mostrarMensagem("Erro ao inicializar a página de eventos.", "erro");
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  await init();
+}
 
 /* =========================================================
    UTILITÁRIOS
@@ -163,7 +177,12 @@ async function carregarEventos() {
       materia_id,
       modulo_id,
       limite_confirmacao,
-      ativo
+      ativo,
+      professor_responsavel_id,
+      professor_responsavel:professor_responsavel_id (
+        id,
+        nome
+      )
     `)
     .order("data_evento", { ascending: true })
     .order("hora_evento", { ascending: true });
@@ -299,13 +318,15 @@ function obterEventosFiltrados() {
     const tipo = normalizarTexto(evento.tipo_evento);
     const descricao = normalizarTexto(evento.descricao);
     const local = normalizarTexto(evento.local);
+    const professor = normalizarTexto(evento.professor_responsavel?.nome);
 
     const passouBusca =
       !busca ||
       titulo.includes(busca) ||
       tipo.includes(busca) ||
       descricao.includes(busca) ||
-      local.includes(busca);
+      local.includes(busca) ||
+      professor.includes(busca);
 
     if (!passouBusca) return false;
 
@@ -365,6 +386,7 @@ function montarDetalhesEvento(evento) {
   };
 
   const totalPendentes = Math.max(convites.total - confirmacoes.total, 0);
+  const professorResponsavel = evento.professor_responsavel?.nome || "Não informado";
 
   const nomesConfirmadosHtml = confirmacoes.alunos.length
     ? `
@@ -388,6 +410,9 @@ function montarDetalhesEvento(evento) {
       </div>
     `;
 
+  const podeRegistrarParticipacao =
+    situacao !== "cancelado" && confirmacoes.total > 0;
+
   return `
     <div class="detalhes-evento-grid">
       <div class="bloco-detalhe-evento">
@@ -398,6 +423,11 @@ function montarDetalhesEvento(evento) {
       <div class="bloco-detalhe-evento">
         <strong>Público</strong>
         <p>${escaparHtml(obterRotuloPublico(evento))}</p>
+      </div>
+
+      <div class="bloco-detalhe-evento">
+        <strong>Professor responsável</strong>
+        <p>${escaparHtml(professorResponsavel)}</p>
       </div>
 
       <div class="bloco-detalhe-evento">
@@ -425,6 +455,20 @@ function montarDetalhesEvento(evento) {
 
     <div class="acoes-evento-detalhe">
       ${
+        podeRegistrarParticipacao
+          ? `
+            <a
+              href="registrar-evento.html?evento=${evento.id}"
+              class="btn"
+              style="text-decoration:none; display:inline-block;"
+            >
+              Registrar participação
+            </a>
+          `
+          : ""
+      }
+
+      ${
         situacao === "ativo"
           ? `
             <button
@@ -443,7 +487,7 @@ function montarDetalhesEvento(evento) {
         class="link-ver-menos"
         data-fechar-evento-id="${evento.id}"
       >
-      Recolher
+        Recolher
       </button>
     </div>
   `;
@@ -464,6 +508,7 @@ function renderizarEventos() {
   } else {
     gridEventosFuturos.innerHTML = futuros.map((evento) => {
       const situacao = obterSituacaoEvento(evento);
+      const professorResponsavel = evento.professor_responsavel?.nome || "Não informado";
 
       return `
         <article class="card-admin card-evento-compacto ${obterClasseVisualEvento(situacao)}">
@@ -481,6 +526,10 @@ function renderizarEventos() {
 
             <p class="meta-evento-compacto">
               Local: ${escaparHtml(evento.local || "-")}
+            </p>
+
+            <p class="meta-evento-compacto">
+              Responsável: ${escaparHtml(professorResponsavel)}
             </p>
           </div>
 
@@ -504,6 +553,7 @@ function renderizarEventos() {
   } else {
     listaHistoricoEventos.innerHTML = historico.map((evento) => {
       const situacao = obterSituacaoEvento(evento);
+      const professorResponsavel = evento.professor_responsavel?.nome || "Não informado";
 
       return `
         <article class="item-historico-evento-compacto ${obterClasseVisualEvento(situacao)}">
@@ -514,6 +564,9 @@ function renderizarEventos() {
               <h3>${escaparHtml(evento.titulo || "-")}</h3>
               <p>
                 ${escaparHtml(evento.tipo_evento || "Evento")} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
+              </p>
+              <p style="margin-top:4px;">
+                Responsável: ${escaparHtml(professorResponsavel)}
               </p>
             </div>
 

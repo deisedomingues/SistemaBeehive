@@ -32,7 +32,8 @@
         <select id="tipoEvento" required>
           <option value="">Selecione</option>
           <option value="Imersão">Imersão</option>
-          <option value="Workshop">Reunião</option>
+          <option value="Workshop">Workshop</option>
+          <option value="Reunião">Reunião</option>
           <option value="Aula temática">Aula temática</option>
           <option value="Oficina">Oficina</option>
           <option value="Evento especial">Evento especial</option>
@@ -69,6 +70,13 @@
           <input type="time" id="horaEvento" required />
         </label>
       </div>
+
+      <label>
+        Professor responsável pelo evento
+        <select id="professorResponsavelId" required>
+          <option value="">Selecione o professor responsável</option>
+        </select>
+      </label>
 
       <label>
         Público do evento

@@ -1,4 +1,7 @@
 import { supabase } from "./supabase.js";
+import { exigirAdmin } from "./guard.js";
+
+await exigirAdmin();
 
 /* =========================================================
    ELEMENTOS
@@ -13,6 +16,8 @@ const localInput = document.getElementById("local");
 const dataEventoInput = document.getElementById("dataEvento");
 const horaEventoInput = document.getElementById("horaEvento");
 
+const professorResponsavelSelect = document.getElementById("professorResponsavelId");
+
 const publicoAlvoSelect = document.getElementById("publicoAlvo");
 const blocoMateria = document.getElementById("blocoMateria");
 const blocoModulo = document.getElementById("blocoModulo");
@@ -26,12 +31,24 @@ const ativoCheckbox = document.getElementById("ativo");
 /* =========================================================
    INICIALIZAÇÃO
 ========================================================= */
-document.addEventListener("DOMContentLoaded", async () => {
-  definirDataMinima();
-  await carregarMaterias();
-  controlarCamposPublico();
-  atualizarPreviewLimiteConfirmacao();
-});
+async function init() {
+  try {
+    definirDataMinima();
+    await carregarProfessoresAtivos();
+    await carregarMaterias();
+    controlarCamposPublico();
+    atualizarPreviewLimiteConfirmacao();
+  } catch (erro) {
+    console.error("Erro na inicialização da página de evento:", erro);
+    mostrarMensagem("Erro ao inicializar a página de cadastro de evento.", "erro");
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  await init();
+}
 
 /* =========================================================
    UTILITÁRIOS
@@ -60,6 +77,7 @@ function esconderMensagem() {
 }
 
 function limparSelect(select, textoPadrao) {
+  if (!select) return;
   select.innerHTML = `<option value="">${textoPadrao}</option>`;
 }
 
@@ -75,8 +93,8 @@ function calcularLimiteConfirmacao(dataEventoStr) {
   if (!dataEventoStr) return null;
 
   const [ano, mes, dia] = dataEventoStr.split("-").map(Number);
-
   const dataLimite = new Date(ano, mes - 1, dia);
+
   dataLimite.setDate(dataLimite.getDate() - 1);
   dataLimite.setHours(23, 59, 59, 0);
 
@@ -135,6 +153,34 @@ function obterOrdemDoModuloSelecionado() {
 /* =========================================================
    CARREGAMENTO DE DADOS
 ========================================================= */
+async function carregarProfessoresAtivos() {
+  limparSelect(professorResponsavelSelect, "Selecione o professor responsável");
+
+  const { data, error } = await supabase
+    .from("professor")
+    .select("id, nome, ativo")
+    .eq("ativo", true)
+    .order("nome", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao carregar professores:", error);
+    mostrarMensagem("Erro ao carregar os professores responsáveis.", "erro");
+    return;
+  }
+
+  if (!data || !data.length) {
+    mostrarMensagem("Nenhum professor ativo foi encontrado.", "erro");
+    return;
+  }
+
+  data.forEach((professor) => {
+    const option = document.createElement("option");
+    option.value = professor.id;
+    option.textContent = professor.nome;
+    professorResponsavelSelect.appendChild(option);
+  });
+}
+
 async function carregarMaterias() {
   limparSelect(materiaSelect, "Selecione a matéria");
 
@@ -212,7 +258,7 @@ function controlarCamposPublico() {
     materiaSelect.required = true;
     moduloSelect.required = true;
     textoAjudaModulo.textContent =
-      "Somente alunos matriculados exatamente neste módulo poderão visualizar e confirmar presença.";
+      "Somente alunos com matrícula ativa exatamente neste módulo poderão visualizar e confirmar presença.";
     return;
   }
 
@@ -222,7 +268,7 @@ function controlarCamposPublico() {
     materiaSelect.required = true;
     moduloSelect.required = true;
     textoAjudaModulo.textContent =
-      "O evento aparecerá para alunos deste módulo e dos módulos acima, dentro do mesmo curso.";
+      "O evento aparecerá para alunos com matrícula ativa neste módulo e nos módulos acima, dentro do mesmo curso.";
   }
 }
 
@@ -380,6 +426,7 @@ function validarFormulario() {
   const publico = publicoAlvoSelect.value;
   const materiaId = materiaSelect.value;
   const moduloId = moduloSelect.value;
+  const professorResponsavelId = professorResponsavelSelect.value;
 
   if (!titulo) {
     mostrarMensagem("Informe o título do evento.", "erro");
@@ -398,6 +445,11 @@ function validarFormulario() {
 
   if (!horaEvento) {
     mostrarMensagem("Selecione a hora do evento.", "erro");
+    return false;
+  }
+
+  if (!professorResponsavelId) {
+    mostrarMensagem("Selecione o professor responsável pelo evento.", "erro");
     return false;
   }
 
@@ -447,6 +499,7 @@ form.addEventListener("submit", async (e) => {
   const horaEvento = horaEventoInput.value;
   const publico = publicoAlvoSelect.value;
 
+  const professorResponsavelId = Number(professorResponsavelSelect.value);
   const materiaId = materiaSelect.value ? Number(materiaSelect.value) : null;
   const moduloId = moduloSelect.value ? Number(moduloSelect.value) : null;
   const ativo = ativoCheckbox.checked;
@@ -468,6 +521,7 @@ form.addEventListener("submit", async (e) => {
       publico === "modulo_exato" || publico === "modulo_a_partir"
         ? moduloId
         : null,
+    professor_responsavel_id: professorResponsavelId,
     limite_confirmacao: dateToISOString(limiteConfirmacao),
     ativo
   };
