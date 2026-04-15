@@ -3,8 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Horários de Reposição | Beehive</title>
+    <title>Inserir Horários de Reposição | Beehive</title>
     <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
@@ -13,32 +14,30 @@
 
     <main class="container">
 
-        <h1>Horários de Reposição</h1>
+        <h1>Inserir horários de reposição</h1>
 
-        <h2>Novo horário</h2>
+        <p style="margin-bottom: 18px; opacity: 0.9;">
+            Cadastre novos horários para que os alunos possam agendar suas reposições.
+        </p>
 
         <form id="formHorario">
 
-            <label>Professor</label>
+            <label for="professor">Professor</label>
             <select id="professor" required></select>
-              <br>
-                <br>
+            <br><br>
 
-            <label>Curso</label>
-            <select id="materia"></select>
-            
-                <br>
-                <br>
-                
-            <label>Data</label>
+            <label for="materia">Curso</label>
+            <select id="materia" required></select>
+            <br><br>
+
+            <label for="data">Data</label>
             <input type="date" id="data" required>
-              <br>
-                <br>
+            <br><br>
 
             <h4>Horários</h4>
 
             <div id="horariosContainer"></div>
-              <br>
+            <br>
 
             <button type="button" id="addHorario" class="btn">
                 + Adicionar horário
@@ -46,27 +45,17 @@
 
             <br><br>
 
-            <button class="btn">Salvar horários</button>
-             <br> <br>
-            <a href="home-admin.html" class="link-voltar">← Voltar</a>
+            <button type="submit" class="btn">Salvar horários</button>
 
         </form>
-
-         <br>
-
-        <h2>Horários de reposição</h2>
-
-        <div id="listaReposicoes"></div>
 
         <p id="msg"></p>
 
         <br>
 
-     
-        <a href="home-admin.html" class="link-voltar">← Voltar</a>
+        <a href="reposicoes.html" class="link-voltar">← Voltar para reposições</a>
 
     </main>
-    
 
     <script type="module" src="js/criar_horarios_reposicao.js"></script>
 

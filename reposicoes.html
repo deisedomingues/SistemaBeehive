@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Reposições | Beehive</title>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+
+    <div class="overlay"></div>
+
+    <main class="container container-resumo">
+
+        <h1>Reposições</h1>
+
+        <p style="margin-bottom: 18px; opacity: 0.9;">
+            Acompanhe os horários disponíveis e os já escolhidos pelos alunos.
+        </p>
+
+        <div style="margin-bottom: 18px;">
+            <a href="criar_horarios_reposicao.html" class="btn">
+                + Inserir horários de reposição
+            </a>
+        </div>
+
+        <section class="dashboard dashboard-reposicoes" style="margin-top: 12px;">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                    <h3 style="margin:0;">Reposições disponíveis</h3>
+                    <span id="contadorDisponiveis"
+                        style="display:inline-block; padding:6px 10px; border-radius:999px; background:#e9f7ef; color:#067647; font-size:12px; font-weight:700;">
+                        0
+                    </span>
+                </div>
+
+                <div id="listaReposicoesDisponiveis">
+                    Carregando...
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                    <h3 style="margin:0;">Reposições escolhidas</h3>
+                    <span id="contadorEscolhidas"
+                        style="display:inline-block; padding:6px 10px; border-radius:999px; background:#fff1b8; color:#7a4b00; font-size:12px; font-weight:700;">
+                        0
+                    </span>
+                </div>
+
+                <div id="listaReposicoesEscolhidas">
+                    Carregando...
+                </div>
+            </div>
+        </section>
+
+        <p id="msg"></p>
+
+        <br>
+
+        <a href="home-admin.html" class="link-voltar">← Voltar</a>
+
+    </main>
+
+    <script type="module" src="js/reposicoes.js"></script>
+
+</body>
+
+</html>

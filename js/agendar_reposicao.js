@@ -7,10 +7,21 @@ const listaReposicoes = document.getElementById("listaReposicoes");
 const msg = document.getElementById("msg");
 const faltasAluno = document.getElementById("faltasAluno");
 const textoSelecao = document.getElementById("textoSelecao");
+const alertaCobrancaReposicao = document.getElementById("alertaCobrancaReposicao");
 
 let alunoAtual = null;
 let aulasPendentes = [];
 let aulaSelecionadaId = null;
+
+// =============================
+// whatsapp da escola
+// =============================
+const TELEFONE_ESCOLA = "5511956177084";
+const MENSAGEM_CANCELAMENTO = "Olá! Gostaria de cancelar uma reposição agendada.";
+
+function gerarLinkWhatsApp() {
+    return `https://wa.me/${TELEFONE_ESCOLA}?text=${encodeURIComponent(MENSAGEM_CANCELAMENTO)}`;
+}
 
 // =============================
 // mensagem
@@ -32,7 +43,6 @@ function mostrarMensagem(texto, erro = false) {
 // =============================
 function formatarDataBR(dataISO) {
     if (!dataISO) return "";
-
     const [ano, mes, dia] = dataISO.split("-");
     return `${dia}/${mes}/${ano}`;
 }
@@ -58,7 +68,6 @@ function textoJustificativa(justificativa) {
 
 // =============================
 // datas locais
-// evita problema de fuso
 // =============================
 function criarDataLocal(dataISO, hora = 0, minuto = 0, segundo = 0) {
     const [ano, mes, dia] = dataISO.split("-").map(Number);
@@ -91,6 +100,79 @@ function formatarPrazoLimite(dataReposicao) {
     const minuto = String(limite.getMinutes()).padStart(2, "0");
 
     return `${dia}/${mes}/${ano} às ${hora}:${minuto}`;
+}
+
+// =============================
+// regra cobrança
+// ausente + mês diferente = cobra
+// cancelada = nunca cobra
+// =============================
+function extrairAnoMes(dataISO) {
+    const [ano, mes] = dataISO.split("-");
+    return { ano: Number(ano), mes: Number(mes) };
+}
+
+function reposicaoGeraCobranca(statusAula, dataAulaFaltada, dataReposicao) {
+    if (!statusAula || !dataAulaFaltada || !dataReposicao) return false;
+
+    const statusNormalizado = statusAula.trim().toLowerCase();
+
+    if (statusNormalizado === "cancelada") {
+        return false;
+    }
+
+    if (statusNormalizado !== "ausente") {
+        return false;
+    }
+
+    const aula = extrairAnoMes(dataAulaFaltada);
+    const reposicao = extrairAnoMes(dataReposicao);
+
+    return aula.ano !== reposicao.ano || aula.mes !== reposicao.mes;
+}
+
+function atualizarAlertaCobranca() {
+    if (!alertaCobrancaReposicao) return;
+
+    if (!aulaSelecionadaId) {
+        alertaCobrancaReposicao.style.display = "none";
+        alertaCobrancaReposicao.innerHTML = "";
+        return;
+    }
+
+    const aulaSelecionada = aulasPendentes.find(a => a.id === aulaSelecionadaId);
+
+    if (!aulaSelecionada) {
+        alertaCobrancaReposicao.style.display = "none";
+        alertaCobrancaReposicao.innerHTML = "";
+        return;
+    }
+
+    const dataDaFalta = formatarDataBR(aulaSelecionada.data_aula);
+    const statusNormalizado = (aulaSelecionada.status || "").trim().toLowerCase();
+
+    alertaCobrancaReposicao.style.display = "block";
+
+    if (statusNormalizado === "cancelada") {
+        alertaCobrancaReposicao.innerHTML = `
+            <div style="padding:12px; border-radius:10px; background:#ecfdf3; border:1px solid #12b76a;">
+                <p style="margin:0;">
+                    <strong>Atenção:</strong> a aula selecionada foi <strong>cancelada</strong> em <strong>${dataDaFalta}</strong>.
+                    Reposições de aulas canceladas <strong>não geram cobrança</strong>, mesmo quando agendadas para outro mês.
+                </p>
+            </div>
+        `;
+        return;
+    }
+
+    alertaCobrancaReposicao.innerHTML = `
+        <div style="padding:12px; border-radius:10px; background:rgba(255,245,204,0.88); border:1px solid #f1bc32;">
+            <p style="margin:0;">
+                <strong>Atenção:</strong> se esta reposição for agendada para <strong>mês diferente</strong> da aula ausente de
+                <strong>${dataDaFalta}</strong>, será gerada cobrança de <strong>R$ 25,00</strong>.
+            </p>
+        </div>
+    `;
 }
 
 // =============================
@@ -154,11 +236,7 @@ async function buscarAluno() {
 }
 
 // =============================
-// buscar aulas que geram reposição
-// regra:
-// - status ausente ou cancelada
-// - aula_gravada = false
-// - precisa_reposicao = true
+// buscar aulas pendentes
 // =============================
 async function buscarAulasPendentes(matriculaId) {
     const { data, error } = await supabase
@@ -212,13 +290,11 @@ async function buscarReposicoesAtivasDoAluno(alunoId) {
 // =============================
 function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
     if (!aulasLivres.length) {
-        faltasAluno.innerHTML = `
-            <p>Você não possui reposições pendentes.</p>
-        `;
-
+        faltasAluno.innerHTML = `<p>Você não possui reposições pendentes.</p>`;
         textoSelecao.textContent = "Você não possui aulas pendentes para repor.";
         listaReposicoes.innerHTML = "";
         aulaSelecionadaId = null;
+        atualizarAlertaCobranca();
         return;
     }
 
@@ -281,11 +357,28 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
 
         html += `
                 </ul>
+
+                <div class="aviso-cancelamento-reposicao" style="margin-top: 12px; padding: 12px; border-radius: 10px; background: rgba(255, 245, 204, 0.85); border: 1px solid #f1bc32;">
+                    <p style="margin: 0 0 10px 0;">
+                        Para cancelar uma reposição agendada, entre em contato com a escola.
+                    </p>
+
+                    <a
+                        href="${gerarLinkWhatsApp()}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn"
+                        style="display: inline-block; text-decoration: none;"
+                    >
+                        WhatsApp da escola
+                    </a>
+                </div>
             </div>
         `;
     }
 
     faltasAluno.innerHTML = html;
+    atualizarAlertaCobranca();
 
     document.querySelectorAll(".btnSelecionarAula").forEach(btn => {
         btn.addEventListener("click", async () => {
@@ -307,8 +400,6 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
 
 // =============================
 // carregar pendências
-// remove da lista as aulas
-// que já possuem reposição ativa
 // =============================
 async function carregarPendencias() {
     const aulas = await buscarAulasPendentes(alunoAtual.matricula_id);
@@ -386,12 +477,17 @@ async function carregarHorariosDisponiveis() {
         return;
     }
 
+    const aulaSelecionada = aulasPendentes.find(a => a.id === aulaSelecionadaId);
+
+    if (!aulaSelecionada) {
+        listaReposicoes.innerHTML = `<p>Selecione uma aula pendente.</p>`;
+        return;
+    }
+
     const horariosLivres = await buscarHorariosLivres();
 
     if (!horariosLivres.length) {
-        listaReposicoes.innerHTML = `
-            <p>Nenhum horário disponível no momento.</p>
-        `;
+        listaReposicoes.innerHTML = `<p>Nenhum horário disponível no momento.</p>`;
         return;
     }
 
@@ -400,6 +496,11 @@ async function carregarHorariosDisponiveis() {
     horariosLivres.forEach(horario => {
         const dentroDoPrazo = podeAgendarHorario(horario.data);
         const prazoTexto = formatarPrazoLimite(horario.data);
+        const geraCobranca = reposicaoGeraCobranca(
+            aulaSelecionada.status,
+            aulaSelecionada.data_aula,
+            horario.data
+        );
 
         const div = document.createElement("div");
         div.className = "card card-horario";
@@ -412,6 +513,21 @@ async function carregarHorariosDisponiveis() {
             <p class="prazo-agendamento">
                 <strong>Prazo para agendar:</strong> ${prazoTexto}
             </p>
+
+            ${
+                geraCobranca
+                    ? `
+                        <div style="margin:10px 0; padding:10px; border-radius:10px; background:#fff3cd; border:1px solid #f1bc32; font-size:14px;">
+                            <strong>Atenção:</strong> esta reposição gerará cobrança de <strong>R$ 25,00</strong>,
+                            pois está em mês diferente da aula ausente. Aguarde o financeiro entrar em contato.
+                        </div>
+                    `
+                    : `
+                        <div style="margin:10px 0; padding:10px; border-radius:10px; background:#ecfdf3; border:1px solid #12b76a; font-size:14px;">
+                            <strong>Sem cobrança adicional.</strong>
+                        </div>
+                    `
+            }
 
             ${
                 dentroDoPrazo
@@ -511,7 +627,18 @@ function ativarEscolhaHorario() {
                     return;
                 }
 
-                const confirmar = confirm("Deseja agendar esta reposição?");
+                const geraCobranca = reposicaoGeraCobranca(
+                    aulaEscolhida.status,
+                    aulaEscolhida.data_aula,
+                    horarioAtual.data
+                );
+
+                const textoConfirmacao = geraCobranca
+                    ? "Esta reposição gerará cobrança de R$ 25,00. Deseja continuar?"
+                    : "Deseja agendar esta reposição?";
+
+                const confirmar = confirm(textoConfirmacao);
+
                 if (!confirmar) {
                     btn.disabled = false;
                     btn.textContent = "Agendar este horário";
@@ -540,7 +667,12 @@ function ativarEscolhaHorario() {
                     throw erroUpdate;
                 }
 
-                mostrarMensagem("Reposição agendada com sucesso!");
+                mostrarMensagem(
+                    geraCobranca
+                        ? "Reposição agendada com sucesso! Esta reposição gerará cobrança de R$ 25,00."
+                        : "Reposição agendada com sucesso!"
+                );
+
                 await carregarTudo();
 
             } catch (err) {
@@ -560,6 +692,11 @@ function ativarEscolhaHorario() {
 async function carregarTudo() {
     faltasAluno.innerHTML = "Carregando pendências...";
     listaReposicoes.innerHTML = "Carregando horários...";
+
+    if (alertaCobrancaReposicao) {
+        alertaCobrancaReposicao.style.display = "none";
+        alertaCobrancaReposicao.innerHTML = "";
+    }
 
     try {
         if (!alunoAtual) {

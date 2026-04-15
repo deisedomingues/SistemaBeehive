@@ -10,30 +10,23 @@ const horariosContainer = document.getElementById("horariosContainer");
 const addHorarioBtn = document.getElementById("addHorario");
 const form = document.getElementById("formHorario");
 const msg = document.getElementById("msg");
-const listaReposicoes = document.getElementById("listaReposicoes");
-
-
 
 // =============================
 // mensagem
 // =============================
 function mostrarMensagem(texto, erro = false) {
-
     msg.textContent = texto;
-    msg.style.color = erro ? "red" : "green";
+    msg.style.color = erro ? "#b42318" : "#027a48";
 
     setTimeout(() => {
         msg.textContent = "";
     }, 3000);
 }
 
-
-
 // =============================
 // data de amanhã
 // =============================
 function definirDataAmanha() {
-
     const hoje = new Date();
     hoje.setDate(hoje.getDate() + 1);
 
@@ -44,13 +37,10 @@ function definirDataAmanha() {
     dataInput.value = `${ano}-${mes}-${dia}`;
 }
 
-
-
 // =============================
 // carregar professores
 // =============================
 async function carregarProfessores() {
-
     const { data, error } = await supabase
         .from("professor")
         .select("id, nome")
@@ -64,23 +54,18 @@ async function carregarProfessores() {
 
     professorSelect.innerHTML = `<option value="">Escolha o professor</option>`;
 
-    data.forEach(p => {
-
+    data.forEach((p) => {
         const option = document.createElement("option");
         option.value = p.id;
         option.textContent = p.nome;
-
         professorSelect.appendChild(option);
     });
 }
 
-
-
 // =============================
-// carregar materias
+// carregar matérias
 // =============================
 async function carregarMaterias() {
-
     const { data, error } = await supabase
         .from("materia")
         .select("id, nome")
@@ -94,31 +79,29 @@ async function carregarMaterias() {
 
     materiaSelect.innerHTML = `<option value="">Escolha o curso</option>`;
 
-    data.forEach(m => {
-
+    data.forEach((m) => {
         const option = document.createElement("option");
         option.value = m.id;
         option.textContent = m.nome;
-
         materiaSelect.appendChild(option);
     });
 }
-
-
 
 // =============================
 // criar linha de horário
 // =============================
 function criarLinhaHorario(horaSugerida = "") {
-
     const div = document.createElement("div");
+    div.className = "linha-horario-reposicao";
 
     div.style.display = "flex";
     div.style.gap = "10px";
     div.style.marginBottom = "10px";
+    div.style.flexWrap = "wrap";
+    div.style.alignItems = "center";
 
     div.innerHTML = `
-        <input type="time" class="horaInicio">
+        <input type="time" class="horaInicio" required>
         <input type="time" class="horaFim" readonly>
         <button type="button" class="remover btn">x</button>
     `;
@@ -130,7 +113,6 @@ function criarLinhaHorario(horaSugerida = "") {
     horaInicio.value = horaSugerida;
 
     function calcularHoraFim() {
-
         if (!horaInicio.value) {
             horaFim.value = "";
             return;
@@ -149,7 +131,6 @@ function criarLinhaHorario(horaSugerida = "") {
     }
 
     horaInicio.addEventListener("input", calcularHoraFim);
-
     calcularHoraFim();
 
     remover.addEventListener("click", () => div.remove());
@@ -157,13 +138,10 @@ function criarLinhaHorario(horaSugerida = "") {
     horariosContainer.appendChild(div);
 }
 
-
-
 // =============================
 // sugerir próximo horário
 // =============================
 function sugerirProximoHorario() {
-
     const horarios = document.querySelectorAll(".horaFim");
 
     if (!horarios.length) return "";
@@ -171,163 +149,17 @@ function sugerirProximoHorario() {
     return horarios[horarios.length - 1].value;
 }
 
-
-
 // =============================
 // adicionar horário
 // =============================
 addHorarioBtn.addEventListener("click", () => {
-
     criarLinhaHorario(sugerirProximoHorario());
 });
 
-
-
 // =============================
-// popup bonito
-// =============================
-function mostrarPopupConfirmacao(texto, callback) {
-
-    const popup = document.createElement("div");
-
-    popup.style.position = "fixed";
-    popup.style.top = "0";
-    popup.style.left = "0";
-    popup.style.width = "100%";
-    popup.style.height = "100%";
-    popup.style.background = "rgba(0,0,0,0.4)";
-    popup.style.display = "flex";
-    popup.style.alignItems = "center";
-    popup.style.justifyContent = "center";
-
-    popup.innerHTML = `
-        <div style="background:white;padding:20px;border-radius:8px;text-align:center;">
-            <p>${texto}</p>
-            <button id="sim">Sim</button>
-            <button id="nao">Cancelar</button>
-        </div>
-    `;
-
-    document.body.appendChild(popup);
-
-    popup.querySelector("#sim").onclick = () => {
-        callback();
-        popup.remove();
-    };
-
-    popup.querySelector("#nao").onclick = () => popup.remove();
-}
-
-
-
-// =============================
-// carregar reposições
-// =============================
-async function carregarReposicoes() {
-
-    const hoje = new Date().toISOString().split("T")[0];
-
-    const { data, error } = await supabase
-        .from("horarios_reposicao")
-        .select(`
-            id,
-            data,
-            hora_inicio,
-            hora_fim,
-            professor (nome),
-            materia (nome),
-            reposicao_agendada (
-                aluno (nome)
-            )
-        `)
-        .gte("data", hoje)
-        .order("data")
-        .order("hora_inicio");
-
-    if (error) {
-        console.error(error);
-        return;
-    }
-
-    listaReposicoes.innerHTML = "";
-
-    data.forEach(h => {
-
-        let status = "Disponível";
-
-        if (h.reposicao_agendada.length > 0) {
-            status = `Escolhido por ${h.reposicao_agendada[0].aluno.nome}`;
-        }
-
-        const [ano, mes, dia] = h.data.split("-");
-        const dataBR = `${dia}/${mes}/${ano}`;
-
-        const div = document.createElement("div");
-
-        div.style.marginBottom = "15px";
-
-        div.innerHTML = `
-            ${dataBR} |
-            ${h.hora_inicio} - ${h.hora_fim} |
-            ${h.professor.nome} |
-            ${h.materia.nome} |
-            ${status}
-            <button class="btnExcluir" data-id="${h.id}">x</button>
-        `;
-
-        listaReposicoes.appendChild(div);
-    });
-
-    ativarExclusao();
-}
-
-
-
-// =============================
-// excluir com fade
-// =============================
-function ativarExclusao() {
-
-    document.querySelectorAll(".btnExcluir").forEach(btn => {
-
-        btn.onclick = () => {
-
-            const id = btn.dataset.id;
-            const linha = btn.parentElement;
-
-            mostrarPopupConfirmacao(
-                "Deseja excluir esta reposição?",
-                async () => {
-
-                    const { error } = await supabase
-                        .from("horarios_reposicao")
-                        .delete()
-                        .eq("id", id);
-
-                    if (error) {
-                        mostrarMensagem("Erro ao excluir", true);
-                        return;
-                    }
-
-                    linha.innerHTML = "Reposição excluída";
-                    linha.style.color = "green";
-                    linha.style.transition = "opacity 1.5s ease";
-
-                    setTimeout(() => linha.style.opacity = "0", 500);
-                    setTimeout(() => linha.remove(), 2000);
-                }
-            );
-        };
-    });
-}
-
-
-
-// =============================
-// salvar
+// salvar horários
 // =============================
 form.addEventListener("submit", async (e) => {
-
     e.preventDefault();
 
     const professorId = professorSelect.value;
@@ -341,28 +173,37 @@ form.addEventListener("submit", async (e) => {
     const horasInicio = document.querySelectorAll(".horaInicio");
     const horasFim = document.querySelectorAll(".horaFim");
 
-    if (!horasInicio.length)
+    if (!horasInicio.length) {
         return mostrarMensagem("Adicione horários", true);
+    }
 
-    const { data: userData } = await supabase.auth.getUser();
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !userData?.user?.id) {
+        console.error(userError);
+        return mostrarMensagem("Não foi possível identificar o usuário logado", true);
+    }
+
     const userId = userData.user.id;
-
     const registros = [];
 
     horasInicio.forEach((h, i) => {
-
         if (h.value && horasFim[i].value) {
-
             registros.push({
                 data,
                 hora_inicio: h.value,
                 hora_fim: horasFim[i].value,
                 professor_id: professorId,
                 materia_id: materiaId,
-                created_by: userId
+                created_by: userId,
+                disponivel: true
             });
         }
     });
+
+    if (!registros.length) {
+        return mostrarMensagem("Preencha pelo menos um horário válido", true);
+    }
 
     const { error } = await supabase
         .from("horarios_reposicao")
@@ -374,23 +215,19 @@ form.addEventListener("submit", async (e) => {
         return;
     }
 
-    mostrarMensagem("Horários salvos");
+    mostrarMensagem("Horários salvos com sucesso!");
 
     form.reset();
     horariosContainer.innerHTML = "";
 
     definirDataAmanha();
     criarLinhaHorario();
-    carregarReposicoes();
 });
-
-
 
 // =============================
 // ENTER cria novo horário
 // =============================
 form.addEventListener("keydown", (e) => {
-
     if (e.key !== "Enter") return;
 
     const el = document.activeElement;
@@ -404,21 +241,17 @@ form.addEventListener("keydown", (e) => {
 
     if (el !== ultimo) {
         const index = Array.from(horarios).indexOf(el);
-        horarios[index + 1].focus();
+        horarios[index + 1]?.focus();
         return;
     }
 
     criarLinhaHorario(sugerirProximoHorario());
 
     setTimeout(() => {
-        document
-            .querySelectorAll(".horaInicio")
-            .item(horarios.length)
-            .focus();
+        const novosHorarios = document.querySelectorAll(".horaInicio");
+        novosHorarios[novosHorarios.length - 1]?.focus();
     }, 50);
 });
-
-
 
 // =============================
 // iniciar
@@ -427,4 +260,3 @@ carregarProfessores();
 carregarMaterias();
 definirDataAmanha();
 criarLinhaHorario();
-carregarReposicoes();

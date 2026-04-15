@@ -2924,3 +2924,87 @@ textarea[readonly] {
     font-size: 16px;
   }
 }
+/* =========================
+   REPOSIÇÕES
+========================= */
+
+.dashboard-reposicoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+#horariosContainer .linha-horario-reposicao input[type="time"] {
+  min-width: 120px;
+}
+
+.card-reposicao-item {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card-reposicao-item:hover {
+  transform: translateY(-1px);
+}
+
+#listaReposicoesDisponiveis,
+#listaReposicoesEscolhidas {
+  margin-top: 6px;
+}
+
+#listaReposicoesDisponiveis p,
+#listaReposicoesEscolhidas p {
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .card-reposicao-item > div {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .card-reposicao-item button.btnExcluir {
+    align-self: flex-start;
+  }
+}
+/* =========================
+   REPOSIÇÕES
+========================= */
+
+.dashboard-reposicoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+#horariosContainer .linha-horario-reposicao input[type="time"] {
+  min-width: 120px;
+}
+
+.card-reposicao-item {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card-reposicao-item:hover {
+  transform: translateY(-1px);
+}
+
+#listaReposicoesDisponiveis,
+#listaReposicoesEscolhidas {
+  margin-top: 6px;
+}
+
+#listaReposicoesDisponiveis p,
+#listaReposicoesEscolhidas p {
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .card-reposicao-item > div {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .card-reposicao-item button.btnExcluir {
+    align-self: flex-start;
+  }
+}

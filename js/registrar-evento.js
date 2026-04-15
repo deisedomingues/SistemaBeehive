@@ -1,8 +1,6 @@
 import { supabase } from "./supabase.js";
 import { exigirAdmin } from "./guard.js";
 
-await exigirAdmin();
-
 /* =========================================================
    ELEMENTOS
 ========================================================= */
@@ -21,29 +19,48 @@ const eventoId = Number(params.get("evento"));
 
 let evento = null;
 let participantes = [];
+let registrando = false;
 
 /* =========================================================
    INICIALIZAÇÃO
 ========================================================= */
-document.addEventListener("DOMContentLoaded", async () => {
-  if (!eventoId) {
-    mostrarMensagem("Evento não informado na URL.", "erro");
-    tituloEventoEl.textContent = "Evento não encontrado";
-    btnRegistrarEvento.disabled = true;
-    return;
-  }
+inicializar();
 
-  await carregarTela();
-});
+async function inicializar() {
+  try {
+    await exigirAdmin();
+
+    if (!Number.isFinite(eventoId) || eventoId <= 0) {
+      mostrarMensagem("Evento não informado ou inválido na URL.", "erro");
+      tituloEventoEl.textContent = "Evento não encontrado";
+      subtituloEventoEl.textContent = "";
+      btnRegistrarEvento.disabled = true;
+      return;
+    }
+
+    btnRegistrarEvento.addEventListener("click", registrarParticipacao);
+
+    await carregarTela();
+  } catch (erro) {
+    console.error("Erro na inicialização da página:", erro);
+    mostrarMensagem("Não foi possível abrir esta página.", "erro");
+    tituloEventoEl.textContent = "Erro ao carregar";
+    subtituloEventoEl.textContent = "";
+    btnRegistrarEvento.disabled = true;
+  }
+}
 
 /* =========================================================
    UTILITÁRIOS
 ========================================================= */
 function mostrarMensagem(texto, tipo = "sucesso") {
+  if (!msg) return;
+
   msg.style.display = "block";
   msg.textContent = texto;
   msg.style.padding = "10px";
   msg.style.borderRadius = "10px";
+  msg.style.marginBottom = "12px";
 
   if (tipo === "erro") {
     msg.style.background = "#ffe5e5";
@@ -57,19 +74,21 @@ function mostrarMensagem(texto, tipo = "sucesso") {
 }
 
 function esconderMensagem() {
+  if (!msg) return;
   msg.style.display = "none";
   msg.textContent = "";
 }
 
 function formatarData(dataStr) {
   if (!dataStr) return "-";
-  const [ano, mes, dia] = dataStr.split("-");
+  const [ano, mes, dia] = String(dataStr).split("-");
+  if (!ano || !mes || !dia) return dataStr;
   return `${dia}/${mes}/${ano}`;
 }
 
 function formatarHora(horaStr) {
   if (!horaStr) return "-";
-  return horaStr.slice(0, 5);
+  return String(horaStr).slice(0, 5);
 }
 
 function escaparHtml(texto) {
@@ -79,6 +98,21 @@ function escaparHtml(texto) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function atualizarTotal() {
+  totalSelecionadosEl.textContent = participantes.length;
+}
+
+function definirBotaoRegistrando(ativo) {
+  registrando = ativo;
+  btnRegistrarEvento.disabled = ativo;
+
+  if (ativo) {
+    btnRegistrarEvento.textContent = "Registrando...";
+  } else {
+    btnRegistrarEvento.textContent = "Registrar participação";
+  }
 }
 
 /* =========================================================
@@ -141,9 +175,8 @@ async function buscarConfirmadosDoEvento() {
     .map((item) => ({
       aluno_id: Number(item.aluno.id),
       nome: item.aluno.nome
-    }));
-
-  lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
   return lista;
 }
@@ -158,12 +191,13 @@ async function buscarMatriculasAtivasDosAlunos(alunosIds) {
       aluno_id,
       materia_id,
       modulo_id,
+      professor_id,
       data_inicio,
       ativa
     `)
     .in("aluno_id", alunosIds)
     .eq("ativa", true)
-    .order("data_inicio", { ascending: true });
+    .order("data_inicio", { ascending: false });
 
   if (error) {
     console.error("Erro ao buscar matrículas ativas:", error);
@@ -173,20 +207,12 @@ async function buscarMatriculasAtivasDosAlunos(alunosIds) {
   return data || [];
 }
 
-async function buscarRegistrosJaExistentes(alunosIds) {
-  if (!alunosIds.length) return [];
-
-  const matriculasAtivas = await buscarMatriculasAtivasDosAlunos(alunosIds);
-  const matriculasIds = matriculasAtivas.map((item) => item.id);
-
-  if (!matriculasIds.length) return [];
-
+async function buscarRegistrosJaExistentesPorEvento() {
   const { data, error } = await supabase
     .from("aula")
     .select("id, matricula_id, evento_id, status")
     .eq("evento_id", eventoId)
-    .eq("status", "Evento")
-    .in("matricula_id", matriculasIds);
+    .eq("status", "Evento");
 
   if (error) {
     console.error("Erro ao buscar registros existentes:", error);
@@ -197,22 +223,32 @@ async function buscarRegistrosJaExistentes(alunosIds) {
 }
 
 /* =========================================================
-   REGRAS
+   REGRAS DE ESCOLHA DA MATRÍCULA
 ========================================================= */
 function escolherMatriculaParaEvento(matriculasDoAluno, eventoAtual) {
   if (!matriculasDoAluno.length) return null;
 
+  // 1) Se o evento tiver matéria definida, tenta achar matrícula da mesma matéria
   if (eventoAtual.materia_id) {
-    const matriculaDaMateria = matriculasDoAluno.find(
+    const daMateria = matriculasDoAluno.find(
       (matricula) => Number(matricula.materia_id) === Number(eventoAtual.materia_id)
     );
 
-    if (matriculaDaMateria) {
-      return matriculaDaMateria;
-    }
+    if (daMateria) return daMateria;
   }
 
-  return matriculasDoAluno[0] || null;
+  // 2) Se o evento tiver professor responsável, tenta achar matrícula com esse professor
+  if (eventoAtual.professor_responsavel_id) {
+    const doProfessor = matriculasDoAluno.find(
+      (matricula) =>
+        Number(matricula.professor_id) === Number(eventoAtual.professor_responsavel_id)
+    );
+
+    if (doProfessor) return doProfessor;
+  }
+
+  // 3) Senão usa a matrícula ativa mais recente
+  return matriculasDoAluno[0];
 }
 
 /* =========================================================
@@ -222,14 +258,11 @@ function renderizarCabecalhoEvento() {
   if (!evento) return;
 
   const responsavel = evento.professor_responsavel?.nome || "Não informado";
+  const local = evento.local ? ` • Local: ${evento.local}` : "";
 
   tituloEventoEl.textContent = evento.titulo || "Evento";
   subtituloEventoEl.textContent =
-    `${evento.tipo_evento || "Evento"} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)} • Responsável: ${responsavel}`;
-}
-
-function atualizarTotal() {
-  totalSelecionadosEl.textContent = participantes.length;
+    `${evento.tipo_evento || "Evento"} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)} • Responsável: ${responsavel}${local}`;
 }
 
 function renderizarParticipantes() {
@@ -247,7 +280,7 @@ function renderizarParticipantes() {
         class="card"
         style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px; margin-bottom:10px;"
       >
-        <div>
+        <div style="min-width:0;">
           <strong>${escaparHtml(participante.nome)}</strong>
         </div>
 
@@ -264,6 +297,7 @@ function renderizarParticipantes() {
             width:34px;
             height:34px;
             font-size:18px;
+            flex-shrink:0;
           "
           aria-label="Remover participante"
           title="Remover participante"
@@ -277,6 +311,9 @@ function renderizarParticipantes() {
   document.querySelectorAll(".btn-remover-participante").forEach((botao) => {
     botao.addEventListener("click", () => {
       const index = Number(botao.dataset.index);
+
+      if (!Number.isInteger(index) || index < 0 || index >= participantes.length) return;
+
       participantes.splice(index, 1);
       renderizarParticipantes();
     });
@@ -294,30 +331,37 @@ async function carregarTela() {
   try {
     evento = await buscarEvento();
 
+    renderizarCabecalhoEvento();
+
     if (!evento.ativo) {
-      mostrarMensagem("Este evento está cancelado e não pode ser registrado.", "erro");
+      mostrarMensagem("Este evento está inativo/cancelado e não pode ser registrado.", "erro");
       btnRegistrarEvento.disabled = true;
+      return;
     }
 
     participantes = await buscarConfirmadosDoEvento();
-
-    renderizarCabecalhoEvento();
     renderizarParticipantes();
 
     if (!participantes.length) {
       mostrarMensagem("Este evento ainda não possui alunos confirmados.", "erro");
       btnRegistrarEvento.disabled = true;
+      return;
     }
+
+    btnRegistrarEvento.disabled = false;
   } catch (erro) {
     console.error(erro);
     mostrarMensagem(erro.message || "Erro ao carregar a tela.", "erro");
     tituloEventoEl.textContent = "Erro ao carregar evento";
+    subtituloEventoEl.textContent = "";
     btnRegistrarEvento.disabled = true;
   }
 }
 
 async function registrarParticipacao() {
   esconderMensagem();
+
+  if (registrando) return;
 
   if (!evento) {
     mostrarMensagem("Evento não carregado.", "erro");
@@ -334,14 +378,15 @@ async function registrarParticipacao() {
     return;
   }
 
-  btnRegistrarEvento.disabled = true;
-  btnRegistrarEvento.textContent = "Registrando...";
+  definirBotaoRegistrando(true);
 
   try {
-    const alunosIds = participantes.map((item) => item.aluno_id);
+    const alunosIds = participantes.map((item) => Number(item.aluno_id));
 
-    const matriculasAtivas = await buscarMatriculasAtivasDosAlunos(alunosIds);
-    const registrosExistentes = await buscarRegistrosJaExistentes(alunosIds);
+    const [matriculasAtivas, registrosExistentes] = await Promise.all([
+      buscarMatriculasAtivasDosAlunos(alunosIds),
+      buscarRegistrosJaExistentesPorEvento()
+    ]);
 
     const matriculasPorAluno = new Map();
 
@@ -389,7 +434,9 @@ async function registrarParticipacao() {
           ? Number(evento.professor_responsavel_id)
           : null,
         parte: 1,
-        modulo_id: matriculaEscolhida.modulo_id ? Number(matriculaEscolhida.modulo_id) : null,
+        modulo_id: matriculaEscolhida.modulo_id
+          ? Number(matriculaEscolhida.modulo_id)
+          : null,
         aula_gravada: false,
         precisa_reposicao: false,
         aula_original_id: null,
@@ -434,19 +481,26 @@ async function registrarParticipacao() {
 
     mostrarMensagem(mensagem, "sucesso");
 
+    // Remove da lista os que acabaram de ser registrados
+    const idsRegistrados = new Set(
+      registrosParaInserir.map((item) => Number(item.matricula_id))
+    );
+
+    participantes = participantes.filter((participante) => {
+      const matriculasDoAluno = matriculasPorAluno.get(Number(participante.aluno_id)) || [];
+      const matriculaEscolhida = escolherMatriculaParaEvento(matriculasDoAluno, evento);
+      return !matriculaEscolhida || !idsRegistrados.has(Number(matriculaEscolhida.id));
+    });
+
+    renderizarParticipantes();
+
     setTimeout(() => {
       window.location.href = "eventos.html";
-    }, 1800);
+    }, 1500);
   } catch (erro) {
     console.error(erro);
     mostrarMensagem(erro.message || "Erro ao registrar participação.", "erro");
   } finally {
-    btnRegistrarEvento.disabled = false;
-    btnRegistrarEvento.textContent = "Registrar participação";
+    definirBotaoRegistrando(false);
   }
 }
-
-/* =========================================================
-   EVENTOS
-========================================================= */
-btnRegistrarEvento.addEventListener("click", registrarParticipacao);
