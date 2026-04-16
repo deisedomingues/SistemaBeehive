@@ -1,52 +1,82 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendar Reposição | Beehive</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <title>Agendar Reposição | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
-
 <body>
 
-    <div class="overlay"></div>
+  <div class="overlay"></div>
 
-    <main class="container container-reposicao">
+  <main class="container container-resumo">
+    <h1 style="margin-bottom:8px;">Agendar reposição</h1>
+    <p style="margin-bottom:18px; opacity:0.9;">
+      Escolha o curso, veja suas aulas pendentes e selecione um horário disponível para reposição.
+    </p>
 
-        <h1>Agendar reposição</h1>
+    <div id="msg" style="display:none; margin-bottom:12px;"></div>
 
-        <section class="card-reposicao">
-            <h3>Reposições pendentes</h3>
-            <p class="texto-apoio">
-                Selecione abaixo a aula que você deseja repor.
-            </p>
+    <!-- =========================
+         CURSO SELECIONADO
+    ========================== -->
+    <section id="blocoCursoReposicao" class="card" style="margin-bottom:16px; display:none;">
+      <h2 style="margin-bottom:8px;">Curso selecionado</h2>
 
-            <div id="faltasAluno">Carregando...</div>
-        </section>
+      <p id="textoCursoReposicao" style="margin:0 0 12px 0; opacity:0.9;">
+        Carregando curso...
+      </p>
 
-        <section class="card-reposicao">
-            <h3>Horários disponíveis</h3>
-            <p class="texto-apoio" id="textoSelecao">
-                Escolha uma aula pendente para visualizar os horários disponíveis.<br>
-                ATENÇÃO: 
-                
-            </p>
-            <div id="alertaCobrancaReposicao" style="display:none; margin: 10px 0 14px 0;"></div>
+      <label id="labelSelectMatriculaReposicao" for="selectMatriculaReposicao" style="display:none;">
+        Escolha o curso que deseja visualizar
+        <select id="selectMatriculaReposicao" style="margin-top:6px;">
+          <option value="">Selecione</option>
+        </select>
+      </label>
+    </section>
 
-            <div id="listaReposicoes">Carregando horários...</div>
-        </section>
+    <!-- =========================
+         AULAS PENDENTES
+    ========================== -->
+    <section class="card" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:8px;">Aulas pendentes de reposição</h2>
+      <p style="margin:0 0 12px 0; opacity:0.85;">
+        Aqui aparecem apenas as aulas do curso selecionado que ainda podem ser repostas.
+      </p>
 
-        <p id="msg"></p>
+      <div id="faltasAluno">
+        <p style="margin:0;">Carregando pendências...</p>
+      </div>
+    </section>
 
-        <a href="home-aluno.html" class="link-voltar">
-            ← Voltar
-        </a>
+    <!-- =========================
+         ALERTA DE COBRANÇA
+    ========================== -->
+    <div id="alertaCobrancaReposicao" style="display:none; margin-bottom:16px;"></div>
 
-    </main>
+    <!-- =========================
+         TEXTO DE SELEÇÃO
+    ========================== -->
+    <section class="card" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:8px;">Horários disponíveis</h2>
+      <p id="textoSelecao" style="margin:0; opacity:0.85;">
+        Selecione uma aula pendente para visualizar os horários disponíveis.
+      </p>
+    </section>
 
-    <script type="module" src="js/agendar_reposicao.js"></script>
+    <!-- =========================
+         LISTA DE HORÁRIOS
+    ========================== -->
+    <section class="card" style="margin-bottom:16px;">
+      <div id="listaReposicoes">
+        <p style="margin:0;">Carregando horários...</p>
+      </div>
+    </section>
 
+    <a href="home-aluno.html" class="link-voltar">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/agendar_reposicao.js"></script>
 </body>
-
 </html>

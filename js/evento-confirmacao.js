@@ -6,11 +6,17 @@ import { supabase } from "./supabase.js";
 const msg = document.getElementById("msg");
 const listaEventos = document.getElementById("listaEventos");
 
+const blocoCursoEventos = document.getElementById("blocoCursoEventos");
+const textoCursoEventos = document.getElementById("textoCursoEventos");
+const labelSelectMatriculaEvento = document.getElementById("labelSelectMatriculaEvento");
+const selectMatriculaEvento = document.getElementById("selectMatriculaEvento");
+
 /* =========================================================
    ESTADO
 ========================================================= */
 let alunoId = null;
 let matriculasAtivas = [];
+let matriculaSelecionada = null;
 let eventosDisponiveis = [];
 let confirmacoesSet = new Set();
 let convitesMap = new Map();
@@ -26,6 +32,8 @@ document.addEventListener("DOMContentLoaded", async () => {
    UTILITÁRIOS
 ========================================================= */
 function mostrarMensagem(texto, tipo = "sucesso") {
+  if (!msg) return;
+
   msg.style.display = "block";
   msg.textContent = texto;
   msg.style.padding = "10px";
@@ -44,6 +52,7 @@ function mostrarMensagem(texto, tipo = "sucesso") {
 }
 
 function esconderMensagem() {
+  if (!msg) return;
   msg.style.display = "none";
   msg.textContent = "";
 }
@@ -96,6 +105,21 @@ function obterAlunoIdLogado() {
   return null;
 }
 
+function montarNomeCurso(matricula) {
+  const materia = matricula?.materia?.nome || "Curso";
+  const modulo = matricula?.modulo?.nome || "Módulo não informado";
+  return `${materia} — ${modulo}`;
+}
+
+function salvarMatriculaSelecionada(matricula) {
+  if (!matricula?.id) return;
+
+  localStorage.setItem("matriculaSelecionadaId", String(matricula.id));
+  localStorage.setItem("materiaSelecionadaId", String(matricula.materia_id || ""));
+  localStorage.setItem("moduloSelecionadoId", String(matricula.modulo_id || ""));
+  localStorage.setItem("nomeCursoSelecionado", montarNomeCurso(matricula));
+}
+
 function eventoJaConfirmado(eventoId) {
   return confirmacoesSet.has(Number(eventoId));
 }
@@ -109,16 +133,19 @@ function obterRotuloPublico(evento) {
 }
 
 function obterPublicoDetalhado(evento) {
+  if (evento.publico_alvo === "todos") {
+    return "Disponível para todos os alunos da escola";
+  }
+
   if (evento.publico_alvo === "materia" && evento.materia?.nome) {
     return `${obterRotuloPublico(evento)} • ${evento.materia.nome}`;
   }
 
   if (
-    (evento.publico_alvo === "modulo_exato" ||
-      evento.publico_alvo === "modulo_a_partir") &&
+    (evento.publico_alvo === "modulo_exato" || evento.publico_alvo === "modulo_a_partir") &&
     evento.modulo?.nome
   ) {
-    return `${obterRotuloPublico(evento)} • ${evento.modulo.nome}`;
+    return `${obterRotuloPublico(evento)} • ${evento.materia?.nome || "Curso"} — ${evento.modulo.nome}`;
   }
 
   return obterRotuloPublico(evento);
@@ -135,9 +162,9 @@ function eventoJaAconteceu(evento) {
   return dataHoraEvento < new Date();
 }
 
-function alunoPodeVerEvento(evento) {
+function eventoCondizComCursoSelecionado(evento) {
   if (!evento?.ativo) return false;
-  if (!matriculasAtivas.length) return false;
+  if (!matriculaSelecionada) return false;
   if (eventoJaAconteceu(evento)) return false;
 
   if (evento.publico_alvo === "todos") {
@@ -145,64 +172,34 @@ function alunoPodeVerEvento(evento) {
   }
 
   if (evento.publico_alvo === "materia") {
-    return matriculasAtivas.some(
-      (matricula) => Number(matricula.materia_id) === Number(evento.materia_id)
-    );
+    return Number(matriculaSelecionada.materia_id) === Number(evento.materia_id);
   }
 
   if (evento.publico_alvo === "modulo_exato") {
-    return matriculasAtivas.some(
-      (matricula) =>
-        Number(matricula.materia_id) === Number(evento.materia_id) &&
-        Number(matricula.modulo_id) === Number(evento.modulo_id)
+    return (
+      Number(matriculaSelecionada.materia_id) === Number(evento.materia_id) &&
+      Number(matriculaSelecionada.modulo_id) === Number(evento.modulo_id)
     );
   }
 
   if (evento.publico_alvo === "modulo_a_partir") {
+    const mesmaMateria = Number(matriculaSelecionada.materia_id) === Number(evento.materia_id);
+    const ordemAluno = matriculaSelecionada.modulo?.ordem ?? null;
     const ordemEvento = evento.modulo?.ordem ?? null;
-    if (ordemEvento === null) return false;
 
-    return matriculasAtivas.some((matricula) => {
-      const mesmaMateria = Number(matricula.materia_id) === Number(evento.materia_id);
-      const ordemAluno = matricula.modulo?.ordem ?? null;
+    if (!mesmaMateria || ordemAluno === null || ordemEvento === null) {
+      return false;
+    }
 
-      return mesmaMateria && ordemAluno !== null && Number(ordemAluno) >= Number(ordemEvento);
-    });
+    return Number(ordemAluno) >= Number(ordemEvento);
   }
 
   return false;
 }
 
 /* =========================================================
-   CARREGAMENTO
+   MATRÍCULAS
 ========================================================= */
-async function iniciarTela() {
-  esconderMensagem();
-
-  alunoId = obterAlunoIdLogado();
-
-  if (!alunoId) {
-    mostrarMensagem(
-      "Não foi possível identificar o aluno logado. Verifique se o ID do aluno está salvo no login.",
-      "erro"
-    );
-
-    listaEventos.innerHTML = `
-      <div class="card">
-        <p style="margin:0;">Não foi possível carregar os eventos.</p>
-      </div>
-    `;
-    return;
-  }
-
-  await carregarMatriculasAtivas();
-  await carregarEventosDisponiveis();
-  await sincronizarConvitesDoAluno();
-  await carregarConfirmacoesDoAluno();
-  renderizarEventos();
-  await marcarConvitesComoVisualizados();
-}
-
 async function carregarMatriculasAtivas() {
   const { data, error } = await supabase
     .from("matricula")
@@ -224,7 +221,8 @@ async function carregarMatriculasAtivas() {
       )
     `)
     .eq("aluno_id", alunoId)
-    .eq("ativa", true);
+    .eq("ativa", true)
+    .order("id", { ascending: true });
 
   if (error) {
     console.error("Erro ao carregar matrículas do aluno:", error);
@@ -236,6 +234,60 @@ async function carregarMatriculasAtivas() {
   matriculasAtivas = data || [];
 }
 
+function definirMatriculaSelecionadaInicial() {
+  if (!matriculasAtivas.length) {
+    matriculaSelecionada = null;
+    return;
+  }
+
+  const idSalvo = localStorage.getItem("matriculaSelecionadaId");
+
+  const encontrada = matriculasAtivas.find(
+    (m) => String(m.id) === String(idSalvo)
+  );
+
+  if (encontrada) {
+    matriculaSelecionada = encontrada;
+    return;
+  }
+
+  matriculaSelecionada = matriculasAtivas[0];
+  salvarMatriculaSelecionada(matriculaSelecionada);
+}
+
+function preencherSelectMatriculas() {
+  if (!blocoCursoEventos || !textoCursoEventos || !labelSelectMatriculaEvento || !selectMatriculaEvento) {
+    return;
+  }
+
+  blocoCursoEventos.style.display = "block";
+  selectMatriculaEvento.innerHTML = "";
+
+  matriculasAtivas.forEach((matricula) => {
+    const option = document.createElement("option");
+    option.value = String(matricula.id);
+    option.textContent = montarNomeCurso(matricula);
+    selectMatriculaEvento.appendChild(option);
+  });
+
+  if (matriculasAtivas.length > 1) {
+    labelSelectMatriculaEvento.style.display = "block";
+  } else {
+    labelSelectMatriculaEvento.style.display = "none";
+  }
+
+  if (matriculaSelecionada?.id) {
+    selectMatriculaEvento.value = String(matriculaSelecionada.id);
+    textoCursoEventos.textContent =
+      `Você está visualizando os eventos do curso ${montarNomeCurso(matriculaSelecionada)}. Eventos gerais da escola também aparecem aqui.`;
+  } else {
+    textoCursoEventos.textContent = "Nenhum curso ativo encontrado.";
+  }
+}
+
+/* =========================================================
+   EVENTOS / CONVITES / CONFIRMAÇÕES
+========================================================= */
 async function carregarEventosDisponiveis() {
   const { data, error } = await supabase
     .from("evento")
@@ -274,7 +326,7 @@ async function carregarEventosDisponiveis() {
     return;
   }
 
-  eventosDisponiveis = (data || []).filter(alunoPodeVerEvento);
+  eventosDisponiveis = (data || []).filter(eventoCondizComCursoSelecionado);
 }
 
 async function sincronizarConvitesDoAluno() {
@@ -471,7 +523,6 @@ function adicionarEventosDeInterface() {
     }
 
     atualizarRotulo();
-
     details.addEventListener("toggle", atualizarRotulo);
 
     if (verMenos) {
@@ -486,11 +537,13 @@ function adicionarEventosDeInterface() {
    RENDER
 ========================================================= */
 function renderizarEventos() {
+  if (!listaEventos) return;
+
   if (!eventosDisponiveis.length) {
     listaEventos.innerHTML = `
       <div class="card">
         <p style="margin:0;">
-          No momento não há eventos disponíveis para você.
+          No momento não há eventos disponíveis para o curso selecionado.
         </p>
       </div>
     `;
@@ -515,11 +568,7 @@ function renderizarEventos() {
         </div>
       `;
       botaoHtml = `
-        <button
-          type="button"
-          class="btn btn-evento-aluno-confirmado"
-          disabled
-        >
+        <button type="button" class="btn btn-evento-aluno-confirmado" disabled>
           Presença confirmada
         </button>
       `;
@@ -532,11 +581,7 @@ function renderizarEventos() {
         </div>
       `;
       botaoHtml = `
-        <button
-          type="button"
-          class="btn btn-evento-aluno-encerrado"
-          disabled
-        >
+        <button type="button" class="btn btn-evento-aluno-encerrado" disabled>
           Prazo encerrado
         </button>
       `;
@@ -549,11 +594,7 @@ function renderizarEventos() {
         </div>
       `;
       botaoHtml = `
-        <button
-          type="button"
-          class="btn btn-confirmar-evento"
-          data-evento-id="${evento.id}"
-        >
+        <button type="button" class="btn btn-confirmar-evento" data-evento-id="${evento.id}">
           Confirmar presença
         </button>
       `;
@@ -616,4 +657,88 @@ function renderizarEventos() {
   }).join("");
 
   adicionarEventosDeInterface();
+}
+
+/* =========================================================
+   FLUXO
+========================================================= */
+async function recarregarTelaEventosPorCurso() {
+  esconderMensagem();
+
+  if (!matriculaSelecionada) {
+    renderizarEventos();
+    return;
+  }
+
+  salvarMatriculaSelecionada(matriculaSelecionada);
+  preencherSelectMatriculas();
+
+  await carregarEventosDisponiveis();
+  await sincronizarConvitesDoAluno();
+  await carregarConfirmacoesDoAluno();
+
+  renderizarEventos();
+  await marcarConvitesComoVisualizados();
+}
+
+async function iniciarTela() {
+  esconderMensagem();
+
+  alunoId = obterAlunoIdLogado();
+
+  if (!alunoId) {
+    mostrarMensagem(
+      "Não foi possível identificar o aluno logado. Verifique se o ID do aluno está salvo no login.",
+      "erro"
+    );
+
+    if (listaEventos) {
+      listaEventos.innerHTML = `
+        <div class="card">
+          <p style="margin:0;">Não foi possível carregar os eventos.</p>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  await carregarMatriculasAtivas();
+
+  if (!matriculasAtivas.length) {
+    if (blocoCursoEventos) blocoCursoEventos.style.display = "block";
+    if (textoCursoEventos) {
+      textoCursoEventos.textContent = "Você não possui matrícula ativa no momento.";
+    }
+
+    if (listaEventos) {
+      listaEventos.innerHTML = `
+        <div class="card">
+          <p style="margin:0;">Você não possui curso ativo para visualizar eventos.</p>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  definirMatriculaSelecionadaInicial();
+  preencherSelectMatriculas();
+  await recarregarTelaEventosPorCurso();
+}
+
+/* =========================================================
+   EVENTOS DA INTERFACE
+========================================================= */
+if (selectMatriculaEvento) {
+  selectMatriculaEvento.addEventListener("change", async () => {
+    const idSelecionado = selectMatriculaEvento.value;
+
+    const encontrada = matriculasAtivas.find(
+      (m) => String(m.id) === String(idSelecionado)
+    );
+
+    if (!encontrada) return;
+
+    matriculaSelecionada = encontrada;
+    await recarregarTelaEventosPorCurso();
+  });
 }

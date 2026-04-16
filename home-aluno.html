@@ -45,6 +45,35 @@
       </div>
     </section>
 
+    <!-- =========================
+         CURSO SELECIONADO
+    ========================== -->
+    <section
+      id="blocoCursoAtual"
+      class="card"
+      style="margin-bottom: 18px; display: none;"
+    >
+      <h2 style="margin-bottom: 10px;">Curso selecionado</h2>
+
+      <p
+        id="textoCursoAtual"
+        style="margin-top: 0; margin-bottom: 12px; opacity: 0.9;"
+      >
+        Carregando seus cursos...
+      </p>
+
+      <label
+        for="selectMatricula"
+        id="labelSelectMatricula"
+        style="display: none;"
+      >
+        Escolha o curso que deseja visualizar
+        <select id="selectMatricula" style="margin-top: 6px;">
+          <option value="">Selecione</option>
+        </select>
+      </label>
+    </section>
+
     <section class="painel-aluno-cards">
 
       <a id="btnZoom" class="card-admin-link" target="_blank" rel="noopener noreferrer">
@@ -52,7 +81,7 @@
           <div class="card-admin-icone">🎓</div>
           <div class="card-admin-conteudo">
             <h2>Entrar na aula ao vivo</h2>
-            <p>
+            <p id="textoCardZoom">
               Acesse rapidamente o link da sua aula online.
             </p>
           </div>
@@ -64,7 +93,7 @@
           <div class="card-admin-icone">🎥</div>
           <div class="card-admin-conteudo">
             <h2>Assistir aulas gravadas</h2>
-            <p>
+            <p id="textoCardYoutube">
               Veja ou reveja as aulas disponíveis para seu curso.
             </p>
           </div>
@@ -90,7 +119,7 @@
           <div class="card-admin-icone">📅</div>
           <div class="card-admin-conteudo">
             <h2>Agendar reposição</h2>
-            <p>
+            <p id="textoCardReposicao">
               Veja horários disponíveis para marcar suas reposições.
             </p>
           </div>
@@ -102,7 +131,7 @@
           <div class="card-admin-icone">📊</div>
           <div class="card-admin-conteudo">
             <h2>Meu painel acadêmico</h2>
-            <p>
+            <p id="textoCardPainel">
               Acompanhe frequência, histórico e informações da sua jornada.
             </p>
           </div>

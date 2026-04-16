@@ -8,17 +8,33 @@ const btnSair = document.getElementById("btnSair");
 const btnZoom = document.getElementById("btnZoom");
 const btnYoutube = document.getElementById("btnYoutube");
 
+const textoCardZoom = document.getElementById("textoCardZoom");
+const textoCardYoutube = document.getElementById("textoCardYoutube");
+const textoCardReposicao = document.getElementById("textoCardReposicao");
+const textoCardPainel = document.getElementById("textoCardPainel");
+
 const badgeEventos = document.getElementById("badgeEventos");
 const textoEventosHome = document.getElementById("textoEventosHome");
 
-const alunoId = localStorage.getItem("alunoId") || localStorage.getItem("aluno_id") || localStorage.getItem("idAluno");
+const blocoCursoAtual = document.getElementById("blocoCursoAtual");
+const textoCursoAtual = document.getElementById("textoCursoAtual");
+const labelSelectMatricula = document.getElementById("labelSelectMatricula");
+const selectMatricula = document.getElementById("selectMatricula");
+
+const alunoId =
+  localStorage.getItem("alunoId") ||
+  localStorage.getItem("aluno_id") ||
+  localStorage.getItem("idAluno");
 
 if (!alunoId) {
   window.location.href = "login.html";
 }
 
+let matriculasAtivas = [];
+let matriculaSelecionada = null;
+
 /* ======================
-   utilitário para desabilitar card-link
+   utilitários
 ====================== */
 function desabilitarCard(linkEl, tituloIndisponivel, descricaoIndisponivel) {
   if (!linkEl) return;
@@ -31,6 +47,15 @@ function desabilitarCard(linkEl, tituloIndisponivel, descricaoIndisponivel) {
 
   if (titulo) titulo.textContent = tituloIndisponivel;
   if (descricao) descricao.textContent = descricaoIndisponivel;
+}
+
+function habilitarCard(linkEl, href) {
+  if (!linkEl || !href) return;
+
+  linkEl.href = href;
+  linkEl.target = "_blank";
+  linkEl.rel = "noopener noreferrer";
+  linkEl.classList.remove("link-indisponivel");
 }
 
 function atualizarBadgeEventos(totalNaoVisualizados) {
@@ -60,23 +85,23 @@ function eventoJaAconteceu(evento) {
   return dataHoraEvento < new Date();
 }
 
-function alunoPodeVerEvento(evento, matriculasAtivas) {
+function alunoPodeVerEvento(evento, matriculasDoAluno) {
   if (!evento?.ativo) return false;
   if (eventoJaAconteceu(evento)) return false;
-  if (!matriculasAtivas.length) return false;
+  if (!matriculasDoAluno.length) return false;
 
   if (evento.publico_alvo === "todos") {
     return true;
   }
 
   if (evento.publico_alvo === "materia") {
-    return matriculasAtivas.some(
+    return matriculasDoAluno.some(
       (matricula) => Number(matricula.materia_id) === Number(evento.materia_id)
     );
   }
 
   if (evento.publico_alvo === "modulo_exato") {
-    return matriculasAtivas.some(
+    return matriculasDoAluno.some(
       (matricula) =>
         Number(matricula.materia_id) === Number(evento.materia_id) &&
         Number(matricula.modulo_id) === Number(evento.modulo_id)
@@ -87,7 +112,7 @@ function alunoPodeVerEvento(evento, matriculasAtivas) {
     const ordemEvento = evento.modulo?.ordem ?? null;
     if (ordemEvento === null) return false;
 
-    return matriculasAtivas.some((matricula) => {
+    return matriculasDoAluno.some((matricula) => {
       const mesmaMateria = Number(matricula.materia_id) === Number(evento.materia_id);
       const ordemAluno = matricula.modulo?.ordem ?? null;
 
@@ -98,6 +123,176 @@ function alunoPodeVerEvento(evento, matriculasAtivas) {
   return false;
 }
 
+function montarNomeCurso(matricula) {
+  const nomeMateria = matricula?.materia?.nome || "Curso";
+  const nomeModulo = matricula?.modulo?.nome || "Módulo não informado";
+  return `${nomeMateria} — ${nomeModulo}`;
+}
+
+function salvarContextoDaMatricula(matricula) {
+  if (!matricula?.id) return;
+
+  localStorage.setItem("matriculaSelecionadaId", String(matricula.id));
+  localStorage.setItem("materiaSelecionadaId", String(matricula.materia_id || ""));
+  localStorage.setItem("moduloSelecionadoId", String(matricula.modulo_id || ""));
+  localStorage.setItem("nomeCursoSelecionado", montarNomeCurso(matricula));
+}
+
+function atualizarResumoDoCursoSelecionado() {
+  if (!blocoCursoAtual || !textoCursoAtual) return;
+
+  blocoCursoAtual.style.display = "block";
+
+  if (!matriculaSelecionada) {
+    textoCursoAtual.textContent = "Nenhum curso ativo encontrado.";
+    return;
+  }
+
+  const nomeCurso = montarNomeCurso(matriculaSelecionada);
+
+  if (matriculasAtivas.length === 1) {
+    textoCursoAtual.textContent = `Você está matriculado(a) em: ${nomeCurso}.`;
+  } else {
+    textoCursoAtual.textContent = `Curso atualmente selecionado: ${nomeCurso}.`;
+  }
+
+  if (textoCardReposicao) {
+    textoCardReposicao.textContent =
+      `Veja horários disponíveis para marcar suas reposições de ${nomeCurso}.`;
+  }
+
+  if (textoCardPainel) {
+    textoCardPainel.textContent =
+      `Acompanhe frequência, histórico e informações da sua jornada em ${nomeCurso}.`;
+  }
+}
+
+function atualizarCardsLinks() {
+  if (!matriculaSelecionada) {
+    desabilitarCard(
+      btnZoom,
+      "Aula ao vivo indisponível",
+      "Não foi possível identificar um curso ativo para este aluno."
+    );
+
+    desabilitarCard(
+      btnYoutube,
+      "Aulas gravadas indisponíveis",
+      "Não foi possível identificar um curso ativo para este aluno."
+    );
+
+    if (textoCardReposicao) {
+      textoCardReposicao.textContent =
+        "Selecione um curso para visualizar suas reposições.";
+    }
+
+    if (textoCardPainel) {
+      textoCardPainel.textContent =
+        "Selecione um curso para visualizar seu painel acadêmico.";
+    }
+
+    return;
+  }
+
+  const nomeCurso = montarNomeCurso(matriculaSelecionada);
+
+  if (matriculaSelecionada.link_zoom) {
+    habilitarCard(btnZoom, matriculaSelecionada.link_zoom);
+    const tituloZoom = btnZoom?.querySelector(".card-admin-conteudo h2");
+    if (tituloZoom) tituloZoom.textContent = "Entrar na aula ao vivo";
+
+    if (textoCardZoom) {
+      textoCardZoom.textContent =
+        `Acesse rapidamente o link da sua aula online de ${nomeCurso}.`;
+    }
+  } else {
+    desabilitarCard(
+      btnZoom,
+      "Aula ao vivo indisponível",
+      `O link da aula ao vivo de ${nomeCurso} ainda não foi cadastrado.`
+    );
+  }
+
+  if (matriculaSelecionada.link_youtube) {
+    habilitarCard(btnYoutube, matriculaSelecionada.link_youtube);
+    const tituloYoutube = btnYoutube?.querySelector(".card-admin-conteudo h2");
+    if (tituloYoutube) tituloYoutube.textContent = "Assistir aulas gravadas";
+
+    if (textoCardYoutube) {
+      textoCardYoutube.textContent =
+        `Veja ou reveja as aulas gravadas disponíveis para ${nomeCurso}.`;
+    }
+  } else {
+    desabilitarCard(
+      btnYoutube,
+      "Aulas gravadas indisponíveis",
+      `A playlist de ${nomeCurso} ainda não foi cadastrada.`
+    );
+  }
+}
+
+function preencherSelectMatriculas() {
+  if (!selectMatricula || !labelSelectMatricula || !blocoCursoAtual) return;
+
+  blocoCursoAtual.style.display = "block";
+  selectMatricula.innerHTML = "";
+
+  if (!matriculasAtivas.length) {
+    labelSelectMatricula.style.display = "none";
+    return;
+  }
+
+  matriculasAtivas.forEach((matricula) => {
+    const option = document.createElement("option");
+    option.value = String(matricula.id);
+    option.textContent = montarNomeCurso(matricula);
+    selectMatricula.appendChild(option);
+  });
+
+  if (matriculasAtivas.length > 1) {
+    labelSelectMatricula.style.display = "block";
+  } else {
+    labelSelectMatricula.style.display = "none";
+  }
+
+  if (matriculaSelecionada?.id) {
+    selectMatricula.value = String(matriculaSelecionada.id);
+  }
+}
+
+function definirMatriculaSelecionadaInicial() {
+  if (!matriculasAtivas.length) {
+    matriculaSelecionada = null;
+    return;
+  }
+
+  const matriculaSalvaId = localStorage.getItem("matriculaSelecionadaId");
+
+  const encontradaSalva = matriculasAtivas.find(
+    (matricula) => String(matricula.id) === String(matriculaSalvaId)
+  );
+
+  if (encontradaSalva) {
+    matriculaSelecionada = encontradaSalva;
+    return;
+  }
+
+  matriculaSelecionada = matriculasAtivas[0];
+  salvarContextoDaMatricula(matriculaSelecionada);
+}
+
+function atualizarTelaComMatriculaSelecionada() {
+  atualizarResumoDoCursoSelecionado();
+  atualizarCardsLinks();
+
+  if (matriculaSelecionada) {
+    salvarContextoDaMatricula(matriculaSelecionada);
+  }
+}
+
+/* ======================
+   banco de dados
+====================== */
 async function carregarMatriculasAtivasDoAluno() {
   const { data, error } = await supabase
     .from("matricula")
@@ -106,7 +301,14 @@ async function carregarMatriculasAtivasDoAluno() {
       aluno_id,
       materia_id,
       modulo_id,
+      professor_id,
       ativa,
+      link_zoom,
+      link_youtube,
+      materia:materia_id (
+        id,
+        nome
+      ),
       modulo:modulo_id (
         id,
         nome,
@@ -115,7 +317,8 @@ async function carregarMatriculasAtivasDoAluno() {
       )
     `)
     .eq("aluno_id", alunoId)
-    .eq("ativa", true);
+    .eq("ativa", true)
+    .order("id", { ascending: true });
 
   if (error) {
     console.error("Erro ao carregar matrículas ativas do aluno:", error);
@@ -125,7 +328,7 @@ async function carregarMatriculasAtivasDoAluno() {
   return data || [];
 }
 
-async function carregarEventosElegiveisDoAluno(matriculasAtivas) {
+async function carregarEventosElegiveisDoAluno(matriculasDoAluno) {
   const { data, error } = await supabase
     .from("evento")
     .select(`
@@ -154,7 +357,7 @@ async function carregarEventosElegiveisDoAluno(matriculasAtivas) {
     return [];
   }
 
-  return (data || []).filter((evento) => alunoPodeVerEvento(evento, matriculasAtivas));
+  return (data || []).filter((evento) => alunoPodeVerEvento(evento, matriculasDoAluno));
 }
 
 async function sincronizarConvitesElegiveis(alunoIdAtual, eventosElegiveis) {
@@ -180,7 +383,7 @@ async function sincronizarConvitesElegiveis(alunoIdAtual, eventosElegiveis) {
   const convitesFaltantes = idsEventosElegiveis
     .filter((eventoId) => !eventoIdsComConvite.has(Number(eventoId)))
     .map((eventoId) => ({
-      evento_id: eventoId,
+      evento_id: Number(eventoId),
       aluno_id: Number(alunoIdAtual)
     }));
 
@@ -211,12 +414,8 @@ async function sincronizarConvitesElegiveis(alunoIdAtual, eventosElegiveis) {
   return convitesAtualizados || [];
 }
 
-/* ======================
-   carregar badge de eventos
-====================== */
 async function carregarBadgeEventos() {
   try {
-    const matriculasAtivas = await carregarMatriculasAtivasDoAluno();
     const eventosElegiveis = await carregarEventosElegiveisDoAluno(matriculasAtivas);
     const convites = await sincronizarConvitesElegiveis(alunoId, eventosElegiveis);
 
@@ -229,7 +428,7 @@ async function carregarBadgeEventos() {
 }
 
 /* ======================
-   carregar dados do aluno
+   carga da home
 ====================== */
 async function carregarAluno() {
   try {
@@ -255,66 +454,54 @@ async function carregarAluno() {
         "Não foi possível carregar seus dados no momento."
       );
 
+      if (blocoCursoAtual) blocoCursoAtual.style.display = "block";
+      if (textoCursoAtual) {
+        textoCursoAtual.textContent = "Não foi possível carregar os cursos deste aluno.";
+      }
+
       await carregarBadgeEventos();
       return;
     }
 
     saudacao.textContent = `Olá, ${aluno.nome}!`;
 
-    const { data: matricula, error: erroMatricula } = await supabase
-      .from("matricula")
-      .select("link_zoom, link_youtube, ativa")
-      .eq("aluno_id", alunoId)
-      .eq("ativa", true)
-      .order("id", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    matriculasAtivas = await carregarMatriculasAtivasDoAluno();
 
-    if (erroMatricula) {
-      console.error("Erro ao carregar matrícula:", erroMatricula);
+    if (!matriculasAtivas.length) {
+      if (blocoCursoAtual) blocoCursoAtual.style.display = "block";
+      if (textoCursoAtual) {
+        textoCursoAtual.textContent = "Você ainda não possui curso ativo disponível no sistema.";
+      }
 
       desabilitarCard(
         btnZoom,
         "Aula ao vivo indisponível",
-        "Não foi possível localizar o link da sua aula."
+        "Você não possui matrícula ativa no momento."
       );
 
       desabilitarCard(
         btnYoutube,
         "Aulas gravadas indisponíveis",
-        "Não foi possível localizar sua playlist no momento."
+        "Você não possui matrícula ativa no momento."
       );
+
+      if (textoCardReposicao) {
+        textoCardReposicao.textContent =
+          "Você precisa ter uma matrícula ativa para visualizar suas reposições.";
+      }
+
+      if (textoCardPainel) {
+        textoCardPainel.textContent =
+          "Você precisa ter uma matrícula ativa para visualizar seu painel acadêmico.";
+      }
 
       await carregarBadgeEventos();
       return;
     }
 
-    if (matricula?.link_zoom) {
-      btnZoom.href = matricula.link_zoom;
-      btnZoom.target = "_blank";
-      btnZoom.rel = "noopener noreferrer";
-      btnZoom.classList.remove("link-indisponivel");
-    } else {
-      desabilitarCard(
-        btnZoom,
-        "Aula ao vivo indisponível",
-        "Seu link de aula ainda não foi cadastrado."
-      );
-    }
-
-    if (matricula?.link_youtube) {
-      btnYoutube.href = matricula.link_youtube;
-      btnYoutube.target = "_blank";
-      btnYoutube.rel = "noopener noreferrer";
-      btnYoutube.classList.remove("link-indisponivel");
-    } else {
-      desabilitarCard(
-        btnYoutube,
-        "Aulas gravadas indisponíveis",
-        "Sua playlist ainda não foi cadastrada."
-      );
-    }
-
+    definirMatriculaSelecionadaInicial();
+    preencherSelectMatriculas();
+    atualizarTelaComMatriculaSelecionada();
     await carregarBadgeEventos();
   } catch (erro) {
     console.error("Erro inesperado na home do aluno:", erro);
@@ -333,8 +520,31 @@ async function carregarAluno() {
       "Ocorreu um erro ao carregar sua área."
     );
 
+    if (blocoCursoAtual) blocoCursoAtual.style.display = "block";
+    if (textoCursoAtual) {
+      textoCursoAtual.textContent = "Ocorreu um erro ao carregar os cursos deste aluno.";
+    }
+
     await carregarBadgeEventos();
   }
+}
+
+/* ======================
+   troca de curso
+====================== */
+if (selectMatricula) {
+  selectMatricula.addEventListener("change", () => {
+    const matriculaIdSelecionada = selectMatricula.value;
+
+    const encontrada = matriculasAtivas.find(
+      (matricula) => String(matricula.id) === String(matriculaIdSelecionada)
+    );
+
+    if (!encontrada) return;
+
+    matriculaSelecionada = encontrada;
+    atualizarTelaComMatriculaSelecionada();
+  });
 }
 
 /* ======================
@@ -347,6 +557,12 @@ btnSair.addEventListener("click", () => {
   sessionStorage.removeItem("idAluno");
   localStorage.removeItem("aluno_id");
   localStorage.removeItem("idAluno");
+
+  localStorage.removeItem("matriculaSelecionadaId");
+  localStorage.removeItem("materiaSelecionadaId");
+  localStorage.removeItem("moduloSelecionadoId");
+  localStorage.removeItem("nomeCursoSelecionado");
+
   window.location.href = "login.html";
 });
 

@@ -1,30 +1,32 @@
 import { supabase } from "./supabase.js";
 import { exigirAluno } from "./guard.js";
 
-// ========================================
-// PROTEÇÃO DA PÁGINA
-// ========================================
 try {
   await exigirAluno();
 } catch (erro) {
   console.error("Erro ao validar acesso do aluno:", erro);
 }
 
-// ========================================
-// CONFIGURAÇÕES DA ESCOLA
-// ========================================
+/* ========================================
+   CONFIGURAÇÕES DA ESCOLA
+======================================== */
 const CONFIG = {
   WHATSAPP_NUMERO: "5511956177084",
-  WHATSAPP_MENSAGEM: "teste de mensagem via link do whatsapp",
+  WHATSAPP_MENSAGEM: "Olá! Preciso de ajuda no painel acadêmico.",
   EMAIL: "contato.beehiveidiomas@gmail.com",
-  TELEFONE_TEXTO: "(11) 95617-7084", 
+  TELEFONE_TEXTO: "(11) 95617-7084",
   TELEFONE_LINK: "+5511956177084"
 };
 
-// ========================================
-// ELEMENTOS DA TELA
-// ========================================
+/* ========================================
+   ELEMENTOS DA TELA
+======================================== */
 const msg = document.getElementById("msg");
+
+const blocoCursoPainel = document.getElementById("blocoCursoPainel");
+const textoCursoPainel = document.getElementById("textoCursoPainel");
+const labelSelectMatriculaPainel = document.getElementById("labelSelectMatriculaPainel");
+const selectMatriculaPainel = document.getElementById("selectMatriculaPainel");
 
 const nomeAluno = document.getElementById("nomeAluno");
 const statusMatricula = document.getElementById("statusMatricula");
@@ -51,9 +53,17 @@ const emailEscola = document.getElementById("emailEscola");
 const telefoneEscola = document.getElementById("telefoneEscola");
 const btnWhatsapp = document.getElementById("btnWhatsapp");
 
-// ========================================
-// CONTATO DA ESCOLA
-// ========================================
+/* ========================================
+   ESTADO
+======================================== */
+let alunoId = null;
+let alunoAtual = null;
+let matriculasAtivas = [];
+let matriculaSelecionada = null;
+
+/* ========================================
+   CONTATO DA ESCOLA
+======================================== */
 function configurarContatoEscola() {
   if (emailEscola) {
     emailEscola.textContent = CONFIG.EMAIL;
@@ -71,9 +81,9 @@ function configurarContatoEscola() {
   }
 }
 
-// ========================================
-// UTILITÁRIOS
-// ========================================
+/* ========================================
+   UTILITÁRIOS
+======================================== */
 function mostrarMensagem(texto, tipo = "erro") {
   if (!msg) return;
   msg.textContent = texto;
@@ -134,25 +144,62 @@ function formatarNota(valor) {
   return Number(valor).toFixed(1).replace(".", ",");
 }
 
-// ========================================
-// IDENTIFICA O ALUNO LOGADO
-// ========================================
 function obterAlunoId() {
-  return localStorage.getItem("alunoId");
+  return (
+    localStorage.getItem("alunoId") ||
+    localStorage.getItem("aluno_id") ||
+    localStorage.getItem("idAluno")
+  );
 }
 
-// ========================================
-// BUSCA DADOS DO ALUNO
-// ========================================
-// CORREÇÃO:
-// link_zoom e link_youtube NÃO estão na tabela aluno.
-// Eles estão na tabela matricula.
-// Por isso aqui buscamos apenas campos do aluno.
-async function carregarAluno(alunoId) {
+function montarNomeCurso(matricula) {
+  const materia = matricula?.materia?.nome || "Curso";
+  const modulo = matricula?.modulo?.nome || "Módulo não informado";
+  return `${materia} — ${modulo}`;
+}
+
+function salvarMatriculaSelecionada(matricula) {
+  if (!matricula?.id) return;
+
+  localStorage.setItem("matriculaSelecionadaId", String(matricula.id));
+  localStorage.setItem("materiaSelecionadaId", String(matricula.materia_id || ""));
+  localStorage.setItem("moduloSelecionadoId", String(matricula.modulo_id || ""));
+  localStorage.setItem("nomeCursoSelecionado", montarNomeCurso(matricula));
+}
+
+function limparCardsResumo() {
+  setTexto(statusMatricula, "--");
+  setTexto(nomeCurso, "--");
+  setTexto(nomeModulo, "--");
+  setTexto(nomeProfessor, "--");
+  setTexto(dataInicio, "--");
+
+  setTexto(totalAulas, "0");
+  setTexto(totalPresencas, "0");
+  setTexto(totalAusencias, "0");
+  setTexto(totalCanceladas, "0");
+  setTexto(percentualPresenca, "0%");
+  if (barraPresenca) barraPresenca.style.width = "0%";
+
+  setTexto(mediaNotas, "--");
+  setTexto(ultimaNota, "--");
+
+  setTexto(totalReposicoes, "0");
+  setTexto(aulasPrecisaReposicao, "0");
+
+  if (listaHistorico) {
+    listaHistorico.innerHTML = `<div class="vazio-box">Nenhuma informação carregada.</div>`;
+  }
+}
+
+/* ========================================
+   CARGA INICIAL
+======================================== */
+async function carregarAluno(alunoIdParam) {
   const { data, error } = await supabase
     .from("aluno")
     .select("id, nome, email")
-    .eq("id", alunoId)
+    .eq("id", alunoIdParam)
     .single();
 
   if (error || !data) {
@@ -161,119 +208,104 @@ async function carregarAluno(alunoId) {
   }
 
   setTexto(nomeAluno, data.nome || "Aluno(a)");
-
   return data;
 }
 
-// ========================================
-// BUSCA MATRÍCULA DO ALUNO
-// ========================================
-// Aqui sim podemos buscar link_zoom e link_youtube,
-// porque esses campos pertencem à matrícula.
-async function carregarMatricula(alunoId) {
+async function carregarMatriculasAtivas(alunoIdParam) {
   const { data, error } = await supabase
     .from("matricula")
-    .select("id, ativa, data_inicio, data_fim, materia_id, modulo_id, professor_id, link_zoom, link_youtube")
-    .eq("aluno_id", alunoId)
-    .order("ativa", { ascending: false })
-    .order("id", { ascending: false })
-    .limit(1);
+    .select(`
+      id,
+      aluno_id,
+      materia_id,
+      modulo_id,
+      professor_id,
+      ativa,
+      data_inicio,
+      data_fim,
+      link_zoom,
+      link_youtube,
+      materia:materia_id (
+        id,
+        nome
+      ),
+      modulo:modulo_id (
+        id,
+        nome,
+        ordem,
+        materia_id
+      ),
+      professor:professor_id (
+        id,
+        nome
+      )
+    `)
+    .eq("aluno_id", alunoIdParam)
+    .eq("ativa", true)
+    .order("id", { ascending: true });
 
   if (error) {
-    console.error("Erro ao buscar matrícula:", error);
-    throw new Error("Não foi possível carregar a matrícula do aluno.");
+    console.error("Erro ao buscar matrículas ativas:", error);
+    throw new Error("Não foi possível carregar os cursos do aluno.");
   }
 
-  const matricula = data?.[0];
-
-  if (!matricula) {
-    throw new Error("Este aluno não possui matrícula cadastrada.");
-  }
-
-  setTexto(statusMatricula, matricula.ativa ? "Ativa" : "Inativa");
-  setTexto(dataInicio, formatarData(matricula.data_inicio));
-
-  return matricula;
+  return data || [];
 }
 
-// ========================================
-// BUSCA MATÉRIA
-// ========================================
-async function carregarMateria(materiaId) {
-  if (!materiaId) {
-    setTexto(nomeCurso, "--");
-    return null;
+function definirMatriculaSelecionadaInicial() {
+  if (!matriculasAtivas.length) {
+    matriculaSelecionada = null;
+    return;
   }
 
-  const { data, error } = await supabase
-    .from("materia")
-    .select("id, nome")
-    .eq("id", materiaId)
-    .single();
+  const matriculaSalvaId = localStorage.getItem("matriculaSelecionadaId");
 
-  if (error) {
-    console.error("Erro ao buscar matéria:", error);
-    setTexto(nomeCurso, "--");
-    return null;
+  const encontrada = matriculasAtivas.find(
+    (m) => String(m.id) === String(matriculaSalvaId)
+  );
+
+  if (encontrada) {
+    matriculaSelecionada = encontrada;
+    return;
   }
 
-  setTexto(nomeCurso, data?.nome || "--");
-  return data;
+  matriculaSelecionada = matriculasAtivas[0];
+  salvarMatriculaSelecionada(matriculaSelecionada);
 }
 
-// ========================================
-// BUSCA MÓDULO
-// ========================================
-async function carregarModulo(moduloId) {
-  if (!moduloId) {
-    setTexto(nomeModulo, "--");
-    return null;
+function preencherSelectMatriculas() {
+  if (!blocoCursoPainel || !textoCursoPainel || !labelSelectMatriculaPainel || !selectMatriculaPainel) {
+    return;
   }
 
-  const { data, error } = await supabase
-    .from("modulo")
-    .select("id, nome")
-    .eq("id", moduloId)
-    .single();
+  blocoCursoPainel.style.display = "block";
+  selectMatriculaPainel.innerHTML = "";
 
-  if (error) {
-    console.error("Erro ao buscar módulo:", error);
-    setTexto(nomeModulo, "--");
-    return null;
+  matriculasAtivas.forEach((matricula) => {
+    const option = document.createElement("option");
+    option.value = String(matricula.id);
+    option.textContent = montarNomeCurso(matricula);
+    selectMatriculaPainel.appendChild(option);
+  });
+
+  if (matriculasAtivas.length > 1) {
+    labelSelectMatriculaPainel.style.display = "block";
+  } else {
+    labelSelectMatriculaPainel.style.display = "none";
   }
 
-  setTexto(nomeModulo, data?.nome || "--");
-  return data;
+  if (matriculaSelecionada?.id) {
+    selectMatriculaPainel.value = String(matriculaSelecionada.id);
+    textoCursoPainel.textContent =
+      `Você está visualizando o painel do curso ${montarNomeCurso(matriculaSelecionada)}.`;
+  } else {
+    textoCursoPainel.textContent = "Nenhum curso ativo encontrado.";
+  }
 }
 
-// ========================================
-// BUSCA PROFESSOR
-// ========================================
-async function carregarProfessor(professorId) {
-  if (!professorId) {
-    setTexto(nomeProfessor, "--");
-    return null;
-  }
-
-  const { data, error } = await supabase
-    .from("professor")
-    .select("id, nome")
-    .eq("id", professorId)
-    .single();
-
-  if (error) {
-    console.error("Erro ao buscar professor:", error);
-    setTexto(nomeProfessor, "--");
-    return null;
-  }
-
-  setTexto(nomeProfessor, data?.nome || "--");
-  return data;
-}
-
-// ========================================
-// BUSCA AULAS DA MATRÍCULA
-// ========================================
+/* ========================================
+   BUSCAS POR MATRÍCULA SELECIONADA
+======================================== */
 async function carregarAulasDaMatricula(matriculaId) {
   const { data, error } = await supabase
     .from("aula")
@@ -299,9 +331,6 @@ async function carregarAulasDaMatricula(matriculaId) {
   return data || [];
 }
 
-// ========================================
-// BUSCA NOTAS DA MATRÍCULA
-// ========================================
 async function carregarNotasDaMatricula(matriculaId) {
   const { data, error } = await supabase
     .from("nota")
@@ -317,28 +346,33 @@ async function carregarNotasDaMatricula(matriculaId) {
   return data || [];
 }
 
-// ========================================
-// BUSCA REPOSIÇÕES DO ALUNO
-// ========================================
-async function carregarReposicoesDoAluno(alunoId) {
+async function carregarReposicoesDaMatricula(matriculaId) {
   const { data, error } = await supabase
     .from("reposicao_agendada")
-    .select("id, aula_id, cancelado, data_agendamento")
-    .eq("aluno_id", alunoId)
+    .select("id, aula_id, cancelado, data_agendamento, matricula_id")
+    .eq("matricula_id", matriculaId)
     .eq("cancelado", false)
     .order("data_agendamento", { ascending: false });
 
   if (error) {
-    console.error("Erro ao buscar reposições:", error);
+    console.error("Erro ao buscar reposições da matrícula:", error);
     return [];
   }
 
   return data || [];
 }
 
-// ========================================
-// RESUMO ACADÊMICO
-// ========================================
+/* ========================================
+   PREENCHIMENTO
+======================================== */
+function preencherCabecalhoMatricula(matricula) {
+  setTexto(statusMatricula, matricula.ativa ? "Ativa" : "Inativa");
+  setTexto(dataInicio, formatarData(matricula.data_inicio));
+  setTexto(nomeCurso, matricula?.materia?.nome || "--");
+  setTexto(nomeModulo, matricula?.modulo?.nome || "--");
+  setTexto(nomeProfessor, matricula?.professor?.nome || "--");
+}
+
 function preencherResumoAcademico(aulas) {
   const total = aulas.length;
 
@@ -377,9 +411,6 @@ function preencherResumoAcademico(aulas) {
   }
 }
 
-// ========================================
-// NOTAS
-// ========================================
 function preencherNotas(notas) {
   if (!notas.length) {
     setTexto(mediaNotas, "--");
@@ -394,9 +425,6 @@ function preencherNotas(notas) {
   setTexto(ultimaNota, formatarNota(notas[0].valor));
 }
 
-// ========================================
-// REPOSIÇÕES
-// ========================================
 function preencherReposicoes(aulas, reposicoes) {
   const qtdReposicoesAgendadas = reposicoes.length;
   const qtdAulasPrecisaReposicao = aulas.filter(
@@ -407,9 +435,6 @@ function preencherReposicoes(aulas, reposicoes) {
   setTexto(aulasPrecisaReposicao, String(qtdAulasPrecisaReposicao));
 }
 
-// ========================================
-// HISTÓRICO
-// ========================================
 function renderizarHistorico(aulas) {
   if (!listaHistorico) return;
 
@@ -418,7 +443,7 @@ function renderizarHistorico(aulas) {
   if (!aulas.length) {
     listaHistorico.innerHTML = `
       <div class="vazio-box">
-        Nenhuma aula registrada ainda.
+        Nenhuma aula registrada ainda para este curso.
       </div>
     `;
     return;
@@ -445,11 +470,11 @@ function renderizarHistorico(aulas) {
       </div>
 
       <div><strong>Conteúdo:</strong> ${conteudo}</div>
-      <div style="margin-top: 6px;"><strong>Lição de casa:</strong> ${licao}</div>
-      <div style="margin-top: 6px;"><strong>Precisa de reposição:</strong> ${precisaReposicao}</div>
+      <div style="margin-top:6px;"><strong>Lição de casa:</strong> ${licao}</div>
+      <div style="margin-top:6px;"><strong>Precisa de reposição:</strong> ${precisaReposicao}</div>
       ${
         justificativa
-          ? `<div style="margin-top: 6px;"><strong>Justificativa:</strong> ${justificativa}</div>`
+          ? `<div style="margin-top:6px;"><strong>Justificativa:</strong> ${justificativa}</div>`
           : ""
       }
     `;
@@ -458,25 +483,72 @@ function renderizarHistorico(aulas) {
   });
 }
 
-// ========================================
-// DEBUG ÚTIL
-// ========================================
+/* ========================================
+   CARREGAR DADOS DA MATRÍCULA
+======================================== */
+async function carregarDadosDaMatriculaSelecionada() {
+  limparMensagem();
+
+  if (!matriculaSelecionada) {
+    limparCardsResumo();
+    mostrarMensagem("Nenhum curso ativo foi encontrado para este aluno.");
+    return;
+  }
+
+  salvarMatriculaSelecionada(matriculaSelecionada);
+  preencherSelectMatriculas();
+  preencherCabecalhoMatricula(matriculaSelecionada);
+
+  const [aulas, notas, reposicoes] = await Promise.all([
+    carregarAulasDaMatricula(matriculaSelecionada.id),
+    carregarNotasDaMatricula(matriculaSelecionada.id),
+    carregarReposicoesDaMatricula(matriculaSelecionada.id)
+  ]);
+
+  preencherResumoAcademico(aulas);
+  preencherNotas(notas);
+  preencherReposicoes(aulas, reposicoes);
+  renderizarHistorico(aulas);
+}
+
+/* ========================================
+   DEBUG
+======================================== */
 function debugLoginAluno() {
   console.log("role:", localStorage.getItem("role"));
   console.log("alunoId:", localStorage.getItem("alunoId"));
   console.log("alunoNome:", localStorage.getItem("alunoNome"));
   console.log("alunoEmail:", localStorage.getItem("alunoEmail"));
+  console.log("matriculaSelecionadaId:", localStorage.getItem("matriculaSelecionadaId"));
 }
 
-// ========================================
-// INÍCIO
-// ========================================
+/* ========================================
+   EVENTOS DA INTERFACE
+======================================== */
+if (selectMatriculaPainel) {
+  selectMatriculaPainel.addEventListener("change", async () => {
+    const idSelecionado = selectMatriculaPainel.value;
+
+    const encontrada = matriculasAtivas.find(
+      (m) => String(m.id) === String(idSelecionado)
+    );
+
+    if (!encontrada) return;
+
+    matriculaSelecionada = encontrada;
+    await carregarDadosDaMatriculaSelecionada();
+  });
+}
+
+/* ========================================
+   INÍCIO
+======================================== */
 async function init() {
   limparMensagem();
   configurarContatoEscola();
   debugLoginAluno();
 
-  const alunoId = obterAlunoId();
+  alunoId = obterAlunoId();
 
   if (!alunoId) {
     mostrarMensagem("Não foi possível identificar o aluno logado.");
@@ -484,31 +556,28 @@ async function init() {
   }
 
   try {
-    // Mostra o nome salvo no navegador enquanto os dados carregam
     const nomeSalvo = localStorage.getItem("alunoNome");
     if (nomeSalvo) {
       setTexto(nomeAluno, nomeSalvo);
     }
 
-    const aluno = await carregarAluno(alunoId);
-    const matricula = await carregarMatricula(alunoId);
+    alunoAtual = await carregarAluno(alunoId);
+    matriculasAtivas = await carregarMatriculasAtivas(alunoId);
 
-    await Promise.all([
-      carregarMateria(matricula.materia_id),
-      carregarModulo(matricula.modulo_id),
-      carregarProfessor(matricula.professor_id)
-    ]);
+    if (!matriculasAtivas.length) {
+      if (blocoCursoPainel) blocoCursoPainel.style.display = "block";
+      if (textoCursoPainel) {
+        textoCursoPainel.textContent = "Você não possui curso ativo no momento.";
+      }
 
-    const [aulas, notas, reposicoes] = await Promise.all([
-      carregarAulasDaMatricula(matricula.id),
-      carregarNotasDaMatricula(matricula.id),
-      carregarReposicoesDoAluno(aluno.id)
-    ]);
+      limparCardsResumo();
+      mostrarMensagem("Você não possui matrícula ativa.");
+      return;
+    }
 
-    preencherResumoAcademico(aulas);
-    preencherNotas(notas);
-    preencherReposicoes(aulas, reposicoes);
-    renderizarHistorico(aulas);
+    definirMatriculaSelecionadaInicial();
+    preencherSelectMatriculas();
+    await carregarDadosDaMatriculaSelecionada();
   } catch (erro) {
     console.error("Erro no painel acadêmico:", erro);
     mostrarMensagem(erro.message || "Erro ao carregar o painel acadêmico.");
