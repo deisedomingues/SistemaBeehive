@@ -165,7 +165,6 @@ function normalizarAlunoPorStatus(aluno) {
     }
 
     if (status === STATUS.AUSENTE) {
-        // Em ausência, só pode ser gravada OU reposição
         if (aluno.aulaGravada && aluno.precisaReposicao) {
             aluno.precisaReposicao = false;
         }
@@ -238,19 +237,39 @@ function aplicarRegrasStatusGeral() {
 // 4. BUSCAS
 // ==========================================
 async function buscarAulasPendentes(matriculaId) {
-    const { data, error } = await supabase
+    const { data: pendentes, error: errorPendentes } = await supabase
         .from("aula")
         .select("id, data_aula, status, justificativa")
         .eq("matricula_id", matriculaId)
         .eq("precisa_reposicao", true)
         .order("data_aula", { ascending: true });
 
-    if (error) {
-        console.error("Erro ao buscar aulas pendentes:", error);
+    if (errorPendentes) {
+        console.error("Erro ao buscar aulas pendentes:", errorPendentes);
         return [];
     }
 
-    return data || [];
+    const { data: reposicoesJaRegistradas, error: errorReposicoes } = await supabase
+        .from("aula")
+        .select("aula_original_id")
+        .eq("matricula_id", matriculaId)
+        .eq("status", STATUS.REPOSICAO)
+        .not("aula_original_id", "is", null);
+
+    if (errorReposicoes) {
+        console.error("Erro ao buscar reposições já registradas:", errorReposicoes);
+        return pendentes || [];
+    }
+
+    const idsJaRepostos = new Set(
+        (reposicoesJaRegistradas || []).map(item => Number(item.aula_original_id))
+    );
+
+    const pendentesFiltradas = (pendentes || []).filter(
+        aula => !idsJaRepostos.has(Number(aula.id))
+    );
+
+    return pendentesFiltradas;
 }
 
 async function carregarMatriculas() {
@@ -862,6 +881,23 @@ form.addEventListener("submit", async (e) => {
         console.error("Erro ao salvar aulas:", error);
         mostrarMensagem("Erro ao salvar os dados.", false);
         return;
+    }
+
+    const idsAulasOriginaisRepostas = registros
+        .filter(reg => reg.status === STATUS.REPOSICAO && reg.aula_original_id)
+        .map(reg => Number(reg.aula_original_id));
+
+    if (idsAulasOriginaisRepostas.length > 0) {
+        const { error: errorAtualizarOriginais } = await supabase
+            .from("aula")
+            .update({ precisa_reposicao: false })
+            .in("id", idsAulasOriginaisRepostas);
+
+        if (errorAtualizarOriginais) {
+            console.error("Erro ao atualizar aulas originais repostas:", errorAtualizarOriginais);
+            mostrarMensagem("A aula foi salva, mas houve erro ao atualizar a pendência da reposição.", false);
+            return;
+        }
     }
 
     mostrarMensagem("Aula(s) registrada(s) com sucesso!");
