@@ -66,7 +66,12 @@ function mostrarMensagem(texto, ok = true) {
 }
 
 function setarDataHoje() {
-    inputDataAula.value = new Date().toISOString().split("T")[0];
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+    const dia = String(hoje.getDate()).padStart(2, "0");
+
+    inputDataAula.value = `${ano}-${mes}-${dia}`;
 }
 
 function formatarDataBR(dataISO) {
