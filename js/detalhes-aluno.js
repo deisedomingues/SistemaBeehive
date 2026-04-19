@@ -165,6 +165,32 @@ function obterTextoStatusExtra(aula) {
   return "";
 }
 
+function textoParte(parte) {
+  if (!parte) return "Não informada";
+  return `Parte ${parte}`;
+}
+
+function textoAulaGravada(aula) {
+  if (aula.status === STATUS.AUSENTE) {
+    return aula.aula_gravada ? "Sim" : "Não";
+  }
+
+  if (
+    aula.status === STATUS.PRESENTE ||
+    aula.status === STATUS.REPOSICAO ||
+    aula.status === STATUS.AULA_INSTRUMENTAL ||
+    aula.status === STATUS.PLANTAO_DUVIDAS
+  ) {
+    return "Sim";
+  }
+
+  if (aula.status === STATUS.CANCELADA) {
+    return "Não";
+  }
+
+  return aula.aula_gravada ? "Sim" : "Não";
+}
+
 if (!matriculaId) {
   window.location.href = "resumo-professor.html";
 }
@@ -295,6 +321,7 @@ async function carregarAulas() {
       precisa_reposicao,
       aula_gravada,
       aula_original_id,
+      parte,
       modulo_id,
       modulo:modulo_id ( nome ),
       professor:professor_id ( nome )
@@ -397,7 +424,7 @@ function renderEventosAluno() {
         </p>
 
         <p>
-          Local: ${escaparHtml(evento.local || "Não informado")}
+          Link/local: ${escaparHtml(evento.local || "Não informado")}
         </p>
       </div>
     `;
@@ -506,40 +533,49 @@ function renderAulas(aulas) {
   }
 
   aulas.forEach((aula) => {
+    const dataBR = formatarDataBR(aula.data_aula);
+    const conteudo = aula.conteudo?.trim() || "Sem conteúdo informado";
+    const licao = aula.licao_casa?.trim() || "Sem lição";
+    const professor = aula.professor?.nome || "-";
+    const status = aula.status || "-";
+    const parte = textoParte(aula.parte);
+    const justificativa = aula.justificativa?.trim() || "";
+    const gravada = textoAulaGravada(aula);
     const observacaoStatus = obterTextoStatusExtra(aula);
 
+    const infosNormais = [
+      `Prof(a). ${professor}`,
+      `Status: ${status}`,
+      `Parte: ${parte}`
+    ];
+
+    if (justificativa) {
+      infosNormais.push(`Justificativa: ${justificativa}`);
+    }
+
+    if (aula.status === STATUS.AUSENTE) {
+      infosNormais.push(`Aula gravada: ${gravada}`);
+    }
+
+    if (aula.status === STATUS.AUSENTE && aula.precisa_reposicao) {
+      infosNormais.push("Reposição: pendente/solicitada");
+    }
+
+    if (observacaoStatus) {
+      infosNormais.push(observacaoStatus);
+    }
+
     const html = `
-      <article class="item-historico">
-        <div class="item-historico-topo">
-          <div>
-            <strong>${formatarDataBR(aula.data_aula)}</strong>
-            <p style="margin:6px 0 0 0; font-size:13px; color:#666;">
-              ${escaparHtml(aula.modulo?.nome || "-")} • ${escaparHtml(aula.professor?.nome || "-")}
-            </p>
+      <article class="item-historico" style="border-bottom:1px solid #e6dfcf; padding:10px 0; margin:0;">
+        <div style="font-size:14px; line-height:1.5;">
+          <div style="font-weight:700; color:#2b2b2b; margin-bottom:4px; word-break:break-word;">
+            ${escaparHtml(dataBR)} - ${escaparHtml(conteudo)} - ${escaparHtml(licao)}
           </div>
 
-          <span class="status-badge ${obterClasseStatus(aula.status)}">
-            ${escaparHtml(aula.status || "-")}
-          </span>
+          <div style="color:#5f5a50; font-size:13px; word-break:break-word;">
+            ${escaparHtml(infosNormais.join(" | "))}
+          </div>
         </div>
-
-        ${observacaoStatus ? `
-          <p style="font-size:13px; margin-bottom:8px; color:#7a5a00;">
-            ${escaparHtml(observacaoStatus)}
-          </p>
-        ` : ""}
-
-        ${aula.conteudo ? `
-          <p><b>Conteúdo:</b> ${escaparHtml(aula.conteudo)}</p>
-        ` : ""}
-
-        ${aula.licao_casa ? `
-          <p><b>Lição de casa:</b> ${escaparHtml(aula.licao_casa)}</p>
-        ` : ""}
-
-        ${aula.justificativa ? `
-          <p><b>Justificativa:</b> ${escaparHtml(aula.justificativa)}</p>
-        ` : ""}
       </article>
     `;
 
