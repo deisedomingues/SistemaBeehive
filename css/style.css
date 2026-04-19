@@ -3008,3 +3008,68 @@ textarea[readonly] {
     align-self: flex-start;
   }
 }
+/* ==========================================
+   EVENTOS DO ALUNO - LINK DE PARTICIPAÇÃO
+========================================== */
+
+.bloco-detalhe-evento .btn {
+  margin-top: 4px;
+}
+
+.bloco-detalhe-evento p {
+  line-height: 1.45;
+}
+
+.bloco-detalhe-evento a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.bloco-detalhe-evento a.btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.bloco-detalhe-evento a.btn:active {
+  transform: translateY(0);
+}
+
+.bloco-detalhe-evento a.btn:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+.detalhes-evento-grid {
+  align-items: start;
+}
+
+.bloco-detalhe-evento {
+  word-break: break-word;
+}
+
+.bloco-detalhe-evento strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* Link bruto, quando exibido em texto */
+.bloco-detalhe-evento p a,
+.bloco-detalhe-evento .link-participacao-texto {
+  word-break: break-all;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 640px) {
+  .bloco-detalhe-evento a.btn {
+    width: 100%;
+  }
+}
