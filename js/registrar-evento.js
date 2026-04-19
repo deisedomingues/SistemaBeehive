@@ -133,6 +133,7 @@ async function buscarEvento() {
       materia_id,
       modulo_id,
       ativo,
+      participacao_registrada,
       professor_responsavel_id,
       professor_responsavel:professor_responsavel_id (
         id,
@@ -228,7 +229,6 @@ async function buscarRegistrosJaExistentesPorEvento() {
 function escolherMatriculaParaEvento(matriculasDoAluno, eventoAtual) {
   if (!matriculasDoAluno.length) return null;
 
-  // 1) Se o evento tiver matéria definida, tenta achar matrícula da mesma matéria
   if (eventoAtual.materia_id) {
     const daMateria = matriculasDoAluno.find(
       (matricula) => Number(matricula.materia_id) === Number(eventoAtual.materia_id)
@@ -237,7 +237,6 @@ function escolherMatriculaParaEvento(matriculasDoAluno, eventoAtual) {
     if (daMateria) return daMateria;
   }
 
-  // 2) Se o evento tiver professor responsável, tenta achar matrícula com esse professor
   if (eventoAtual.professor_responsavel_id) {
     const doProfessor = matriculasDoAluno.find(
       (matricula) =>
@@ -247,7 +246,6 @@ function escolherMatriculaParaEvento(matriculasDoAluno, eventoAtual) {
     if (doProfessor) return doProfessor;
   }
 
-  // 3) Senão usa a matrícula ativa mais recente
   return matriculasDoAluno[0];
 }
 
@@ -339,6 +337,12 @@ async function carregarTela() {
       return;
     }
 
+    if (evento.participacao_registrada) {
+      mostrarMensagem("A participação deste evento já foi registrada anteriormente.", "erro");
+      btnRegistrarEvento.disabled = true;
+      return;
+    }
+
     participantes = await buscarConfirmadosDoEvento();
     renderizarParticipantes();
 
@@ -370,6 +374,11 @@ async function registrarParticipacao() {
 
   if (!evento.ativo) {
     mostrarMensagem("Evento cancelado não pode ser registrado.", "erro");
+    return;
+  }
+
+  if (evento.participacao_registrada) {
+    mostrarMensagem("A participação deste evento já foi registrada.", "erro");
     return;
   }
 
@@ -460,14 +469,26 @@ async function registrarParticipacao() {
       return;
     }
 
-    const { error } = await supabase
+    const { error: erroInsert } = await supabase
       .from("aula")
       .insert(registrosParaInserir);
 
-    if (error) {
-      console.error("Erro ao registrar participação:", error);
+    if (erroInsert) {
+      console.error("Erro ao registrar participação:", erroInsert);
       throw new Error("Não foi possível registrar a participação dos alunos.");
     }
+
+    const { error: erroEvento } = await supabase
+      .from("evento")
+      .update({ participacao_registrada: true })
+      .eq("id", eventoId);
+
+    if (erroEvento) {
+      console.error("Erro ao marcar evento como registrado:", erroEvento);
+      throw new Error("A participação foi salva nas aulas, mas não foi possível marcar o evento como registrado.");
+    }
+
+    evento.participacao_registrada = true;
 
     let mensagem = `✅ Participação registrada com sucesso para ${registrosParaInserir.length} aluno(s).`;
 
@@ -481,18 +502,9 @@ async function registrarParticipacao() {
 
     mostrarMensagem(mensagem, "sucesso");
 
-    // Remove da lista os que acabaram de ser registrados
-    const idsRegistrados = new Set(
-      registrosParaInserir.map((item) => Number(item.matricula_id))
-    );
-
-    participantes = participantes.filter((participante) => {
-      const matriculasDoAluno = matriculasPorAluno.get(Number(participante.aluno_id)) || [];
-      const matriculaEscolhida = escolherMatriculaParaEvento(matriculasDoAluno, evento);
-      return !matriculaEscolhida || !idsRegistrados.has(Number(matriculaEscolhida.id));
-    });
-
+    participantes = [];
     renderizarParticipantes();
+    btnRegistrarEvento.disabled = true;
 
     setTimeout(() => {
       window.location.href = "eventos.html";
@@ -502,5 +514,9 @@ async function registrarParticipacao() {
     mostrarMensagem(erro.message || "Erro ao registrar participação.", "erro");
   } finally {
     definirBotaoRegistrando(false);
+
+    if (evento?.participacao_registrada) {
+      btnRegistrarEvento.disabled = true;
+    }
   }
 }

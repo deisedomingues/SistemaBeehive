@@ -178,6 +178,7 @@ async function carregarEventos() {
       modulo_id,
       limite_confirmacao,
       ativo,
+      participacao_registrada,
       professor_responsavel_id,
       professor_responsavel:professor_responsavel_id (
         id,
@@ -411,7 +412,20 @@ function montarDetalhesEvento(evento) {
     `;
 
   const podeRegistrarParticipacao =
-    situacao !== "cancelado" && confirmacoes.total > 0;
+    situacao !== "cancelado" &&
+    confirmacoes.total > 0 &&
+    !evento.participacao_registrada;
+
+  const participacaoJaRegistradaHtml = evento.participacao_registrada
+    ? `
+      <div class="bloco-detalhe-evento">
+        <strong>Participação</strong>
+        <p style="margin:0; color:#1d5e1d; font-weight:600;">
+          ✅ Participação já registrada para este evento.
+        </p>
+      </div>
+    `
+    : "";
 
   return `
     <div class="detalhes-evento-grid">
@@ -452,6 +466,7 @@ function montarDetalhesEvento(evento) {
     </div>
 
     ${nomesConfirmadosHtml}
+    ${participacaoJaRegistradaHtml}
 
     <div class="acoes-evento-detalhe">
       ${
