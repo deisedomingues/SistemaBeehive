@@ -4,6 +4,12 @@ import { exigirAdmin } from "./guard.js";
 await exigirAdmin();
 
 /* =========================================================
+   CONFIGURAÇÃO
+========================================================= */
+// TROQUE pelo CNPJ exato que você cadastrou para a Beehive
+const CNPJ_BEEHIVE = "12345678000199";
+
+/* =========================================================
    ELEMENTOS
 ========================================================= */
 const msg = document.getElementById("msg");
@@ -36,7 +42,8 @@ const resultadoModuloResumo = document.getElementById("resultadoModuloResumo");
 /* =========================================================
    ESTADO
 ========================================================= */
-let matriculasAtivas = [];
+let matriculasAtivas = []; // todas as matrículas ativas
+let matriculasAtivasResumo = []; // sem funcionários da Beehive
 let professoresAtivos = [];
 let eventos = [];
 let confirmacoesEvento = [];
@@ -86,6 +93,11 @@ function mesAtualPrefixo() {
   return `${ano}-${mes}`;
 }
 
+function ehAlunoInternoBeehive(matricula) {
+  const empresaCnpj = String(matricula?.aluno?.empresa_cnpj || "").trim();
+  return empresaCnpj !== "" && empresaCnpj === CNPJ_BEEHIVE;
+}
+
 /* =========================================================
    BUSCAS
 ========================================================= */
@@ -110,9 +122,11 @@ async function carregarMatriculasAtivas() {
       aluno_id,
       materia_id,
       modulo_id,
+      professor_id,
       aluno:aluno_id (
         id,
-        nome
+        nome,
+        empresa_cnpj
       ),
       materia:materia_id (
         id,
@@ -138,6 +152,8 @@ async function carregarMatriculasAtivas() {
     const professorId = m?.professor?.id;
     return professoresAtivosIds.has(professorId);
   });
+
+  matriculasAtivasResumo = matriculasAtivas.filter((m) => !ehAlunoInternoBeehive(m));
 }
 
 async function carregarEventos() {
@@ -162,9 +178,9 @@ async function carregarConfirmacoesEvento() {
 }
 
 async function carregarAulasResumo() {
-  const matriculaIdsAtivas = matriculasAtivas.map((m) => m.id);
+  const matriculaIdsResumo = matriculasAtivasResumo.map((m) => m.id);
 
-  if (!matriculaIdsAtivas.length) {
+  if (!matriculaIdsResumo.length) {
     aulas = [];
     return;
   }
@@ -172,7 +188,7 @@ async function carregarAulasResumo() {
   const { data, error } = await supabase
     .from("aula")
     .select("id, matricula_id, data_aula, status, precisa_reposicao, aula_original_id")
-    .in("matricula_id", matriculaIdsAtivas);
+    .in("matricula_id", matriculaIdsResumo);
 
   if (error) throw error;
 
@@ -180,9 +196,9 @@ async function carregarAulasResumo() {
 }
 
 async function carregarNotasResumo() {
-  const matriculaIdsAtivas = matriculasAtivas.map((m) => m.id);
+  const matriculaIdsResumo = matriculasAtivasResumo.map((m) => m.id);
 
-  if (!matriculaIdsAtivas.length) {
+  if (!matriculaIdsResumo.length) {
     notas = [];
     return;
   }
@@ -190,7 +206,7 @@ async function carregarNotasResumo() {
   const { data, error } = await supabase
     .from("nota")
     .select("id, matricula_id")
-    .in("matricula_id", matriculaIdsAtivas);
+    .in("matricula_id", matriculaIdsResumo);
 
   if (error) throw error;
 
@@ -202,13 +218,13 @@ async function carregarNotasResumo() {
 ========================================================= */
 function renderIndicadoresGerais() {
   const alunosUnicos = new Set(
-    matriculasAtivas
+    matriculasAtivasResumo
       .map((m) => m?.aluno?.id)
       .filter(Boolean)
   );
 
   const materiasUnicas = new Set(
-    matriculasAtivas
+    matriculasAtivasResumo
       .map((m) => m?.materia?.id)
       .filter(Boolean)
   );
@@ -238,7 +254,7 @@ function renderIndicadoresGerais() {
   }).length;
 
   qtdAlunosUnicosAtivos.textContent = String(alunosUnicos.size);
-  qtdMatriculasAtivas.textContent = String(matriculasAtivas.length);
+  qtdMatriculasAtivas.textContent = String(matriculasAtivasResumo.length);
   qtdProfessoresAtivos.textContent = String(professoresAtivos.length);
   qtdMateriasAtivas.textContent = String(materiasUnicas.size);
 
@@ -258,7 +274,7 @@ function renderAlertasResumo() {
   );
 
   const alunoIdsComFaltas = new Set(
-    matriculasAtivas
+    matriculasAtivasResumo
       .filter((m) => matriculaIdsComFaltas.has(m.id))
       .map((m) => m.aluno_id)
   );
@@ -268,7 +284,7 @@ function renderAlertasResumo() {
   );
 
   const alunoIdsSemNotas = new Set(
-    matriculasAtivas
+    matriculasAtivasResumo
       .filter((m) => !matriculaIdsComNotas.has(m.id))
       .map((m) => m.aluno_id)
   );
@@ -303,6 +319,8 @@ function renderAlertasResumo() {
 function renderSelectMatriculasAdmin() {
   selectMatriculaAdmin.innerHTML = `<option value="">Selecione o aluno (curso)</option>`;
 
+  // Aqui deixei TODAS as matrículas ativas, inclusive staff,
+  // para o admin continuar conseguindo consultar qualquer pessoa.
   const listaOrdenada = [...matriculasAtivas].sort((a, b) => {
     const nomeA = a?.aluno?.nome || "";
     const nomeB = b?.aluno?.nome || "";
@@ -327,7 +345,7 @@ function renderCardsProfessores() {
   }
 
   const html = professoresAtivos.map((prof) => {
-    const matriculasDoProfessor = matriculasAtivas.filter(
+    const matriculasDoProfessor = matriculasAtivasResumo.filter(
       (m) => m?.professor?.id === prof.id
     );
 
@@ -377,7 +395,7 @@ function renderCardsProfessores() {
 function renderCardsMaterias() {
   const mapa = {};
 
-  matriculasAtivas.forEach((m) => {
+  matriculasAtivasResumo.forEach((m) => {
     const nomeMateria = m?.materia?.nome || "Matéria";
     const alunoId = m?.aluno?.id;
 
@@ -418,7 +436,7 @@ function renderSelectMateriasResumo() {
 
   const mapaMaterias = new Map();
 
-  matriculasAtivas.forEach((m) => {
+  matriculasAtivasResumo.forEach((m) => {
     const materiaId = m?.materia?.id;
     const materiaNome = m?.materia?.nome;
 
@@ -461,7 +479,7 @@ function renderModulosPorMateria(materiaIdSelecionada) {
 
   const modulosMap = new Map();
 
-  matriculasAtivas.forEach((m) => {
+  matriculasAtivasResumo.forEach((m) => {
     const materiaId = String(m?.materia?.id || "");
     const moduloId = m?.modulo?.id;
     const moduloNome = m?.modulo?.nome;
@@ -503,7 +521,7 @@ function renderModulosPorMateria(materiaIdSelecionada) {
 function renderResultadoModulo(materiaIdSelecionada, moduloIdSelecionado) {
   if (!resultadoModuloResumo) return;
 
-  const filtradas = matriculasAtivas.filter((m) => {
+  const filtradas = matriculasAtivasResumo.filter((m) => {
     const materiaId = String(m?.materia?.id || "");
     const moduloId = String(m?.modulo?.id || "");
     return (

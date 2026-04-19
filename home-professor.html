@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Beehive | Área do Professor</title>
+  <title>Beehive | Início</title>
   <link rel="stylesheet" href="css/style.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
@@ -25,8 +25,7 @@
     >
 
     <section class="cabecalho-professor-central">
-      <p class="rotulo-admin">Área do professor</p>
-      <h1 id="tituloProfessor">Área do Professor</h1>
+      <h1 id="tituloProfessor">Bem-vindo(a)</h1>
 
       <div class="saudacao-card saudacao-card-professor">
         <div class="saudacao-card-texto">
@@ -44,7 +43,24 @@
       </div>
     </section>
 
-    <section class="painel-professor-cards">
+    <section class="seletor-perfil-inline">
+      <label for="selectPerfilVisualizacao" class="label-seletor-inline">
+        Visualizar como:
+      </label>
+
+      <select id="selectPerfilVisualizacao" class="select-seletor-inline">
+        <option value="professor" selected>Professor</option>
+        <option value="aluno" id="optionAluno">Aluno</option>
+      </select>
+
+      <button id="btnAbrirPerfil" class="btn btn-seletor-inline" type="button">
+        Ir
+      </button>
+    </section>
+
+    <p id="infoPerfilAluno" class="info-perfil-aluno-inline"></p>
+
+    <section id="painelProfessorCards" class="painel-professor-cards">
 
       <a href="registrar-aula.html" class="card-admin-link">
         <article class="card-admin card-professor">

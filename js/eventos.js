@@ -23,6 +23,7 @@ const filtroSituacao = document.getElementById("filtroSituacao");
 let eventos = [];
 let confirmacoesPorEvento = {};
 let convitesPorEvento = {};
+let eventosComParticipacaoRegistrada = new Set();
 
 /* =========================================================
    INICIALIZAÇÃO
@@ -150,6 +151,13 @@ function fecharDetalhesPorEventoId(eventoId) {
   }
 }
 
+function eventoJaFoiRegistrado(evento) {
+  return Boolean(
+    evento?.participacao_registrada ||
+    eventosComParticipacaoRegistrada.has(Number(evento.id))
+  );
+}
+
 /* =========================================================
    BUSCA DE DADOS
 ========================================================= */
@@ -158,6 +166,7 @@ async function carregarTudo() {
   await carregarEventos();
   await carregarConfirmacoes();
   await carregarConvites();
+  await carregarEventosJaRegistrados();
   atualizarResumo();
   renderizarEventos();
 }
@@ -286,6 +295,28 @@ async function carregarConvites() {
   }
 }
 
+async function carregarEventosJaRegistrados() {
+  eventosComParticipacaoRegistrada = new Set();
+
+  const { data, error } = await supabase
+    .from("aula")
+    .select("evento_id")
+    .eq("status", "Evento")
+    .not("evento_id", "is", null);
+
+  if (error) {
+    console.error("Erro ao buscar eventos já registrados:", error);
+    mostrarMensagem("Os eventos foram carregados, mas houve erro ao verificar participações já registradas.", "erro");
+    return;
+  }
+
+  for (const item of data || []) {
+    if (item.evento_id != null) {
+      eventosComParticipacaoRegistrada.add(Number(item.evento_id));
+    }
+  }
+}
+
 /* =========================================================
    RESUMO
 ========================================================= */
@@ -374,6 +405,7 @@ async function cancelarEvento(eventoId) {
 ========================================================= */
 function montarDetalhesEvento(evento) {
   const situacao = obterSituacaoEvento(evento);
+  const jaRegistrado = eventoJaFoiRegistrado(evento);
 
   const confirmacoes = confirmacoesPorEvento[evento.id] || {
     total: 0,
@@ -414,9 +446,9 @@ function montarDetalhesEvento(evento) {
   const podeRegistrarParticipacao =
     situacao !== "cancelado" &&
     confirmacoes.total > 0 &&
-    !evento.participacao_registrada;
+    !jaRegistrado;
 
-  const participacaoJaRegistradaHtml = evento.participacao_registrada
+  const participacaoJaRegistradaHtml = jaRegistrado
     ? `
       <div class="bloco-detalhe-evento">
         <strong>Participação</strong>
