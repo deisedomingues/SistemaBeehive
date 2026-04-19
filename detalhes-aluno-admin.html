@@ -12,6 +12,8 @@
 
   <main class="container container-resumo">
 
+    <a href="resumo-geral.html" class="link-voltar" style="display:inline-block; margin-bottom:10px;">← Voltar</a>
+
     <h1 style="margin-bottom:8px;">Detalhes do Aluno</h1>
 
     <div id="msg" style="display:none; margin-bottom:10px;"></div>
@@ -45,13 +47,28 @@
       <h2>📚 Histórico de aulas</h2>
 
       <p style="font-size:12px; opacity:0.85; margin-top:6px;">
-        Mostrando data — professor — conteúdo — lição de casa (se houver)
+        Mostrando data - conteúdo - lição de casa em destaque
       </p>
 
-      <ul id="listaAulas" style="margin-top:10px;"></ul>
+      <div style="margin-top:10px; margin-bottom:10px;">
+        <label for="filtroModuloAula" style="font-size:13px; display:block; margin-bottom:6px;">
+          Filtrar por módulo
+        </label>
+        <select id="filtroModuloAula">
+          <option value="">Todos</option>
+        </select>
+      </div>
+
+      <ul id="listaAulas" class="lista-historico-aulas" style="margin-top:10px;"></ul>
+
+      <div id="boxExpandirAulas" style="display:none; margin-top:10px;">
+        <button type="button" id="btnExpandirAulas" class="btn">
+          Ver mais aulas
+        </button>
+      </div>
     </div>
 
-    <!-- NOTAS (apenas visualização para admin) -->
+    <!-- NOTAS -->
     <div class="dashboard">
       <div class="card" style="grid-column: 1 / -1;">
 
@@ -66,7 +83,7 @@
       </div>
     </div>
 
-    <!-- Cards de presença -->
+    <!-- Cards -->
     <div class="dashboard">
 
       <div class="card">

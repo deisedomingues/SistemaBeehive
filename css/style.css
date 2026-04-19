@@ -3073,3 +3073,108 @@ textarea[readonly] {
     width: 100%;
   }
 }
+/* ==========================================
+   HISTÓRICO DE AULAS - VERSÃO COMPACTA
+========================================== */
+
+.item-historico {
+  margin: 0;
+  padding: 10px 0;
+  border-bottom: 1px solid #e6dfcf;
+}
+
+.item-historico:last-child {
+  border-bottom: none;
+}
+
+.item-historico-linha {
+  font-size: 14px;
+  line-height: 1.5;
+  min-width: 0;
+}
+
+.item-historico-topo-compacto {
+  font-weight: 700;
+  color: #2b2b2b;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.item-historico-detalhes {
+  color: #5f5a50;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.lista-historico-aulas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-historico-aulas li {
+  list-style: none;
+}
+
+/* versão com botão de ação ao lado */
+.item-historico-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+.item-historico-acoes {
+  flex-shrink: 0;
+}
+
+.btn-excluir-aula-admin,
+.btn-excluir-nota-admin {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: none;
+  background: #f7e4e4;
+  color: #8b1e1e;
+  font-size: 13px;
+}
+
+.btn-excluir-aula-admin:hover,
+.btn-excluir-nota-admin:hover {
+  opacity: 0.9;
+}
+
+.btn-excluir-aula-admin:active,
+.btn-excluir-nota-admin:active {
+  transform: scale(0.98);
+}
+
+/* cards vazios */
+.vazio-box {
+  padding: 12px 0;
+  color: #6a655c;
+  font-size: 14px;
+}
+
+/* responsivo */
+@media (max-width: 640px) {
+  .item-historico-flex {
+    flex-wrap: wrap;
+  }
+
+  .item-historico-acoes {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+
+  .item-historico-topo-compacto {
+    font-size: 14px;
+  }
+
+  .item-historico-detalhes {
+    font-size: 12.5px;
+  }
+}
