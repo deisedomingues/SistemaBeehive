@@ -15,14 +15,13 @@
       <div>
         <h1 id="tituloResumoGeral" class="titulo-principal-resumo">Resumo Geral da Escola</h1>
         <p class="subtitulo-resumo-geral">
-          Acompanhe professores, alunos e matrículas ativas da Beehive.
+          Acompanhe professores, alunos, matrículas e indicadores importantes da Beehive.
         </p>
       </div>
 
       <a href="home-admin.html" class="link-voltar link-voltar-topo">← Voltar</a>
     </header>
 
-    <!-- mensagem -->
     <div id="msg" class="msg-resumo-professor" style="display:none;"></div>
 
     <!-- =========================
@@ -46,10 +45,6 @@
           <button class="btn" id="btnDetalhesAdmin" type="button" style="padding:12px;">
             Ver detalhes
           </button>
-
-          <p class="texto-ajuda-resumo">
-            Ao clicar, você será direcionada para a tela <b>detalhes_aluno_admin.html</b>.
-          </p>
         </div>
       </div>
     </section>
@@ -66,22 +61,74 @@
       <div class="dashboard dashboard-resumo-professor dashboard-resumo-admin-topo">
         <div class="card">
           <h2>👥 Alunos únicos ativos</h2>
-          <p><b id="qtdAlunosUnicosAtivos">0</b> aluno(s) com matrícula ativa.</p>
+          <p><b id="qtdAlunosUnicosAtivos">0</b> aluno(s)</p>
         </div>
 
         <div class="card card-destaque">
           <h2>📌 Matrículas ativas</h2>
-          <p>Atualmente a Beehive possui <b id="qtdMatriculasAtivas">0</b> matrícula(s) ativa(s).</p>
+          <p><b id="qtdMatriculasAtivas">0</b> matrícula(s)</p>
         </div>
 
         <div class="card">
           <h2>🧑‍🏫 Professores ativos</h2>
-          <p><b id="qtdProfessoresAtivos">0</b> professor(es) ativo(s).</p>
+          <p><b id="qtdProfessoresAtivos">0</b> professor(es)</p>
         </div>
 
         <div class="card">
-          <h2>📚 Matérias com alunos ativos</h2>
-          <p><b id="qtdMateriasAtivas">0</b> matéria(s) com matrícula ativa.</p>
+          <h2>📚 Matérias ativas</h2>
+          <p><b id="qtdMateriasAtivas">0</b> matéria(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>🎈 Eventos cadastrados</h2>
+          <p><b id="qtdEventosTotal">0</b> evento(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>📅 Eventos futuros</h2>
+          <p><b id="qtdEventosFuturos">0</b> evento(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>🔁 Reposições pendentes</h2>
+          <p><b id="qtdReposicoesPendentesResumo">0</b> pendência(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>📝 Aulas no mês</h2>
+          <p><b id="qtdAulasMes">0</b> aula(s)</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================
+         ALERTAS
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>🚨 Pontos de atenção</h2>
+        <p>Informações que merecem acompanhamento mais próximo.</p>
+      </div>
+
+      <div class="dashboard dashboard-resumo-professor">
+        <div class="card">
+          <h2>⚠️ Alunos com faltas</h2>
+          <p><b id="qtdAlunosComFaltasResumo">0</b> aluno(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>🧾 Alunos sem notas</h2>
+          <p><b id="qtdAlunosSemNotasResumo">0</b> aluno(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>🗓️ Eventos sem confirmação</h2>
+          <p><b id="qtdEventosSemConfirmacaoResumo">0</b> evento(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>📉 Ausências no mês</h2>
+          <p><b id="qtdAusenciasMesResumo">0</b> aula(s)</p>
         </div>
       </div>
     </section>
@@ -118,45 +165,39 @@
       </div>
     </section>
 
-   <!-- =========================
-     DISTRIBUIÇÃO POR MÓDULO (COM FILTRO)
-========================== -->
-<section class="bloco-resumo-professor">
-  <div class="cabecalho-bloco-resumo">
-    <h2>🧩 Distribuição por módulo</h2>
-    <p>Selecione uma matéria e um módulo para visualizar os alunos ativos.</p>
-  </div>
+    <!-- =========================
+         DISTRIBUIÇÃO POR MÓDULO
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>🧩 Distribuição por módulo</h2>
+        <p>Selecione uma matéria e um módulo para visualizar os alunos ativos.</p>
+      </div>
 
-  <div class="card">
+      <div class="card">
+        <div class="form form-resumo-professor" style="margin-top:0;">
+          <label>
+            Matéria
+            <select id="selectMateriaResumo">
+              <option value="">Selecione a matéria</option>
+            </select>
+          </label>
 
-    <div class="form form-resumo-professor" style="margin-top:0;">
+          <label>
+            Módulo
+            <select id="selectModuloResumo" disabled>
+              <option value="">Selecione o módulo</option>
+            </select>
+          </label>
+        </div>
 
-      <!-- SELECT MATÉRIA -->
-      <label>
-        Matéria
-        <select id="selectMateriaResumo">
-          <option value="">Selecione a matéria</option>
-        </select>
-      </label>
+        <div id="resultadoModuloResumo" style="margin-top:16px;">
+          <p style="font-size:14px;">Selecione uma matéria para começar.</p>
+        </div>
+      </div>
+    </section>
 
-      <!-- SELECT MÓDULO -->
-      <label>
-        Módulo
-        <select id="selectModuloResumo" disabled>
-          <option value="">Selecione o módulo</option>
-        </select>
-      </label>
-
-    </div>
-
-    <!-- RESULTADO -->
-    <div id="resultadoModuloResumo" style="margin-top:16px;">
-      <p style="font-size:14px;">Selecione uma matéria para começar.</p>
-    </div>
-
-  </div>
-</section>
-<a href="home-admin.html" class="link-voltar link-voltar-topo">← Voltar</a>
+    <a href="home-admin.html" class="link-voltar link-voltar-topo">← Voltar</a>
   </main>
 
   <script type="module" src="js/resumo-geral.js"></script>

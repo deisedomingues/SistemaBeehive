@@ -13,13 +13,22 @@ const qtdMatriculasAtivas = document.getElementById("qtdMatriculasAtivas");
 const qtdProfessoresAtivos = document.getElementById("qtdProfessoresAtivos");
 const qtdMateriasAtivas = document.getElementById("qtdMateriasAtivas");
 
+const qtdEventosTotal = document.getElementById("qtdEventosTotal");
+const qtdEventosFuturos = document.getElementById("qtdEventosFuturos");
+const qtdReposicoesPendentesResumo = document.getElementById("qtdReposicoesPendentesResumo");
+const qtdAulasMes = document.getElementById("qtdAulasMes");
+
+const qtdAlunosComFaltasResumo = document.getElementById("qtdAlunosComFaltasResumo");
+const qtdAlunosSemNotasResumo = document.getElementById("qtdAlunosSemNotasResumo");
+const qtdEventosSemConfirmacaoResumo = document.getElementById("qtdEventosSemConfirmacaoResumo");
+const qtdAusenciasMesResumo = document.getElementById("qtdAusenciasMesResumo");
+
 const selectMatriculaAdmin = document.getElementById("selectMatriculaAdmin");
 const btnDetalhesAdmin = document.getElementById("btnDetalhesAdmin");
 
 const cardsProfessoresAtivos = document.getElementById("cardsProfessoresAtivos");
 const cardsMateriasResumo = document.getElementById("cardsMateriasResumo");
 
-/* NOVOS ELEMENTOS DO FILTRO DE MÓDULO */
 const selectMateriaResumo = document.getElementById("selectMateriaResumo");
 const selectModuloResumo = document.getElementById("selectModuloResumo");
 const resultadoModuloResumo = document.getElementById("resultadoModuloResumo");
@@ -29,6 +38,10 @@ const resultadoModuloResumo = document.getElementById("resultadoModuloResumo");
 ========================================================= */
 let matriculasAtivas = [];
 let professoresAtivos = [];
+let eventos = [];
+let confirmacoesEvento = [];
+let aulas = [];
+let notas = [];
 
 /* =========================================================
    UTILITÁRIOS
@@ -58,6 +71,21 @@ function escapeHtml(texto) {
     .replaceAll("'", "&#039;");
 }
 
+function hojeISO() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+function mesAtualPrefixo() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  return `${ano}-${mes}`;
+}
+
 /* =========================================================
    BUSCAS
 ========================================================= */
@@ -79,6 +107,9 @@ async function carregarMatriculasAtivas() {
     .select(`
       id,
       ativa,
+      aluno_id,
+      materia_id,
+      modulo_id,
       aluno:aluno_id (
         id,
         nome
@@ -109,6 +140,63 @@ async function carregarMatriculasAtivas() {
   });
 }
 
+async function carregarEventos() {
+  const { data, error } = await supabase
+    .from("evento")
+    .select("id, data_evento, hora_evento, ativo")
+    .order("data_evento", { ascending: true });
+
+  if (error) throw error;
+
+  eventos = data || [];
+}
+
+async function carregarConfirmacoesEvento() {
+  const { data, error } = await supabase
+    .from("evento_confirmacao")
+    .select("evento_id");
+
+  if (error) throw error;
+
+  confirmacoesEvento = data || [];
+}
+
+async function carregarAulasResumo() {
+  const matriculaIdsAtivas = matriculasAtivas.map((m) => m.id);
+
+  if (!matriculaIdsAtivas.length) {
+    aulas = [];
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("aula")
+    .select("id, matricula_id, data_aula, status, precisa_reposicao, aula_original_id")
+    .in("matricula_id", matriculaIdsAtivas);
+
+  if (error) throw error;
+
+  aulas = data || [];
+}
+
+async function carregarNotasResumo() {
+  const matriculaIdsAtivas = matriculasAtivas.map((m) => m.id);
+
+  if (!matriculaIdsAtivas.length) {
+    notas = [];
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("nota")
+    .select("id, matricula_id")
+    .in("matricula_id", matriculaIdsAtivas);
+
+  if (error) throw error;
+
+  notas = data || [];
+}
+
 /* =========================================================
    RENDER - TOPO
 ========================================================= */
@@ -125,10 +213,88 @@ function renderIndicadoresGerais() {
       .filter(Boolean)
   );
 
+  const hoje = hojeISO();
+  const prefixoMes = mesAtualPrefixo();
+
+  const idsOriginaisJaRepostos = new Set(
+    aulas
+      .filter((a) => a.status === "Reposição" && a.aula_original_id)
+      .map((a) => Number(a.aula_original_id))
+  );
+
+  const reposicoesPendentes = aulas.filter((a) => {
+    if (!a.precisa_reposicao) return false;
+    if (idsOriginaisJaRepostos.has(Number(a.id))) return false;
+    return a.status === "Ausente" || a.status === "Cancelada";
+  }).length;
+
+  const aulasDoMes = aulas.filter((a) =>
+    String(a.data_aula || "").startsWith(prefixoMes)
+  ).length;
+
+  const eventosFuturos = eventos.filter((e) => {
+    if (!e.ativo) return false;
+    return String(e.data_evento || "") >= hoje;
+  }).length;
+
   qtdAlunosUnicosAtivos.textContent = String(alunosUnicos.size);
   qtdMatriculasAtivas.textContent = String(matriculasAtivas.length);
   qtdProfessoresAtivos.textContent = String(professoresAtivos.length);
   qtdMateriasAtivas.textContent = String(materiasUnicas.size);
+
+  qtdEventosTotal.textContent = String(eventos.length);
+  qtdEventosFuturos.textContent = String(eventosFuturos);
+  qtdReposicoesPendentesResumo.textContent = String(reposicoesPendentes);
+  qtdAulasMes.textContent = String(aulasDoMes);
+}
+
+function renderAlertasResumo() {
+  const prefixoMes = mesAtualPrefixo();
+
+  const matriculaIdsComFaltas = new Set(
+    aulas
+      .filter((a) => a.status === "Ausente")
+      .map((a) => a.matricula_id)
+  );
+
+  const alunoIdsComFaltas = new Set(
+    matriculasAtivas
+      .filter((m) => matriculaIdsComFaltas.has(m.id))
+      .map((m) => m.aluno_id)
+  );
+
+  const matriculaIdsComNotas = new Set(
+    notas.map((n) => n.matricula_id)
+  );
+
+  const alunoIdsSemNotas = new Set(
+    matriculasAtivas
+      .filter((m) => !matriculaIdsComNotas.has(m.id))
+      .map((m) => m.aluno_id)
+  );
+
+  const confirmacoesPorEvento = new Map();
+  confirmacoesEvento.forEach((c) => {
+    const atual = confirmacoesPorEvento.get(c.evento_id) || 0;
+    confirmacoesPorEvento.set(c.evento_id, atual + 1);
+  });
+
+  const hoje = hojeISO();
+  const eventosSemConfirmacao = eventos.filter((e) => {
+    const futuros = e.ativo && String(e.data_evento || "") >= hoje;
+    if (!futuros) return false;
+    return !confirmacoesPorEvento.has(e.id);
+  });
+
+  const ausenciasMes = aulas.filter((a) =>
+    a.status === "Ausente" &&
+    String(a.data_aula || "").startsWith(prefixoMes)
+  ).length;
+
+  qtdAlunosComFaltasResumo.textContent = String(alunoIdsComFaltas.size);
+  qtdAlunosSemNotasResumo.textContent = String(alunoIdsSemNotas.size);
+  qtdEventosSemConfirmacaoResumo.textContent = String(eventosSemConfirmacao.length);
+  qtdAusenciasMesResumo.textContent = String(ausenciasMes);
 }
 
 /* =========================================================
@@ -379,8 +545,13 @@ async function montarResumoGeral() {
   try {
     await carregarProfessoresAtivos();
     await carregarMatriculasAtivas();
+    await carregarEventos();
+    await carregarConfirmacoesEvento();
+    await carregarAulasResumo();
+    await carregarNotasResumo();
 
     renderIndicadoresGerais();
+    renderAlertasResumo();
     renderSelectMatriculasAdmin();
     renderCardsProfessores();
     renderCardsMaterias();
