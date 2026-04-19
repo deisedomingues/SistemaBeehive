@@ -136,6 +136,8 @@ async function carregarMatriculasRelacionadas() {
     .from("matricula")
     .select(`
       id,
+      professor_id,
+      ativa,
       aluno:aluno_id (
         id,
         nome
@@ -149,7 +151,9 @@ async function carregarMatriculasRelacionadas() {
           nome
         )
       )
-    `);
+    `)
+    .eq("professor_id", professorId)
+    .eq("ativa", true);
 
   if (error) throw error;
 
@@ -203,9 +207,17 @@ async function carregarAulasProfessorPorPeriodo() {
 }
 
 async function carregarNotasSistema() {
+  const idsMatriculas = matriculasFiltradas.map((m) => m.id);
+
+  if (!idsMatriculas.length) {
+    notasDoSistema = [];
+    return;
+  }
+
   const { data, error } = await supabase
     .from("nota")
-    .select("*");
+    .select("*")
+    .in("matricula_id", idsMatriculas);
 
   if (error) {
     console.warn("Não foi possível carregar notas:", error.message);
