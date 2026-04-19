@@ -197,6 +197,46 @@ function eventoCondizComCursoSelecionado(evento) {
   return false;
 }
 
+function normalizarLink(link) {
+  const valor = String(link || "").trim();
+  if (!valor) return "";
+
+  if (valor.startsWith("http://") || valor.startsWith("https://")) {
+    return valor;
+  }
+
+  return `https://${valor}`;
+}
+
+function obterHtmlLinkParticipacao(link) {
+  const linkNormalizado = normalizarLink(link);
+
+  if (!linkNormalizado) {
+    return `
+      <div class="bloco-detalhe-evento">
+        <strong>Link para participação</strong>
+        <p>Não informado.</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="bloco-detalhe-evento">
+      <strong>Link para participação</strong>
+      <p style="word-break:break-word; margin-bottom:10px;">${escaparHtml(linkNormalizado)}</p>
+      <a
+        href="${escaparHtml(linkNormalizado)}"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn"
+        style="display:inline-block; text-decoration:none;"
+      >
+        Acessar evento
+      </a>
+    </div>
+  `;
+}
+
 /* =========================================================
    MATRÍCULAS
 ========================================================= */
@@ -554,6 +594,7 @@ function renderizarEventos() {
     const confirmado = eventoJaConfirmado(evento.id);
     const prazoVencido = eventoPrazoConfirmacaoVencido(evento);
     const publicoDetalhe = obterPublicoDetalhado(evento);
+    const blocoLinkParticipacao = obterHtmlLinkParticipacao(evento.local);
 
     let badgeStatus = "";
     let statusInfo = "";
@@ -625,10 +666,7 @@ function renderizarEventos() {
 
           <div class="conteudo-detalhes-evento">
             <div class="detalhes-evento-grid">
-              <div class="bloco-detalhe-evento">
-                <strong>Local</strong>
-                <p>${escaparHtml(evento.local || "-")}</p>
-              </div>
+              ${blocoLinkParticipacao}
 
               <div class="bloco-detalhe-evento">
                 <strong>Público</strong>

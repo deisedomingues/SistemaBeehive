@@ -12,7 +12,7 @@ const msg = document.getElementById("msg");
 const tituloInput = document.getElementById("titulo");
 const tipoEventoSelect = document.getElementById("tipoEvento");
 const descricaoInput = document.getElementById("descricao");
-const localInput = document.getElementById("local");
+const localInput = document.getElementById("local"); // no banco continua "local"
 const dataEventoInput = document.getElementById("dataEvento");
 const horaEventoInput = document.getElementById("horaEvento");
 
@@ -38,6 +38,7 @@ async function init() {
     await carregarMaterias();
     controlarCamposPublico();
     atualizarPreviewLimiteConfirmacao();
+    configurarCampoLinkParticipacao();
   } catch (erro) {
     console.error("Erro na inicialização da página de evento:", erro);
     mostrarMensagem("Erro ao inicializar a página de cadastro de evento.", "erro");
@@ -140,6 +141,7 @@ function limparFormularioVisual() {
 
   limparSelect(moduloSelect, "Selecione o módulo");
   atualizarPreviewLimiteConfirmacao();
+  configurarCampoLinkParticipacao();
 }
 
 function obterOrdemDoModuloSelecionado() {
@@ -148,6 +150,47 @@ function obterOrdemDoModuloSelecionado() {
 
   const ordem = optionSelecionada.dataset.ordem;
   return ordem ? Number(ordem) : null;
+}
+
+function configurarCampoLinkParticipacao() {
+  if (!localInput) return;
+
+  localInput.type = "url";
+  localInput.placeholder = "Ex: https://meet.google.com/abc-defg-hij";
+  localInput.setAttribute("inputmode", "url");
+}
+
+function normalizarLinkParticipacao(link) {
+  const valor = String(link || "").trim();
+
+  if (!valor) return null;
+
+  if (
+    valor.startsWith("http://") ||
+    valor.startsWith("https://")
+  ) {
+    return valor;
+  }
+
+  return `https://${valor}`;
+}
+
+function validarLinkParticipacao(link) {
+  if (!link) {
+    return "Informe o link para participação do evento.";
+  }
+
+  try {
+    const url = new URL(link);
+
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return "O link para participação precisa começar com http:// ou https://";
+    }
+
+    return null;
+  } catch {
+    return "Informe um link válido para participação.";
+  }
 }
 
 /* =========================================================
@@ -415,6 +458,13 @@ materiaSelect.addEventListener("change", async () => {
 
 dataEventoInput.addEventListener("change", atualizarPreviewLimiteConfirmacao);
 
+localInput?.addEventListener("blur", () => {
+  const linkNormalizado = normalizarLinkParticipacao(localInput.value);
+  if (linkNormalizado) {
+    localInput.value = linkNormalizado;
+  }
+});
+
 /* =========================================================
    VALIDAÇÕES
 ========================================================= */
@@ -427,6 +477,7 @@ function validarFormulario() {
   const materiaId = materiaSelect.value;
   const moduloId = moduloSelect.value;
   const professorResponsavelId = professorResponsavelSelect.value;
+  const linkParticipacao = normalizarLinkParticipacao(localInput.value);
 
   if (!titulo) {
     mostrarMensagem("Informe o título do evento.", "erro");
@@ -455,6 +506,17 @@ function validarFormulario() {
 
   if (!publico) {
     mostrarMensagem("Selecione o público do evento.", "erro");
+    return false;
+  }
+
+  if (!linkParticipacao) {
+    mostrarMensagem("Informe o link para participação.", "erro");
+    return false;
+  }
+
+  const erroLink = validarLinkParticipacao(linkParticipacao);
+  if (erroLink) {
+    mostrarMensagem(erroLink, "erro");
     return false;
   }
 
@@ -494,7 +556,7 @@ form.addEventListener("submit", async (e) => {
   const titulo = tituloInput.value.trim();
   const tipoEvento = tipoEventoSelect.value;
   const descricao = descricaoInput.value.trim();
-  const local = localInput.value.trim();
+  const linkParticipacao = normalizarLinkParticipacao(localInput.value);
   const dataEvento = dataEventoInput.value;
   const horaEvento = horaEventoInput.value;
   const publico = publicoAlvoSelect.value;
@@ -514,7 +576,7 @@ form.addEventListener("submit", async (e) => {
     tipo_evento: tipoEvento,
     data_evento: dataEvento,
     hora_evento: horaEvento,
-    local: local || null,
+    local: linkParticipacao || null,
     publico_alvo: publico,
     materia_id: publico === "todos" ? null : materiaId,
     modulo_id:

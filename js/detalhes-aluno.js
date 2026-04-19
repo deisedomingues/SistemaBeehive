@@ -98,7 +98,11 @@ function formatarDataBR(dataISO) {
 }
 
 function hojeISO() {
-  return new Date().toISOString().split("T")[0];
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
 }
 
 function escaparHtml(texto) {
@@ -408,20 +412,33 @@ function preencherContadores(aulas) {
   let p = 0;
   let a = 0;
   let c = 0;
-  let r = 0;
+  let reposicoesPendentes = 0;
   let instrumental = 0;
   let plantao = 0;
 
   limparLista(listaReposicoes);
 
+  const idsAulasOriginaisJaRepostas = new Set(
+    (aulas || [])
+      .filter((x) => x.status === STATUS.REPOSICAO && x.aula_original_id)
+      .map((x) => Number(x.aula_original_id))
+  );
+
   aulas.forEach((x) => {
     if (x.status === STATUS.PRESENTE) {
       p++;
-    } else if (x.status === STATUS.AUSENTE) {
+      return;
+    }
+
+    if (x.status === STATUS.AUSENTE) {
       a++;
 
-      if (x.precisa_reposicao) {
-        r++;
+      const estaPendente =
+        x.precisa_reposicao === true &&
+        !idsAulasOriginaisJaRepostas.has(Number(x.id));
+
+      if (estaPendente) {
+        reposicoesPendentes++;
 
         const li = document.createElement("li");
         li.textContent =
@@ -429,19 +446,38 @@ function preencherContadores(aulas) {
 
         listaReposicoes.appendChild(li);
       }
-    } else if (x.status === STATUS.CANCELADA) {
+
+      return;
+    }
+
+    if (x.status === STATUS.CANCELADA) {
       c++;
-      r++;
 
-      const li = document.createElement("li");
-      li.textContent =
-        `${formatarDataBR(x.data_aula)} — ${x.justificativa || "Aula cancelada"}`;
+      const estaPendente =
+        x.precisa_reposicao === true &&
+        !idsAulasOriginaisJaRepostas.has(Number(x.id));
 
-      listaReposicoes.appendChild(li);
-    } else if (x.status === STATUS.AULA_INSTRUMENTAL) {
+      if (estaPendente) {
+        reposicoesPendentes++;
+
+        const li = document.createElement("li");
+        li.textContent =
+          `${formatarDataBR(x.data_aula)} — ${x.justificativa || "Aula cancelada"}`;
+
+        listaReposicoes.appendChild(li);
+      }
+
+      return;
+    }
+
+    if (x.status === STATUS.AULA_INSTRUMENTAL) {
       instrumental++;
-    } else if (x.status === STATUS.PLANTAO_DUVIDAS) {
+      return;
+    }
+
+    if (x.status === STATUS.PLANTAO_DUVIDAS) {
       plantao++;
+      return;
     }
   });
 
@@ -452,7 +488,7 @@ function preencherContadores(aulas) {
   cPresente.textContent = p;
   cAusente.textContent = a;
   cCancelada.textContent = c;
-  cReposicao.textContent = r;
+  cReposicao.textContent = reposicoesPendentes;
   cInstrumental.textContent = instrumental;
   cPlantao.textContent = plantao;
 }

@@ -98,6 +98,7 @@ function limparCamposAuxiliaresGerais() {
     inputPrecisaReposicao.checked = false;
     aulaOriginalIdGeral.innerHTML = `<option value="">Selecione o aluno primeiro</option>`;
     reposicaoComCustoGeral.checked = false;
+    reposicaoComCustoGeral.disabled = false;
     inputJustificativa.value = "";
 }
 
@@ -228,6 +229,7 @@ function aplicarRegrasStatusGeral() {
     if (status !== STATUS.REPOSICAO) {
         aulaOriginalIdGeral.innerHTML = `<option value="">Selecione o aluno primeiro</option>`;
         reposicaoComCustoGeral.checked = false;
+        reposicaoComCustoGeral.disabled = false;
     }
 
     if (!statusExigeJustificativa(status)) {
@@ -351,11 +353,24 @@ async function carregarAulasPendentesGeral() {
 
     if (!matriculaId) {
         aulaOriginalIdGeral.innerHTML = `<option value="">Selecione o aluno primeiro</option>`;
+        reposicaoComCustoGeral.checked = false;
+        reposicaoComCustoGeral.disabled = false;
         return;
     }
 
     const pendentes = await buscarAulasPendentes(matriculaId);
 
+    if (!pendentes.length) {
+        aulaOriginalIdGeral.innerHTML = `
+            <option value="">Este aluno não possui faltas e/ou cancelamentos pendentes</option>
+        `;
+        reposicaoComCustoGeral.checked = false;
+        reposicaoComCustoGeral.disabled = true;
+        mostrarMensagem("Este aluno não possui faltas e/ou cancelamentos pendentes para reposição.", false);
+        return;
+    }
+
+    reposicaoComCustoGeral.disabled = false;
     aulaOriginalIdGeral.innerHTML = `<option value="">Selecione a aula original...</option>`;
 
     pendentes.forEach((aula) => {
@@ -422,6 +437,7 @@ async function renderizarAlunosColetivo() {
             `;
         } else if (aluno.status === STATUS.REPOSICAO) {
             const pendentes = await buscarAulasPendentes(aluno.id);
+            const semPendencias = !pendentes.length;
 
             htmlExtras = `
                 <div style="margin-top:10px; background:#fff; padding:10px; border-radius:8px; border:1px solid #eee;">
@@ -430,12 +446,23 @@ async function renderizarAlunosColetivo() {
                     </label>
 
                     <select class="aula-original-ind" data-index="${index}" style="width:100%; margin-bottom:8px; font-size:12px;">
-                        <option value="">Selecione a falta...</option>
-                        ${pendentes.map((p) => criarOpcaoAulaPendente(p)).join("")}
+                        ${
+                            semPendencias
+                                ? `<option value="">Este aluno não possui faltas e/ou cancelamentos pendentes</option>`
+                                : `<option value="">Selecione a falta...</option>${pendentes.map((p) => criarOpcaoAulaPendente(p)).join("")}`
+                        }
                     </select>
 
+                    ${
+                        semPendencias
+                            ? `<small style="display:block; color:#b71c1c; margin-bottom:8px;">
+                                Este aluno não possui aula pendente para vincular a esta reposição.
+                               </small>`
+                            : ``
+                    }
+
                     <label style="display:flex; align-items:center; gap:8px; font-size:12px;">
-                        <input type="checkbox" class="custo-ind" data-index="${index}" ${aluno.reposicaoComCusto ? "checked" : ""}>
+                        <input type="checkbox" class="custo-ind" data-index="${index}" ${aluno.reposicaoComCusto ? "checked" : ""} ${semPendencias ? "disabled" : ""}>
                         Reposição com custo
                     </label>
                 </div>

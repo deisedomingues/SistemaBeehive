@@ -109,6 +109,14 @@ function criarDataLocal(dataISO, hora = 0, minuto = 0, segundo = 0) {
   return new Date(ano, mes - 1, dia, hora, minuto, segundo);
 }
 
+function hojeISO() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
 // =============================
 // regra do prazo
 // até 21h do dia anterior
@@ -332,21 +340,48 @@ async function buscarMatriculasAtivas(alunoId) {
 // buscar aulas pendentes
 // =============================
 async function buscarAulasPendentes(matriculaId) {
-  const { data, error } = await supabase
+  const { data: aulasBase, error: errorAulas } = await supabase
     .from("aula")
     .select("id, data_aula, status, justificativa, aula_gravada, precisa_reposicao")
     .eq("matricula_id", matriculaId)
     .in("status", ["Ausente", "Cancelada", "ausente", "cancelada"])
-    .eq("aula_gravada", false)
     .eq("precisa_reposicao", true)
     .order("data_aula", { ascending: true });
 
-  if (error) {
-    console.error("Erro ao buscar aulas pendentes:", error);
-    throw error;
+  if (errorAulas) {
+    console.error("Erro ao buscar aulas pendentes:", errorAulas);
+    throw errorAulas;
   }
 
-  return data || [];
+  const { data: reposicoesRegistradas, error: errorReposicoesRegistradas } = await supabase
+    .from("aula")
+    .select("aula_original_id")
+    .eq("matricula_id", matriculaId)
+    .eq("status", "Reposição")
+    .not("aula_original_id", "is", null);
+
+  if (errorReposicoesRegistradas) {
+    console.error("Erro ao buscar aulas já repostas:", errorReposicoesRegistradas);
+    throw errorReposicoesRegistradas;
+  }
+
+  const idsJaRepostos = new Set(
+    (reposicoesRegistradas || []).map((item) => Number(item.aula_original_id))
+  );
+
+  return (aulasBase || []).filter((aula) => {
+    const statusNormalizado = String(aula.status || "").trim().toLowerCase();
+
+    const elegivelPorStatus =
+      statusNormalizado === "cancelada" ||
+      (statusNormalizado === "ausente" && aula.aula_gravada === false);
+
+    if (!elegivelPorStatus) return false;
+
+    if (idsJaRepostos.has(Number(aula.id))) return false;
+
+    return true;
+  });
 }
 
 // =============================
@@ -502,10 +537,10 @@ async function carregarPendencias() {
   const aulasJaAgendadasIds = new Set(
     reposicoesAtivas
       .filter((item) => item.aula_id !== null)
-      .map((item) => item.aula_id)
+      .map((item) => Number(item.aula_id))
   );
 
-  aulasPendentes = aulas.filter((aula) => !aulasJaAgendadasIds.has(aula.id));
+  aulasPendentes = aulas.filter((aula) => !aulasJaAgendadasIds.has(Number(aula.id)));
 
   if (aulasPendentes.length > 0 && !aulaSelecionadaId) {
     aulaSelecionadaId = aulasPendentes[0].id;
@@ -522,7 +557,7 @@ async function carregarPendencias() {
 // buscar horários livres
 // =============================
 async function buscarHorariosLivres() {
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = hojeISO();
 
   const { data, error } = await supabase
     .from("horarios_reposicao")
