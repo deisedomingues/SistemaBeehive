@@ -400,9 +400,8 @@ async function carregarNotas() {
       tipo,
       valor,
       observacao,
-      matricula:matricula_id (
-        modulo:modulo_id ( nome )
-      )
+      modulo_id,
+      modulo:modulo_id ( nome )
     `)
     .eq("matricula_id", matriculaId)
     .order("data", { ascending: false });
@@ -428,7 +427,7 @@ function renderNotas(notas) {
     const li = document.createElement("li");
 
     const dataBR = formatarDataBR(n.data);
-    const modulo = n.matricula?.modulo?.nome || "Sem módulo";
+    const modulo = n.modulo?.nome || "Sem módulo";
     const obs = n.observacao ? ` — ${n.observacao}` : "";
 
     const texto = `${dataBR} — ${n.tipo} — ${modulo} — ${n.valor}${obs}`;
@@ -480,7 +479,7 @@ function calcularMedias(notas) {
   let soma = 0;
 
   notas.forEach((n) => {
-    soma += Number(n.valor);
+    soma += Number(n.valor) || 0;
   });
 
   const media = soma / notas.length;
@@ -491,13 +490,13 @@ function calcularMedias(notas) {
   const modulos = {};
 
   notas.forEach((n) => {
-    const nome = n.matricula?.modulo?.nome || "Sem módulo";
+    const nome = n.modulo?.nome || "Sem módulo";
 
     if (!modulos[nome]) {
       modulos[nome] = [];
     }
 
-    modulos[nome].push(Number(n.valor));
+    modulos[nome].push(Number(n.valor) || 0);
   });
 
   mediaPorModulo.innerHTML = "";
