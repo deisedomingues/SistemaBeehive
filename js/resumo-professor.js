@@ -71,7 +71,7 @@ async function preencherFiltroInicial() {
   dataFim.value = hoje;
 }
 
-function statusContaComoAula(status) {
+function statusContaComoAulaNoPeriodo(status) {
   return String(status || "").trim().toLowerCase() === "presente";
 }
 
@@ -90,6 +90,25 @@ function escapeHtml(texto) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function ehNotaDeAvaliacao(nota) {
+  const tipo = normalizarTexto(
+    nota?.tipo ?? nota?.tipo_avaliacao ?? nota?.avaliacao ?? ""
+  );
+
+  return tipo.includes("avalia");
+}
+
+function aulaContaParaCicloDeAvaliacao(aula) {
+  const status = normalizarTexto(aula?.status);
+  const gravada = aula?.aula_gravada === true;
+
+  if (status === "presente") return true;
+  if (status === "reposição" || status === "reposicao") return true;
+  if (status === "ausente" && gravada) return true;
+
+  return false;
 }
 
 /* =========================================================
@@ -138,6 +157,7 @@ async function carregarMatriculasRelacionadas() {
       id,
       professor_id,
       ativa,
+      modulo_id,
       aluno:aluno_id (
         id,
         nome
@@ -187,7 +207,9 @@ async function carregarAulasProfessorPorPeriodo() {
       id,
       data_aula,
       status,
+      aula_gravada,
       matricula_id,
+      modulo_id,
       professor_id
     `)
     .eq("professor_id", professorId);
@@ -216,7 +238,15 @@ async function carregarNotasSistema() {
 
   const { data, error } = await supabase
     .from("nota")
-    .select("*")
+    .select(`
+      id,
+      matricula_id,
+      modulo_id,
+      tipo,
+      valor,
+      observacao,
+      data
+    `)
     .in("matricula_id", idsMatriculas);
 
   if (error) {
@@ -228,22 +258,40 @@ async function carregarNotasSistema() {
   notasDoSistema = data || [];
 }
 
-async function carregarPresencasTotaisPorMatricula() {
+async function carregarAulasValidasPorMatriculaEModuloAtual() {
   const idsMatriculas = matriculasFiltradas.map((m) => m.id);
   if (idsMatriculas.length === 0) return {};
 
+  const moduloAtualPorMatricula = {};
+  matriculasFiltradas.forEach((m) => {
+    moduloAtualPorMatricula[String(m.id)] = Number(m.modulo_id);
+  });
+
   const { data, error } = await supabase
     .from("aula")
-    .select("id, matricula_id, status, professor_id")
+    .select(`
+      id,
+      matricula_id,
+      modulo_id,
+      status,
+      aula_gravada,
+      professor_id
+    `)
     .in("matricula_id", idsMatriculas)
-    .eq("professor_id", professorId)
-    .eq("status", "Presente");
+    .eq("professor_id", professorId);
 
   if (error) throw error;
 
   const contagem = {};
-  (data || []).forEach((a) => {
-    const mid = String(a.matricula_id);
+
+  (data || []).forEach((aula) => {
+    const mid = String(aula.matricula_id);
+    const moduloAtual = Number(moduloAtualPorMatricula[mid] || 0);
+    const moduloDaAula = Number(aula.modulo_id || 0);
+
+    if (!moduloAtual || moduloDaAula !== moduloAtual) return;
+    if (!aulaContaParaCicloDeAvaliacao(aula)) return;
+
     contagem[mid] = (contagem[mid] || 0) + 1;
   });
 
@@ -280,7 +328,7 @@ function renderTotalAlunos() {
 }
 
 function renderAulasPeriodo() {
-  const total = aulasFiltradasProfessor.filter((a) => statusContaComoAula(a.status)).length;
+  const total = aulasFiltradasProfessor.filter((a) => statusContaComoAulaNoPeriodo(a.status)).length;
   qtdAulasPeriodo.textContent = String(total);
 }
 
@@ -373,46 +421,38 @@ function renderCardsModulosPorMateria() {
   cardsModulosPorMateria.innerHTML = html;
 }
 
-function existeNotaDaAvaliacao(matriculaId, numeroAvaliacao) {
-  return notasDoSistema.some((nota) => {
+function contarAvaliacoesDoModuloAtual(matriculaId, moduloId) {
+  return notasDoSistema.filter((nota) => {
     if (String(nota.matricula_id) !== String(matriculaId)) return false;
-
-    const tipo = normalizarTexto(
-      nota.tipo ?? nota.tipo_avaliacao ?? nota.avaliacao ?? ""
-    );
-
-    if (numeroAvaliacao === 1) return tipo.includes("1");
-    if (numeroAvaliacao === 2) return tipo.includes("2");
-
-    return false;
-  });
+    if (Number(nota.modulo_id || 0) !== Number(moduloId || 0)) return false;
+    return ehNotaDeAvaliacao(nota);
+  }).length;
 }
 
-function renderAvaliacoes(presencasPorMatricula) {
+function renderAvaliacoes(aulasValidasPorMatricula) {
   const pendencias = [];
 
   matriculasFiltradas.forEach((m) => {
     const matriculaId = m.id;
-    const totalPresencas = presencasPorMatricula[String(matriculaId)] || 0;
+    const moduloId = m.modulo_id;
+    const totalAulasValidasModuloAtual = aulasValidasPorMatricula[String(matriculaId)] || 0;
+    const totalAvaliacoesLancadasNoModulo = contarAvaliacoesDoModuloAtual(matriculaId, moduloId);
 
-    if (totalPresencas >= 14 && !existeNotaDaAvaliacao(matriculaId, 1)) {
+    const avaliacoesEsperadas = Math.floor(totalAulasValidasModuloAtual / 14);
+    const avaliacoesPendentes = Math.max(0, avaliacoesEsperadas - totalAvaliacoesLancadasNoModulo);
+
+    if (avaliacoesPendentes <= 0) return;
+
+    for (let i = 1; i <= avaliacoesPendentes; i++) {
+      const numeroDaProximaAvaliacao = totalAvaliacoesLancadasNoModulo + i;
+
       pendencias.push({
         aluno: m?.aluno?.nome || "Aluno",
         materia: m?.modulo?.materia?.nome || "Matéria",
         modulo: m?.modulo?.nome || "Módulo",
-        avaliacao: "Avaliação 1",
-        presencas: totalPresencas
-      });
-      return;
-    }
-
-    if (totalPresencas >= 28 && !existeNotaDaAvaliacao(matriculaId, 2)) {
-      pendencias.push({
-        aluno: m?.aluno?.nome || "Aluno",
-        materia: m?.modulo?.materia?.nome || "Matéria",
-        modulo: m?.modulo?.nome || "Módulo",
-        avaliacao: "Avaliação 2",
-        presencas: totalPresencas
+        avaliacao: `Avaliação ${numeroDaProximaAvaliacao}`,
+        aulasValidas: totalAulasValidasModuloAtual,
+        avaliacoesLancadas: totalAvaliacoesLancadasNoModulo
       });
     }
   });
@@ -426,6 +466,7 @@ function renderAvaliacoes(presencasPorMatricula) {
 
   pendencias.sort((a, b) => {
     if (a.materia !== b.materia) return a.materia.localeCompare(b.materia);
+    if (a.modulo !== b.modulo) return a.modulo.localeCompare(b.modulo);
     return a.aluno.localeCompare(b.aluno);
   });
 
@@ -434,7 +475,7 @@ function renderAvaliacoes(presencasPorMatricula) {
       <div class="item-avaliacao-resumo">
         <strong>${escapeHtml(item.aluno)} — ${escapeHtml(item.avaliacao)}</strong>
         <p>${escapeHtml(item.materia)} • ${escapeHtml(item.modulo)}</p>
-        <p>${item.presencas} presença(s) registradas</p>
+        <p>${item.aulasValidas} aula(s) válidas no módulo atual • ${item.avaliacoesLancadas} avaliação(ões) lançada(s)</p>
       </div>
     `)
     .join("");
@@ -475,8 +516,8 @@ async function montarResumo() {
     renderCardsAlunosPorMateria();
     renderCardsModulosPorMateria();
 
-    const presencasPorMatricula = await carregarPresencasTotaisPorMatricula();
-    renderAvaliacoes(presencasPorMatricula);
+    const aulasValidasPorMatricula = await carregarAulasValidasPorMatriculaEModuloAtual();
+    renderAvaliacoes(aulasValidasPorMatricula);
 
   } catch (error) {
     console.error("Erro ao montar resumo do professor:", error);
@@ -500,14 +541,14 @@ btnLimparFiltro?.addEventListener("click", async () => {
 });
 
 btnDetalhes?.addEventListener("click", () => {
-  const matriculaId = selectMatricula.value;
+  const matriculaIdSelecionada = selectMatricula.value;
 
-  if (!matriculaId) {
+  if (!matriculaIdSelecionada) {
     mostrarMensagem("Selecione o aluno (curso).", false);
     return;
   }
 
-  localStorage.setItem("matriculaSelecionada", matriculaId);
+  localStorage.setItem("matriculaSelecionada", matriculaIdSelecionada);
   window.location.href = "detalhes-aluno.html";
 });
 
