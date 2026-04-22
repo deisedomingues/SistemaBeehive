@@ -99,7 +99,7 @@
       </div>
 
       <div class="card" style="padding:10px 12px;">
-        <div style="font-size:12px; opacity:0.8;">🔄 Reposições</div>
+        <div style="font-size:12px; opacity:0.8;">🔄 Reposições pendentes</div>
         <div style="font-size:22px; font-weight:700;"><span id="cReposicao">0</span></div>
       </div>
 
@@ -116,6 +116,36 @@
       <div class="card" style="padding:10px 12px;">
         <div style="font-size:12px; opacity:0.8;">🎈 Eventos</div>
         <div style="font-size:22px; font-weight:700;"><span id="cEventos">0</span></div>
+      </div>
+    </section>
+
+    <!-- AVALIAÇÃO + AULAS VÁLIDAS -->
+    <section
+      style="
+        display:grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap:10px;
+        margin-bottom:12px;
+      "
+    >
+      <div class="card" style="padding:12px 14px;">
+        <h2 style="margin:0 0 8px 0;">📘 Contagem de aulas válidas</h2>
+        <div style="font-size:24px; font-weight:700; margin-bottom:6px;">
+          <span id="cAulasValidas">0</span>
+        </div>
+        <p style="font-size:12px; opacity:0.88; margin:0;">
+          Considera somente: presente com aula gravada, ausente com aula gravada e reposição com aula gravada.
+        </p>
+      </div>
+
+      <div class="card" style="padding:12px 14px;">
+        <h2 style="margin:0 0 8px 0;">📝 Avaliação prevista</h2>
+        <div id="statusAvaliacaoPendente" style="font-size:14px; font-weight:600; margin-bottom:6px;">
+          Carregando...
+        </div>
+        <p id="textoAvaliacaoPendente" style="font-size:12px; opacity:0.88; margin:0;">
+          Carregando...
+        </p>
       </div>
     </section>
 
@@ -223,6 +253,7 @@
           Filtrar status
           <select id="filtroStatusAula">
             <option value="">Todos</option>
+            <option value="__VALIDAS__">Aulas válidas</option>
             <option value="Presente">Presente</option>
             <option value="Ausente">Ausente</option>
             <option value="Cancelada">Cancelada</option>
