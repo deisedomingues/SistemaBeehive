@@ -269,14 +269,16 @@ function renderAulas(aulasOriginais) {
   }
 
   const aulasParaMostrar = aulasExpandido ? aulasOriginais : aulasOriginais.slice(0, 3);
+  const totalAulasFiltradas = aulasOriginais.length;
 
-  aulasParaMostrar.forEach((x) => {
+  aulasParaMostrar.forEach((x, index) => {
     const li = document.createElement("li");
     li.style.listStyle = "none";
     li.style.marginBottom = "0";
     li.style.padding = "10px 0";
     li.style.borderBottom = "1px solid #e6dfcf";
 
+    const numeroAula = totalAulasFiltradas - index;
     const dataBR = formatarDataBR(x.data_aula);
     const professor = x.professor?.nome || "Professor";
     const status = x.status || "-";
@@ -310,7 +312,7 @@ function renderAulas(aulasOriginais) {
       <div class="item-historico-flex">
         <div class="item-historico-linha">
           <div class="item-historico-topo-compacto">
-            ${escaparHtml(dataBR)} - ${escaparHtml(conteudo)} - ${escaparHtml(licao)}
+            ${escaparHtml(`Aula ${numeroAula}`)} • ${escaparHtml(dataBR)} - ${escaparHtml(conteudo)} - ${escaparHtml(licao)}
           </div>
 
           <div class="item-historico-detalhes">

@@ -3189,3 +3189,293 @@ textarea[readonly] {
     font-size: 12.5px;
   }
 }
+/* =========================================================
+   DETALHES DO ALUNO / DETALHES DO ALUNO ADMIN
+   Ajustes visuais compactos
+========================================================= */
+
+.container-detalhes-aluno,
+.container.container-resumo {
+  position: relative;
+  z-index: 2;
+}
+
+.container-detalhes-aluno .card,
+.container.container-resumo .card {
+  border-radius: 16px;
+}
+
+.container-detalhes-aluno h1,
+.container.container-resumo h1 {
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.container-detalhes-aluno h2,
+.container.container-resumo h2 {
+  font-size: 18px;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+/* Botões voltar */
+#btnVoltarTopo,
+#btnVoltarRodape,
+.link-voltar {
+  min-width: 110px;
+  text-align: center;
+}
+
+/* Cards compactos de resumo */
+.detalhes-cards-compactos,
+.dashboard.dashboard-detalhes-aluno,
+.container.container-resumo .dashboard {
+  gap: 10px;
+}
+
+.dashboard.dashboard-detalhes-aluno .card,
+.container.container-resumo .dashboard .card {
+  padding: 10px 12px;
+}
+
+.dashboard.dashboard-detalhes-aluno .card h2,
+.container.container-resumo .dashboard .card h2 {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.dashboard.dashboard-detalhes-aluno .card p,
+.container.container-resumo .dashboard .card p {
+  margin: 0;
+}
+
+/* Cabeçalho compacto */
+.subtitulo-detalhe-aluno {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+
+.grade-info-aluno-topo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mini-info-aluno {
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid #eadb9a;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.mini-info-aluno span {
+  display: block;
+  font-size: 11px;
+  opacity: 0.75;
+  margin-bottom: 3px;
+}
+
+.mini-info-aluno strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+/* Badge aniversário */
+.badge-aniversario {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff4bf;
+  border: 1px solid #f1d36b;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Filtros */
+.filtros-historico-aluno {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.filtros-historico-aluno label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+/* Histórico */
+.lista-historico,
+.lista-historico-aulas {
+  margin: 0;
+  padding: 0;
+}
+
+.item-historico-flex {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.item-historico-linha {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-historico-topo-compacto {
+  font-weight: 700;
+  color: #2b2b2b;
+  font-size: 15px;
+  line-height: 1.45;
+  word-break: break-word;
+  margin-bottom: 4px;
+}
+
+.item-historico-detalhes {
+  color: #5f5a50;
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.item-historico-acoes {
+  flex-shrink: 0;
+}
+
+/* Botão excluir aula no admin */
+.btn-excluir-aula-admin {
+  background: transparent;
+  border: 1px solid #d8cfae;
+  border-radius: 10px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-excluir-aula-admin:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Eventos */
+.box-eventos-aluno,
+.lista-eventos-aluno {
+  margin-top: 10px;
+}
+
+.item-evento-aluno {
+  padding: 10px 0;
+  border-bottom: 1px solid #e6dfcf;
+}
+
+.item-evento-aluno:last-child {
+  border-bottom: none;
+}
+
+.item-evento-aluno-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.badge-evento-aluno {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #e0d2a0;
+}
+
+/* Notas */
+.form-nota-compacta {
+  margin-top: 10px;
+}
+
+.linha-nota {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.linha-nota label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.btn-salvar-nota {
+  min-height: 40px;
+}
+
+.media-geral-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.media-geral {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.filtro-modulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.texto-lista-notas {
+  margin: 12px 0 8px;
+  font-size: 13px;
+}
+
+.notas-grid {
+  display: block;
+}
+
+/* Deixa a tela menos alta visualmente */
+.container-detalhes-aluno .card,
+.container.container-resumo .card {
+  margin-bottom: 12px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .container-detalhes-aluno h1,
+  .container.container-resumo h1 {
+    font-size: 24px;
+  }
+
+  .container-detalhes-aluno h2,
+  .container.container-resumo h2 {
+    font-size: 16px;
+  }
+
+  .item-historico-topo-compacto {
+    font-size: 14px;
+  }
+
+  .item-historico-detalhes {
+    font-size: 12px;
+  }
+
+  .media-geral {
+    font-size: 14px;
+  }
+}

@@ -11,135 +11,147 @@
   <div class="overlay"></div>
 
   <main class="container container-resumo container-detalhes-aluno">
+
+    <div style="display:flex; justify-content:flex-start; margin-bottom:10px;">
+      <button
+        id="btnVoltarTopo"
+        type="button"
+        class="btn"
+        style="padding:8px 14px;"
+      >
+        ← Voltar
+      </button>
+    </div>
+
     <h1 style="margin-bottom:8px;">Detalhes do Aluno</h1>
 
     <div id="msg" style="display:none; margin-bottom:10px;"></div>
 
-    <!-- Cabeçalho do aluno -->
-    <section class="card-admin card-detalhe-topo">
-      <div class="card-admin-icone">🎓</div>
+    <!-- CABEÇALHO COMPACTO -->
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+        <div>
+          <h2 id="tituloAluno" style="margin:0 0 4px 0;">Carregando...</h2>
+          <p id="subtituloAluno" style="font-size:13px; opacity:0.85; margin:0;"></p>
+        </div>
 
-      <div class="card-admin-conteudo card-detalhe-topo-conteudo">
-        <div class="topo-aluno-linha">
-          <div>
-            <h2 id="tituloAluno">Carregando...</h2>
-            <p id="subtituloAluno" class="subtitulo-detalhe-aluno"></p>
-          </div>
-
-          <div id="badgeAniversario" class="badge-aniversario" style="display:none;">
+        <div id="badgeAniversario" style="display:none;">
+          <span
+            style="display:inline-flex; align-items:center; gap:6px; background:#fff4bf; border:1px solid #f1d36b; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:600;"
+          >
             🎂 Aniversariante do dia
-          </div>
+          </span>
+        </div>
+      </div>
+
+      <div
+        style="
+          display:grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap:8px;
+          margin-top:12px;
+        "
+      >
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Curso</div>
+          <strong id="infoMateria" style="font-size:13px;">-</strong>
         </div>
 
-        <div class="grade-info-aluno-topo">
-          <div class="mini-info-aluno">
-            <span>Curso</span>
-            <strong id="infoMateria">-</strong>
-          </div>
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Módulo atual</div>
+          <strong id="infoModuloAtual" style="font-size:13px;">-</strong>
+        </div>
 
-          <div class="mini-info-aluno">
-            <span>Módulo atual</span>
-            <strong id="infoModuloAtual">-</strong>
-          </div>
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Professor(a)</div>
+          <strong id="infoProfessor" style="font-size:13px;">-</strong>
+        </div>
 
-          <div class="mini-info-aluno">
-            <span>Professor(a)</span>
-            <strong id="infoProfessor">-</strong>
-          </div>
-
-          <div class="mini-info-aluno">
-            <span>Nascimento</span>
-            <strong id="infoNascimento">-</strong>
-          </div>
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Nascimento</div>
+          <strong id="infoNascimento" style="font-size:13px;">-</strong>
         </div>
       </div>
     </section>
 
-    <!-- Cards de resumo -->
-    <section class="dashboard dashboard-detalhes-aluno">
-      <div class="card-admin card-resumo-aluno">
-        <div class="card-admin-icone">✅</div>
-        <div class="card-admin-conteudo">
-          <h2>Presenças</h2>
-          <p><b id="cPresente">0</b></p>
-        </div>
+    <!-- CARDS COMPACTOS -->
+    <section
+      style="
+        display:grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap:10px;
+        margin-bottom:12px;
+      "
+    >
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">✅ Presenças</div>
+        <div style="font-size:22px; font-weight:700;"><span id="cPresente">0</span></div>
       </div>
 
-      <div class="card-admin card-resumo-aluno">
-        <div class="card-admin-icone">⚠️</div>
-        <div class="card-admin-conteudo">
-          <h2>Ausências</h2>
-          <p><b id="cAusente">0</b></p>
-        </div>
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">⚠️ Ausências</div>
+        <div style="font-size:22px; font-weight:700;"><span id="cAusente">0</span></div>
       </div>
 
-      <div class="card-admin card-resumo-aluno">
-        <div class="card-admin-icone">❌</div>
-        <div class="card-admin-conteudo">
-          <h2>Canceladas</h2>
-          <p><b id="cCancelada">0</b></p>
-        </div>
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">❌ Canceladas</div>
+        <div style="font-size:22px; font-weight:700;"><span id="cCancelada">0</span></div>
       </div>
 
-      <div class="card-admin card-resumo-aluno">
-        <div class="card-admin-icone">🔄</div>
-        <div class="card-admin-conteudo">
-          <h2>Reposições pendentes</h2>
-          <p><b id="cReposicao">0</b></p>
-        </div>
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">🔄 Reposições</div>
+        <div style="font-size:22px; font-weight:700;"><span id="cReposicao">0</span></div>
       </div>
 
-      <div class="card-admin card-resumo-aluno">
-        <div class="card-admin-icone">🧰</div>
-        <div class="card-admin-conteudo">
-          <h2>Aulas instrumentais</h2>
-          <p><b id="cInstrumental">0</b></p>
-        </div>
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">🧰 Instrumentais</div>
+        <div style="font-size:22px; font-weight:700;"><span id="cInstrumental">0</span></div>
       </div>
 
-      <div class="card-admin card-resumo-aluno">
-        <div class="card-admin-icone">💡</div>
-        <div class="card-admin-conteudo">
-          <h2>Plantões de dúvidas</h2>
-          <p><b id="cPlantao">0</b></p>
-        </div>
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">💡 Plantões</div>
+        <div style="font-size:22px; font-weight:700;"><span id="cPlantao">0</span></div>
+      </div>
+
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">🎈 Eventos</div>
+        <div style="font-size:22px; font-weight:700;"><span id="cEventos">0</span></div>
       </div>
     </section>
 
-    <!-- Eventos -->
-    <section class="card-admin card-resumo-eventos-aluno">
-      <div class="card-admin-icone">🎈</div>
-      <div class="card-admin-conteudo">
-        <div class="topo-card-eventos-aluno">
-          <div>
-            <h2>Eventos participados</h2>
-            <p><b id="cEventos">0</b></p>
-          </div>
-
-          <button type="button" id="btnToggleEventos" class="btn-link-expansao" style="display:none;">
-            Ver mais
-          </button>
+    <!-- EVENTOS -->
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div>
+          <h2 style="margin:0;">🎈 Eventos participados</h2>
+          <p style="font-size:12px; opacity:0.85; margin:4px 0 0 0;">
+            Histórico de participação do aluno em eventos da escola.
+          </p>
         </div>
 
-        <div id="boxEventosAluno" class="box-eventos-aluno" style="display:none;">
-          <div id="listaEventosAluno" class="lista-eventos-aluno"></div>
-        </div>
+        <button type="button" id="btnToggleEventos" class="btn-link-expansao" style="display:none;">
+          Ver mais
+        </button>
+      </div>
+
+      <div id="boxEventosAluno" style="display:none; margin-top:12px;">
+        <div id="listaEventosAluno"></div>
       </div>
     </section>
 
-    <!-- Reposições detalhadas -->
-    <section class="card">
-      <h2>🔄 Reposições pendentes</h2>
-      <p style="font-size:12px; opacity:0.85; margin-top:6px;">
+    <!-- REPOSIÇÕES -->
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <h2 style="margin-bottom:6px;">🔄 Reposições pendentes</h2>
+      <p style="font-size:12px; opacity:0.85; margin-top:0;">
         Aqui aparecem ausências com reposição e aulas canceladas que ainda precisam ser compensadas.
       </p>
 
       <ul id="listaReposicoes" style="margin-top:10px;"></ul>
     </section>
 
-    <!-- Notas -->
-    <section class="card" style="grid-column: 1 / -1;">
-      <h2>📝 Notas</h2>
+    <!-- NOTAS -->
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <h2 style="margin-bottom:10px;">📝 Notas</h2>
 
       <form class="form-nota-compacta" id="form-nota">
         <div class="linha-nota">
@@ -174,7 +186,7 @@
         </div>
       </form>
 
-      <div class="media-geral-box">
+      <div class="media-geral-box" style="margin-top:10px;">
         <div class="media-geral">
           🐝 Média Geral:
           <b id="mediaGeral">0.0</b>
@@ -188,17 +200,14 @@
         </div>
       </div>
 
-      <p class="texto-lista-notas">
-        Lista de notas:
-      </p>
-
+      <p class="texto-lista-notas">Lista de notas:</p>
       <div id="listaNotas" class="notas-grid"></div>
     </section>
 
-    <!-- Histórico de aulas por último -->
-    <section class="card">
-      <h2>📚 Histórico de aulas</h2>
-      <p style="font-size:12px; opacity:0.85; margin-top:6px;">
+    <!-- HISTÓRICO -->
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <h2 style="margin-bottom:6px;">📚 Histórico de aulas</h2>
+      <p style="font-size:12px; opacity:0.85; margin-top:0;">
         Filtre por módulo e por status para localizar rapidamente o que procura.
       </p>
 
@@ -225,9 +234,25 @@
       </div>
 
       <div id="listaAulas" class="lista-historico" style="margin-top:14px;"></div>
+
+      <div id="boxExpandirAulas" style="display:none; margin-top:12px; text-align:center;">
+        <button type="button" id="btnExpandirAulas" class="btn">
+          Ver mais aulas
+        </button>
+      </div>
     </section>
 
-    <a href="resumo-professor.html" class="link-voltar">← Voltar</a>
+    <div style="display:flex; justify-content:center; margin:16px 0 4px;">
+      <button
+        id="btnVoltarRodape"
+        type="button"
+        class="btn"
+        style="padding:8px 14px;"
+      >
+        ← Voltar
+      </button>
+    </div>
+
   </main>
 
   <script type="module" src="js/detalhes-aluno.js"></script>

@@ -12,42 +12,81 @@
 
   <main class="container container-resumo">
 
-    <a href="resumo-geral.html" class="link-voltar" style="display:inline-block; margin-bottom:10px;">← Voltar</a>
+    <div style="display:flex; justify-content:flex-start; margin-bottom:10px;">
+      <a href="resumo-geral.html" class="btn" style="display:inline-block; padding:8px 14px; text-decoration:none;">
+        ← Voltar
+      </a>
+    </div>
 
     <h1 style="margin-bottom:8px;">Detalhes do Aluno</h1>
 
     <div id="msg" style="display:none; margin-bottom:10px;"></div>
 
-    <!-- Cabeçalho do aluno -->
-    <div class="card" style="margin-bottom:14px;">
-      <h2 id="tituloAluno">Carregando...</h2>
-      <p style="font-size:13px; opacity:0.85; margin-top:6px;" id="subtituloAluno"></p>
-    </div>
+    <!-- CABEÇALHO MAIS COMPACTO -->
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <h2 id="tituloAluno" style="margin:0 0 4px 0;">Carregando...</h2>
+      <p style="font-size:13px; opacity:0.85; margin:0;" id="subtituloAluno"></p>
+    </section>
 
-    <!-- ================= MÉDIAS ================= -->
-    <div class="dashboard">
-
-      <div class="card">
-        <h2>📊 Média geral</h2>
-        <p style="font-size:22px; font-weight:bold;" id="mediaGeral">-</p>
-        <p style="font-size:12px;">Total de avaliações: <b id="totalNotas">0</b></p>
+    <!-- MÉDIAS -->
+    <section
+      style="
+        display:grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap:10px;
+        margin-bottom:12px;
+      "
+    >
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">📊 Média geral</div>
+        <div style="font-size:24px; font-weight:700;" id="mediaGeral">-</div>
+        <div style="font-size:12px; margin-top:4px;">Total de avaliações: <b id="totalNotas">0</b></div>
       </div>
 
-      <div class="card" style="grid-column: 1 / -1;">
-        <h2>📚 Média por módulo</h2>
-        <div id="mediaPorModulo" style="margin-top:10px;">
+      <div class="card" style="padding:10px 12px; grid-column: 1 / -1;">
+        <div style="font-size:12px; opacity:0.8; margin-bottom:6px;">📚 Média por módulo</div>
+        <div id="mediaPorModulo">
           Nenhuma média calculada ainda
         </div>
       </div>
+    </section>
 
-    </div>
+    <!-- RESUMO -->
+    <section
+      style="
+        display:grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap:10px;
+        margin-bottom:12px;
+      "
+    >
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">✅ Presenças</div>
+        <div style="font-size:22px; font-weight:700;"><span id="cPresente">0</span></div>
+      </div>
 
-    <!-- Histórico de aulas -->
-    <div class="card">
-      <h2>📚 Histórico de aulas</h2>
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">⚠️ Ausências</div>
+        <div style="font-size:22px; font-weight:700;"><span id="cAusente">0</span></div>
+      </div>
 
-      <p style="font-size:12px; opacity:0.85; margin-top:6px;">
-        Mostrando data - conteúdo - lição de casa em destaque
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">❌ Canceladas</div>
+        <div style="font-size:22px; font-weight:700;"><span id="cCancelada">0</span></div>
+      </div>
+
+      <div class="card" style="padding:10px 12px;">
+        <div style="font-size:12px; opacity:0.8;">🎈 Eventos</div>
+        <div style="font-size:22px; font-weight:700;"><span id="cTrancada">0</span></div>
+      </div>
+    </section>
+
+    <!-- HISTÓRICO -->
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <h2 style="margin-bottom:6px;">📚 Histórico de aulas</h2>
+
+      <p style="font-size:12px; opacity:0.85; margin-top:0;">
+        Mostrando data, conteúdo e lição de casa em destaque.
       </p>
 
       <div style="margin-top:10px; margin-bottom:10px;">
@@ -61,60 +100,32 @@
 
       <ul id="listaAulas" class="lista-historico-aulas" style="margin-top:10px;"></ul>
 
-      <div id="boxExpandirAulas" style="display:none; margin-top:10px;">
+      <div id="boxExpandirAulas" style="display:none; margin-top:10px; text-align:center;">
         <button type="button" id="btnExpandirAulas" class="btn">
           Ver mais aulas
         </button>
       </div>
-    </div>
+    </section>
 
     <!-- NOTAS -->
-    <div class="dashboard">
-      <div class="card" style="grid-column: 1 / -1;">
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <h2 style="margin-bottom:6px;">📝 Notas</h2>
 
-        <h2>📝 Notas</h2>
+      <p style="font-size:12px; opacity:0.85; margin-top:0;">
+        Data — Tipo — Módulo — Nota
+      </p>
 
-        <p style="font-size:12px; opacity:0.85; margin-top:6px;">
-          Data — Tipo — Módulo — Nota
-        </p>
+      <ul id="listaNotas" style="margin-top:10px;"></ul>
+    </section>
 
-        <ul id="listaNotas" style="margin-top:10px;"></ul>
-
-      </div>
+    <div style="display:flex; justify-content:center; margin:16px 0 4px;">
+      <a href="resumo-geral.html" class="btn" style="display:inline-block; padding:8px 14px; text-decoration:none;">
+        ← Voltar
+      </a>
     </div>
-
-    <!-- Cards -->
-    <div class="dashboard">
-
-      <div class="card">
-        <h2>✅ Presenças</h2>
-        <p><b id="cPresente">0</b></p>
-      </div>
-
-      <div class="card">
-        <h2>⚠️ Ausências</h2>
-        <p><b id="cAusente">0</b></p>
-      </div>
-
-      <div class="card">
-        <h2>❌ Canceladas</h2>
-        <p><b id="cCancelada">0</b></p>
-      </div>
-
-      <div class="card">
-        <h2>🎈 Eventos participados</h2>
-        <p><b id="cTrancada">0</b></p>
-      </div>
-
-    </div>
-
-    <hr style="margin: 14px 0; border: none; border-top: 1px solid #eee;">
-
-    <a href="resumo-geral.html" class="link-voltar">← Voltar</a>
 
   </main>
 
   <script type="module" src="js/detalhes-aluno-admin.js"></script>
-
 </body>
 </html>

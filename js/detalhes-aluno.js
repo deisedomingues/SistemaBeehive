@@ -49,6 +49,12 @@ const filtroModulo = document.getElementById("filtroModulo");
 const filtroModuloAula = document.getElementById("filtroModuloAula");
 const filtroStatusAula = document.getElementById("filtroStatusAula");
 
+const btnVoltarTopo = document.getElementById("btnVoltarTopo");
+const btnVoltarRodape = document.getElementById("btnVoltarRodape");
+
+const boxExpandirAulas = document.getElementById("boxExpandirAulas");
+const btnExpandirAulas = document.getElementById("btnExpandirAulas");
+
 // ===============================
 // ESTADO
 // ===============================
@@ -57,6 +63,7 @@ let todasNotas = [];
 let todasAulas = [];
 let eventosAluno = [];
 let dadosCabecalho = null;
+let aulasExpandido = false;
 
 // ===============================
 // STATUS
@@ -118,21 +125,11 @@ function normalizarTexto(valor) {
   return String(valor || "").trim().toLowerCase();
 }
 
-function obterClasseStatus(status) {
-  if (status === STATUS.PRESENTE) return "status-presente";
-  if (status === STATUS.AUSENTE) return "status-ausente";
-  if (status === STATUS.CANCELADA) return "status-cancelada";
-  if (status === STATUS.REPOSICAO) return "status-reposicao";
-  if (status === STATUS.AULA_INSTRUMENTAL) return "status-instrumental";
-  if (status === STATUS.PLANTAO_DUVIDAS) return "status-plantao";
-  return "";
-}
-
 function ehAniversarioHoje(dataNascimento) {
   if (!dataNascimento) return false;
 
   const hoje = new Date();
-  const [ano, mes, dia] = dataNascimento.split("-").map(Number);
+  const [, mes, dia] = dataNascimento.split("-").map(Number);
 
   return hoje.getMonth() + 1 === mes && hoje.getDate() === dia;
 }
@@ -191,8 +188,12 @@ function textoAulaGravada(aula) {
   return aula.aula_gravada ? "Sim" : "Não";
 }
 
-if (!matriculaId) {
+function voltarParaResumo() {
   window.location.href = "resumo-professor.html";
+}
+
+if (!matriculaId) {
+  voltarParaResumo();
 }
 
 // ===============================
@@ -338,6 +339,118 @@ async function carregarAulas() {
   return data || [];
 }
 
+function atualizarBotaoExpandirAulas(totalAulas) {
+  if (!boxExpandirAulas || !btnExpandirAulas) return;
+
+  if (totalAulas <= 3) {
+    boxExpandirAulas.style.display = "none";
+    return;
+  }
+
+  boxExpandirAulas.style.display = "block";
+  btnExpandirAulas.textContent = aulasExpandido ? "Ver menos aulas" : "Ver mais aulas";
+}
+
+function obterAulasFiltradas() {
+  const moduloId = Number(filtroModuloAula?.value || "");
+  const status = filtroStatusAula?.value || "";
+
+  let filtradas = [...todasAulas];
+
+  if (moduloId) {
+    filtradas = filtradas.filter(
+      (aula) => Number(aula.modulo_id) === moduloId
+    );
+  }
+
+  if (status) {
+    filtradas = filtradas.filter(
+      (aula) => normalizarTexto(aula.status) === normalizarTexto(status)
+    );
+  }
+
+  return filtradas;
+}
+
+function renderAulas(aulasOriginais) {
+  limparLista(listaAulas);
+
+  if (!aulasOriginais.length) {
+    listaAulas.innerHTML = `<div class="vazio-box">Nenhuma aula encontrada com os filtros selecionados.</div>`;
+    atualizarBotaoExpandirAulas(0);
+    return;
+  }
+
+  const aulasParaMostrar = aulasExpandido ? aulasOriginais : aulasOriginais.slice(0, 3);
+  const totalAulasFiltradas = aulasOriginais.length;
+
+  aulasParaMostrar.forEach((aula, index) => {
+    const li = document.createElement("li");
+    li.style.listStyle = "none";
+    li.style.marginBottom = "0";
+    li.style.padding = "10px 0";
+    li.style.borderBottom = "1px solid #e6dfcf";
+
+    const numeroAula = totalAulasFiltradas - index;
+    const dataBR = formatarDataBR(aula.data_aula);
+    const conteudo = aula.conteudo?.trim() || "Sem conteúdo informado";
+    const licao = aula.licao_casa?.trim() || "Sem lição";
+    const professor = aula.professor?.nome || "-";
+    const status = aula.status || "-";
+    const parte = textoParte(aula.parte);
+    const justificativa = aula.justificativa?.trim() || "";
+    const gravada = textoAulaGravada(aula);
+    const nomeModulo = aula.modulo?.nome || "Sem módulo";
+    const observacaoStatus = obterTextoStatusExtra(aula);
+
+    const infosNormais = [
+      `Prof(a). ${professor}`,
+      `Módulo: ${nomeModulo}`,
+      `Status: ${status}`,
+      `Parte: ${parte}`
+    ];
+
+    if (justificativa) {
+      infosNormais.push(`Justificativa: ${justificativa}`);
+    }
+
+    if (aula.status === STATUS.AUSENTE) {
+      infosNormais.push(`Aula gravada: ${gravada}`);
+    }
+
+    if (aula.status === STATUS.AUSENTE && aula.precisa_reposicao) {
+      infosNormais.push("Reposição: pendente/solicitada");
+    }
+
+    if (observacaoStatus) {
+      infosNormais.push(observacaoStatus);
+    }
+
+    li.innerHTML = `
+      <div class="item-historico-flex">
+        <div class="item-historico-linha">
+          <div class="item-historico-topo-compacto">
+            ${escaparHtml(`Aula ${numeroAula}`)} • ${escaparHtml(dataBR)} - ${escaparHtml(conteudo)} - ${escaparHtml(licao)}
+          </div>
+
+          <div class="item-historico-detalhes">
+            ${escaparHtml(infosNormais.join(" | "))}
+          </div>
+        </div>
+      </div>
+    `;
+
+    listaAulas.appendChild(li);
+  });
+
+  atualizarBotaoExpandirAulas(aulasOriginais.length);
+}
+
+function atualizarRenderAulas() {
+  const aulasFiltradas = obterAulasFiltradas();
+  renderAulas(aulasFiltradas);
+}
+
 // ===============================
 // EVENTOS DO ALUNO
 // ===============================
@@ -411,19 +524,19 @@ function renderEventosAluno() {
     const situacao = evento.ativo ? "Ativo" : "Encerrado/Cancelado";
 
     return `
-      <div class="item-evento-aluno">
-        <div class="item-evento-aluno-topo">
+      <div class="item-evento-aluno" style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
+        <div class="item-evento-aluno-topo" style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
           <strong>${escaparHtml(evento.titulo || "Evento")}</strong>
           <span class="badge-evento-aluno">${escaparHtml(situacao)}</span>
         </div>
 
-        <p>
+        <p style="margin:6px 0 4px 0; font-size:13px;">
           ${escaparHtml(evento.tipo_evento || "Evento")} •
           ${formatarDataBR(evento.data_evento)}
           ${evento.hora_evento ? ` às ${escaparHtml(evento.hora_evento.slice(0, 5))}` : ""}
         </p>
 
-        <p>
+        <p style="margin:0; font-size:13px;">
           Link/local: ${escaparHtml(evento.local || "Não informado")}
         </p>
       </div>
@@ -518,94 +631,6 @@ function preencherContadores(aulas) {
   cReposicao.textContent = reposicoesPendentes;
   cInstrumental.textContent = instrumental;
   cPlantao.textContent = plantao;
-}
-
-// ===============================
-// RENDER AULAS
-// ===============================
-
-function renderAulas(aulas) {
-  limparLista(listaAulas);
-
-  if (!aulas.length) {
-    listaAulas.innerHTML = `<div class="vazio-box">Nenhuma aula encontrada com os filtros selecionados.</div>`;
-    return;
-  }
-
-  aulas.forEach((aula) => {
-    const dataBR = formatarDataBR(aula.data_aula);
-    const conteudo = aula.conteudo?.trim() || "Sem conteúdo informado";
-    const licao = aula.licao_casa?.trim() || "Sem lição";
-    const professor = aula.professor?.nome || "-";
-    const status = aula.status || "-";
-    const parte = textoParte(aula.parte);
-    const justificativa = aula.justificativa?.trim() || "";
-    const gravada = textoAulaGravada(aula);
-    const observacaoStatus = obterTextoStatusExtra(aula);
-
-    const infosNormais = [
-      `Prof(a). ${professor}`,
-      `Status: ${status}`,
-      `Parte: ${parte}`
-    ];
-
-    if (justificativa) {
-      infosNormais.push(`Justificativa: ${justificativa}`);
-    }
-
-    if (aula.status === STATUS.AUSENTE) {
-      infosNormais.push(`Aula gravada: ${gravada}`);
-    }
-
-    if (aula.status === STATUS.AUSENTE && aula.precisa_reposicao) {
-      infosNormais.push("Reposição: pendente/solicitada");
-    }
-
-    if (observacaoStatus) {
-      infosNormais.push(observacaoStatus);
-    }
-
-    const html = `
-      <article class="item-historico" style="border-bottom:1px solid #e6dfcf; padding:10px 0; margin:0;">
-        <div style="font-size:14px; line-height:1.5;">
-          <div style="font-weight:700; color:#2b2b2b; margin-bottom:4px; word-break:break-word;">
-            ${escaparHtml(dataBR)} - ${escaparHtml(conteudo)} - ${escaparHtml(licao)}
-          </div>
-
-          <div style="color:#5f5a50; font-size:13px; word-break:break-word;">
-            ${escaparHtml(infosNormais.join(" | "))}
-          </div>
-        </div>
-      </article>
-    `;
-
-    listaAulas.insertAdjacentHTML("beforeend", html);
-  });
-}
-
-// ===============================
-// FILTRO DAS AULAS
-// ===============================
-
-function aplicarFiltroAulas() {
-  const moduloId = Number(filtroModuloAula.value);
-  const status = filtroStatusAula.value;
-
-  let filtradas = [...todasAulas];
-
-  if (moduloId) {
-    filtradas = filtradas.filter(
-      (aula) => Number(aula.modulo_id) === moduloId
-    );
-  }
-
-  if (status) {
-    filtradas = filtradas.filter(
-      (aula) => normalizarTexto(aula.status) === normalizarTexto(status)
-    );
-  }
-
-  renderAulas(filtradas);
 }
 
 // ===============================
@@ -715,8 +740,20 @@ filtroModulo.addEventListener("change", () => {
 // FILTROS DAS AULAS
 // ===============================
 
-filtroModuloAula?.addEventListener("change", aplicarFiltroAulas);
-filtroStatusAula?.addEventListener("change", aplicarFiltroAulas);
+filtroModuloAula?.addEventListener("change", () => {
+  aulasExpandido = false;
+  atualizarRenderAulas();
+});
+
+filtroStatusAula?.addEventListener("change", () => {
+  aulasExpandido = false;
+  atualizarRenderAulas();
+});
+
+btnExpandirAulas?.addEventListener("click", () => {
+  aulasExpandido = !aulasExpandido;
+  atualizarRenderAulas();
+});
 
 // ===============================
 // SALVAR NOTA
@@ -765,6 +802,13 @@ formNota.addEventListener("submit", async (e) => {
 });
 
 // ===============================
+// BOTÕES VOLTAR
+// ===============================
+
+btnVoltarTopo?.addEventListener("click", voltarParaResumo);
+btnVoltarRodape?.addEventListener("click", voltarParaResumo);
+
+// ===============================
 // INIT
 // ===============================
 
@@ -778,7 +822,7 @@ async function init() {
   todasAulas = await carregarAulas();
 
   preencherContadores(todasAulas);
-  renderAulas(todasAulas);
+  atualizarRenderAulas();
 
   await carregarEventosAluno();
   await carregarNotas();
