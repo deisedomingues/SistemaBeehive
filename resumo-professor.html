@@ -22,13 +22,9 @@
       <a href="home-professor.html" class="link-voltar link-voltar-topo">← Voltar</a>
     </header>
 
-    <!-- mensagem pequena -->
     <div id="msg" class="msg-resumo-professor" style="display:none;"></div>
 
-
-    <!-- =========================
-         CONSULTA DE ALUNO
-    ========================== -->
+    <!-- CONSULTA DE ALUNO -->
     <section class="bloco-resumo-professor">
       <div class="cabecalho-bloco-resumo">
         <h2>🔎 Consulta de aluno</h2>
@@ -55,33 +51,26 @@
       </div>
     </section>
 
-  
+    <!-- NOTIFICAÇÕES -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>🔔 Notificações</h2>
+        <p>Informações que merecem sua atenção agora.</p>
+      </div>
 
-   
+      <div class="card card-destaque">
+        <h2>📝 Avaliações previstas</h2>
+        <p class="texto-ajuda-resumo">
+          A cada 14 aulas válidas no módulo atual, uma avaliação pode ficar pendente.
+        </p>
 
-      <section class="bloco-resumo-professor">
-  <div class="cabecalho-bloco-resumo">
-    <h2>🔔 Notificações</h2>
-    <p>Informações que merecem sua atenção agora.</p>
-  </div>
+        <div id="listaAvaliacoesContainer" class="lista-interna-resumo">
+          <p style="font-size:14px;">Carregando...</p>
+        </div>
+      </div>
+    </section>
 
-  <div class="card card-destaque">
-    <h2>📝 Avaliações previstas</h2>
-    <p class="texto-ajuda-resumo">
-      A cada 14 aulas válidas, uma avaliação pode ficar pendente.
-    </p>
-
-
-    
-    <div id="listaAvaliacoesContainer" class="lista-interna-resumo">
-      <p style="font-size:14px;">Carregando...</p>
-    </div>
-  </div>
-</section>
-
- <!-- =========================
-         AULAS
-    ========================== -->
+    <!-- AULAS -->
     <section class="bloco-resumo-professor">
       <div class="cabecalho-bloco-resumo">
         <h2>📅 Aulas</h2>
@@ -94,7 +83,7 @@
           <p>Foram dadas <b id="qtdAulasPeriodo">0</b> aulas no período selecionado.</p>
 
           <p class="texto-ajuda-resumo">
-            (contando somente status “Presente”)
+            (contando presente, ausente, reposição, aula instrumental e plantão de dúvidas)
           </p>
 
           <div class="filtro-interno-aulas">
@@ -108,6 +97,18 @@
               <input type="date" id="dataFim" />
             </label>
 
+            <label>
+              Filtrar status
+              <select id="filtroStatusPeriodo">
+                <option value="">Todos</option>
+                <option value="Presente">Presente</option>
+                <option value="Ausente">Ausente</option>
+                <option value="Reposição">Reposição</option>
+                <option value="Aula Instrumental">Aula Instrumental</option>
+                <option value="Plantão de dúvidas">Plantão de dúvidas</option>
+              </select>
+            </label>
+
             <div class="grupo-botoes-filtro">
               <button id="btnAplicarFiltro" class="btn" type="button">Aplicar filtro</button>
               <button id="btnLimparFiltro" class="btn btn-neutro" type="button">Limpar</button>
@@ -115,12 +116,43 @@
           </div>
         </div>
       </div>
+
+      <div
+        style="
+          display:grid;
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+          gap:10px;
+          margin-top:12px;
+        "
+      >
+        <div class="card" style="padding:10px 12px;">
+          <div style="font-size:12px; opacity:0.8;">✅ Presente</div>
+          <div style="font-size:22px; font-weight:700;"><span id="cAulasPresente">0</span></div>
+        </div>
+
+        <div class="card" style="padding:10px 12px;">
+          <div style="font-size:12px; opacity:0.8;">⚠️ Ausente</div>
+          <div style="font-size:22px; font-weight:700;"><span id="cAulasAusente">0</span></div>
+        </div>
+
+        <div class="card" style="padding:10px 12px;">
+          <div style="font-size:12px; opacity:0.8;">🔄 Reposição</div>
+          <div style="font-size:22px; font-weight:700;"><span id="cAulasReposicao">0</span></div>
+        </div>
+
+        <div class="card" style="padding:10px 12px;">
+          <div style="font-size:12px; opacity:0.8;">🧰 Instrumental</div>
+          <div style="font-size:22px; font-weight:700;"><span id="cAulasInstrumental">0</span></div>
+        </div>
+
+        <div class="card" style="padding:10px 12px;">
+          <div style="font-size:12px; opacity:0.8;">💡 Plantão</div>
+          <div style="font-size:22px; font-weight:700;"><span id="cAulasPlantao">0</span></div>
+        </div>
+      </div>
     </section>
 
-
- <!-- =========================
-         VISÃO GERAL
-    ========================== -->
+    <!-- VISÃO GERAL -->
     <section class="bloco-resumo-professor">
       <div class="cabecalho-bloco-resumo">
         <h2>📊 Visão geral</h2>
@@ -160,11 +192,7 @@
       </div>
     </section>
 
-   
-    
-    <!-- =========================
-         CONTATO
-    ========================== -->
+    <!-- CONTATO -->
     <section class="bloco-resumo-professor">
       <div class="cabecalho-bloco-resumo">
         <h2>☎️ Contato com a escola</h2>
@@ -201,10 +229,8 @@
       </div>
     </section>
 
-    
-   <a href="home-professor.html" class="link-voltar link-voltar-topo">← Voltar</a>
+    <a href="home-professor.html" class="link-voltar link-voltar-topo">← Voltar</a>
   </main>
-
 
   <script type="module" src="js/resumo-professor.js"></script>
 </body>

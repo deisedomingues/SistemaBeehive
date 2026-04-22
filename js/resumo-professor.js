@@ -17,6 +17,7 @@ const dataInicio = document.getElementById("dataInicio");
 const dataFim = document.getElementById("dataFim");
 const btnAplicarFiltro = document.getElementById("btnAplicarFiltro");
 const btnLimparFiltro = document.getElementById("btnLimparFiltro");
+const filtroStatusPeriodo = document.getElementById("filtroStatusPeriodo");
 
 const listaMateriasProfessor = document.getElementById("listaMateriasProfessor");
 const qtdTotalAlunos = document.getElementById("qtdTotalAlunos");
@@ -29,6 +30,12 @@ const btnDetalhes = document.getElementById("btnDetalhes");
 
 const cardsAlunosPorMateria = document.getElementById("cardsAlunosPorMateria");
 const cardsModulosPorMateria = document.getElementById("cardsModulosPorMateria");
+
+const cAulasPresente = document.getElementById("cAulasPresente");
+const cAulasAusente = document.getElementById("cAulasAusente");
+const cAulasReposicao = document.getElementById("cAulasReposicao");
+const cAulasInstrumental = document.getElementById("cAulasInstrumental");
+const cAulasPlantao = document.getElementById("cAulasPlantao");
 
 /* =========================================================
    ESTADO
@@ -69,10 +76,10 @@ async function preencherFiltroInicial() {
 
   dataInicio.value = primeiraAula || hoje;
   dataFim.value = hoje;
-}
 
-function statusContaComoAulaNoPeriodo(status) {
-  return String(status || "").trim().toLowerCase() === "presente";
+  if (filtroStatusPeriodo) {
+    filtroStatusPeriodo.value = "";
+  }
 }
 
 function criarParagrafoVazio(texto) {
@@ -104,11 +111,25 @@ function aulaContaParaCicloDeAvaliacao(aula) {
   const status = normalizarTexto(aula?.status);
   const gravada = aula?.aula_gravada === true;
 
-  if (status === "presente") return true;
-  if (status === "reposição" || status === "reposicao") return true;
+  if (status === "presente" && gravada) return true;
+  if ((status === "reposição" || status === "reposicao") && gravada) return true;
   if (status === "ausente" && gravada) return true;
 
   return false;
+}
+
+function statusContaComoAulaNoPeriodo(aula) {
+  const status = normalizarTexto(aula?.status);
+
+  return [
+    "presente",
+    "ausente",
+    "reposição",
+    "reposicao",
+    "aula instrumental",
+    "plantão de dúvidas",
+    "plantao de duvidas"
+  ].includes(status);
 }
 
 /* =========================================================
@@ -200,6 +221,7 @@ async function buscarPrimeiraAulaProfessor() {
 async function carregarAulasProfessorPorPeriodo() {
   const inicio = dataInicio.value || null;
   const fim = dataFim.value || null;
+  const statusSelecionado = filtroStatusPeriodo?.value || "";
 
   let query = supabase
     .from("aula")
@@ -223,9 +245,19 @@ async function carregarAulasProfessorPorPeriodo() {
 
   const matriculaIdsPermitidas = new Set(matriculasFiltradas.map((m) => m.id));
 
-  aulasFiltradasProfessor = (data || []).filter((aula) =>
+  let filtradas = (data || []).filter((aula) =>
     matriculaIdsPermitidas.has(aula.matricula_id)
   );
+
+  filtradas = filtradas.filter((aula) => statusContaComoAulaNoPeriodo(aula));
+
+  if (statusSelecionado) {
+    filtradas = filtradas.filter(
+      (aula) => normalizarTexto(aula.status) === normalizarTexto(statusSelecionado)
+    );
+  }
+
+  aulasFiltradasProfessor = filtradas;
 }
 
 async function carregarNotasSistema() {
@@ -258,33 +290,46 @@ async function carregarNotasSistema() {
   notasDoSistema = data || [];
 }
 
-async function carregarAulasValidasPorMatriculaEModuloAtual() {
+/**
+ * Esta função foi feita para bater com a tela detalhes-aluno:
+ * - olha a matrícula
+ * - olha o módulo atual da matrícula
+ * - conta aulas válidas daquele módulo
+ * - compara com as avaliações lançadas daquele mesmo módulo
+ */
+async function carregarPendenciasAvaliacaoPorMatricula() {
   const idsMatriculas = matriculasFiltradas.map((m) => m.id);
-  if (idsMatriculas.length === 0) return {};
+  if (!idsMatriculas.length) return [];
 
   const moduloAtualPorMatricula = {};
+  const metaPorMatricula = {};
+
   matriculasFiltradas.forEach((m) => {
-    moduloAtualPorMatricula[String(m.id)] = Number(m.modulo_id);
+    const mid = String(m.id);
+    moduloAtualPorMatricula[mid] = Number(m.modulo_id || 0);
+    metaPorMatricula[mid] = {
+      aluno: m?.aluno?.nome || "Aluno",
+      materia: m?.modulo?.materia?.nome || "Matéria",
+      modulo: m?.modulo?.nome || "Módulo"
+    };
   });
 
-  const { data, error } = await supabase
+  const { data: aulas, error: errorAulas } = await supabase
     .from("aula")
     .select(`
       id,
       matricula_id,
       modulo_id,
       status,
-      aula_gravada,
-      professor_id
+      aula_gravada
     `)
-    .in("matricula_id", idsMatriculas)
-    .eq("professor_id", professorId);
+    .in("matricula_id", idsMatriculas);
 
-  if (error) throw error;
+  if (errorAulas) throw errorAulas;
 
-  const contagem = {};
+  const aulasValidasPorMatricula = {};
 
-  (data || []).forEach((aula) => {
+  (aulas || []).forEach((aula) => {
     const mid = String(aula.matricula_id);
     const moduloAtual = Number(moduloAtualPorMatricula[mid] || 0);
     const moduloDaAula = Number(aula.modulo_id || 0);
@@ -292,10 +337,47 @@ async function carregarAulasValidasPorMatriculaEModuloAtual() {
     if (!moduloAtual || moduloDaAula !== moduloAtual) return;
     if (!aulaContaParaCicloDeAvaliacao(aula)) return;
 
-    contagem[mid] = (contagem[mid] || 0) + 1;
+    aulasValidasPorMatricula[mid] = (aulasValidasPorMatricula[mid] || 0) + 1;
   });
 
-  return contagem;
+  const avaliacoesPorMatricula = {};
+
+  notasDoSistema.forEach((nota) => {
+    const mid = String(nota.matricula_id);
+    const moduloAtual = Number(moduloAtualPorMatricula[mid] || 0);
+    const moduloDaNota = Number(nota.modulo_id || 0);
+
+    if (!moduloAtual || moduloDaNota !== moduloAtual) return;
+    if (!ehNotaDeAvaliacao(nota)) return;
+
+    avaliacoesPorMatricula[mid] = (avaliacoesPorMatricula[mid] || 0) + 1;
+  });
+
+  const pendencias = [];
+
+  idsMatriculas.forEach((matriculaId) => {
+    const mid = String(matriculaId);
+    const totalAulasValidas = aulasValidasPorMatricula[mid] || 0;
+    const totalAvaliacoesLancadas = avaliacoesPorMatricula[mid] || 0;
+
+    const avaliacoesEsperadas = Math.floor(totalAulasValidas / 14);
+    const avaliacoesPendentes = Math.max(0, avaliacoesEsperadas - totalAvaliacoesLancadas);
+
+    if (avaliacoesPendentes <= 0) return;
+
+    for (let i = 1; i <= avaliacoesPendentes; i++) {
+      pendencias.push({
+        aluno: metaPorMatricula[mid]?.aluno || "Aluno",
+        materia: metaPorMatricula[mid]?.materia || "Matéria",
+        modulo: metaPorMatricula[mid]?.modulo || "Módulo",
+        avaliacao: `Avaliação ${totalAvaliacoesLancadas + i}`,
+        aulasValidas: totalAulasValidas,
+        avaliacoesLancadas: totalAvaliacoesLancadas
+      });
+    }
+  });
+
+  return pendencias;
 }
 
 /* =========================================================
@@ -328,8 +410,31 @@ function renderTotalAlunos() {
 }
 
 function renderAulasPeriodo() {
-  const total = aulasFiltradasProfessor.filter((a) => statusContaComoAulaNoPeriodo(a.status)).length;
-  qtdAulasPeriodo.textContent = String(total);
+  qtdAulasPeriodo.textContent = String(aulasFiltradasProfessor.length);
+}
+
+function renderCardsStatusAulasPeriodo() {
+  let presente = 0;
+  let ausente = 0;
+  let reposicao = 0;
+  let instrumental = 0;
+  let plantao = 0;
+
+  aulasFiltradasProfessor.forEach((aula) => {
+    const status = normalizarTexto(aula.status);
+
+    if (status === "presente") presente++;
+    else if (status === "ausente") ausente++;
+    else if (status === "reposição" || status === "reposicao") reposicao++;
+    else if (status === "aula instrumental") instrumental++;
+    else if (status === "plantão de dúvidas" || status === "plantao de duvidas") plantao++;
+  });
+
+  cAulasPresente.textContent = String(presente);
+  cAulasAusente.textContent = String(ausente);
+  cAulasReposicao.textContent = String(reposicao);
+  cAulasInstrumental.textContent = String(instrumental);
+  cAulasPlantao.textContent = String(plantao);
 }
 
 function renderSelectMatriculas() {
@@ -421,42 +526,7 @@ function renderCardsModulosPorMateria() {
   cardsModulosPorMateria.innerHTML = html;
 }
 
-function contarAvaliacoesDoModuloAtual(matriculaId, moduloId) {
-  return notasDoSistema.filter((nota) => {
-    if (String(nota.matricula_id) !== String(matriculaId)) return false;
-    if (Number(nota.modulo_id || 0) !== Number(moduloId || 0)) return false;
-    return ehNotaDeAvaliacao(nota);
-  }).length;
-}
-
-function renderAvaliacoes(aulasValidasPorMatricula) {
-  const pendencias = [];
-
-  matriculasFiltradas.forEach((m) => {
-    const matriculaId = m.id;
-    const moduloId = m.modulo_id;
-    const totalAulasValidasModuloAtual = aulasValidasPorMatricula[String(matriculaId)] || 0;
-    const totalAvaliacoesLancadasNoModulo = contarAvaliacoesDoModuloAtual(matriculaId, moduloId);
-
-    const avaliacoesEsperadas = Math.floor(totalAulasValidasModuloAtual / 14);
-    const avaliacoesPendentes = Math.max(0, avaliacoesEsperadas - totalAvaliacoesLancadasNoModulo);
-
-    if (avaliacoesPendentes <= 0) return;
-
-    for (let i = 1; i <= avaliacoesPendentes; i++) {
-      const numeroDaProximaAvaliacao = totalAvaliacoesLancadasNoModulo + i;
-
-      pendencias.push({
-        aluno: m?.aluno?.nome || "Aluno",
-        materia: m?.modulo?.materia?.nome || "Matéria",
-        modulo: m?.modulo?.nome || "Módulo",
-        avaliacao: `Avaliação ${numeroDaProximaAvaliacao}`,
-        aulasValidas: totalAulasValidasModuloAtual,
-        avaliacoesLancadas: totalAvaliacoesLancadasNoModulo
-      });
-    }
-  });
-
+function renderAvaliacoes(pendencias) {
   if (!pendencias.length) {
     listaAvaliacoesContainer.innerHTML = criarParagrafoVazio(
       "Nenhuma avaliação pendente no momento."
@@ -499,6 +569,11 @@ async function montarResumo() {
     if (!materiaIdsProfessor.length) {
       qtdTotalAlunos.textContent = "0";
       qtdAulasPeriodo.textContent = "0";
+      cAulasPresente.textContent = "0";
+      cAulasAusente.textContent = "0";
+      cAulasReposicao.textContent = "0";
+      cAulasInstrumental.textContent = "0";
+      cAulasPlantao.textContent = "0";
       listaAvaliacoesContainer.innerHTML = criarParagrafoVazio("Sem dados para exibir.");
       cardsAlunosPorMateria.innerHTML = `<div class="card"><p>Sem matérias vinculadas.</p></div>`;
       cardsModulosPorMateria.innerHTML = `<div class="card"><p>Sem matérias vinculadas.</p></div>`;
@@ -512,12 +587,13 @@ async function montarResumo() {
 
     renderTotalAlunos();
     renderAulasPeriodo();
+    renderCardsStatusAulasPeriodo();
     renderSelectMatriculas();
     renderCardsAlunosPorMateria();
     renderCardsModulosPorMateria();
 
-    const aulasValidasPorMatricula = await carregarAulasValidasPorMatriculaEModuloAtual();
-    renderAvaliacoes(aulasValidasPorMatricula);
+    const pendencias = await carregarPendenciasAvaliacaoPorMatricula();
+    renderAvaliacoes(pendencias);
 
   } catch (error) {
     console.error("Erro ao montar resumo do professor:", error);

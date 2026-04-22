@@ -427,7 +427,8 @@ async function carregarAulas() {
       professor:professor_id ( nome )
     `)
     .eq("matricula_id", matriculaId)
-    .order("data_aula", { ascending: false });
+    .order("data_aula", { ascending: false })
+    .order("id", { ascending: false });
 
   if (error) {
     console.error(error);
