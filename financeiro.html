@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beehive | Financeiro</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container home-admin-page">
+    <section class="cabecalho-admin-central">
+      <h1>Financeiro</h1>
+      <p class="subtitulo-admin">
+        Escolha uma área para continuar no controle financeiro da escola.
+      </p>
+    </section>
+
+    <section class="painel-admin-cards">
+
+      <a href="financeiro-hora-aula.html" class="card-admin-link">
+        <article class="card-admin">
+          <div class="card-admin-icone">⏱️</div>
+          <div class="card-admin-conteudo">
+            <h2>Registro de hora-aula</h2>
+            <p>
+              Informe a duração das aulas gravadas e visualize a prévia de pagamento por professor.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="#" class="card-admin-link card-financeiro-bloqueado" data-modulo="Resumo geral do financeiro">
+        <article class="card-admin">
+          <div class="card-admin-icone">📈</div>
+          <div class="card-admin-conteudo">
+            <h2>Resumo geral</h2>
+            <p>
+              Consulte o total previsto por professor, pagos, pendentes e visão geral do período.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="#" class="card-admin-link card-financeiro-bloqueado" data-modulo="Lançamentos fixos">
+        <article class="card-admin">
+          <div class="card-admin-icone">🧾</div>
+          <div class="card-admin-conteudo">
+            <h2>Lançamentos fixos</h2>
+            <p>
+              Cadastre ajuda de custo, adicionais, bônus, descontos e outros valores fixos.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <a href="#" class="card-admin-link card-financeiro-bloqueado" data-modulo="Fechamento e pagamentos">
+        <article class="card-admin">
+          <div class="card-admin-icone">💸</div>
+          <div class="card-admin-conteudo">
+            <h2>Fechamento e pagamentos</h2>
+            <p>
+              Organize o fechamento mensal, registre pagamentos e acompanhe o histórico financeiro.
+            </p>
+          </div>
+        </article>
+      </a>
+
+    </section>
+
+    <div id="msgFinanceiro" style="display:none; margin-top:14px;"></div>
+
+    <a href="home-admin.html" class="link-voltar" style="margin-top:16px;">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/financeiro.js"></script>
+</body>
+</html>

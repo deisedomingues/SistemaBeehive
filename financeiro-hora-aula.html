@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Registro de hora-aula | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+    <a href="financeiro.html" class="link-voltar" style="margin-bottom:12px; display:inline-block;">← Voltar</a>
+
+    <h1 style="margin-bottom:8px;">Registro de hora-aula</h1>
+    <p style="margin-bottom:18px; opacity:0.9;">
+      Selecione o professor e o período desejado para informar a duração das aulas e visualizar uma prévia do valor das aulas.
+    </p>
+
+    <div id="msg" style="display:none; margin-bottom:12px;"></div>
+
+    <section class="card" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:12px;">Filtros</h2>
+
+      <div style="
+        display:grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap:12px;
+        align-items:end;
+      ">
+        <label>
+          Professor
+          <select id="filtroProfessor" style="margin-top:6px;">
+            <option value="">Carregando professores...</option>
+          </select>
+        </label>
+
+        <label>
+          Dia
+          <select id="filtroDia" style="margin-top:6px;">
+            <option value="">Todos os dias</option>
+          </select>
+        </label>
+
+        <label>
+          Mês
+          <select id="filtroMes" style="margin-top:6px;">
+            <option value="">Todos os meses</option>
+            <option value="1">Janeiro</option>
+            <option value="2">Fevereiro</option>
+            <option value="3">Março</option>
+            <option value="4">Abril</option>
+            <option value="5">Maio</option>
+            <option value="6">Junho</option>
+            <option value="7">Julho</option>
+            <option value="8">Agosto</option>
+            <option value="9">Setembro</option>
+            <option value="10">Outubro</option>
+            <option value="11">Novembro</option>
+            <option value="12">Dezembro</option>
+          </select>
+        </label>
+
+        <label>
+          Ano
+          <select id="filtroAno" style="margin-top:6px;">
+            <option value="">Todos os anos</option>
+          </select>
+        </label>
+
+        <button id="btnBuscar" class="btn" type="button">
+          Buscar aulas
+        </button>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:12px;">Resumo do período</h2>
+
+      <div style="
+        display:grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap:12px;
+      ">
+        <div style="padding:12px; border:1px solid #eee; border-radius:10px; background:#fffdf5;">
+          <div style="font-size:12px; opacity:0.8;">Aulas encontradas</div>
+          <div id="resumoQtdAulas" style="font-size:24px; font-weight:700; margin-top:6px;">0</div>
+        </div>
+
+        <div style="padding:12px; border:1px solid #eee; border-radius:10px; background:#fffdf5;">
+          <div style="font-size:12px; opacity:0.8;">Total de minutos</div>
+          <div id="resumoMinutos" style="font-size:24px; font-weight:700; margin-top:6px;">0</div>
+        </div>
+
+        <div style="padding:12px; border:1px solid #eee; border-radius:10px; background:#fffdf5;">
+          <div style="font-size:12px; opacity:0.8;">Valor estimado das aulas</div>
+          <div id="resumoValor" style="font-size:24px; font-weight:700; margin-top:6px;">R$ 0,00</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <div style="margin-bottom:12px;">
+        <h2 style="margin:0 0 6px 0;">Aulas do professor</h2>
+        <p style="margin:0; opacity:0.85; font-size:13px;">
+          Aulas coletivas aparecem agrupadas em uma única linha. Cada card possui seu próprio botão de salvar.
+        </p>
+      </div>
+
+      <div id="listaAulas">
+        <div style="opacity:0.8; font-size:13px;">Selecione um professor e clique em buscar.</div>
+      </div>
+    </section>
+
+    <a href="financeiro.html" class="link-voltar" style="margin-top:10px;">← Voltar</a>
+  </main>
+
+  <script type="module" src="js/financeiro-hora-aula.js"></script>
+</body>
+</html>
