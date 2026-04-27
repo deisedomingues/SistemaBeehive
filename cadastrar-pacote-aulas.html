@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastrar Pacote de Aulas | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+
+    <div style="display:flex; justify-content:flex-start; margin-bottom:10px;">
+      <button
+        id="btnVoltar"
+        type="button"
+        class="btn"
+        style="padding:8px 14px;"
+      >
+        ← Voltar
+      </button>
+    </div>
+
+    <h1 style="margin-bottom:8px;">Cadastrar pacote de aulas</h1>
+
+    <p style="font-size:14px; opacity:0.9; margin-bottom:16px;">
+      Use esta tela para registrar a compra ou renovação de pacote de aulas do aluno.
+      Cada pacote fica salvo no histórico e não substitui pacotes anteriores.
+    </p>
+
+    <div id="msg" style="display:none; margin-bottom:12px;"></div>
+
+    <section class="card" style="padding:14px; margin-bottom:14px;">
+      <h2 style="margin-bottom:10px;">Novo pacote</h2>
+
+      <form id="formPacote">
+
+        <div
+          style="
+            display:grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap:12px;
+          "
+        >
+          <label>
+            Aluno
+            <select id="alunoSelect" required>
+              <option value="">Carregando alunos...</option>
+            </select>
+          </label>
+
+          <label>
+            Curso / matéria
+            <select id="materiaSelect" required disabled>
+              <option value="">Selecione primeiro o aluno</option>
+            </select>
+          </label>
+
+          <label>
+            Quantidade de aulas
+            <input
+              type="number"
+              id="quantidadeAulas"
+              min="1"
+              value="36"
+              required
+            />
+          </label>
+
+          <label>
+            Data de início
+            <input
+              type="date"
+              id="dataInicio"
+              required
+            />
+          </label>
+        </div>
+
+        <label style="display:block; margin-top:12px;">
+          Observação
+          <textarea
+            id="observacao"
+            rows="3"
+            placeholder="Exemplo: Renovação feita em dinheiro, pacote promocional, continuidade do módulo anterior..."
+          ></textarea>
+        </label>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+          <button type="submit" class="btn">
+            Salvar pacote
+          </button>
+        </div>
+
+      </form>
+    </section>
+
+    <section class="card" style="padding:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div>
+          <h2 style="margin:0;">Pacotes cadastrados</h2>
+          <p style="font-size:12px; opacity:0.85; margin:4px 0 0 0;">
+            Lista dos pacotes mais recentes registrados no sistema.
+          </p>
+        </div>
+
+        <button type="button" id="btnRecarregar" class="btn" style="padding:8px 12px;">
+          Atualizar
+        </button>
+      </div>
+
+      <div id="listaPacotes" style="margin-top:12px;"></div>
+    </section>
+
+  </main>
+
+  <script type="module" src="js/cadastrar-pacote-aulas.js"></script>
+</body>
+</html>
