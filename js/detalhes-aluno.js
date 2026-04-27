@@ -33,6 +33,7 @@ const textoAvaliacaoPendente = document.getElementById("textoAvaliacaoPendente")
 
 const listaAulas = document.getElementById("listaAulas");
 const listaReposicoes = document.getElementById("listaReposicoes");
+const btnToggleReposicoes = document.getElementById("btnToggleReposicoes");
 
 const btnToggleEventos = document.getElementById("btnToggleEventos");
 const boxEventosAluno = document.getElementById("boxEventosAluno");
@@ -67,6 +68,8 @@ let todasAulas = [];
 let eventosAluno = [];
 let dadosCabecalho = null;
 let aulasExpandido = false;
+let reposicoesExpandido = false;
+let reposicoesPendentesLista = [];
 
 // ===============================
 // STATUS
@@ -181,50 +184,91 @@ function aulaContaComoValida(aula) {
   return false;
 }
 
-function contarAvaliacoesDoModuloAtual() {
-  const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
-
-  return todasNotas.filter((nota) => {
-    if (Number(nota.modulo_id || 0) !== moduloAtual) return false;
-    return ehNotaDeAvaliacao(nota);
-  }).length;
-}
-
-function contarAulasValidasModuloAtual() {
+function obterAulasValidasModuloAtual() {
   const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
 
   return todasAulas.filter((aula) => {
     if (Number(aula.modulo_id || 0) !== moduloAtual) return false;
     return aulaContaComoValida(aula);
+  });
+}
+
+function obterNotasDeAvaliacaoModuloAtual() {
+  const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
+
+  return todasNotas
+    .filter((nota) => {
+      if (Number(nota.modulo_id || 0) !== moduloAtual) return false;
+      return ehNotaDeAvaliacao(nota);
+    })
+    .sort((a, b) => {
+      const dataA = String(a.data || "");
+      const dataB = String(b.data || "");
+
+      if (dataA !== dataB) {
+        return dataA.localeCompare(dataB);
+      }
+
+      return Number(a.id || 0) - Number(b.id || 0);
+    });
+}
+
+function contarAulasValidasModuloAtual() {
+  return obterAulasValidasModuloAtual().length;
+}
+
+function contarAulasValidasDesdeUltimaAvaliacao() {
+  const aulasValidas = obterAulasValidasModuloAtual();
+  const avaliacoes = obterNotasDeAvaliacaoModuloAtual();
+
+  if (!avaliacoes.length) {
+    return aulasValidas.length;
+  }
+
+  const ultimaAvaliacao = avaliacoes[avaliacoes.length - 1];
+  const dataUltimaAvaliacao = String(ultimaAvaliacao.data || "");
+
+  return aulasValidas.filter((aula) => {
+    const dataAula = String(aula.data_aula || "");
+
+    /*
+      Regra:
+      Depois que a avaliação é lançada, o contador pedagógico recomeça.
+      Como a tabela nota não está ligada a uma aula específica, usamos a data da nota
+      como ponto de corte. Se a avaliação for registrada no mesmo dia de uma aula,
+      essa aula não entra no próximo ciclo.
+    */
+    return dataAula > dataUltimaAvaliacao;
   }).length;
 }
 
 function atualizarCardAulasValidasEAvaliacao() {
   const totalAulasValidas = contarAulasValidasModuloAtual();
-  const totalAvaliacoesLancadas = contarAvaliacoesDoModuloAtual();
-  const avaliacoesEsperadas = Math.floor(totalAulasValidas / 14);
-  const avaliacoesPendentes = Math.max(0, avaliacoesEsperadas - totalAvaliacoesLancadas);
+  const avaliacoes = obterNotasDeAvaliacaoModuloAtual();
+  const totalAvaliacoesLancadas = avaliacoes.length;
+  const aulasDesdeUltimaAvaliacao = contarAulasValidasDesdeUltimaAvaliacao();
+  const proximaAvaliacao = totalAvaliacoesLancadas + 1;
 
   cAulasValidas.textContent = String(totalAulasValidas);
 
-  if (avaliacoesPendentes > 0) {
-    const proximaAvaliacao = totalAvaliacoesLancadas + 1;
-
+  if (aulasDesdeUltimaAvaliacao >= 14) {
     statusAvaliacaoPendente.textContent = `Pendente: Avaliação ${proximaAvaliacao}`;
     statusAvaliacaoPendente.style.color = "#b71c1c";
 
     textoAvaliacaoPendente.textContent =
-      `${totalAulasValidas} aula(s) válidas no módulo atual • ` +
+      `${totalAulasValidas} aula(s) válida(s) no módulo atual • ` +
+      `${aulasDesdeUltimaAvaliacao} aula(s) válida(s) desde a última avaliação • ` +
       `${totalAvaliacoesLancadas} avaliação(ões) lançada(s). ` +
-      `Ao lançar a próxima avaliação, essa pendência é abatida.`;
+      `Ao lançar a próxima avaliação, o contador recomeça.`;
   } else {
+    const faltam = 14 - aulasDesdeUltimaAvaliacao;
+
     statusAvaliacaoPendente.textContent = "Nenhuma avaliação pendente";
     statusAvaliacaoPendente.style.color = "#1b5e20";
 
-    const faltam = 14 - (totalAulasValidas % 14 || 14);
-
     textoAvaliacaoPendente.textContent =
-      `${totalAulasValidas} aula(s) válidas no módulo atual • ` +
+      `${totalAulasValidas} aula(s) válida(s) no módulo atual • ` +
+      `${aulasDesdeUltimaAvaliacao} aula(s) válida(s) desde a última avaliação • ` +
       `${totalAvaliacoesLancadas} avaliação(ões) lançada(s). ` +
       `Faltam ${faltam} aula(s) válida(s) para a próxima previsão.`;
   }
@@ -635,21 +679,90 @@ function renderEventosAluno() {
 // CONTADORES + REPOSIÇÕES
 // ===============================
 
+function obterReposicoesPendentes(aulas) {
+  const idsAulasOriginaisJaRepostas = new Set(
+    (aulas || [])
+      .filter((x) => normalizarTexto(x.status) === normalizarTexto(STATUS.REPOSICAO) && x.aula_original_id)
+      .map((x) => Number(x.aula_original_id))
+  );
+
+  return (aulas || [])
+    .filter((x) => {
+      const status = normalizarTexto(x.status);
+      const statusGeraReposicao =
+        status === normalizarTexto(STATUS.AUSENTE) ||
+        status === normalizarTexto(STATUS.CANCELADA);
+
+      if (!statusGeraReposicao) return false;
+      if (x.precisa_reposicao !== true) return false;
+      if (idsAulasOriginaisJaRepostas.has(Number(x.id))) return false;
+
+      return true;
+    })
+    .sort((a, b) => {
+      const dataA = String(a.data_aula || "");
+      const dataB = String(b.data_aula || "");
+
+      if (dataA !== dataB) {
+        return dataB.localeCompare(dataA);
+      }
+
+      return Number(b.id || 0) - Number(a.id || 0);
+    });
+}
+
+function renderReposicoesPendentes() {
+  limparLista(listaReposicoes);
+
+  if (!reposicoesPendentesLista.length) {
+    listaReposicoes.innerHTML = `<li>Nenhuma reposição pendente.</li>`;
+
+    if (btnToggleReposicoes) {
+      btnToggleReposicoes.style.display = "none";
+    }
+
+    return;
+  }
+
+  const reposicoesParaMostrar = reposicoesExpandido
+    ? reposicoesPendentesLista
+    : reposicoesPendentesLista.slice(0, 3);
+
+  reposicoesParaMostrar.forEach((x) => {
+    const li = document.createElement("li");
+    li.style.marginBottom = "6px";
+
+    const status = normalizarTexto(x.status);
+    const textoPadrao =
+      status === normalizarTexto(STATUS.CANCELADA)
+        ? "Aula cancelada"
+        : "Reposição solicitada";
+
+    li.textContent =
+      `${formatarDataBR(x.data_aula)} — ${x.justificativa || textoPadrao}`;
+
+    listaReposicoes.appendChild(li);
+  });
+
+  if (!btnToggleReposicoes) return;
+
+  if (reposicoesPendentesLista.length <= 3) {
+    btnToggleReposicoes.style.display = "none";
+    return;
+  }
+
+  btnToggleReposicoes.style.display = "inline-flex";
+  btnToggleReposicoes.textContent = reposicoesExpandido
+    ? "Ver menos"
+    : `Ver mais ${reposicoesPendentesLista.length - 3}`;
+}
+
 function preencherContadores(aulas) {
   let p = 0;
   let a = 0;
   let c = 0;
-  let reposicoesPendentes = 0;
   let instrumental = 0;
   let plantao = 0;
-
-  limparLista(listaReposicoes);
-
-  const idsAulasOriginaisJaRepostas = new Set(
-    (aulas || [])
-      .filter((x) => x.status === STATUS.REPOSICAO && x.aula_original_id)
-      .map((x) => Number(x.aula_original_id))
-  );
 
   aulas.forEach((x) => {
     if (x.status === STATUS.PRESENTE) {
@@ -659,41 +772,11 @@ function preencherContadores(aulas) {
 
     if (x.status === STATUS.AUSENTE) {
       a++;
-
-      const estaPendente =
-        x.precisa_reposicao === true &&
-        !idsAulasOriginaisJaRepostas.has(Number(x.id));
-
-      if (estaPendente) {
-        reposicoesPendentes++;
-
-        const li = document.createElement("li");
-        li.textContent =
-          `${formatarDataBR(x.data_aula)} — ${x.justificativa || "Reposição solicitada"}`;
-
-        listaReposicoes.appendChild(li);
-      }
-
       return;
     }
 
     if (x.status === STATUS.CANCELADA) {
       c++;
-
-      const estaPendente =
-        x.precisa_reposicao === true &&
-        !idsAulasOriginaisJaRepostas.has(Number(x.id));
-
-      if (estaPendente) {
-        reposicoesPendentes++;
-
-        const li = document.createElement("li");
-        li.textContent =
-          `${formatarDataBR(x.data_aula)} — ${x.justificativa || "Aula cancelada"}`;
-
-        listaReposicoes.appendChild(li);
-      }
-
       return;
     }
 
@@ -708,14 +791,13 @@ function preencherContadores(aulas) {
     }
   });
 
-  if (!listaReposicoes.innerHTML.trim()) {
-    listaReposicoes.innerHTML = `<li>Nenhuma reposição pendente.</li>`;
-  }
+  reposicoesPendentesLista = obterReposicoesPendentes(aulas);
+  renderReposicoesPendentes();
 
   cPresente.textContent = p;
   cAusente.textContent = a;
   cCancelada.textContent = c;
-  cReposicao.textContent = reposicoesPendentes;
+  cReposicao.textContent = reposicoesPendentesLista.length;
   cInstrumental.textContent = instrumental;
   cPlantao.textContent = plantao;
 }
@@ -801,6 +883,11 @@ btnToggleEventos?.addEventListener("click", () => {
     boxEventosAluno.style.display = "block";
     btnToggleEventos.textContent = "Ver menos";
   }
+});
+
+btnToggleReposicoes?.addEventListener("click", () => {
+  reposicoesExpandido = !reposicoesExpandido;
+  renderReposicoesPendentes();
 });
 
 // ===============================

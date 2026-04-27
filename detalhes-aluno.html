@@ -171,10 +171,18 @@
 
     <!-- REPOSIÇÕES -->
     <section class="card" style="margin-bottom:12px; padding:12px 14px;">
-      <h2 style="margin-bottom:6px;">🔄 Reposições pendentes</h2>
-      <p style="font-size:12px; opacity:0.85; margin-top:0;">
-        Aqui aparecem ausências com reposição e aulas canceladas que ainda precisam ser compensadas.
-      </p>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div>
+          <h2 style="margin:0 0 6px 0;">🔄 Reposições pendentes</h2>
+          <p style="font-size:12px; opacity:0.85; margin:0;">
+            Aqui aparecem ausências com reposição e aulas canceladas que ainda precisam ser compensadas.
+          </p>
+        </div>
+
+        <button type="button" id="btnToggleReposicoes" class="btn-link-expansao" style="display:none;">
+          Ver mais
+        </button>
+      </div>
 
       <ul id="listaReposicoes" style="margin-top:10px;"></ul>
     </section>
