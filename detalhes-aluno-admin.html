@@ -28,6 +28,80 @@
       <p style="font-size:13px; opacity:0.85; margin:0;" id="subtituloAluno"></p>
     </section>
 
+    <!-- PACOTE DE AULAS -->
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+        <div>
+          <h2 style="margin:0 0 6px 0;">📦 Pacote de aulas</h2>
+          <p style="font-size:12px; opacity:0.85; margin:0;">
+            Controle administrativo das aulas compradas e utilizadas neste curso.
+          </p>
+        </div>
+
+        <a
+          href="cadastrar-pacote-aulas.html"
+          class="btn"
+          style="padding:8px 12px; text-decoration:none; font-size:13px;"
+        >
+          + Novo pacote
+        </a>
+      </div>
+
+      <div
+        id="boxPacoteAtual"
+        style="
+          margin-top:12px;
+          display:grid;
+          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+          gap:10px;
+        "
+      >
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:10px;">
+          <div style="font-size:11px; opacity:0.75;">Situação</div>
+          <strong id="pacoteSituacao" style="font-size:14px;">Carregando...</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:10px;">
+          <div style="font-size:11px; opacity:0.75;">Aulas usadas</div>
+          <strong id="pacoteAulasUsadas" style="font-size:14px;">-</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:10px;">
+          <div style="font-size:11px; opacity:0.75;">Aulas restantes</div>
+          <strong id="pacoteAulasRestantes" style="font-size:14px;">-</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:10px;">
+          <div style="font-size:11px; opacity:0.75;">Início do pacote</div>
+          <strong id="pacoteInicio" style="font-size:14px;">-</strong>
+        </div>
+      </div>
+
+      <div id="pacoteAlerta" style="display:none; margin-top:10px; padding:10px 12px; border-radius:10px; font-size:13px;"></div>
+
+      <div id="boxAcoesPacote" style="display:none; margin-top:12px; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+  <button type="button" id="btnVerAulasPacote" class="btn" style="padding:8px 12px;">
+    Ver aulas do pacote
+  </button>
+
+  <button type="button" id="btnEncerrarPacote" class="btn" style="padding:8px 12px;">
+    Encerrar pacote ativo
+  </button>
+</div>
+
+<div id="boxAulasPacote" style="display:none; margin-top:12px;">
+  <h3 style="font-size:15px; margin-bottom:8px;">Aulas consumidas neste pacote</h3>
+  <div id="listaAulasPacote" style="font-size:13px;"></div>
+</div>
+
+      <div style="margin-top:14px;">
+        <h3 style="font-size:15px; margin-bottom:8px;">Histórico de pacotes</h3>
+        <div id="listaPacotesAluno" style="font-size:13px;">
+          Carregando histórico...
+        </div>
+      </div>
+    </section>
+
     <!-- MÉDIAS -->
     <section
       style="
