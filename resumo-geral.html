@@ -11,6 +11,13 @@
   <div class="overlay"></div>
 
   <main class="container container-resumo container-resumo-geral">
+
+    <div style="display:flex; justify-content:flex-start; margin-bottom:10px;">
+      <a href="home-admin.html" class="btn" style="display:inline-block; padding:8px 14px; text-decoration:none;">
+        ← Voltar
+      </a>
+    </div>
+
     <header class="topo-resumo-geral">
       <div>
         <h1 id="tituloResumoGeral" class="titulo-principal-resumo">Resumo Geral da Escola</h1>
@@ -18,11 +25,11 @@
           Acompanhe professores, alunos, matrículas e indicadores importantes da Beehive.
         </p>
       </div>
-
-      <a href="home-admin.html" class="link-voltar link-voltar-topo">← Voltar</a>
     </header>
 
     <div id="msg" class="msg-resumo-professor" style="display:none;"></div>
+    <br>
+    
 
     <!-- =========================
          CONSULTA DE ALUNO
@@ -48,6 +55,41 @@
         </div>
       </div>
     </section>
+
+    <!-- =========================
+         PONTOS DE ATENÇÃO
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>🚨 Pontos de atenção</h2>
+        <p>Alunos e situações que merecem acompanhamento administrativo.</p>
+      </div>
+
+      <div class="dashboard dashboard-resumo-professor">
+        <div class="card card-destaque">
+          <h2>📦 Pacotes próximos da renovação</h2>
+          <p><b id="qtdPacotesProximosResumo">0</b> aluno(s)</p>
+          <div id="listaPacotesProximosResumo" style="margin-top:10px; font-size:13px;">
+            Carregando...
+          </div>
+        </div>
+
+        <div class="card card-destaque">
+          <h2>📝 Avaliações pendentes</h2>
+          <p><b id="qtdAvaliacoesPendentesResumo">0</b> aluno(s)</p>
+          <div id="listaAvaliacoesPendentesResumo" style="margin-top:10px; font-size:13px;">
+            Carregando...
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>🗓️ Eventos sem confirmação</h2>
+          <p><b id="qtdEventosSemConfirmacaoResumo">0</b> evento(s)</p>
+        </div>
+      </div>
+    </section>
+
+    
 
     <!-- =========================
          VISÃO GERAL
@@ -87,48 +129,6 @@
         <div class="card">
           <h2>📅 Eventos futuros</h2>
           <p><b id="qtdEventosFuturos">0</b> evento(s)</p>
-        </div>
-
-        <div class="card">
-          <h2>🔁 Reposições pendentes</h2>
-          <p><b id="qtdReposicoesPendentesResumo">0</b> pendência(s)</p>
-        </div>
-
-        <div class="card">
-          <h2>📝 Aulas no mês</h2>
-          <p><b id="qtdAulasMes">0</b> aula(s)</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- =========================
-         ALERTAS
-    ========================== -->
-    <section class="bloco-resumo-professor">
-      <div class="cabecalho-bloco-resumo">
-        <h2>🚨 Pontos de atenção</h2>
-        <p>Informações que merecem acompanhamento mais próximo.</p>
-      </div>
-
-      <div class="dashboard dashboard-resumo-professor">
-        <div class="card">
-          <h2>⚠️ Alunos com faltas</h2>
-          <p><b id="qtdAlunosComFaltasResumo">0</b> aluno(s)</p>
-        </div>
-
-        <div class="card">
-          <h2>🧾 Alunos sem notas</h2>
-          <p><b id="qtdAlunosSemNotasResumo">0</b> aluno(s)</p>
-        </div>
-
-        <div class="card">
-          <h2>🗓️ Eventos sem confirmação</h2>
-          <p><b id="qtdEventosSemConfirmacaoResumo">0</b> evento(s)</p>
-        </div>
-
-        <div class="card">
-          <h2>📉 Ausências no mês</h2>
-          <p><b id="qtdAusenciasMesResumo">0</b> aula(s)</p>
         </div>
       </div>
     </section>
@@ -197,7 +197,6 @@
       </div>
     </section>
 
-    <a href="home-admin.html" class="link-voltar link-voltar-topo">← Voltar</a>
   </main>
 
   <script type="module" src="js/resumo-geral.js"></script>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Detalhes do Professor | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body class="pagina-resumo-geral">
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo container-resumo-geral">
+
+    <div style="display:flex; justify-content:flex-start; margin-bottom:10px;">
+      <a href="resumo-geral.html" class="btn" style="display:inline-block; padding:8px 14px; text-decoration:none;">
+        ← Voltar
+      </a>
+    </div>
+
+    <header class="topo-resumo-geral">
+      <div>
+        <h1 id="tituloProfessor" class="titulo-principal-resumo">Detalhes do Professor</h1>
+        <p id="subtituloProfessor" class="subtitulo-resumo-geral">
+          Carregando informações...
+        </p>
+      </div>
+    </header>
+
+    <div id="msg" class="msg-resumo-professor" style="display:none;"></div>
+
+    <!-- =========================
+         CABEÇALHO DO PROFESSOR
+    ========================== -->
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:10px;">
+          <div style="font-size:11px; opacity:0.75;">Nome</div>
+          <strong id="infoNomeProfessor" style="font-size:14px;">-</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:10px;">
+          <div style="font-size:11px; opacity:0.75;">E-mail</div>
+          <strong id="infoEmailProfessor" style="font-size:14px;">-</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:10px;">
+          <div style="font-size:11px; opacity:0.75;">Status</div>
+          <strong id="infoStatusProfessor" style="font-size:14px;">-</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:10px;">
+          <div style="font-size:11px; opacity:0.75;">Cursos que leciona</div>
+          <strong id="infoCursosProfessor" style="font-size:14px;">-</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================
+         INDICADORES
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>📊 Indicadores do professor</h2>
+        <p>Resumo administrativo das aulas, alunos e vínculos ativos.</p>
+      </div>
+
+      <div class="dashboard dashboard-resumo-professor dashboard-resumo-admin-topo">
+        <div class="card">
+          <h2>👥 Alunos ativos</h2>
+          <p><b id="qtdAlunosAtivosProfessor">0</b> aluno(s)</p>
+        </div>
+
+        <div class="card card-destaque">
+          <h2>📌 Matrículas ativas</h2>
+          <p><b id="qtdMatriculasProfessor">0</b> matrícula(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>📚 Cursos</h2>
+          <p><b id="qtdCursosProfessor">0</b> curso(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>📝 Aulas registradas</h2>
+          <p><b id="qtdAulasRegistradasProfessor">0</b> aula(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>✅ Aulas computáveis</h2>
+          <p><b id="qtdAulasComputaveisProfessor">0</b> aula(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>❌ Canceladas</h2>
+          <p><b id="qtdAulasCanceladasProfessor">0</b> aula(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>📅 Aulas no mês</h2>
+          <p><b id="qtdAulasMesProfessor">0</b> aula(s)</p>
+        </div>
+
+        <div class="card">
+          <h2>⏱️ Minutos registrados</h2>
+          <p><b id="qtdMinutosProfessor">0</b> minuto(s)</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================
+         ALUNOS DO PROFESSOR
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>👥 Alunos vinculados</h2>
+        <p>Alunos e cursos ativos atribuídos a este professor.</p>
+      </div>
+
+      <div class="card" style="padding:12px 14px;">
+        <div id="listaAlunosProfessor">
+          Carregando alunos...
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================
+         DISTRIBUIÇÃO POR CURSO
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>📚 Distribuição por curso</h2>
+        <p>Quantidade de alunos e matrículas por matéria.</p>
+      </div>
+
+      <div id="cardsCursosProfessor" class="dashboard dashboard-resumo-professor">
+        <div class="card">
+          <p style="font-size:14px;">Carregando...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================
+         AULAS RECENTES
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>📖 Aulas recentes</h2>
+        <p>Últimos registros de aula feitos para este professor.</p>
+      </div>
+
+      <section class="card" style="padding:12px 14px;">
+        <div style="margin-bottom:10px;">
+          <label for="filtroStatusAulaProfessor" style="font-size:13px; display:block; margin-bottom:6px;">
+            Filtrar por status
+          </label>
+
+          <select id="filtroStatusAulaProfessor">
+            <option value="">Todos</option>
+            <option value="Presente">Presente</option>
+            <option value="Ausente">Ausente</option>
+            <option value="Cancelada">Cancelada</option>
+            <option value="Reposição">Reposição</option>
+            <option value="Aula Instrumental">Aula Instrumental</option>
+            <option value="Plantão de dúvidas">Plantão de dúvidas</option>
+          </select>
+        </div>
+
+        <div id="listaAulasProfessor">
+          Carregando aulas...
+        </div>
+
+        <div id="boxExpandirAulasProfessor" style="display:none; margin-top:10px; text-align:center;">
+          <button type="button" id="btnExpandirAulasProfessor" class="btn">
+            Ver mais aulas
+          </button>
+        </div>
+      </section>
+    </section>
+
+    <!-- =========================
+         PONTOS DE ATENÇÃO
+    ========================== -->
+    <section class="bloco-resumo-professor">
+      <div class="cabecalho-bloco-resumo">
+        <h2>🚨 Pontos de atenção</h2>
+        <p>Cancelamentos, registros incompletos e observações administrativas.</p>
+      </div>
+
+      <div class="dashboard dashboard-resumo-professor">
+        <div class="card">
+          <h2>❌ Aulas canceladas</h2>
+          <p><b id="qtdCancelamentosAtencao">0</b> registro(s)</p>
+          <div id="listaCancelamentosAtencao" style="margin-top:10px; font-size:13px;">
+            Carregando...
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>⏱️ Aulas sem minutagem</h2>
+          <p><b id="qtdAulasSemMinutagem">0</b> aula(s)</p>
+          <div id="listaAulasSemMinutagem" style="margin-top:10px; font-size:13px;">
+            Carregando...
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>⚠️ Advertências / ocorrências</h2>
+          <p style="font-size:13px; opacity:0.88;">
+            Ainda não há uma tabela própria para registrar advertências, faltas do professor ou descumprimento do manual.
+          </p>
+          <p style="font-size:12px; opacity:0.8; margin-top:8px;">
+            Próximo passo sugerido: criar uma tabela administrativa de ocorrências do professor.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div style="display:flex; justify-content:center; margin:16px 0 4px;">
+      <a href="resumo-geral.html" class="btn" style="display:inline-block; padding:8px 14px; text-decoration:none;">
+        ← Voltar
+      </a>
+    </div>
+
+  </main>
+
+  <script type="module" src="js/detalhes-professor-admin.js"></script>
+</body>
+</html>

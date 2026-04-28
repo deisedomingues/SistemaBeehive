@@ -6,12 +6,21 @@ await exigirAdmin();
 /* =========================================================
    CONFIGURAÇÃO
 ========================================================= */
+
 // TROQUE pelo CNPJ exato que você cadastrou para a Beehive
 const CNPJ_BEEHIVE = "12345678000199";
+
+// Quando o pacote chegar em 28 aulas usadas, aparece em pontos de atenção.
+// Pacote padrão: 36 aulas. 36 - 28 = restam 8 aulas.
+const LIMITE_ALERTA_PACOTE = 28;
+
+// Quantidade de aulas válidas para alertar avaliação pendente.
+const LIMITE_AVALIACAO = 14;
 
 /* =========================================================
    ELEMENTOS
 ========================================================= */
+
 const msg = document.getElementById("msg");
 
 const qtdAlunosUnicosAtivos = document.getElementById("qtdAlunosUnicosAtivos");
@@ -21,13 +30,14 @@ const qtdMateriasAtivas = document.getElementById("qtdMateriasAtivas");
 
 const qtdEventosTotal = document.getElementById("qtdEventosTotal");
 const qtdEventosFuturos = document.getElementById("qtdEventosFuturos");
-const qtdReposicoesPendentesResumo = document.getElementById("qtdReposicoesPendentesResumo");
-const qtdAulasMes = document.getElementById("qtdAulasMes");
 
-const qtdAlunosComFaltasResumo = document.getElementById("qtdAlunosComFaltasResumo");
-const qtdAlunosSemNotasResumo = document.getElementById("qtdAlunosSemNotasResumo");
 const qtdEventosSemConfirmacaoResumo = document.getElementById("qtdEventosSemConfirmacaoResumo");
-const qtdAusenciasMesResumo = document.getElementById("qtdAusenciasMesResumo");
+
+const qtdPacotesProximosResumo = document.getElementById("qtdPacotesProximosResumo");
+const listaPacotesProximosResumo = document.getElementById("listaPacotesProximosResumo");
+
+const qtdAvaliacoesPendentesResumo = document.getElementById("qtdAvaliacoesPendentesResumo");
+const listaAvaliacoesPendentesResumo = document.getElementById("listaAvaliacoesPendentesResumo");
 
 const selectMatriculaAdmin = document.getElementById("selectMatriculaAdmin");
 const btnDetalhesAdmin = document.getElementById("btnDetalhesAdmin");
@@ -42,17 +52,20 @@ const resultadoModuloResumo = document.getElementById("resultadoModuloResumo");
 /* =========================================================
    ESTADO
 ========================================================= */
-let matriculasAtivas = []; // todas as matrículas ativas
-let matriculasAtivasResumo = []; // sem funcionários da Beehive
+
+let matriculasAtivas = [];
+let matriculasAtivasResumo = [];
 let professoresAtivos = [];
 let eventos = [];
 let confirmacoesEvento = [];
 let aulas = [];
 let notas = [];
+let pacotesAulas = [];
 
 /* =========================================================
    UTILITÁRIOS
 ========================================================= */
+
 function mostrarMensagem(texto, ok = true) {
   msg.textContent = texto;
   msg.style.display = "block";
@@ -78,6 +91,10 @@ function escapeHtml(texto) {
     .replaceAll("'", "&#039;");
 }
 
+function normalizarTexto(valor) {
+  return String(valor || "").trim().toLowerCase();
+}
+
 function hojeISO() {
   const hoje = new Date();
   const ano = hoje.getFullYear();
@@ -86,11 +103,10 @@ function hojeISO() {
   return `${ano}-${mes}-${dia}`;
 }
 
-function mesAtualPrefixo() {
-  const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-  return `${ano}-${mes}`;
+function formatarDataBR(dataISO) {
+  if (!dataISO) return "-";
+  const [yyyy, mm, dd] = String(dataISO).split("-");
+  return `${dd}/${mm}/${yyyy}`;
 }
 
 function ehAlunoInternoBeehive(matricula) {
@@ -98,9 +114,94 @@ function ehAlunoInternoBeehive(matricula) {
   return empresaCnpj !== "" && empresaCnpj === CNPJ_BEEHIVE;
 }
 
+function ehNotaDeAvaliacao(nota) {
+  const tipo = normalizarTexto(nota?.tipo || "");
+  return tipo.includes("avalia");
+}
+
+function aulaContaParaAvaliacao(aula) {
+  const status = normalizarTexto(aula?.status);
+  const gravada = aula?.aula_gravada === true;
+
+  if (status === "presente" && gravada) return true;
+  if (status === "ausente" && gravada) return true;
+  if ((status === "reposição" || status === "reposicao") && gravada) return true;
+
+  return false;
+}
+
+function aulaConsomePacote(aula) {
+  const status = normalizarTexto(aula?.status);
+  const gravada = aula?.aula_gravada === true;
+  const precisaReposicao = aula?.precisa_reposicao === true;
+  const temAulaOriginal = !!aula?.aula_original_id;
+
+  /*
+    Regra do pacote:
+    Conta o encontro disponibilizado pelo professor.
+
+    Presente com aula gravada conta.
+    Ausente com aula gravada conta.
+    Ausente sem aula gravada, mas com reposição gerada, conta.
+    Reposição vinculada a uma aula de origem não conta de novo.
+  */
+
+  if (status === "presente" && gravada) return true;
+
+  if (status === "ausente" && gravada) return true;
+
+  if (status === "ausente" && !gravada && precisaReposicao) return true;
+
+  if ((status === "reposição" || status === "reposicao") && gravada && !temAulaOriginal) {
+    return true;
+  }
+
+  return false;
+}
+
+function aulaDentroDoPeriodoDoPacote(aula, pacote) {
+  const dataAula = String(aula?.data_aula || "");
+  const dataInicio = String(pacote?.data_inicio || "");
+  const dataFim = String(pacote?.data_fim || "");
+
+  if (!dataAula || !dataInicio) return false;
+
+  if (dataAula < dataInicio) return false;
+
+  if (dataFim && dataAula > dataFim) return false;
+
+  return true;
+}
+
+function obterMatriculaPorAlunoMateria(alunoId, materiaId) {
+  return matriculasAtivasResumo.find((m) => {
+    return (
+      Number(m.aluno_id) === Number(alunoId) &&
+      Number(m.materia_id) === Number(materiaId)
+    );
+  });
+}
+
+function abrirDetalhesAluno(matriculaId) {
+  if (!matriculaId) return;
+
+  localStorage.setItem("matriculaSelecionada", String(matriculaId));
+  window.location.href = "detalhes-aluno-admin.html";
+}
+
+function configurarBotoesAbrirAluno() {
+  document.querySelectorAll("[data-abrir-matricula]").forEach((btn) => {
+    btn.onclick = () => {
+      const matriculaId = btn.dataset.abrirMatricula;
+      abrirDetalhesAluno(matriculaId);
+    };
+  });
+}
+
 /* =========================================================
    BUSCAS
 ========================================================= */
+
 async function carregarProfessoresAtivos() {
   const { data, error } = await supabase
     .from("professor")
@@ -187,7 +288,16 @@ async function carregarAulasResumo() {
 
   const { data, error } = await supabase
     .from("aula")
-    .select("id, matricula_id, data_aula, status, precisa_reposicao, aula_original_id")
+    .select(`
+      id,
+      matricula_id,
+      data_aula,
+      status,
+      precisa_reposicao,
+      aula_original_id,
+      aula_gravada,
+      modulo_id
+    `)
     .in("matricula_id", matriculaIdsResumo);
 
   if (error) throw error;
@@ -205,7 +315,13 @@ async function carregarNotasResumo() {
 
   const { data, error } = await supabase
     .from("nota")
-    .select("id, matricula_id")
+    .select(`
+      id,
+      matricula_id,
+      data,
+      tipo,
+      modulo_id
+    `)
     .in("matricula_id", matriculaIdsResumo);
 
   if (error) throw error;
@@ -213,9 +329,170 @@ async function carregarNotasResumo() {
   notas = data || [];
 }
 
+async function carregarPacotesAulasResumo() {
+  const alunoIds = Array.from(
+    new Set(
+      matriculasAtivasResumo
+        .map((m) => m.aluno_id)
+        .filter(Boolean)
+    )
+  );
+
+  if (!alunoIds.length) {
+    pacotesAulas = [];
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("pacote_aulas")
+    .select(`
+      id,
+      aluno_id,
+      materia_id,
+      quantidade_aulas,
+      data_inicio,
+      data_fim,
+      status,
+      observacao,
+      created_at
+    `)
+    .in("aluno_id", alunoIds)
+    .eq("status", "Ativo");
+
+  if (error) throw error;
+
+  pacotesAulas = data || [];
+}
+
 /* =========================================================
-   RENDER - TOPO
+   CÁLCULOS - PACOTE
 ========================================================= */
+
+function contarAulasUsadasNoPacote(pacote) {
+  const matricula = obterMatriculaPorAlunoMateria(pacote.aluno_id, pacote.materia_id);
+
+  if (!matricula) return 0;
+
+  return aulas.filter((aula) => {
+    if (Number(aula.matricula_id) !== Number(matricula.id)) return false;
+    if (!aulaDentroDoPeriodoDoPacote(aula, pacote)) return false;
+    return aulaConsomePacote(aula);
+  }).length;
+}
+
+function obterPacotesProximosRenovacao() {
+  return pacotesAulas
+    .map((pacote) => {
+      const matricula = obterMatriculaPorAlunoMateria(pacote.aluno_id, pacote.materia_id);
+
+      if (!matricula) return null;
+
+      const usadas = contarAulasUsadasNoPacote(pacote);
+      const total = Number(pacote.quantidade_aulas || 36);
+      const restantes = Math.max(0, total - usadas);
+
+      if (usadas < LIMITE_ALERTA_PACOTE) return null;
+
+      return {
+        pacote,
+        matricula,
+        usadas,
+        total,
+        restantes
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (a.restantes !== b.restantes) return a.restantes - b.restantes;
+      return a.matricula.aluno?.nome?.localeCompare(b.matricula.aluno?.nome || "", "pt-BR");
+    });
+}
+
+/* =========================================================
+   CÁLCULOS - AVALIAÇÃO
+========================================================= */
+
+function contarAulasValidasDesdeUltimaAvaliacao(matricula) {
+  const moduloAtual = Number(matricula.modulo_id || 0);
+
+  const aulasValidasModulo = aulas
+    .filter((aula) => {
+      if (Number(aula.matricula_id) !== Number(matricula.id)) return false;
+      if (Number(aula.modulo_id || 0) !== moduloAtual) return false;
+      return aulaContaParaAvaliacao(aula);
+    })
+    .sort((a, b) => {
+      const dataA = String(a.data_aula || "");
+      const dataB = String(b.data_aula || "");
+
+      if (dataA !== dataB) return dataA.localeCompare(dataB);
+
+      return Number(a.id || 0) - Number(b.id || 0);
+    });
+
+  const avaliacoesModulo = notas
+    .filter((nota) => {
+      if (Number(nota.matricula_id) !== Number(matricula.id)) return false;
+      if (Number(nota.modulo_id || 0) !== moduloAtual) return false;
+      return ehNotaDeAvaliacao(nota);
+    })
+    .sort((a, b) => {
+      const dataA = String(a.data || "");
+      const dataB = String(b.data || "");
+
+      if (dataA !== dataB) return dataA.localeCompare(dataB);
+
+      return Number(a.id || 0) - Number(b.id || 0);
+    });
+
+  if (!avaliacoesModulo.length) {
+    return {
+      aulasDesdeUltima: aulasValidasModulo.length,
+      totalAvaliacoes: 0
+    };
+  }
+
+  const ultimaAvaliacao = avaliacoesModulo[avaliacoesModulo.length - 1];
+  const dataUltimaAvaliacao = String(ultimaAvaliacao.data || "");
+
+  const aulasDepois = aulasValidasModulo.filter((aula) => {
+    return String(aula.data_aula || "") > dataUltimaAvaliacao;
+  });
+
+  return {
+    aulasDesdeUltima: aulasDepois.length,
+    totalAvaliacoes: avaliacoesModulo.length
+  };
+}
+
+function obterMatriculasComAvaliacaoPendente() {
+  return matriculasAtivasResumo
+    .map((matricula) => {
+      const dados = contarAulasValidasDesdeUltimaAvaliacao(matricula);
+
+      if (dados.aulasDesdeUltima < LIMITE_AVALIACAO) return null;
+
+      return {
+        matricula,
+        aulasDesdeUltima: dados.aulasDesdeUltima,
+        totalAvaliacoes: dados.totalAvaliacoes,
+        proximaAvaliacao: dados.totalAvaliacoes + 1
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (a.aulasDesdeUltima !== b.aulasDesdeUltima) {
+        return b.aulasDesdeUltima - a.aulasDesdeUltima;
+      }
+
+      return a.matricula.aluno?.nome?.localeCompare(b.matricula.aluno?.nome || "", "pt-BR");
+    });
+}
+
+/* =========================================================
+   RENDER - VISÃO GERAL
+========================================================= */
+
 function renderIndicadoresGerais() {
   const alunosUnicos = new Set(
     matriculasAtivasResumo
@@ -230,23 +507,6 @@ function renderIndicadoresGerais() {
   );
 
   const hoje = hojeISO();
-  const prefixoMes = mesAtualPrefixo();
-
-  const idsOriginaisJaRepostos = new Set(
-    aulas
-      .filter((a) => a.status === "Reposição" && a.aula_original_id)
-      .map((a) => Number(a.aula_original_id))
-  );
-
-  const reposicoesPendentes = aulas.filter((a) => {
-    if (!a.precisa_reposicao) return false;
-    if (idsOriginaisJaRepostos.has(Number(a.id))) return false;
-    return a.status === "Ausente" || a.status === "Cancelada";
-  }).length;
-
-  const aulasDoMes = aulas.filter((a) =>
-    String(a.data_aula || "").startsWith(prefixoMes)
-  ).length;
 
   const eventosFuturos = eventos.filter((e) => {
     if (!e.ativo) return false;
@@ -260,71 +520,148 @@ function renderIndicadoresGerais() {
 
   qtdEventosTotal.textContent = String(eventos.length);
   qtdEventosFuturos.textContent = String(eventosFuturos);
-  qtdReposicoesPendentesResumo.textContent = String(reposicoesPendentes);
-  qtdAulasMes.textContent = String(aulasDoMes);
 }
 
+/* =========================================================
+   RENDER - PONTOS DE ATENÇÃO
+========================================================= */
+
 function renderAlertasResumo() {
-  const prefixoMes = mesAtualPrefixo();
+  renderAlertaPacotesProximos();
+  renderAlertaAvaliacoesPendentes();
+  renderAlertaEventosSemConfirmacao();
+  configurarBotoesAbrirAluno();
+}
 
-  const matriculaIdsComFaltas = new Set(
-    aulas
-      .filter((a) => a.status === "Ausente")
-      .map((a) => a.matricula_id)
-  );
+function renderAlertaPacotesProximos() {
+  const pacotesProximos = obterPacotesProximosRenovacao();
 
-  const alunoIdsComFaltas = new Set(
-    matriculasAtivasResumo
-      .filter((m) => matriculaIdsComFaltas.has(m.id))
-      .map((m) => m.aluno_id)
-  );
+  qtdPacotesProximosResumo.textContent = String(pacotesProximos.length);
 
-  const matriculaIdsComNotas = new Set(
-    notas.map((n) => n.matricula_id)
-  );
+  if (!pacotesProximos.length) {
+    listaPacotesProximosResumo.innerHTML = `
+      <p style="font-size:13px; opacity:0.85; margin:0;">
+        Nenhum pacote próximo da renovação.
+      </p>
+    `;
+    return;
+  }
 
-  const alunoIdsSemNotas = new Set(
-    matriculasAtivasResumo
-      .filter((m) => !matriculaIdsComNotas.has(m.id))
-      .map((m) => m.aluno_id)
-  );
+  listaPacotesProximosResumo.innerHTML = pacotesProximos.slice(0, 8).map((item) => {
+    const aluno = item.matricula.aluno?.nome || "Aluno";
+    const materia = item.matricula.materia?.nome || "Curso";
+    const situacao = item.restantes <= 0
+      ? "Renovação necessária"
+      : `Restam ${item.restantes} aula(s)`;
 
+    return `
+      <div style="padding:8px 0; border-bottom:1px solid #e6dfcf;">
+        <strong>${escapeHtml(aluno)}</strong>
+        <div style="font-size:12px; opacity:0.88;">
+          ${escapeHtml(materia)} • ${item.usadas}/${item.total} aulas • ${escapeHtml(situacao)}
+        </div>
+        <button
+          type="button"
+          class="btn"
+          data-abrir-matricula="${item.matricula.id}"
+          style="padding:5px 9px; margin-top:6px; font-size:12px;"
+        >
+          Abrir aluno
+        </button>
+      </div>
+    `;
+  }).join("");
+
+  if (pacotesProximos.length > 8) {
+    listaPacotesProximosResumo.innerHTML += `
+      <p style="font-size:12px; opacity:0.8; margin-top:8px;">
+        + ${pacotesProximos.length - 8} outro(s) aluno(s) em atenção.
+      </p>
+    `;
+  }
+}
+
+function renderAlertaAvaliacoesPendentes() {
+  const avaliacoesPendentes = obterMatriculasComAvaliacaoPendente();
+
+  qtdAvaliacoesPendentesResumo.textContent = String(avaliacoesPendentes.length);
+
+  if (!avaliacoesPendentes.length) {
+    listaAvaliacoesPendentesResumo.innerHTML = `
+      <p style="font-size:13px; opacity:0.85; margin:0;">
+        Nenhum aluno com avaliação pendente.
+      </p>
+    `;
+    return;
+  }
+
+  listaAvaliacoesPendentesResumo.innerHTML = avaliacoesPendentes.slice(0, 8).map((item) => {
+    const aluno = item.matricula.aluno?.nome || "Aluno";
+    const materia = item.matricula.materia?.nome || "Curso";
+    const modulo = item.matricula.modulo?.nome || "Módulo";
+
+    return `
+      <div style="padding:8px 0; border-bottom:1px solid #e6dfcf;">
+        <strong>${escapeHtml(aluno)}</strong>
+        <div style="font-size:12px; opacity:0.88;">
+          ${escapeHtml(materia)} • ${escapeHtml(modulo)} •
+          ${item.aulasDesdeUltima} aula(s) válida(s) desde a última avaliação
+        </div>
+        <div style="font-size:12px; opacity:0.88;">
+          Próxima: Avaliação ${item.proximaAvaliacao}
+        </div>
+        <button
+          type="button"
+          class="btn"
+          data-abrir-matricula="${item.matricula.id}"
+          style="padding:5px 9px; margin-top:6px; font-size:12px;"
+        >
+          Abrir aluno
+        </button>
+      </div>
+    `;
+  }).join("");
+
+  if (avaliacoesPendentes.length > 8) {
+    listaAvaliacoesPendentesResumo.innerHTML += `
+      <p style="font-size:12px; opacity:0.8; margin-top:8px;">
+        + ${avaliacoesPendentes.length - 8} outro(s) aluno(s) com avaliação pendente.
+      </p>
+    `;
+  }
+}
+
+function renderAlertaEventosSemConfirmacao() {
   const confirmacoesPorEvento = new Map();
+
   confirmacoesEvento.forEach((c) => {
     const atual = confirmacoesPorEvento.get(c.evento_id) || 0;
     confirmacoesPorEvento.set(c.evento_id, atual + 1);
   });
 
   const hoje = hojeISO();
+
   const eventosSemConfirmacao = eventos.filter((e) => {
-    const futuros = e.ativo && String(e.data_evento || "") >= hoje;
-    if (!futuros) return false;
+    const futuro = e.ativo && String(e.data_evento || "") >= hoje;
+    if (!futuro) return false;
+
     return !confirmacoesPorEvento.has(e.id);
   });
 
-  const ausenciasMes = aulas.filter((a) =>
-    a.status === "Ausente" &&
-    String(a.data_aula || "").startsWith(prefixoMes)
-  ).length;
-
-  qtdAlunosComFaltasResumo.textContent = String(alunoIdsComFaltas.size);
-  qtdAlunosSemNotasResumo.textContent = String(alunoIdsSemNotas.size);
   qtdEventosSemConfirmacaoResumo.textContent = String(eventosSemConfirmacao.length);
-  qtdAusenciasMesResumo.textContent = String(ausenciasMes);
 }
 
 /* =========================================================
    RENDER - CONSULTA DE ALUNO
 ========================================================= */
+
 function renderSelectMatriculasAdmin() {
   selectMatriculaAdmin.innerHTML = `<option value="">Selecione o aluno (curso)</option>`;
 
-  // Aqui deixei TODAS as matrículas ativas, inclusive staff,
-  // para o admin continuar conseguindo consultar qualquer pessoa.
   const listaOrdenada = [...matriculasAtivas].sort((a, b) => {
     const nomeA = a?.aluno?.nome || "";
     const nomeB = b?.aluno?.nome || "";
-    return nomeA.localeCompare(nomeB);
+    return nomeA.localeCompare(nomeB, "pt-BR");
   });
 
   listaOrdenada.forEach((m) => {
@@ -338,6 +675,7 @@ function renderSelectMatriculasAdmin() {
 /* =========================================================
    RENDER - PROFESSORES
 ========================================================= */
+
 function renderCardsProfessores() {
   if (!professoresAtivos.length) {
     cardsProfessoresAtivos.innerHTML = `<div class="card">${criarParagrafoVazio("Nenhum professor ativo encontrado.")}</div>`;
@@ -366,7 +704,7 @@ function renderCardsProfessores() {
       }
     });
 
-    const materiasOrdenadas = Object.keys(porMateria).sort((a, b) => a.localeCompare(b));
+    const materiasOrdenadas = Object.keys(porMateria).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
     return `
       <div class="card card-professor-admin">
@@ -382,16 +720,33 @@ function renderCardsProfessores() {
                </ul>`
             : `<p>Nenhum aluno ativo vinculado.</p>`
         }
+
+        <button
+          type="button"
+          class="btn btn-detalhes-professor-admin"
+          data-professor-id="${prof.id}"
+          style="padding:7px 10px; margin-top:8px; font-size:12px;"
+        >
+          Ver detalhes do professor
+        </button>
       </div>
     `;
   }).join("");
 
   cardsProfessoresAtivos.innerHTML = html;
+
+  document.querySelectorAll(".btn-detalhes-professor-admin").forEach((btn) => {
+    btn.onclick = () => {
+      localStorage.setItem("professorSelecionadoAdmin", btn.dataset.professorId);
+      window.location.href = "detalhes-professor-admin.html";
+    };
+  });
 }
 
 /* =========================================================
    RENDER - MATÉRIAS
 ========================================================= */
+
 function renderCardsMaterias() {
   const mapa = {};
 
@@ -410,7 +765,7 @@ function renderCardsMaterias() {
     mapa[nomeMateria].matriculas += 1;
   });
 
-  const materias = Object.keys(mapa).sort((a, b) => a.localeCompare(b));
+  const materias = Object.keys(mapa).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
   if (!materias.length) {
     cardsMateriasResumo.innerHTML = `<div class="card">${criarParagrafoVazio("Nenhuma matéria com matrícula ativa encontrada.")}</div>`;
@@ -431,6 +786,7 @@ function renderCardsMaterias() {
 /* =========================================================
    RENDER - FILTRO DE MÓDULO
 ========================================================= */
+
 function renderSelectMateriasResumo() {
   if (!selectMateriaResumo) return;
 
@@ -446,7 +802,7 @@ function renderSelectMateriasResumo() {
   });
 
   const materiasOrdenadas = Array.from(mapaMaterias.entries()).sort((a, b) =>
-    a[1].localeCompare(b[1])
+    a[1].localeCompare(b[1], "pt-BR")
   );
 
   selectMateriaResumo.innerHTML = `<option value="">Selecione a matéria</option>`;
@@ -491,7 +847,7 @@ function renderModulosPorMateria(materiaIdSelecionada) {
   });
 
   const modulosOrdenados = Array.from(modulosMap.entries()).sort((a, b) =>
-    a[1].localeCompare(b[1])
+    a[1].localeCompare(b[1], "pt-BR")
   );
 
   limparSelectModulos();
@@ -524,6 +880,7 @@ function renderResultadoModulo(materiaIdSelecionada, moduloIdSelecionado) {
   const filtradas = matriculasAtivasResumo.filter((m) => {
     const materiaId = String(m?.materia?.id || "");
     const moduloId = String(m?.modulo?.id || "");
+
     return (
       materiaId === String(materiaIdSelecionada) &&
       moduloId === String(moduloIdSelecionado)
@@ -559,6 +916,7 @@ function renderResultadoModulo(materiaIdSelecionada, moduloIdSelecionado) {
 /* =========================================================
    MONTAGEM
 ========================================================= */
+
 async function montarResumoGeral() {
   try {
     await carregarProfessoresAtivos();
@@ -567,9 +925,10 @@ async function montarResumoGeral() {
     await carregarConfirmacoesEvento();
     await carregarAulasResumo();
     await carregarNotasResumo();
+    await carregarPacotesAulasResumo();
 
-    renderIndicadoresGerais();
     renderAlertasResumo();
+    renderIndicadoresGerais();
     renderSelectMatriculasAdmin();
     renderCardsProfessores();
     renderCardsMaterias();
@@ -590,6 +949,7 @@ async function montarResumoGeral() {
 /* =========================================================
    EVENTOS
 ========================================================= */
+
 btnDetalhesAdmin?.addEventListener("click", () => {
   const matriculaId = selectMatriculaAdmin.value;
 
@@ -598,8 +958,7 @@ btnDetalhesAdmin?.addEventListener("click", () => {
     return;
   }
 
-  localStorage.setItem("matriculaSelecionada", matriculaId);
-  window.location.href = "detalhes-aluno-admin.html";
+  abrirDetalhesAluno(matriculaId);
 });
 
 selectMateriaResumo?.addEventListener("change", () => {
@@ -631,4 +990,5 @@ selectModuloResumo?.addEventListener("change", () => {
 /* =========================================================
    INÍCIO
 ========================================================= */
+
 await montarResumoGeral();
