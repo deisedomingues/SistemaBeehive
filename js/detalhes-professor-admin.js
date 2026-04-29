@@ -22,25 +22,35 @@ const infoCursosProfessor = document.getElementById("infoCursosProfessor");
 const qtdAlunosAtivosProfessor = document.getElementById("qtdAlunosAtivosProfessor");
 const qtdMatriculasProfessor = document.getElementById("qtdMatriculasProfessor");
 const qtdCursosProfessor = document.getElementById("qtdCursosProfessor");
-const qtdAulasRegistradasProfessor = document.getElementById("qtdAulasRegistradasProfessor");
-const qtdAulasComputaveisProfessor = document.getElementById("qtdAulasComputaveisProfessor");
-const qtdAulasCanceladasProfessor = document.getElementById("qtdAulasCanceladasProfessor");
 const qtdAulasMesProfessor = document.getElementById("qtdAulasMesProfessor");
+const qtdAulasComputaveisProfessor = document.getElementById("qtdAulasComputaveisProfessor");
 const qtdMinutosProfessor = document.getElementById("qtdMinutosProfessor");
 
-const listaAlunosProfessor = document.getElementById("listaAlunosProfessor");
 const cardsCursosProfessor = document.getElementById("cardsCursosProfessor");
+
+const listaAlunosProfessor = document.getElementById("listaAlunosProfessor");
+const btnExpandirAlunosProfessor = document.getElementById("btnExpandirAlunosProfessor");
 
 const filtroStatusAulaProfessor = document.getElementById("filtroStatusAulaProfessor");
 const listaAulasProfessor = document.getElementById("listaAulasProfessor");
 const boxExpandirAulasProfessor = document.getElementById("boxExpandirAulasProfessor");
 const btnExpandirAulasProfessor = document.getElementById("btnExpandirAulasProfessor");
 
-const qtdCancelamentosAtencao = document.getElementById("qtdCancelamentosAtencao");
-const listaCancelamentosAtencao = document.getElementById("listaCancelamentosAtencao");
+const btnMostrarFormOcorrencia = document.getElementById("btnMostrarFormOcorrencia");
+const formOcorrenciaProfessor = document.getElementById("formOcorrenciaProfessor");
+const btnCancelarOcorrencia = document.getElementById("btnCancelarOcorrencia");
+const btnSalvarOcorrencia = document.getElementById("btnSalvarOcorrencia");
 
-const qtdAulasSemMinutagem = document.getElementById("qtdAulasSemMinutagem");
-const listaAulasSemMinutagem = document.getElementById("listaAulasSemMinutagem");
+const ocorrenciaData = document.getElementById("ocorrenciaData");
+const ocorrenciaTipo = document.getElementById("ocorrenciaTipo");
+const ocorrenciaGravidade = document.getElementById("ocorrenciaGravidade");
+const ocorrenciaMotivo = document.getElementById("ocorrenciaMotivo");
+const ocorrenciaProvidencia = document.getElementById("ocorrenciaProvidencia");
+const ocorrenciaDescricao = document.getElementById("ocorrenciaDescricao");
+
+const listaOcorrenciasProfessor = document.getElementById("listaOcorrenciasProfessor");
+const boxExpandirOcorrenciasProfessor = document.getElementById("boxExpandirOcorrenciasProfessor");
+const btnExpandirOcorrenciasProfessor = document.getElementById("btnExpandirOcorrenciasProfessor");
 
 // ===============================
 // PROTEÇÃO
@@ -59,7 +69,10 @@ let materiasProfessor = [];
 let matriculasProfessor = [];
 let aulasProfessor = [];
 let ocorrenciasProfessor = [];
+
+let alunosExpandido = false;
 let aulasExpandido = false;
+let ocorrenciasExpandido = false;
 
 // ===============================
 // STATUS
@@ -83,13 +96,18 @@ function mostrarMensagem(texto, ok = true) {
 
   msg.textContent = texto;
   msg.style.display = "block";
-  msg.className = ok ? "msg-resumo-professor ok" : "msg-resumo-professor erro";
+  msg.style.padding = "10px 12px";
+  msg.style.borderRadius = "10px";
+  msg.style.fontSize = "13px";
+  msg.style.fontWeight = "600";
+  msg.style.backgroundColor = ok ? "#e8f5e9" : "#ffebee";
+  msg.style.color = ok ? "#1b5e20" : "#b71c1c";
+  msg.style.border = ok ? "1px solid #66bb6a" : "1px solid #ef5350";
 
   setTimeout(() => {
     msg.style.display = "none";
     msg.textContent = "";
-    msg.className = "msg-resumo-professor";
-  }, 2500);
+  }, 2800);
 }
 
 function escaparHtml(texto) {
@@ -116,10 +134,20 @@ function formatarDataBR(dataISO) {
   return `${dd}/${mm}/${yyyy}`;
 }
 
+function dataHojeLocalISO() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
 function mesAtualPrefixo() {
   const hoje = new Date();
   const ano = hoje.getFullYear();
   const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+
   return `${ano}-${mes}`;
 }
 
@@ -171,8 +199,8 @@ function aulaComputavelProfessor(aula) {
   const gravada = aula?.aula_gravada === true;
 
   /*
-    Aula computável aqui significa aula que pode entrar nos indicadores
-    administrativos do professor, principalmente para histórico e financeiro.
+    Aula computável:
+    é a aula que pode entrar no acompanhamento administrativo/financeiro.
 
     Conta:
     - Presente com aula gravada
@@ -180,6 +208,10 @@ function aulaComputavelProfessor(aula) {
     - Reposição com aula gravada
     - Aula Instrumental com aula gravada
     - Plantão de dúvidas com aula gravada
+
+    Não conta:
+    - Cancelada
+    - Aula sem gravação
   */
 
   if (status === "presente" && gravada) return true;
@@ -201,6 +233,54 @@ function obterMateriaAula(aula) {
 
 function obterModuloAula(aula) {
   return aula?.matricula?.modulo?.nome || "Módulo";
+}
+
+function pluralAlunos(qtd) {
+  return Number(qtd) === 1 ? "1 aluno" : `${qtd} alunos`;
+}
+
+function obterMatriculasPorCurso() {
+  const mapa = new Map();
+
+  materiasProfessor.forEach((pm) => {
+    const materiaId = Number(pm.materia_id);
+    const materiaNome = pm?.materia?.nome || "Curso";
+
+    if (!mapa.has(materiaId)) {
+      mapa.set(materiaId, {
+        materia_id: materiaId,
+        materia_nome: materiaNome,
+        alunos: new Set(),
+        matriculas: 0
+      });
+    }
+  });
+
+  matriculasProfessor.forEach((m) => {
+    const materiaId = Number(m.materia_id);
+    const materiaNome = m?.materia?.nome || "Curso";
+
+    if (!mapa.has(materiaId)) {
+      mapa.set(materiaId, {
+        materia_id: materiaId,
+        materia_nome: materiaNome,
+        alunos: new Set(),
+        matriculas: 0
+      });
+    }
+
+    const item = mapa.get(materiaId);
+
+    if (m?.aluno?.id) {
+      item.alunos.add(Number(m.aluno.id));
+    }
+
+    item.matriculas += 1;
+  });
+
+  return Array.from(mapa.values()).sort((a, b) =>
+    a.materia_nome.localeCompare(b.materia_nome, "pt-BR")
+  );
 }
 
 // ===============================
@@ -292,12 +372,6 @@ async function carregarAulasProfessor() {
     return;
   }
 
-  /*
-    Atenção:
-    Na sua tabela aula, a duração chama duracao_segundos,
-    não duracao_minutos.
-  */
-
   const { data, error } = await supabase
     .from("aula")
     .select(`
@@ -357,6 +431,8 @@ async function carregarOcorrenciasProfessor() {
       data_ocorrencia,
       tipo,
       descricao,
+      motivo,
+      providencia,
       gravidade,
       created_at
     `)
@@ -425,34 +501,62 @@ function renderIndicadores() {
       .filter(Boolean)
   );
 
-  const aulasComputaveis = aulasProfessor.filter((aula) =>
-    aulaComputavelProfessor(aula)
-  );
-
-  const aulasCanceladas = aulasProfessor.filter((aula) =>
-    aula.status === STATUS.CANCELADA
-  );
-
   const prefixoMes = mesAtualPrefixo();
 
   const aulasMes = aulasProfessor.filter((aula) =>
     String(aula.data_aula || "").startsWith(prefixoMes)
   );
 
-  const totalSegundos = aulasProfessor.reduce((acc, aula) => {
+  const aulasComputaveisMes = aulasMes.filter((aula) =>
+    aulaComputavelProfessor(aula)
+  );
+
+  const totalSegundosMes = aulasMes.reduce((acc, aula) => {
     return acc + (Number(aula.duracao_segundos) || 0);
   }, 0);
 
-  const totalMinutos = segundosParaMinutos(totalSegundos);
+  const totalMinutosMes = segundosParaMinutos(totalSegundosMes);
 
   qtdAlunosAtivosProfessor.textContent = String(alunosUnicos.size);
   qtdMatriculasProfessor.textContent = String(matriculasProfessor.length);
   qtdCursosProfessor.textContent = String(cursosUnicos.size);
-  qtdAulasRegistradasProfessor.textContent = String(aulasProfessor.length);
-  qtdAulasComputaveisProfessor.textContent = String(aulasComputaveis.length);
-  qtdAulasCanceladasProfessor.textContent = String(aulasCanceladas.length);
   qtdAulasMesProfessor.textContent = String(aulasMes.length);
-  qtdMinutosProfessor.textContent = String(totalMinutos);
+  qtdAulasComputaveisProfessor.textContent = String(aulasComputaveisMes.length);
+  qtdMinutosProfessor.textContent = String(totalMinutosMes);
+}
+
+// ===============================
+// RENDER - CURSOS
+// ===============================
+
+function renderCardsCursos() {
+  const cursos = obterMatriculasPorCurso();
+
+  if (!cursos.length) {
+    cardsCursosProfessor.innerHTML = `
+      <div style="padding:12px; border:1px solid #eee; border-radius:10px; background:#fffdf5;">
+        <p style="font-size:14px; margin:0;">Nenhum curso ativo encontrado para este professor.</p>
+      </div>
+    `;
+    return;
+  }
+
+  cardsCursosProfessor.innerHTML = cursos.map((curso) => {
+    const qtdAlunos = curso.alunos.size;
+    const qtdMatriculas = curso.matriculas;
+
+    return `
+      <div style="padding:12px; border:1px solid #eee; border-radius:10px; background:#fffdf5;">
+        <div style="font-size:12px; opacity:0.75;">${escaparHtml(curso.materia_nome)}</div>
+        <div style="font-size:22px; font-weight:700; margin-top:5px;">
+          ${escaparHtml(pluralAlunos(qtdAlunos))}
+        </div>
+        <div style="font-size:12px; opacity:0.85; margin-top:5px;">
+          ${qtdMatriculas} matrícula(s) ativa(s)
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 // ===============================
@@ -466,6 +570,11 @@ function renderAlunosProfessor() {
         Nenhum aluno ativo vinculado a este professor.
       </p>
     `;
+
+    if (btnExpandirAlunosProfessor) {
+      btnExpandirAlunosProfessor.style.display = "none";
+    }
+
     return;
   }
 
@@ -475,7 +584,14 @@ function renderAlunosProfessor() {
     return nomeA.localeCompare(nomeB, "pt-BR");
   });
 
-  listaAlunosProfessor.innerHTML = listaOrdenada.map((m) => {
+  const total = listaOrdenada.length;
+  const limite = 3;
+
+  const listaParaMostrar = alunosExpandido
+    ? listaOrdenada
+    : listaOrdenada.slice(0, limite);
+
+  listaAlunosProfessor.innerHTML = listaParaMostrar.map((m) => {
     const aluno = m.aluno?.nome || "Aluno";
     const materia = m.materia?.nome || "Curso";
     const modulo = m.modulo?.nome || "Módulo";
@@ -502,51 +618,18 @@ function renderAlunosProfessor() {
     `;
   }).join("");
 
-  configurarBotoesAbrirAluno();
-}
-
-// ===============================
-// RENDER - CURSOS
-// ===============================
-
-function renderCardsCursos() {
-  const mapa = {};
-
-  matriculasProfessor.forEach((m) => {
-    const materia = m?.materia?.nome || "Curso";
-    const alunoId = m?.aluno?.id;
-
-    if (!mapa[materia]) {
-      mapa[materia] = {
-        alunos: new Set(),
-        matriculas: 0
-      };
+  if (btnExpandirAlunosProfessor) {
+    if (total <= limite) {
+      btnExpandirAlunosProfessor.style.display = "none";
+    } else {
+      btnExpandirAlunosProfessor.style.display = "inline-block";
+      btnExpandirAlunosProfessor.textContent = alunosExpandido
+        ? "Ver menos"
+        : `Ver mais (${total - limite})`;
     }
-
-    if (alunoId) mapa[materia].alunos.add(alunoId);
-    mapa[materia].matriculas += 1;
-  });
-
-  const cursos = Object.keys(mapa).sort((a, b) => a.localeCompare(b, "pt-BR"));
-
-  if (!cursos.length) {
-    cardsCursosProfessor.innerHTML = `
-      <div class="card">
-        <p style="font-size:14px;">Nenhum curso ativo encontrado para este professor.</p>
-      </div>
-    `;
-    return;
   }
 
-  cardsCursosProfessor.innerHTML = cursos.map((curso) => {
-    return `
-      <div class="card">
-        <h2>${escaparHtml(curso)}</h2>
-        <p><b>Alunos:</b> ${mapa[curso].alunos.size}</p>
-        <p><b>Matrículas:</b> ${mapa[curso].matriculas}</p>
-      </div>
-    `;
-  }).join("");
+  configurarBotoesAbrirAluno();
 }
 
 // ===============================
@@ -556,11 +639,26 @@ function renderCardsCursos() {
 function obterAulasFiltradas() {
   const statusSelecionado = filtroStatusAulaProfessor?.value || "";
 
+  let aulas = [...aulasProfessor];
+
+  /*
+    Removido daqui:
+    - aulas canceladas
+    - aulas sem minutagem
+
+    Você pediu que essas aulas não apareçam nesta tela.
+  */
+  aulas = aulas.filter((aula) => {
+    if (aula.status === STATUS.CANCELADA) return false;
+    if (!aula.duracao_segundos) return false;
+    return true;
+  });
+
   if (!statusSelecionado) {
-    return [...aulasProfessor];
+    return aulas;
   }
 
-  return aulasProfessor.filter((aula) =>
+  return aulas.filter((aula) =>
     normalizarTexto(aula.status) === normalizarTexto(statusSelecionado)
   );
 }
@@ -568,7 +666,9 @@ function obterAulasFiltradas() {
 function atualizarBotaoExpandirAulas(total) {
   if (!boxExpandirAulasProfessor || !btnExpandirAulasProfessor) return;
 
-  if (total <= 6) {
+  const limite = 3;
+
+  if (total <= limite) {
     boxExpandirAulasProfessor.style.display = "none";
     return;
   }
@@ -576,7 +676,7 @@ function atualizarBotaoExpandirAulas(total) {
   boxExpandirAulasProfessor.style.display = "block";
   btnExpandirAulasProfessor.textContent = aulasExpandido
     ? "Ver menos aulas"
-    : "Ver mais aulas";
+    : `Ver mais aulas (${total - limite})`;
 }
 
 function renderAulasProfessor() {
@@ -585,7 +685,7 @@ function renderAulasProfessor() {
   if (!aulasFiltradas.length) {
     listaAulasProfessor.innerHTML = `
       <p style="font-size:13px; opacity:0.85;">
-        Nenhuma aula encontrada com o filtro selecionado.
+        Nenhuma aula recente encontrada com minutagem registrada.
       </p>
     `;
 
@@ -593,9 +693,11 @@ function renderAulasProfessor() {
     return;
   }
 
+  const limite = 3;
+
   const aulasParaMostrar = aulasExpandido
     ? aulasFiltradas
-    : aulasFiltradas.slice(0, 6);
+    : aulasFiltradas.slice(0, limite);
 
   listaAulasProfessor.innerHTML = aulasParaMostrar.map((aula) => {
     const data = formatarDataBR(aula.data_aula);
@@ -605,7 +707,6 @@ function renderAulasProfessor() {
     const status = aula.status || "-";
     const parte = textoParte(aula.parte);
     const conteudo = aula.conteudo?.trim() || "Sem conteúdo informado";
-    const justificativa = aula.justificativa?.trim() || "";
     const duracao = formatarDuracao(aula.duracao_segundos);
 
     const computavel = aulaComputavelProfessor(aula)
@@ -629,14 +730,6 @@ function renderAulasProfessor() {
           Conteúdo: ${escaparHtml(conteudo)}
         </div>
 
-        ${
-          justificativa
-            ? `<div style="font-size:12px; opacity:0.88; margin-top:4px;">
-                Justificativa: ${escaparHtml(justificativa)}
-              </div>`
-            : ""
-        }
-
         <div style="font-size:12px; opacity:0.88; margin-top:4px;">
           Aula gravada: ${aula.aula_gravada ? "Sim" : "Não"} •
           Duração: ${escaparHtml(duracao)} •
@@ -659,150 +752,152 @@ function renderAulasProfessor() {
 }
 
 // ===============================
-// RENDER - PONTOS DE ATENÇÃO
+// RENDER - OCORRÊNCIAS
 // ===============================
 
-function renderCancelamentosAtencao() {
-  const canceladasTodas = aulasProfessor.filter((aula) =>
-    aula.status === STATUS.CANCELADA
-  );
-
-  const canceladas = canceladasTodas.slice(0, 6);
-
-  qtdCancelamentosAtencao.textContent = String(canceladasTodas.length);
-
-  if (!canceladasTodas.length) {
-    listaCancelamentosAtencao.innerHTML = `
-      <p style="font-size:13px; opacity:0.85;">
-        Nenhuma aula cancelada registrada.
-      </p>
-    `;
-    return;
-  }
-
-  listaCancelamentosAtencao.innerHTML = canceladas.map((aula) => {
-    const data = formatarDataBR(aula.data_aula);
-    const aluno = obterNomeAlunoAula(aula);
-    const justificativa = aula.justificativa?.trim() || "Sem justificativa";
-
-    return `
-      <div style="padding:8px 0; border-bottom:1px solid #e6dfcf;">
-        <strong>${escaparHtml(data)} — ${escaparHtml(aluno)}</strong>
-        <div style="font-size:12px; opacity:0.88; margin-top:4px;">
-          Justificativa: ${escaparHtml(justificativa)}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if (canceladasTodas.length > 6) {
-    listaCancelamentosAtencao.innerHTML += `
-      <p style="font-size:12px; opacity:0.8; margin-top:8px;">
-        + ${canceladasTodas.length - 6} outro(s) cancelamento(s).
-      </p>
-    `;
-  }
-}
-
-function renderAulasSemMinutagem() {
-  const semMinutagemTodas = aulasProfessor.filter((aula) => {
-    if (aula.status === STATUS.CANCELADA) return false;
-    return !aula.duracao_segundos;
-  });
-
-  const semMinutagem = semMinutagemTodas.slice(0, 6);
-
-  qtdAulasSemMinutagem.textContent = String(semMinutagemTodas.length);
-
-  if (!semMinutagemTodas.length) {
-    listaAulasSemMinutagem.innerHTML = `
-      <p style="font-size:13px; opacity:0.85;">
-        Nenhuma aula sem minutagem.
-      </p>
-    `;
-    return;
-  }
-
-  listaAulasSemMinutagem.innerHTML = semMinutagem.map((aula) => {
-    const data = formatarDataBR(aula.data_aula);
-    const aluno = obterNomeAlunoAula(aula);
-    const status = aula.status || "-";
-
-    return `
-      <div style="padding:8px 0; border-bottom:1px solid #e6dfcf;">
-        <strong>${escaparHtml(data)} — ${escaparHtml(aluno)}</strong>
-        <div style="font-size:12px; opacity:0.88; margin-top:4px;">
-          Status: ${escaparHtml(status)} • Duração não informada
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if (semMinutagemTodas.length > 6) {
-    listaAulasSemMinutagem.innerHTML += `
-      <p style="font-size:12px; opacity:0.8; margin-top:8px;">
-        + ${semMinutagemTodas.length - 6} outra(s) aula(s) sem duração.
-      </p>
-    `;
-  }
-}
-
 function renderOcorrenciasProfessor() {
-  const cards = Array.from(document.querySelectorAll(".card"));
-  const cardOcorrencias = cards.find((card) =>
-    card.textContent.includes("Advertências / ocorrências")
-  );
-
-  if (!cardOcorrencias) return;
-
   if (!ocorrenciasProfessor.length) {
-    cardOcorrencias.innerHTML = `
-      <h2>⚠️ Advertências / ocorrências</h2>
-      <p style="font-size:13px; opacity:0.88;">
+    listaOcorrenciasProfessor.innerHTML = `
+      <p style="font-size:13px; opacity:0.85;">
         Nenhuma ocorrência registrada para este professor.
       </p>
-      <p style="font-size:12px; opacity:0.8; margin-top:8px;">
-        As próximas ocorrências cadastradas na tabela professor_ocorrencia aparecerão aqui.
-      </p>
     `;
+
+    if (boxExpandirOcorrenciasProfessor) {
+      boxExpandirOcorrenciasProfessor.style.display = "none";
+    }
+
     return;
   }
 
-  const ocorrenciasRecentes = ocorrenciasProfessor.slice(0, 6);
+  const limite = 3;
 
-  cardOcorrencias.innerHTML = `
-    <h2>⚠️ Advertências / ocorrências</h2>
-    <p><b>${ocorrenciasProfessor.length}</b> ocorrência(s)</p>
+  const ocorrenciasParaMostrar = ocorrenciasExpandido
+    ? ocorrenciasProfessor
+    : ocorrenciasProfessor.slice(0, limite);
 
-    <div style="margin-top:10px; font-size:13px;">
-      ${ocorrenciasRecentes.map((oc) => {
-        return `
-          <div style="padding:8px 0; border-bottom:1px solid #e6dfcf;">
-            <strong>${escaparHtml(formatarDataBR(oc.data_ocorrencia))} — ${escaparHtml(oc.tipo)}</strong>
-            <div style="font-size:12px; opacity:0.88; margin-top:4px;">
-              Gravidade: ${escaparHtml(oc.gravidade || "Observação")}
-            </div>
-            <div style="font-size:12px; opacity:0.88; margin-top:4px;">
-              ${escaparHtml(oc.descricao)}
-            </div>
-          </div>
-        `;
-      }).join("")}
-    </div>
+  listaOcorrenciasProfessor.innerHTML = ocorrenciasParaMostrar.map((oc) => {
+    const data = formatarDataBR(oc.data_ocorrencia);
+    const tipo = oc.tipo || "Ocorrência";
+    const gravidade = oc.gravidade || "Observação";
+    const motivo = oc.motivo || "";
+    const providencia = oc.providencia || "";
+    const descricao = oc.descricao || "";
 
-    ${
-      ocorrenciasProfessor.length > 6
-        ? `<p style="font-size:12px; opacity:0.8; margin-top:8px;">
-            + ${ocorrenciasProfessor.length - 6} outra(s) ocorrência(s).
-          </p>`
-        : ""
+    return `
+      <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
+        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <strong>${escaparHtml(data)} — ${escaparHtml(tipo)}</strong>
+          <span style="font-size:12px; font-weight:700;">
+            ${escaparHtml(gravidade)}
+          </span>
+        </div>
+
+        ${
+          motivo
+            ? `<div style="font-size:12px; opacity:0.88; margin-top:4px;">
+                <strong>Motivo:</strong> ${escaparHtml(motivo)}
+              </div>`
+            : ""
+        }
+
+        ${
+          providencia
+            ? `<div style="font-size:12px; opacity:0.88; margin-top:4px;">
+                <strong>Providência:</strong> ${escaparHtml(providencia)}
+              </div>`
+            : ""
+        }
+
+        <div style="font-size:12px; opacity:0.88; margin-top:4px;">
+          <strong>Descrição:</strong> ${escaparHtml(descricao)}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (boxExpandirOcorrenciasProfessor && btnExpandirOcorrenciasProfessor) {
+    if (ocorrenciasProfessor.length <= limite) {
+      boxExpandirOcorrenciasProfessor.style.display = "none";
+    } else {
+      boxExpandirOcorrenciasProfessor.style.display = "block";
+      btnExpandirOcorrenciasProfessor.textContent = ocorrenciasExpandido
+        ? "Ver menos ocorrências"
+        : `Ver mais ocorrências (${ocorrenciasProfessor.length - limite})`;
     }
-  `;
+  }
 }
 
-function renderPontosAtencao() {
-  renderCancelamentosAtencao();
-  renderAulasSemMinutagem();
+// ===============================
+// FORMULÁRIO DE OCORRÊNCIA
+// ===============================
+
+function abrirFormOcorrencia() {
+  formOcorrenciaProfessor.style.display = "block";
+  btnMostrarFormOcorrencia.style.display = "none";
+
+  ocorrenciaData.value = dataHojeLocalISO();
+  ocorrenciaTipo.value = "";
+  ocorrenciaGravidade.value = "Observação";
+  ocorrenciaMotivo.value = "";
+  ocorrenciaProvidencia.value = "";
+  ocorrenciaDescricao.value = "";
+
+  ocorrenciaTipo.focus();
+}
+
+function fecharFormOcorrencia() {
+  formOcorrenciaProfessor.style.display = "none";
+  btnMostrarFormOcorrencia.style.display = "inline-block";
+
+  formOcorrenciaProfessor.reset();
+}
+
+async function salvarOcorrencia(event) {
+  event.preventDefault();
+
+  const dataOcorrencia = ocorrenciaData.value;
+  const tipo = ocorrenciaTipo.value;
+  const gravidade = ocorrenciaGravidade.value;
+  const motivo = ocorrenciaMotivo.value.trim();
+  const providencia = ocorrenciaProvidencia.value.trim();
+  const descricao = ocorrenciaDescricao.value.trim();
+
+  if (!dataOcorrencia || !tipo || !gravidade || !motivo || !providencia || !descricao) {
+    mostrarMensagem("Preencha todos os campos da ocorrência.", false);
+    return;
+  }
+
+  btnSalvarOcorrencia.disabled = true;
+  btnSalvarOcorrencia.textContent = "Salvando...";
+
+  const { error } = await supabase
+    .from("professor_ocorrencia")
+    .insert({
+      professor_id: Number(professorId),
+      data_ocorrencia: dataOcorrencia,
+      tipo,
+      gravidade,
+      motivo,
+      providencia,
+      descricao
+    });
+
+  btnSalvarOcorrencia.disabled = false;
+  btnSalvarOcorrencia.textContent = "Salvar ocorrência";
+
+  if (error) {
+    console.error("Erro ao salvar ocorrência:", error);
+    mostrarMensagem("Erro ao salvar ocorrência.", false);
+    return;
+  }
+
+  mostrarMensagem("Ocorrência registrada com sucesso!", true);
+
+  fecharFormOcorrencia();
+
+  await carregarOcorrenciasProfessor();
+  ocorrenciasExpandido = false;
   renderOcorrenciasProfessor();
 }
 
@@ -823,10 +918,10 @@ async function init() {
 
     renderCabecalho();
     renderIndicadores();
-    renderAlunosProfessor();
     renderCardsCursos();
+    renderAlunosProfessor();
     renderAulasProfessor();
-    renderPontosAtencao();
+    renderOcorrenciasProfessor();
 
   } catch (error) {
     console.error("Erro ao carregar detalhes do professor:", error);
@@ -838,6 +933,11 @@ async function init() {
 // EVENTOS
 // ===============================
 
+btnExpandirAlunosProfessor?.addEventListener("click", () => {
+  alunosExpandido = !alunosExpandido;
+  renderAlunosProfessor();
+});
+
 btnExpandirAulasProfessor?.addEventListener("click", () => {
   aulasExpandido = !aulasExpandido;
   renderAulasProfessor();
@@ -846,6 +946,17 @@ btnExpandirAulasProfessor?.addEventListener("click", () => {
 filtroStatusAulaProfessor?.addEventListener("change", () => {
   aulasExpandido = false;
   renderAulasProfessor();
+});
+
+btnMostrarFormOcorrencia?.addEventListener("click", abrirFormOcorrencia);
+
+btnCancelarOcorrencia?.addEventListener("click", fecharFormOcorrencia);
+
+formOcorrenciaProfessor?.addEventListener("submit", salvarOcorrencia);
+
+btnExpandirOcorrenciasProfessor?.addEventListener("click", () => {
+  ocorrenciasExpandido = !ocorrenciasExpandido;
+  renderOcorrenciasProfessor();
 });
 
 // ===============================
