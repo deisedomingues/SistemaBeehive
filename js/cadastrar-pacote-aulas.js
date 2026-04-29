@@ -67,7 +67,7 @@ function escaparHtml(texto) {
 }
 
 function voltar() {
-  window.location.href = "home-admin.html";
+  window.location.href = "home-financeiro.html";
 }
 
 // ===============================
