@@ -3479,3 +3479,41 @@ textarea[readonly] {
     font-size: 14px;
   }
 }
+.painel-admin-departamentos {
+  max-width: 850px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.card-admin-departamento {
+  min-height: 150px;
+}
+
+.card-admin-departamento .card-admin-icone {
+  font-size: 2.4rem;
+}
+
+.card-admin-departamento h2 {
+  font-size: 1.4rem;
+}
+
+.topo-acoes-duplo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.link-voltar-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #000;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.link-voltar-admin:hover {
+  text-decoration: underline;
+}
