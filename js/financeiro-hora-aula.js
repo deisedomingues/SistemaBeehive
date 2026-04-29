@@ -50,6 +50,7 @@ function mostrarMensagem(texto, ok = true) {
 
 function formatarData(dataIso) {
   if (!dataIso) return "-";
+
   const [ano, mes, dia] = dataIso.split("-");
   return `${dia}/${mes}/${ano}`;
 }
@@ -67,6 +68,7 @@ function formatarParte(parte) {
 
 function preencherDias() {
   filtroDia.innerHTML = `<option value="">Todos os dias</option>`;
+
   for (let i = 1; i <= 31; i++) {
     const option = document.createElement("option");
     option.value = String(i);
@@ -77,6 +79,7 @@ function preencherDias() {
 
 function preencherAnos() {
   filtroAno.innerHTML = `<option value="">Todos os anos</option>`;
+
   const anoAtual = new Date().getFullYear();
 
   for (let ano = anoAtual + 1; ano >= 2024; ano--) {
@@ -112,29 +115,32 @@ function formatarTempoDigitado(digitos) {
   const segundos = limpo.slice(-2);
   const minutos = limpo.slice(-4, -2).padStart(2, "0");
   const horas = limpo.slice(0, -4);
+
   return `${Number(horas)}:${minutos}:${segundos}`;
 }
 
 function converterTempoDigitadoParaSegundos(valorDigitado) {
   const limpo = somenteDigitos(valorDigitado);
+
   if (!limpo) return null;
 
   if (limpo.length <= 2) {
-    // interpreta como minutos inteiros
+    // Exemplo: 30 = 30 minutos
     return Number(limpo) * 60;
   }
 
   if (limpo.length <= 4) {
-    // mmss
+    // Exemplo: 3050 = 30 minutos e 50 segundos
     const minutos = Number(limpo.slice(0, -2) || 0);
     const segundos = Number(limpo.slice(-2) || 0);
     return (minutos * 60) + segundos;
   }
 
-  // hhm mss / h:mm:ss
+  // Exemplo: 13050 = 1 hora, 30 minutos e 50 segundos
   const segundos = Number(limpo.slice(-2) || 0);
   const minutos = Number(limpo.slice(-4, -2) || 0);
   const horas = Number(limpo.slice(0, -4) || 0);
+
   return (horas * 3600) + (minutos * 60) + segundos;
 }
 
@@ -144,6 +150,7 @@ function formatarSegundosParaCampo(valorSegundos) {
   }
 
   const total = Number(valorSegundos);
+
   if (Number.isNaN(total)) return "";
 
   const horas = Math.floor(total / 3600);
@@ -177,6 +184,7 @@ function normalizarDuracaoSegundos(valor) {
   if (valor === "" || valor === null || valor === undefined) return null;
 
   const numero = Number(valor);
+
   if (Number.isNaN(numero)) return null;
 
   return numero;
@@ -189,11 +197,13 @@ function obterValorHoraDaMateria(materiaId) {
   const registro = valoresHoraProfessor.find(
     (item) => Number(item.materia_id) === Number(materiaId)
   );
+
   return Number(registro?.valor_hora || 0);
 }
 
 function calcularValorItem(item) {
   const segundos = Number(item.duracao_segundos || 0);
+
   if (!segundos) return 0;
 
   let valorHora = Number(item.valor_hora || 0);
@@ -316,10 +326,12 @@ function agruparAulasParaFinanceiro(aulas) {
           duracao_segundos: aula.duracao_segundos ?? "",
           duracao_segundos_salva: aula.duracao_segundos ?? null,
           duracao_input: formatarSegundosParaCampo(aula.duracao_segundos),
-          valor_hora: valorHoraBase
+          valor_hora: valorHoraBase,
+          editando: false
         });
       } else {
         const grupo = grupos.get(chave);
+
         grupo.ids_aula.push(Number(aula.id));
 
         if (!grupo.alunos.includes(nomeAluno)) {
@@ -365,7 +377,8 @@ function agruparAulasParaFinanceiro(aulas) {
         duracao_segundos: aula.duracao_segundos ?? "",
         duracao_segundos_salva: aula.duracao_segundos ?? null,
         duracao_input: formatarSegundosParaCampo(aula.duracao_segundos),
-        valor_hora: valorHoraBase
+        valor_hora: valorHoraBase,
+        editando: false
       });
     }
   }
@@ -378,6 +391,7 @@ function agruparAulasParaFinanceiro(aulas) {
   return itens.sort((a, b) => {
     const dataA = `${a.data_aula || ""}-${String(a.parte || 1).padStart(2, "0")}`;
     const dataB = `${b.data_aula || ""}-${String(b.parte || 1).padStart(2, "0")}`;
+
     return dataB.localeCompare(dataA);
   });
 }
@@ -388,7 +402,9 @@ function agruparAulasParaFinanceiro(aulas) {
 function montarHtmlAlunos(alunos) {
   return `
     <ul style="margin:6px 0 0 18px; padding:0; line-height:1.55;">
-      ${alunos.map((nome) => `<li style="margin-bottom:4px;"><strong style="font-size:15px;">${nome}</strong></li>`).join("")}
+      ${alunos
+        .map((nome) => `<li style="margin-bottom:4px;"><strong style="font-size:15px;">${nome}</strong></li>`)
+        .join("")}
     </ul>
   `;
 }
@@ -406,6 +422,17 @@ function renderItensFinanceiro() {
 
   itensFinanceiroCache.forEach((item) => {
     const estadoMinutagem = obterEstadoMinutagem(item);
+
+    const temMinutagemSalva =
+      normalizarDuracaoSegundos(item.duracao_segundos_salva) !== null;
+
+    const estaEditando = Boolean(item.editando);
+
+    // Se já tem minutagem salva e não está em modo edição, trava o campo.
+    const campoTravado = temMinutagemSalva && !estaEditando;
+
+    const textoBotao = campoTravado ? "Editar" : "Salvar";
+    const acaoBotao = campoTravado ? "editar" : "salvar";
 
     const card = document.createElement("div");
     card.style.border = item.aula_coletiva ? "1px solid #f1d98a" : "1px solid #eee";
@@ -458,6 +485,7 @@ function renderItensFinanceiro() {
         </span>
       </div>
     `;
+
     card.appendChild(titulo);
 
     const blocoAlunos = document.createElement("div");
@@ -477,15 +505,18 @@ function renderItensFinanceiro() {
       <span><strong>${formatarParte(item.parte)}</strong></span>
       <span><strong>Qtd. alunos:</strong> ${item.quantidade_alunos || item.alunos.length}</span>
     `;
+
     card.appendChild(linhaInfo);
 
     const blocoConteudo = document.createElement("div");
     blocoConteudo.style.marginBottom = "12px";
+
     blocoConteudo.innerHTML = `
       <div style="font-size:14px;">
         <strong>Conteúdo:</strong> ${item.conteudo || "-"}
       </div>
     `;
+
     card.appendChild(blocoConteudo);
 
     const valorHoraAplicado = item.aula_coletiva
@@ -514,17 +545,30 @@ function renderItensFinanceiro() {
           value="${item.duracao_input || ""}"
           data-chave-item="${item.chave}"
           class="input-duracao-aula"
-          style="margin-top:6px;"
+          style="
+            margin-top:6px;
+            ${campoTravado ? "background:#f3f3f3; cursor:not-allowed; opacity:0.85;" : ""}
+          "
           placeholder="Ex: 3050"
+          ${campoTravado ? "disabled" : ""}
         />
-        <div style="font-size:11px; opacity:0.7; margin-top:4px;">Digite sem os dois pontos</div>
+        <div style="font-size:11px; opacity:0.7; margin-top:4px;">
+          ${
+            campoTravado
+              ? "Clique em editar para alterar a minutagem."
+              : "Digite sem os dois pontos."
+          }
+        </div>
       </div>
 
       <div>
         <div style="font-size:12px; opacity:0.75;">Valor estimado</div>
-        <div id="valor-item-${item.chave}" style="font-weight:700; margin-top:4px;">${formatarMoeda(valorPrevio)}</div>
+        <div id="valor-item-${item.chave}" style="font-weight:700; margin-top:4px;">
+          ${formatarMoeda(valorPrevio)}
+        </div>
       </div>
     `;
+
     card.appendChild(linhaFinal);
 
     const rodape = document.createElement("div");
@@ -536,13 +580,15 @@ function renderItensFinanceiro() {
     rodape.innerHTML = `
       <button
         type="button"
-        class="btn btn-salvar-item"
+        class="btn btn-acao-item"
         data-chave-item="${item.chave}"
+        data-acao="${acaoBotao}"
         style="padding:10px 14px;"
       >
-        Salvar
+        ${textoBotao}
       </button>
     `;
+
     card.appendChild(rodape);
 
     listaAulas.appendChild(card);
@@ -552,6 +598,7 @@ function renderItensFinanceiro() {
     input.addEventListener("input", (e) => {
       const chave = e.target.dataset.chaveItem;
       const item = itensFinanceiroCache.find((x) => x.chave === chave);
+
       if (!item) return;
 
       const limpo = somenteDigitos(e.target.value);
@@ -562,6 +609,7 @@ function renderItensFinanceiro() {
       item.duracao_segundos = converterTempoDigitadoParaSegundos(limpo);
 
       const valorEl = document.getElementById(`valor-item-${chave}`);
+
       if (valorEl) {
         valorEl.textContent = formatarMoeda(calcularValorItem(item));
       }
@@ -570,9 +618,36 @@ function renderItensFinanceiro() {
     });
   });
 
-  document.querySelectorAll(".btn-salvar-item").forEach((btn) => {
+  document.querySelectorAll(".btn-acao-item").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       const chave = e.currentTarget.dataset.chaveItem;
+      const acao = e.currentTarget.dataset.acao;
+
+      const item = itensFinanceiroCache.find((x) => x.chave === chave);
+
+      if (!item) {
+        mostrarMensagem("Aula não encontrada.", false);
+        return;
+      }
+
+      if (acao === "editar") {
+        item.editando = true;
+        renderItensFinanceiro();
+
+        setTimeout(() => {
+          const input = document.querySelector(
+            `.input-duracao-aula[data-chave-item="${chave}"]`
+          );
+
+          if (input) {
+            input.focus();
+            input.select();
+          }
+        }, 50);
+
+        return;
+      }
+
       await salvarDuracaoItem(chave, e.currentTarget);
     });
   });
@@ -632,13 +707,16 @@ async function buscarAulas() {
   }
 
   listaAulas.innerHTML = `<div style="opacity:0.8; font-size:13px;">Carregando aulas...</div>`;
+
   itensFinanceiroCache = [];
   valoresHoraProfessor = [];
 
   const okValores = await carregarValoresHoraProfessor(professorId);
 
   if (!okValores) {
-    listaAulas.innerHTML = `<div style="opacity:0.8; font-size:13px;">Erro ao carregar valores do professor.</div>`;
+    listaAulas.innerHTML = `
+      <div style="opacity:0.8; font-size:13px;">Erro ao carregar valores do professor.</div>
+    `;
     mostrarMensagem("Erro ao carregar valor/hora do professor.", false);
     atualizarResumo();
     return;
@@ -705,7 +783,13 @@ async function salvarDuracaoItem(chave, botao) {
 
   const valorDuracao = normalizarDuracaoSegundos(item.duracao_segundos);
 
+  if (valorDuracao === null) {
+    mostrarMensagem("Informe uma minutagem antes de salvar.", false);
+    return;
+  }
+
   botao.disabled = true;
+
   const textoOriginal = botao.textContent;
   botao.textContent = "Salvando...";
 
@@ -724,18 +808,17 @@ async function salvarDuracaoItem(chave, botao) {
     }
 
     item.duracao_segundos_salva = valorDuracao;
+    item.duracao_segundos = valorDuracao;
     item.duracao_input = formatarSegundosParaCampo(valorDuracao);
+    item.editando = false;
 
-    if (valorDuracao === null) {
-      mostrarMensagem("Minutagem removida. O selo continuará pendente.", true);
-    } else {
-      mostrarMensagem("Minutagem salva com sucesso!", true);
-    }
+    mostrarMensagem("Minutagem salva com sucesso!", true);
 
     renderItensFinanceiro();
   } catch (error) {
     console.error("Erro ao salvar minutagem:", error);
     mostrarMensagem("Erro ao salvar a minutagem desta aula.", false);
+
     botao.disabled = false;
     botao.textContent = textoOriginal;
   }
@@ -754,6 +837,7 @@ btnBuscar.addEventListener("click", buscarAulas);
   preencherAnos();
 
   const hoje = new Date();
+
   filtroDia.value = "";
   filtroMes.value = String(hoje.getMonth() + 1);
   filtroAno.value = String(hoje.getFullYear());
