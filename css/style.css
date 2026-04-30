@@ -3517,3 +3517,629 @@ textarea[readonly] {
 .link-voltar-admin:hover {
   text-decoration: underline;
 }
+/* =========================================================
+   RESUMO PROFESSOR - AJUSTES
+========================================================= */
+
+.card-professor-amarelo {
+  background: #FFF5CC;
+  border: 1px solid rgba(253, 204, 12, 0.55);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.btn-pequeno-resumo {
+  width: auto;
+  min-width: 130px;
+  padding: 9px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+.cards-visao-professor {
+  align-items: stretch;
+}
+
+.card-visao-curso {
+  background: #FFF5CC;
+  border: 1px solid rgba(253, 204, 12, 0.55);
+}
+
+.scroll-horizontal-resumo {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.grid-modulos-professor {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  min-width: 520px;
+}
+
+.card-modulo-professor {
+  min-height: 120px;
+  padding: 14px;
+}
+
+.card-modulo-professor h2 {
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+
+.materia-modulo-professor {
+  font-size: 13px;
+  opacity: 0.75;
+  margin-bottom: 8px;
+}
+
+.lista-aulas-periodo {
+  margin-top: 14px;
+}
+
+.item-aula-periodo {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(253, 204, 12, 0.45);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.item-aula-periodo p {
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+
+.texto-reposicao-periodo {
+  color: #6b4b00;
+}
+
+.duracao-aula-periodo {
+  flex-shrink: 0;
+  background: #FDCC0C;
+  color: #000;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  text-align: center;
+  min-width: 95px;
+}
+
+.item-avaliacao-resumo {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(253, 204, 12, 0.45);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.item-avaliacao-resumo p {
+  margin: 5px 0 0;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .grid-modulos-professor {
+    min-width: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .scroll-horizontal-resumo {
+    overflow-x: visible;
+  }
+
+  .item-aula-periodo {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .duracao-aula-periodo {
+    min-width: auto;
+  }
+}
+/* =========================================================
+   RESUMO PROFESSOR - AJUSTES NOVOS
+========================================================= */
+
+.card-professor-amarelo {
+  background: #FFF5CC;
+  border: 1px solid rgba(253, 204, 12, 0.55);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.btn-pequeno-resumo {
+  width: auto;
+  min-width: 130px;
+  padding: 9px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+.texto-ajuda-italico {
+  font-style: italic;
+}
+
+.resumo-filtro-aulas {
+  margin-top: 14px;
+}
+
+.resumo-filtro-aulas p {
+  margin: 6px 0;
+  font-size: 15px;
+}
+
+.acoes-lista-aulas {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.cards-visao-professor {
+  align-items: stretch;
+}
+
+.card-visao-curso {
+  background: #FFF5CC;
+  border: 1px solid rgba(253, 204, 12, 0.55);
+}
+
+.scroll-horizontal-resumo {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.grid-modulos-professor {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  min-width: 520px;
+}
+
+.card-modulo-professor {
+  min-height: 120px;
+  padding: 14px;
+}
+
+.card-modulo-professor h2 {
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+
+.materia-modulo-professor {
+  font-size: 13px;
+  opacity: 0.75;
+  margin-bottom: 8px;
+}
+
+/* AVALIAÇÕES */
+.item-avaliacao-resumo {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(253, 204, 12, 0.45);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.item-avaliacao-resumo p {
+  margin: 5px 0 0;
+  font-size: 13px;
+}
+
+.item-avaliacao-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+}
+
+.item-avaliacao-info {
+  flex: 1;
+}
+
+.item-avaliacao-acoes {
+  flex-shrink: 0;
+}
+
+.btn-enviar-avaliacao {
+  white-space: nowrap;
+}
+
+/* AULAS NO PERÍODO */
+.lista-aulas-periodo {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-aula-periodo-linha {
+  display: grid;
+  grid-template-columns: 110px minmax(180px, 1.2fr) 140px minmax(220px, 1.5fr) 130px;
+  gap: 10px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(253, 204, 12, 0.45);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.col-aula {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-aula-data {
+  font-weight: 700;
+}
+
+.col-aula-aluno {
+  font-weight: 600;
+}
+
+.col-aula-status {
+  color: #6b4b00;
+}
+
+.col-aula-duracao {
+  font-weight: 700;
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .item-aula-periodo-linha {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .col-aula {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: initial;
+  }
+
+  .col-aula-duracao {
+    text-align: left;
+  }
+}
+
+@media (max-width: 700px) {
+  .grid-modulos-professor {
+    min-width: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .scroll-horizontal-resumo {
+    overflow-x: visible;
+  }
+
+  .item-avaliacao-topo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+/* =========================================================
+   MENSAGEM LOCAL / CONTEXTUAL
+========================================================= */
+
+.msg-local-resumo {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  max-width: 260px;
+}
+
+.msg-local-resumo.ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid rgba(27, 94, 32, 0.18);
+}
+
+.msg-local-resumo.erro {
+  background: #ffebee;
+  color: #b71c1c;
+  border: 1px solid rgba(183, 28, 28, 0.18);
+}
+
+/* =========================================================
+   RESUMO PROFESSOR - AJUSTES GERAIS
+========================================================= */
+
+.card-professor-amarelo {
+  background: #FFF5CC;
+  border: 1px solid rgba(253, 204, 12, 0.55);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.btn-pequeno-resumo {
+  width: auto;
+  min-width: 130px;
+  padding: 9px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+.texto-ajuda-italico {
+  font-style: italic;
+}
+
+.resumo-filtro-aulas {
+  margin-top: 14px;
+}
+
+.resumo-filtro-aulas p {
+  margin: 6px 0;
+  font-size: 15px;
+}
+
+.acoes-lista-aulas {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* =========================================================
+   MENSAGEM LOCAL / CONTEXTUAL
+========================================================= */
+
+.msg-local-resumo {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  max-width: 260px;
+}
+
+.msg-local-resumo.ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid rgba(27, 94, 32, 0.18);
+}
+
+.msg-local-resumo.erro {
+  background: #ffebee;
+  color: #b71c1c;
+  border: 1px solid rgba(183, 28, 28, 0.18);
+}
+
+/* =========================================================
+   AVALIAÇÕES PREVISTAS
+========================================================= */
+
+.item-avaliacao-resumo {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(253, 204, 12, 0.45);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.item-avaliacao-resumo p {
+  margin: 5px 0 0;
+  font-size: 13px;
+}
+
+.item-avaliacao-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+}
+
+.item-avaliacao-info {
+  flex: 1;
+}
+
+.item-avaliacao-acoes {
+  flex-shrink: 0;
+}
+
+.btn-enviar-avaliacao {
+  white-space: nowrap;
+}
+
+/* =========================================================
+   AULAS NO PERÍODO
+========================================================= */
+
+.lista-aulas-periodo {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-aula-periodo-linha {
+  display: grid;
+  grid-template-columns: 110px minmax(180px, 1.2fr) 140px minmax(220px, 1.5fr) 130px;
+  gap: 10px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(253, 204, 12, 0.45);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.col-aula {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-aula-data {
+  font-weight: 700;
+}
+
+.col-aula-aluno {
+  font-weight: 600;
+}
+
+.col-aula-status {
+  color: #6b4b00;
+}
+
+.col-aula-duracao {
+  font-weight: 700;
+  text-align: right;
+}
+
+/* =========================================================
+   VISÃO GERAL UNIFICADA - RESUMO PROFESSOR
+========================================================= */
+
+.card-visao-geral-unificada {
+  background: #FFF5CC;
+  border: 1px solid rgba(253, 204, 12, 0.55);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.topo-visao-geral-unificada {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.resumo-topo-unificado {
+  flex: 1 1 220px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(253, 204, 12, 0.4);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.rotulo-topo-unificado {
+  display: block;
+  font-size: 12px;
+  opacity: 0.75;
+  margin-bottom: 4px;
+}
+
+.lista-cursos-unificada {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bloco-curso-unificado {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(253, 204, 12, 0.4);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.linha-curso-unificado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.nome-curso-unificado {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.quantidade-curso-unificado {
+  font-size: 14px;
+}
+
+.linha-modulos-unificado {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.rotulo-modulos-unificado {
+  font-size: 13px;
+  opacity: 0.75;
+  min-width: 58px;
+}
+
+.conteudo-modulos-unificado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.item-modulo-inline {
+  white-space: nowrap;
+}
+
+.separador-modulo-professor {
+  color: rgba(0, 0, 0, 0.35);
+  font-weight: 700;
+}
+
+.texto-vazio-modulo {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+/* =========================================================
+   RESPONSIVO
+========================================================= */
+
+@media (max-width: 900px) {
+  .item-aula-periodo-linha {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .col-aula {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: initial;
+  }
+
+  .col-aula-duracao {
+    text-align: left;
+  }
+}
+
+@media (max-width: 700px) {
+  .item-avaliacao-topo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .linha-curso-unificado {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .linha-modulos-unificado {
+    flex-direction: column;
+  }
+
+  .rotulo-modulos-unificado {
+    min-width: auto;
+  }
+
+  .item-modulo-inline {
+    white-space: normal;
+  }
+}

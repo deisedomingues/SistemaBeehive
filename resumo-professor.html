@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
+
 <body class="pagina-resumo-professor">
 
   <div class="overlay"></div>
@@ -28,10 +29,10 @@
     <section class="bloco-resumo-professor">
       <div class="cabecalho-bloco-resumo">
         <h2>🔎 Consulta de aluno</h2>
-        <p>Abra rapidamente os detalhes de um aluno.</p>
+        <p>Visualize o diário e mais detalhes de um aluno.</p>
       </div>
 
-      <div class="card">
+      <div class="card card-professor-amarelo">
         <div class="form form-resumo-professor" style="margin-top:0;">
           <label>
             Aluno (curso)
@@ -43,10 +44,6 @@
           <button class="btn" id="btnDetalhes" type="button" style="padding:12px;">
             Ver detalhes
           </button>
-
-          <p class="texto-ajuda-resumo">
-            Selecione um aluno para abrir a tela de detalhes.
-          </p>
         </div>
       </div>
     </section>
@@ -58,7 +55,7 @@
         <p>Informações que merecem sua atenção agora.</p>
       </div>
 
-      <div class="card card-destaque">
+      <div class="card card-professor-amarelo">
         <h2>📝 Avaliações previstas</h2>
         <p class="texto-ajuda-resumo">
           A cada 14 aulas válidas no módulo atual, uma avaliação pode ficar pendente.
@@ -67,6 +64,15 @@
         <div id="listaAvaliacoesContainer" class="lista-interna-resumo">
           <p style="font-size:14px;">Carregando...</p>
         </div>
+
+        <button
+          id="btnToggleAvaliacoes"
+          type="button"
+          class="btn btn-pequeno-resumo"
+          style="display:none; margin-top:12px;"
+        >
+          Ver mais
+        </button>
       </div>
     </section>
 
@@ -74,81 +80,82 @@
     <section class="bloco-resumo-professor">
       <div class="cabecalho-bloco-resumo">
         <h2>📅 Aulas</h2>
-        <p>Consulte a quantidade de aulas dadas em um período.</p>
+        <p>Consulte as aulas dadas em um período.</p>
       </div>
 
-      <div class="dashboard dashboard-resumo-professor">
-        <div class="card card-aulas-resumo">
-          <h2>📅 Aulas dadas no período</h2>
-          <p>Foram dadas <b id="qtdAulasPeriodo">0</b> aulas no período selecionado.</p>
+      <div class="card card-aulas-resumo">
+        <h2>📅 Aulas dadas no período</h2>
 
-          <p class="texto-ajuda-resumo">
-            (contando presente, ausente, reposição, aula instrumental e plantão de dúvidas)
-          </p>
+        <p class="texto-ajuda-resumo texto-ajuda-italico">
+          Use o filtro “Aulas válidas” para ver somente as aulas que contam como aula dada:
+          presente, ausente com aula gravada, reposição, aula instrumental e plantão de dúvidas.
+        </p>
 
-          <div class="filtro-interno-aulas">
-            <label>
-              Data inicial
-              <input type="date" id="dataInicio" />
-            </label>
+        <div class="filtro-interno-aulas">
+          <label>
+            Data inicial
+            <input type="date" id="dataInicio" />
+          </label>
 
-            <label>
-              Data final
-              <input type="date" id="dataFim" />
-            </label>
+          <label>
+            Data final
+            <input type="date" id="dataFim" />
+          </label>
 
-            <label>
-              Filtrar status
-              <select id="filtroStatusPeriodo">
-                <option value="">Todos</option>
-                <option value="Presente">Presente</option>
-                <option value="Ausente">Ausente</option>
-                <option value="Reposição">Reposição</option>
-                <option value="Aula Instrumental">Aula Instrumental</option>
-                <option value="Plantão de dúvidas">Plantão de dúvidas</option>
-              </select>
-            </label>
+          <label>
+            Filtrar aulas
+            <select id="filtroStatusPeriodo">
+              <option value="">Todas</option>
+              <option value="aulas_validas">Aulas válidas</option>
+              <option value="Presente">Presente</option>
+              <option value="Ausente">Ausente</option>
+              <option value="Reposição">Reposição</option>
+              <option value="Aula Instrumental">Aula Instrumental</option>
+              <option value="Plantão de dúvidas">Plantão de dúvidas</option>
+            </select>
+          </label>
 
-            <div class="grupo-botoes-filtro">
-              <button id="btnAplicarFiltro" class="btn" type="button">Aplicar filtro</button>
-              <button id="btnLimparFiltro" class="btn btn-neutro" type="button">Limpar</button>
-            </div>
+          <div class="grupo-botoes-filtro">
+            <button id="btnAplicarFiltro" class="btn" type="button">Aplicar filtro</button>
+            <button id="btnLimparFiltro" class="btn btn-neutro" type="button">Limpar</button>
           </div>
         </div>
-      </div>
 
-      <div
-        style="
-          display:grid;
-          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-          gap:10px;
-          margin-top:12px;
-        "
-      >
-        <div class="card" style="padding:10px 12px;">
-          <div style="font-size:12px; opacity:0.8;">✅ Presente</div>
-          <div style="font-size:22px; font-weight:700;"><span id="cAulasPresente">0</span></div>
+        <div class="resumo-filtro-aulas">
+          <p id="textoResumoAulasPeriodo">
+            Foram encontradas <b>0</b> aula(s) em <b>todas</b> no período selecionado.
+          </p>
+
+          <p id="textoResumoDuracaoPeriodo">
+            Totalizando <b>0 minuto(s) registrados</b>.
+          </p>
         </div>
 
-        <div class="card" style="padding:10px 12px;">
-          <div style="font-size:12px; opacity:0.8;">⚠️ Ausente</div>
-          <div style="font-size:22px; font-weight:700;"><span id="cAulasAusente">0</span></div>
+        <div class="acoes-lista-aulas">
+          <button
+            id="btnToggleAulasPeriodo"
+            type="button"
+            class="btn btn-pequeno-resumo"
+            style="display:none;"
+          >
+            Ver aulas
+          </button>
+
+          <button
+            id="btnExpandirAulasPeriodo"
+            type="button"
+            class="btn btn-neutro btn-pequeno-resumo"
+            style="display:none;"
+          >
+            Ver mais
+          </button>
         </div>
 
-        <div class="card" style="padding:10px 12px;">
-          <div style="font-size:12px; opacity:0.8;">🔄 Reposição</div>
-          <div style="font-size:22px; font-weight:700;"><span id="cAulasReposicao">0</span></div>
-        </div>
-
-        <div class="card" style="padding:10px 12px;">
-          <div style="font-size:12px; opacity:0.8;">🧰 Instrumental</div>
-          <div style="font-size:22px; font-weight:700;"><span id="cAulasInstrumental">0</span></div>
-        </div>
-
-        <div class="card" style="padding:10px 12px;">
-          <div style="font-size:12px; opacity:0.8;">💡 Plantão</div>
-          <div style="font-size:22px; font-weight:700;"><span id="cAulasPlantao">0</span></div>
-        </div>
+        <div
+          id="listaAulasPeriodoContainer"
+          class="lista-aulas-periodo"
+          style="display:none;"
+        ></div>
       </div>
     </section>
 
@@ -159,35 +166,9 @@
         <p>Resumo rápido das suas matérias e dos seus alunos.</p>
       </div>
 
-      <div class="dashboard dashboard-resumo-professor">
-        <div class="card">
-          <h2>📚 Matérias ministradas</h2>
-          <div id="listaMateriasProfessor" class="lista-interna-resumo">
-            <p style="font-size:14px;">Carregando...</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>📌 Total de alunos</h2>
-          <p><b id="qtdTotalAlunos">0</b> alunos vinculados às suas matérias.</p>
-        </div>
-      </div>
-
-      <div class="subbloco-resumo">
-        <h3>👥 Alunos por matéria</h3>
-        <div id="cardsAlunosPorMateria" class="dashboard dashboard-resumo-professor">
-          <div class="card">
-            <p style="font-size:14px;">Carregando...</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="subbloco-resumo">
-        <h3>🧩 Quantidade de alunos por módulo</h3>
-        <div id="cardsModulosPorMateria" class="dashboard dashboard-resumo-professor">
-          <div class="card">
-            <p style="font-size:14px;">Carregando...</p>
-          </div>
+      <div class="card card-visao-geral-unificada">
+        <div id="cardVisaoGeralProfessor">
+          <p style="font-size:14px;">Carregando...</p>
         </div>
       </div>
     </section>
