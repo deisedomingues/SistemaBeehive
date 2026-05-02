@@ -8,7 +8,7 @@ await exigirAdmin();
 ========================================================= */
 
 // TROQUE pelo CNPJ exato que você cadastrou para a Beehive
-const CNPJ_BEEHIVE = "12345678000199";
+const CNPJ_BEEHIVE = "50715902000182";
 
 // Quando o pacote chegar em 28 aulas usadas, aparece em pontos de atenção.
 // Pacote padrão: 36 aulas. 36 - 28 = restam 8 aulas.
@@ -63,6 +63,20 @@ let notas = [];
 let pacotesAulas = [];
 
 /* =========================================================
+   CONSTANTES
+========================================================= */
+
+const STATUS = {
+  PRESENTE: "presente",
+  AUSENTE: "ausente",
+  CANCELADA: "cancelada",
+  TRANCADA: "trancada",
+  REPOSICAO: "reposicao",
+  AULA_INSTRUMENTAL: "aula instrumental",
+  PLANTAO_DUVIDAS: "plantao de duvidas"
+};
+
+/* =========================================================
    UTILITÁRIOS
 ========================================================= */
 
@@ -92,7 +106,11 @@ function escapeHtml(texto) {
 }
 
 function normalizarTexto(valor) {
-  return String(valor || "").trim().toLowerCase();
+  return String(valor || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function hojeISO() {
@@ -119,41 +137,80 @@ function ehNotaDeAvaliacao(nota) {
   return tipo.includes("avalia");
 }
 
+function statusAula(aula) {
+  return normalizarTexto(aula?.status);
+}
+
+function aulaTemOrigemVinculada(aula) {
+  return !!aula?.aula_original_id;
+}
+
+/* =========================================================
+   REGRAS DE AVALIAÇÃO
+========================================================= */
+
 function aulaContaParaAvaliacao(aula) {
-  const status = normalizarTexto(aula?.status);
+  const status = statusAula(aula);
   const gravada = aula?.aula_gravada === true;
 
-  if (status === "presente" && gravada) return true;
-  if (status === "ausente" && gravada) return true;
-  if ((status === "reposição" || status === "reposicao") && gravada) return true;
+  if (status === STATUS.PRESENTE && gravada) return true;
+  if (status === STATUS.AUSENTE && gravada) return true;
+  if (status === STATUS.REPOSICAO && gravada) return true;
+  if (status === STATUS.AULA_INSTRUMENTAL && gravada) return true;
+  if (status === STATUS.PLANTAO_DUVIDAS && gravada) return true;
 
   return false;
 }
 
+/* =========================================================
+   REGRAS DE PACOTE
+========================================================= */
+
+/*
+  REGRA DO PACOTE
+
+  Conta no pacote:
+  - Presente
+  - Ausente com aula gravada
+  - Ausente sem aula gravada, quando gerou reposição
+  - Cancelada, quando gerou reposição
+  - Trancada, quando gerou reposição
+  - Aula Instrumental
+  - Plantão de dúvidas
+  - Reposição sem aula original vinculada
+
+  NÃO conta no pacote:
+  - Qualquer Reposição vinculada a uma aula original
+
+  Motivo:
+  A aula original já consumiu o pacote.
+  Se a reposição vinculada contar de novo, o aluno perde duas aulas do pacote.
+*/
 function aulaConsomePacote(aula) {
-  const status = normalizarTexto(aula?.status);
+  const status = statusAula(aula);
   const gravada = aula?.aula_gravada === true;
   const precisaReposicao = aula?.precisa_reposicao === true;
-  const temAulaOriginal = !!aula?.aula_original_id;
 
-  /*
-    Regra do pacote:
-    Conta o encontro disponibilizado pelo professor.
+  if (status === STATUS.PRESENTE) return true;
 
-    Presente com aula gravada conta.
-    Ausente com aula gravada conta.
-    Ausente sem aula gravada, mas com reposição gerada, conta.
-    Reposição vinculada a uma aula de origem não conta de novo.
-  */
+  if (status === STATUS.AUSENTE && gravada) return true;
 
-  if (status === "presente" && gravada) return true;
+  if (status === STATUS.AUSENTE && !gravada && precisaReposicao) return true;
 
-  if (status === "ausente" && gravada) return true;
+  if (status === STATUS.CANCELADA && precisaReposicao) return true;
 
-  if (status === "ausente" && !gravada && precisaReposicao) return true;
+  if (status === STATUS.TRANCADA && precisaReposicao) return true;
 
-  if ((status === "reposição" || status === "reposicao") && gravada && !temAulaOriginal) {
-    return true;
+  if (status === STATUS.AULA_INSTRUMENTAL) return true;
+
+  if (status === STATUS.PLANTAO_DUVIDAS) return true;
+
+  if (status === STATUS.REPOSICAO) {
+    if (aulaTemOrigemVinculada(aula)) {
+      return false;
+    }
+
+    return gravada;
   }
 
   return false;

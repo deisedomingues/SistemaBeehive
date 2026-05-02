@@ -23,6 +23,7 @@ const cPresente = document.getElementById("cPresente");
 const cAusente = document.getElementById("cAusente");
 const cCancelada = document.getElementById("cCancelada");
 const cTrancada = document.getElementById("cTrancada");
+const cEventos = document.getElementById("cEventos");
 
 const listaNotas = document.getElementById("listaNotas");
 
@@ -39,6 +40,7 @@ const listaPacotesAluno = document.getElementById("listaPacotesAluno");
 const boxAcoesPacote = document.getElementById("boxAcoesPacote");
 const btnEncerrarPacote = document.getElementById("btnEncerrarPacote");
 const btnVerAulasPacote = document.getElementById("btnVerAulasPacote");
+const btnFecharAulasPacote = document.getElementById("btnFecharAulasPacote");
 const boxAulasPacote = document.getElementById("boxAulasPacote");
 const listaAulasPacote = document.getElementById("listaAulasPacote");
 
@@ -66,6 +68,7 @@ const STATUS = {
   PRESENTE: "Presente",
   AUSENTE: "Ausente",
   CANCELADA: "Cancelada",
+  TRANCADA: "Trancada",
   REPOSICAO: "Reposição",
   AULA_INSTRUMENTAL: "Aula Instrumental",
   PLANTAO_DUVIDAS: "Plantão de dúvidas"
@@ -129,7 +132,11 @@ function escaparHtml(texto) {
 }
 
 function normalizarTexto(valor) {
-  return String(valor || "").trim().toLowerCase();
+  return String(valor || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function textoParte(parte) {
@@ -138,33 +145,50 @@ function textoParte(parte) {
 }
 
 function textoAulaGravada(aula) {
-  if (aula.status === STATUS.AUSENTE) {
-    return aula.aula_gravada ? "Sim" : "Não";
-  }
+  const status = normalizarTexto(aula?.status);
 
-  if (
-    aula.status === STATUS.PRESENTE ||
-    aula.status === STATUS.REPOSICAO ||
-    aula.status === STATUS.AULA_INSTRUMENTAL ||
-    aula.status === STATUS.PLANTAO_DUVIDAS
-  ) {
-    return aula.aula_gravada ? "Sim" : "Não";
-  }
-
-  if (aula.status === STATUS.CANCELADA) {
+  if (status === "cancelada" || status === "trancada") {
     return "Não";
   }
 
-  return aula.aula_gravada ? "Sim" : "Não";
+  return aula?.aula_gravada ? "Sim" : "Não";
 }
 
-function obterTipoConsumoPacote(aula, idsAulasOriginaisJaContadas = new Set()) {
+function aulaEhReposicao(aula) {
+  const status = normalizarTexto(aula?.status);
+  return status === "reposicao";
+}
+
+function aulaTemOrigemVinculada(aula) {
+  return !!aula?.aula_original_id;
+}
+
+/*
+  REGRA DO PACOTE
+
+  Conta no pacote:
+  - Presente
+  - Ausente com aula gravada
+  - Ausente sem aula gravada, quando gerou reposição
+  - Cancelada, quando gerou reposição
+  - Trancada, quando gerou reposição
+  - Aula Instrumental
+  - Plantão de dúvidas
+  - Reposição sem aula original vinculada, para evitar que registros antigos soltos sumam da contagem
+
+  NÃO conta no pacote:
+  - Qualquer Reposição vinculada a uma aula original
+
+  Motivo:
+  A aula original já consumiu o pacote.
+  Se a reposição vinculada contar de novo, o aluno perde duas aulas do pacote.
+*/
+function obterTipoConsumoPacote(aula) {
   const status = normalizarTexto(aula?.status);
   const gravada = aula?.aula_gravada === true;
   const precisaReposicao = aula?.precisa_reposicao === true;
-  const temAulaOriginal = !!aula?.aula_original_id;
 
-  if (status === "presente" && gravada) {
+  if (status === "presente") {
     return "Presença";
   }
 
@@ -173,28 +197,40 @@ function obterTipoConsumoPacote(aula, idsAulasOriginaisJaContadas = new Set()) {
   }
 
   if (status === "ausente" && !gravada && precisaReposicao) {
-    return "Ausência sem aula gravada";
+    return "Ausência com reposição pendente";
   }
 
-  if ((status === "reposição" || status === "reposicao") && gravada) {
-    if (!temAulaOriginal) {
-      return "Reposição sem aula de origem vinculada";
-    }
+  if (status === "cancelada" && precisaReposicao) {
+    return "Cancelada com reposição gratuita";
+  }
 
-    const aulaOriginalId = Number(aula.aula_original_id);
+  if (status === "trancada" && precisaReposicao) {
+    return "Trancada com reposição gratuita";
+  }
 
-    if (idsAulasOriginaisJaContadas.has(aulaOriginalId)) {
+  if (status === "aula instrumental") {
+    return "Aula Instrumental";
+  }
+
+  if (status === "plantao de duvidas") {
+    return "Plantão de dúvidas";
+  }
+
+  if (status === "reposicao") {
+    if (aulaTemOrigemVinculada(aula)) {
       return "";
     }
 
-    return "Reposição";
+    if (gravada) {
+      return "Reposição sem aula de origem vinculada";
+    }
   }
 
   return "";
 }
 
-function aulaConsomePacote(aula, idsAulasOriginaisJaContadas = new Set()) {
-  return !!obterTipoConsumoPacote(aula, idsAulasOriginaisJaContadas);
+function aulaConsomePacote(aula) {
+  return !!obterTipoConsumoPacote(aula);
 }
 
 function aulaContaParaAvaliacao(aula) {
@@ -203,7 +239,9 @@ function aulaContaParaAvaliacao(aula) {
 
   if (status === "presente" && gravada) return true;
   if (status === "ausente" && gravada) return true;
-  if ((status === "reposição" || status === "reposicao") && gravada) return true;
+  if (status === "reposicao" && gravada) return true;
+  if (status === "aula instrumental" && gravada) return true;
+  if (status === "plantao de duvidas" && gravada) return true;
 
   return false;
 }
@@ -237,27 +275,11 @@ function obterAulasDoPeriodoDoPacote(pacote) {
     });
 }
 
-function obterIdsAulasOriginaisJaContadas(aulasDoPeriodo) {
-  return new Set(
-    (aulasDoPeriodo || [])
-      .filter((aula) => {
-        const status = normalizarTexto(aula.status);
-
-        return (
-          status === "ausente" &&
-          aula.precisa_reposicao === true
-        );
-      })
-      .map((aula) => Number(aula.id))
-  );
-}
-
 function obterAulasConsumidasNoPacote(pacote) {
   const aulasDoPeriodo = obterAulasDoPeriodoDoPacote(pacote);
-  const idsAulasOriginaisJaContadas = obterIdsAulasOriginaisJaContadas(aulasDoPeriodo);
 
   return aulasDoPeriodo.filter((aula) => {
-    return aulaConsomePacote(aula, idsAulasOriginaisJaContadas);
+    return aulaConsomePacote(aula);
   });
 }
 
@@ -406,16 +428,19 @@ function preencherContadores(aulas) {
   let p = 0;
   let a = 0;
   let c = 0;
+  let t = 0;
 
   aulas.forEach((x) => {
     if (x.status === STATUS.PRESENTE) p++;
     else if (x.status === STATUS.AUSENTE) a++;
     else if (x.status === STATUS.CANCELADA) c++;
+    else if (x.status === STATUS.TRANCADA) t++;
   });
 
   cPresente.textContent = p;
   cAusente.textContent = a;
   cCancelada.textContent = c;
+  cTrancada.textContent = t;
 }
 
 function atualizarBotaoExpandirAulas(totalAulas) {
@@ -486,7 +511,9 @@ function renderAulas(aulasOriginais) {
     if (
       x.status === STATUS.PRESENTE ||
       x.status === STATUS.AUSENTE ||
-      x.status === STATUS.REPOSICAO
+      x.status === STATUS.REPOSICAO ||
+      x.status === STATUS.AULA_INSTRUMENTAL ||
+      x.status === STATUS.PLANTAO_DUVIDAS
     ) {
       infosNormais.push(`Aula gravada: ${gravada}`);
     }
@@ -495,8 +522,19 @@ function renderAulas(aulasOriginais) {
       infosNormais.push("Reposição: pendente/solicitada");
     }
 
-    if (aulaConsomePacote(x)) {
-      infosNormais.push("Pode contar no pacote");
+    if (x.status === STATUS.CANCELADA && x.precisa_reposicao) {
+      infosNormais.push("Reposição: pendente sem custo");
+    }
+
+    if (x.status === STATUS.TRANCADA && x.precisa_reposicao) {
+      infosNormais.push("Reposição: pendente sem custo por trancamento");
+    }
+
+    if (aulaEhReposicao(x) && aulaTemOrigemVinculada(x)) {
+      infosNormais.push("Reposição vinculada a aula original");
+      infosNormais.push("Não consome pacote novamente");
+    } else if (aulaConsomePacote(x)) {
+      infosNormais.push("Conta no pacote");
     }
 
     if (aulaContaParaAvaliacao(x)) {
@@ -763,7 +801,7 @@ function esconderAulasDoPacote() {
   }
 
   if (btnVerAulasPacote) {
-    btnVerAulasPacote.textContent = "Ver aulas do pacote";
+    btnVerAulasPacote.textContent = "Ver aulas do pacote ativo";
   }
 
   if (listaAulasPacote) {
@@ -792,8 +830,6 @@ function renderAulasDoPacote() {
   if (!pacoteAtivoAtual || !listaAulasPacote) return;
 
   const aulasConsumidas = obterAulasConsumidasNoPacote(pacoteAtivoAtual);
-  const aulasDoPeriodo = obterAulasDoPeriodoDoPacote(pacoteAtivoAtual);
-  const idsAulasOriginaisJaContadas = obterIdsAulasOriginaisJaContadas(aulasDoPeriodo);
 
   if (!aulasConsumidas.length) {
     listaAulasPacote.innerHTML =
@@ -802,13 +838,14 @@ function renderAulasDoPacote() {
   }
 
   listaAulasPacote.innerHTML = aulasConsumidas.map((aula, index) => {
-    const tipoConsumo = obterTipoConsumoPacote(aula, idsAulasOriginaisJaContadas);
+    const tipoConsumo = obterTipoConsumoPacote(aula);
     const dataBR = formatarDataBR(aula.data_aula);
     const modulo = aula.modulo?.nome || "Sem módulo";
     const professor = aula.professor?.nome || "Professor";
     const conteudo = aula.conteudo?.trim() || "Sem conteúdo informado";
     const status = aula.status || "-";
     const parte = textoParte(aula.parte);
+    const justificativa = aula.justificativa?.trim() || "";
 
     return `
       <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
@@ -828,9 +865,9 @@ function renderAulasDoPacote() {
         </div>
 
         ${
-          aula.aula_original_id
+          justificativa
             ? `<div style="font-size:12px; opacity:0.85; margin-top:4px;">
-                Reposição vinculada à aula de origem ID ${Number(aula.aula_original_id)}
+                Justificativa: ${escaparHtml(justificativa)}
               </div>`
             : ""
         }
@@ -881,7 +918,7 @@ async function encerrarPacoteAtivo() {
 
 async function carregarQuantidadeEventosParticipados(alunoId) {
   if (!alunoId) {
-    cTrancada.textContent = "0";
+    cEventos.textContent = "0";
     return;
   }
 
@@ -892,12 +929,12 @@ async function carregarQuantidadeEventosParticipados(alunoId) {
 
   if (error) {
     console.error(error);
-    cTrancada.textContent = "0";
+    cEventos.textContent = "0";
     return;
   }
 
   const eventosUnicos = new Set((data || []).map((item) => item.evento_id));
-  cTrancada.textContent = String(eventosUnicos.size);
+  cEventos.textContent = String(eventosUnicos.size);
 }
 
 // ===============================
@@ -1074,5 +1111,7 @@ filtroModuloAula?.addEventListener("change", () => {
 btnEncerrarPacote?.addEventListener("click", encerrarPacoteAtivo);
 
 btnVerAulasPacote?.addEventListener("click", alternarAulasDoPacote);
+
+btnFecharAulasPacote?.addEventListener("click", esconderAulasDoPacote);
 
 init();

@@ -47,6 +47,7 @@ const STATUS = {
   PRESENTE: "Presente",
   AUSENTE: "Ausente",
   CANCELADA: "Cancelada",
+  TRANCADA: "Trancada",
   REPOSICAO: "Reposição",
   AULA_INSTRUMENTAL: "Aula Instrumental",
   PLANTAO_DUVIDAS: "Plantão de dúvidas"
@@ -137,6 +138,10 @@ function textoStatusAulaOriginal(aula) {
     return "Cancelada — reposição sem custo, responsabilidade da escola";
   }
 
+  if (aula.status === STATUS.TRANCADA) {
+    return "Trancada — reposição sem custo";
+  }
+
   return `${aula.status || "Status não informado"} — reposição pendente`;
 }
 
@@ -181,7 +186,11 @@ function limparEstadoColetivo() {
 }
 
 function statusExigeJustificativa(status) {
-  return status === STATUS.AUSENTE || status === STATUS.CANCELADA;
+  return (
+    status === STATUS.AUSENTE ||
+    status === STATUS.CANCELADA ||
+    status === STATUS.TRANCADA
+  );
 }
 
 function statusGravaAutomaticamente(status) {
@@ -210,7 +219,9 @@ function atualizarBoxJustificativaGeral() {
 
 function atualizarCamposTextoPorStatusGeral() {
   const status = selectStatusGeral.value;
-  const desabilitar = status === STATUS.CANCELADA;
+  const desabilitar =
+    status === STATUS.CANCELADA ||
+    status === STATUS.TRANCADA;
 
   inputConteudo.disabled = desabilitar;
   inputLicaoCasa.disabled = desabilitar;
@@ -269,6 +280,14 @@ function normalizarAlunoPorStatus(aluno) {
     return;
   }
 
+  if (status === STATUS.TRANCADA) {
+    aluno.aulaGravada = false;
+    aluno.precisaReposicao = true;
+    aluno.aulaOriginalId = null;
+    aluno.reposicaoComCusto = false;
+    return;
+  }
+
   if (status === STATUS.REPOSICAO) {
     aluno.aulaGravada = true;
     aluno.precisaReposicao = false;
@@ -295,6 +314,9 @@ function aplicarRegrasStatusGeral() {
   if (status === STATUS.AUSENTE) {
     // Usuário escolhe: gravada OU reposição.
   } else if (status === STATUS.CANCELADA) {
+    inputAulaGravada.checked = false;
+    inputPrecisaReposicao.checked = true;
+  } else if (status === STATUS.TRANCADA) {
     inputAulaGravada.checked = false;
     inputPrecisaReposicao.checked = true;
   } else if (status === STATUS.REPOSICAO) {
@@ -448,11 +470,11 @@ async function carregarAulasPendentesGeral() {
 
   if (!pendentes.length) {
     aulaOriginalIdGeral.innerHTML = `
-      <option value="">Este aluno não possui faltas e/ou cancelamentos pendentes</option>
+      <option value="">Este aluno não possui aulas pendentes de reposição</option>
     `;
 
     mostrarMensagem(
-      "Este aluno não possui faltas e/ou cancelamentos pendentes para reposição.",
+      "Este aluno não possui aulas ausentes, canceladas ou trancadas pendentes para reposição.",
       false
     );
     return;
@@ -522,6 +544,26 @@ async function renderizarAlunosColetivo() {
           </small>
         </div>
       `;
+    } else if (aluno.status === STATUS.TRANCADA) {
+      htmlExtras = `
+        <div style="margin-top:10px; background:#fff; padding:10px; border-radius:8px; border:1px solid #eee;">
+          <label style="font-size:13px; display:block;">
+            Justificativa
+            <input
+              type="text"
+              class="justificativa-ind"
+              data-index="${index}"
+              value="${aluno.justificativa || ""}"
+              placeholder="Ex: aluno solicitou trancamento no período"
+              style="width:100%; margin-top:5px;"
+            >
+          </label>
+
+          <small style="display:block; margin-top:6px; color:#666;">
+            Aula trancada consome o pacote original e gera reposição automática sem custo.
+          </small>
+        </div>
+      `;
     } else if (aluno.status === STATUS.REPOSICAO) {
       const pendentes = await buscarAulasPendentes(aluno.id);
       const semPendencias = !pendentes.length;
@@ -535,7 +577,7 @@ async function renderizarAlunosColetivo() {
           <select class="aula-original-ind" data-index="${index}" style="width:100%; margin-bottom:8px; font-size:12px;">
             ${
               semPendencias
-                ? `<option value="">Este aluno não possui faltas e/ou cancelamentos pendentes</option>`
+                ? `<option value="">Este aluno não possui aulas pendentes de reposição</option>`
                 : `<option value="">Selecione a aula original...</option>${pendentes
                     .map((p) => criarOpcaoAulaPendente(p))
                     .join("")}`
@@ -548,7 +590,7 @@ async function renderizarAlunosColetivo() {
                   Este aluno não possui aula pendente para vincular a esta reposição.
                 </small>`
               : `<small style="display:block; color:#555;">
-                  A informação de custo não aparece para o professor. Quando a aula original for cancelada, a reposição é sem custo.
+                  A informação de custo não aparece para o professor. Reposição de aula cancelada ou trancada é sem custo.
                 </small>`
           }
         </div>
@@ -616,6 +658,7 @@ async function renderizarAlunosColetivo() {
         <option value="${STATUS.PRESENTE}" ${aluno.status === STATUS.PRESENTE ? "selected" : ""}>Presente</option>
         <option value="${STATUS.AUSENTE}" ${aluno.status === STATUS.AUSENTE ? "selected" : ""}>Ausente</option>
         <option value="${STATUS.CANCELADA}" ${aluno.status === STATUS.CANCELADA ? "selected" : ""}>Cancelada</option>
+        <option value="${STATUS.TRANCADA}" ${aluno.status === STATUS.TRANCADA ? "selected" : ""}>Trancada</option>
         <option value="${STATUS.REPOSICAO}" ${aluno.status === STATUS.REPOSICAO ? "selected" : ""}>Reposição</option>
         <option value="${STATUS.AULA_INSTRUMENTAL}" ${aluno.status === STATUS.AULA_INSTRUMENTAL ? "selected" : ""}>Aula Instrumental</option>
         <option value="${STATUS.PLANTAO_DUVIDAS}" ${aluno.status === STATUS.PLANTAO_DUVIDAS ? "selected" : ""}>Plantão de dúvidas</option>
@@ -645,7 +688,11 @@ function vincularEventosIndividuais() {
 
       matriculasLista[index].status = novoStatus;
 
-      if (novoStatus !== STATUS.AUSENTE && novoStatus !== STATUS.CANCELADA) {
+      if (
+        novoStatus !== STATUS.AUSENTE &&
+        novoStatus !== STATUS.CANCELADA &&
+        novoStatus !== STATUS.TRANCADA
+      ) {
         matriculasLista[index].justificativa = "";
       }
 
@@ -868,7 +915,10 @@ function montarRegistroBase({
   grupoAulaId = null,
   quantidadeAlunos = 1
 }) {
-  const ehCancelada = status === STATUS.CANCELADA;
+  const ehSemConteudo =
+    status === STATUS.CANCELADA ||
+    status === STATUS.TRANCADA;
+
   const ehReposicao = status === STATUS.REPOSICAO;
 
   return {
@@ -879,12 +929,12 @@ function montarRegistroBase({
     modulo_id: moduloId,
     status: status,
     justificativa: statusExigeJustificativa(status) ? justificativa.trim() : null,
-    conteudo: ehCancelada ? null : (conteudo || null),
-    licao_casa: ehCancelada ? null : (licaoCasa || null),
+    conteudo: ehSemConteudo ? null : (conteudo || null),
+    licao_casa: ehSemConteudo ? null : (licaoCasa || null),
     aula_original_id: ehReposicao ? Number(aulaOriginalId) : null,
 
-    // Custo não é mais controlado pelo professor nesta tela.
-    // Mantém false para não misturar regra financeira/administrativa com registro pedagógico.
+    // Custo não é controlado pelo professor nesta tela.
+    // Reposição de aula trancada/cancelada deve ser tratada como gratuita.
     reposicao_com_custo: false,
 
     aula_gravada: !!aulaGravada,
@@ -1046,6 +1096,9 @@ form.addEventListener("submit", async (e) => {
       aulaGravada = inputAulaGravada.checked;
       precisaReposicao = inputPrecisaReposicao.checked;
     } else if (status === STATUS.CANCELADA) {
+      aulaGravada = false;
+      precisaReposicao = true;
+    } else if (status === STATUS.TRANCADA) {
       aulaGravada = false;
       precisaReposicao = true;
     } else if (statusGravaAutomaticamente(status)) {

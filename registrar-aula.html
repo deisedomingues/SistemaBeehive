@@ -58,14 +58,15 @@
                 <label>
                     Status da aula
                     <select id="status" required>
-                         <option value="">Selecione o status</option>
-                            <option value="Presente">Presente</option>
-                            <option value="Ausente">Ausente</option>
-                            <option value="Cancelada">Cancelada</option>
-                            <option value="Reposição">Reposição</option>
-                            <option value="Aula Instrumental">Aula Instrumental</option>
-                            <option value="Plantão de dúvidas">Plantão de dúvidas</option>
-                                    </select>
+                        <option value="">Selecione o status</option>
+                        <option value="Presente">Presente</option>
+                        <option value="Ausente">Ausente</option>
+                        <option value="Cancelada">Cancelada</option>
+                        <option value="Trancada">Trancada</option>
+                        <option value="Reposição">Reposição</option>
+                        <option value="Aula Instrumental">Aula Instrumental</option>
+                        <option value="Plantão de dúvidas">Plantão de dúvidas</option>
+                    </select>
                 </label>
             </div>
 
@@ -87,12 +88,12 @@
                     <input
                         type="text"
                         id="justificativa"
-                        placeholder="Ex: professor sem luz / reagendamento solicitado / feriado / escola fechada"
+                        placeholder="Ex: aluno solicitou trancamento / professor sem luz / reagendamento solicitado / feriado / escola fechada"
                     >
                 </label>
 
                 <small style="font-size:12px; color:#666; display:block; margin-top:6px;">
-                    Obrigatória para status de aula "ausente" e "cancelada".
+                    Obrigatória para status de aula "Ausente", "Cancelada" e "Trancada".
                 </small>
             </div>
 
@@ -115,13 +116,13 @@
             <div id="boxReposicao" style="display:none;">
 
                 <label>
-                    Aula faltada
+                    Aula original
                     <select id="aulaOriginalId">
                         <option value="">Selecione o aluno primeiro</option>
                     </select>
 
                     <small style="font-size:12px; color:#666;">
-                        Selecione a aula que o aluno faltou para registrar a reposição
+                        Selecione a aula ausente, cancelada ou trancada para registrar a reposição.
                     </small>
                 </label>
 
