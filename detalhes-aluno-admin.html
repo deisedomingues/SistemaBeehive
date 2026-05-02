@@ -5,6 +5,88 @@
   <title>Detalhes do Aluno | Beehive</title>
   <link rel="stylesheet" href="css/style.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    .btn-cinza-pacote {
+      border: none;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      background: #eeeeee;
+      color: #333333;
+      font-weight: 700;
+      font-size: 13px;
+      transition: background-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .btn-cinza-pacote:hover {
+      background: #dddddd;
+      transform: translateY(-1px);
+    }
+
+    .btn-cinza-pacote:active {
+      transform: translateY(0);
+    }
+
+    .card-pacote-historico {
+      padding: 12px;
+      border: 1px solid #e6dfcf;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      background: rgba(255,255,255,0.35);
+    }
+
+    .box-aulas-pacote {
+      display: none;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid #e6dfcf;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.28);
+    }
+
+    .details-historico-pacotes {
+      margin-top: 16px;
+      border-top: 1px solid #e6dfcf;
+      padding-top: 12px;
+    }
+
+    .summary-historico-pacotes {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: #eeeeee;
+      color: #333333;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      transition: background-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .summary-historico-pacotes:hover {
+      background: #dddddd;
+      transform: translateY(-1px);
+    }
+
+    .summary-historico-pacotes::-webkit-details-marker {
+      display: none;
+    }
+
+    .summary-historico-pacotes::after {
+      content: "▼";
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    details[open] .summary-historico-pacotes::after {
+      content: "▲";
+    }
+  </style>
 </head>
 <body>
 
@@ -22,7 +104,7 @@
 
     <div id="msg" style="display:none; margin-bottom:10px;"></div>
 
-    <!-- CABEÇALHO MAIS COMPACTO -->
+    <!-- CABEÇALHO -->
     <section class="card" style="margin-bottom:12px; padding:12px 14px;">
       <h2 id="tituloAluno" style="margin:0 0 4px 0;">Carregando...</h2>
       <p style="font-size:13px; opacity:0.85; margin:0;" id="subtituloAluno"></p>
@@ -30,6 +112,7 @@
 
     <!-- PACOTE DE AULAS -->
     <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
         <div>
           <h2 style="margin:0 0 6px 0;">📦 Pacote de aulas</h2>
@@ -47,6 +130,7 @@
         </a>
       </div>
 
+      <!-- RESUMO DO PACOTE ATIVO -->
       <div
         id="boxPacoteAtual"
         style="
@@ -77,29 +161,58 @@
         </div>
       </div>
 
-      <div id="pacoteAlerta" style="display:none; margin-top:10px; padding:10px 12px; border-radius:10px; font-size:13px;"></div>
+      <div
+        id="pacoteAlerta"
+        style="display:none; margin-top:10px; padding:10px 12px; border-radius:10px; font-size:13px;"
+      ></div>
 
-      <div id="boxAcoesPacote" style="display:none; margin-top:12px; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
-  <button type="button" id="btnVerAulasPacote" class="btn" style="padding:8px 12px;">
-    Ver aulas do pacote
-  </button>
+      <!-- AÇÕES DO PACOTE ATIVO -->
+      <div
+        id="boxAcoesPacote"
+        style="display:none; margin-top:12px; justify-content:flex-end; gap:8px; flex-wrap:wrap;"
+      >
+        <button type="button" id="btnVerAulasPacote" class="btn" style="padding:8px 12px;">
+          Ver aulas do pacote ativo
+        </button>
 
-  <button type="button" id="btnEncerrarPacote" class="btn" style="padding:8px 12px;">
-    Encerrar pacote ativo
-  </button>
-</div>
-
-<div id="boxAulasPacote" style="display:none; margin-top:12px;">
-  <h3 style="font-size:15px; margin-bottom:8px;">Aulas consumidas neste pacote</h3>
-  <div id="listaAulasPacote" style="font-size:13px;"></div>
-</div>
-
-      <div style="margin-top:14px;">
-        <h3 style="font-size:15px; margin-bottom:8px;">Histórico de pacotes</h3>
-        <div id="listaPacotesAluno" style="font-size:13px;">
-          Carregando histórico...
-        </div>
+        <button type="button" id="btnEncerrarPacote" class="btn" style="padding:8px 12px;">
+          Encerrar pacote ativo
+        </button>
       </div>
+
+      <!-- AULAS DO PACOTE SELECIONADO -->
+      <div id="boxAulasPacote" class="box-aulas-pacote">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+          <h3 id="tituloAulasPacote" style="font-size:15px; margin:0;">
+            Aulas consumidas neste pacote
+          </h3>
+
+          <button type="button" id="btnFecharAulasPacote" class="btn-cinza-pacote">
+            Ocultar
+          </button>
+        </div>
+
+        <div id="listaAulasPacote" style="font-size:13px; margin-top:8px;"></div>
+      </div>
+
+      <!-- HISTÓRICO DE PACOTES NATIVO DO HTML -->
+      <details class="details-historico-pacotes">
+        <summary class="summary-historico-pacotes">
+          Ver histórico de pacotes
+        </summary>
+
+        <div style="margin-top:12px;">
+          <h3 style="font-size:15px; margin:0 0 4px;">Histórico de pacotes</h3>
+          <p style="font-size:12px; opacity:0.8; margin:0 0 10px;">
+            Pacotes anteriores ficam guardados aqui para consulta administrativa.
+          </p>
+
+          <div id="listaPacotesAluno" style="font-size:13px;">
+            Carregando histórico...
+          </div>
+        </div>
+      </details>
+
     </section>
 
     <!-- MÉDIAS -->
@@ -155,7 +268,7 @@
       </div>
     </section>
 
-    <!-- HISTÓRICO -->
+    <!-- HISTÓRICO DE AULAS -->
     <section class="card" style="margin-bottom:12px; padding:12px 14px;">
       <h2 style="margin-bottom:6px;">📚 Histórico de aulas</h2>
 
@@ -200,6 +313,6 @@
 
   </main>
 
-  <script type="module" src="js/detalhes-aluno-admin.js"></script>
+  <script type="module" src="js/detalhes-aluno-admin.js?v=4"></script>
 </body>
 </html>
