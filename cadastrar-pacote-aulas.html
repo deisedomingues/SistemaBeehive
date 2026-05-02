@@ -5,6 +5,18 @@
   <title>Cadastrar Pacote de Aulas | Beehive</title>
   <link rel="stylesheet" href="css/style.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    .aviso-campo-temporario {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fff4cc;
+      color: #7a4b00;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+  </style>
 </head>
 <body>
 
@@ -77,6 +89,20 @@
               required
             />
           </label>
+
+          <label>
+            Data de encerramento
+            <input
+              type="date"
+              id="dataFim"
+            />
+          </label>
+        </div>
+
+        <div class="aviso-campo-temporario">
+          <strong>Campo temporário:</strong>
+          preencha a data de encerramento somente para cadastrar pacotes antigos já finalizados.
+          Se deixar em branco, o pacote será cadastrado como ativo.
         </div>
 
         <label style="display:block; margin-top:12px;">
@@ -116,6 +142,6 @@
 
   </main>
 
-  <script type="module" src="js/cadastrar-pacote-aulas.js"></script>
+  <script type="module" src="js/cadastrar-pacote-aulas.js?v=2"></script>
 </body>
 </html>

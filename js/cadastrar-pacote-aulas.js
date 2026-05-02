@@ -15,6 +15,7 @@ const alunoSelect = document.getElementById("alunoSelect");
 const materiaSelect = document.getElementById("materiaSelect");
 const quantidadeAulas = document.getElementById("quantidadeAulas");
 const dataInicio = document.getElementById("dataInicio");
+const dataFim = document.getElementById("dataFim");
 const observacao = document.getElementById("observacao");
 
 const listaPacotes = document.getElementById("listaPacotes");
@@ -40,7 +41,8 @@ function mostrarMensagem(texto, ok = true) {
 
   setTimeout(() => {
     msg.style.display = "none";
-  }, 2600);
+    msg.textContent = "";
+  }, 3000);
 }
 
 function hojeISO() {
@@ -53,7 +55,14 @@ function hojeISO() {
 
 function formatarDataBR(dataISO) {
   if (!dataISO) return "-";
-  const [yyyy, mm, dd] = dataISO.split("-");
+
+  const partes = String(dataISO).split("-");
+  const yyyy = partes[0];
+  const mm = partes[1];
+  const dd = partes[2];
+
+  if (!yyyy || !mm || !dd) return "-";
+
   return `${dd}/${mm}/${yyyy}`;
 }
 
@@ -68,6 +77,20 @@ function escaparHtml(texto) {
 
 function voltar() {
   window.location.href = "home-financeiro.html";
+}
+
+function limparFormulario() {
+  formPacote.reset();
+
+  quantidadeAulas.value = 36;
+  dataInicio.value = hojeISO();
+
+  if (dataFim) {
+    dataFim.value = "";
+  }
+
+  materiaSelect.disabled = true;
+  materiaSelect.innerHTML = `<option value="">Selecione primeiro o aluno</option>`;
 }
 
 // ===============================
@@ -216,7 +239,10 @@ async function salvarPacote(e) {
   const materiaId = Number(materiaSelect.value);
   const qtd = Number(quantidadeAulas.value);
   const inicio = dataInicio.value;
+  const fim = dataFim?.value || "";
   const obs = observacao.value.trim();
+
+  const statusPacote = fim ? "Encerrado" : "Ativo";
 
   if (!alunoId || !materiaId || !qtd || !inicio) {
     mostrarMensagem("Preencha aluno, curso, quantidade e data de início.", false);
@@ -228,15 +254,22 @@ async function salvarPacote(e) {
     return;
   }
 
-  try {
-    const pacoteAtivo = await buscarPacoteAtivo(alunoId, materiaId);
+  if (fim && fim < inicio) {
+    mostrarMensagem("A data de encerramento não pode ser anterior à data de início.", false);
+    return;
+  }
 
-    if (pacoteAtivo) {
-      mostrarMensagem(
-        "Este aluno já possui um pacote ativo para este curso. Encerre o pacote atual antes de cadastrar uma renovação.",
-        false
-      );
-      return;
+  try {
+    if (statusPacote === "Ativo") {
+      const pacoteAtivo = await buscarPacoteAtivo(alunoId, materiaId);
+
+      if (pacoteAtivo) {
+        mostrarMensagem(
+          "Este aluno já possui um pacote ativo para este curso. Encerre o pacote atual antes de cadastrar uma renovação.",
+          false
+        );
+        return;
+      }
     }
 
     const { error } = await supabase
@@ -247,8 +280,8 @@ async function salvarPacote(e) {
           materia_id: materiaId,
           quantidade_aulas: qtd,
           data_inicio: inicio,
-          data_fim: null,
-          status: "Ativo",
+          data_fim: fim || null,
+          status: statusPacote,
           observacao: obs || null
         }
       ]);
@@ -259,13 +292,13 @@ async function salvarPacote(e) {
       return;
     }
 
-    mostrarMensagem("Pacote cadastrado com sucesso!");
+    if (statusPacote === "Encerrado") {
+      mostrarMensagem("Pacote antigo cadastrado como encerrado!");
+    } else {
+      mostrarMensagem("Pacote ativo cadastrado com sucesso!");
+    }
 
-    formPacote.reset();
-    quantidadeAulas.value = 36;
-    dataInicio.value = hojeISO();
-    materiaSelect.disabled = true;
-    materiaSelect.innerHTML = `<option value="">Selecione primeiro o aluno</option>`;
+    limparFormulario();
 
     await carregarPacotes();
 
@@ -302,7 +335,7 @@ async function carregarPacotes() {
       )
     `)
     .order("created_at", { ascending: false })
-    .limit(30);
+    .limit(50);
 
   if (error) {
     console.error(error);
@@ -387,6 +420,10 @@ btnRecarregar?.addEventListener("click", carregarPacotes);
 async function init() {
   dataInicio.value = hojeISO();
   quantidadeAulas.value = 36;
+
+  if (dataFim) {
+    dataFim.value = "";
+  }
 
   await carregarMatriculas();
   await carregarPacotes();
