@@ -4143,3 +4143,126 @@ textarea[readonly] {
     white-space: normal;
   }
 }
+.box-tipo-aula,
+.box-regra-ausencia {
+  background: rgba(255, 245, 204, 0.55);
+  border: 1px solid #FDCC0C;
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.titulo-tipo-aula,
+.box-regra-ausencia h3 {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.box-regra-ausencia p {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.35;
+}
+
+.opcoes-tipo-aula,
+.opcoes-ausencia {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 8px;
+}
+
+.card-tipo-aula,
+.card-opcao-ausencia {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fff;
+  border: 2px solid #eee;
+  border-radius: 10px;
+  padding: 9px 10px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.card-tipo-aula:hover,
+.card-opcao-ausencia:hover {
+  border-color: #FDCC0C;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.card-tipo-aula.ativo,
+.card-opcao-ausencia.ativo {
+  border-color: #FDCC0C;
+  background: #FFF5CC;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+
+.card-tipo-aula input,
+.card-opcao-ausencia input {
+  margin-top: 3px;
+  transform: scale(1.05);
+}
+
+.card-tipo-aula strong,
+.card-opcao-ausencia strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.card-tipo-aula small,
+.card-opcao-ausencia small {
+  display: block;
+  font-size: 11px;
+  color: #666;
+  line-height: 1.3;
+}
+
+.aviso-aula-coletiva,
+.aviso-regra {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b4b00;
+  background: #fff9db;
+  border: 1px solid #ffe08a;
+  border-radius: 8px;
+  padding: 7px 9px;
+  line-height: 1.35;
+}
+
+.box-info-status {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.35;
+}
+
+.aluno-box {
+  background: #FFF5CC;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid #FDCC0C;
+  position: relative;
+}
+
+.btn-remover-aluno {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+}

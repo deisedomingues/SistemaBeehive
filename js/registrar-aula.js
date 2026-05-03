@@ -8,7 +8,13 @@ await exigirProfessor();
 // ==========================================
 const form = document.getElementById("form-aula");
 const inputDataAula = document.getElementById("dataAula");
-const aulaColetivaCheckbox = document.getElementById("aulaColetiva");
+
+const aulaIndividualRadio = document.getElementById("aulaIndividual");
+const aulaColetivaRadio = document.getElementById("aulaColetiva");
+const cardAulaIndividual = document.getElementById("cardAulaIndividual");
+const cardAulaColetiva = document.getElementById("cardAulaColetiva");
+const avisoAulaColetiva = document.getElementById("avisoAulaColetiva");
+
 const selectMatricula = document.getElementById("matricula");
 const listaAlunosBox = document.getElementById("listaAlunos");
 const alunosSelecionadosDiv = document.getElementById("alunosSelecionados");
@@ -20,18 +26,22 @@ const boxReposicaoGeral = document.getElementById("boxReposicao");
 
 const selectParte = document.getElementById("parteAula");
 const moduloAula = document.getElementById("moduloAula");
+
 const boxJustificativaGeral = document.getElementById("boxJustificativa");
 const inputJustificativa = document.getElementById("justificativa");
+
 const inputConteudo = document.getElementById("conteudo");
 const inputLicaoCasa = document.getElementById("licaoCasa");
 
 const inputAulaGravada = document.getElementById("aulaGravada");
 const inputPrecisaReposicao = document.getElementById("precisaReposicao");
 
+const cardAulaGravada = document.getElementById("cardAulaGravada");
+const cardPrecisaReposicao = document.getElementById("cardPrecisaReposicao");
+
 const aulaOriginalIdGeral = document.getElementById("aulaOriginalId");
 
-// Pode ainda existir no HTML antigo.
-// O JS vai esconder e ignorar, porque custo é assunto administrativo/financeiro.
+// Campo antigo. Professor não controla custo nesta tela.
 const reposicaoComCustoGeral = document.getElementById("reposicaoComCusto");
 
 let msg = document.getElementById("msg");
@@ -54,7 +64,7 @@ const STATUS = {
 };
 
 // ==========================================
-// 3. AJUSTE VISUAL DA MENSAGEM
+// 3. UI / MENSAGENS
 // ==========================================
 function prepararMensagemAbaixoDoBotao() {
   const botaoSalvar =
@@ -76,6 +86,28 @@ function prepararMensagemAbaixoDoBotao() {
   msg.style.marginBottom = "0";
 }
 
+function mostrarMensagem(texto, ok = true) {
+  msg.textContent = texto;
+  msg.style.display = "block";
+  msg.style.backgroundColor = ok ? "#e8f5e9" : "#ffebee";
+  msg.style.color = ok ? "#1b5e20" : "#b71c1c";
+  msg.style.padding = "10px 12px";
+  msg.style.borderRadius = "10px";
+  msg.style.marginTop = "12px";
+  msg.style.marginBottom = "0";
+  msg.style.fontWeight = "600";
+  msg.style.textAlign = "center";
+
+  msg.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+
+  setTimeout(() => {
+    msg.style.display = "none";
+  }, 4500);
+}
+
 function esconderCampoReposicaoComCusto() {
   if (!reposicaoComCustoGeral) return;
 
@@ -94,24 +126,42 @@ function esconderCampoReposicaoComCusto() {
   }
 }
 
-// ==========================================
-// 4. FUNÇÕES AUXILIARES
-// ==========================================
-function mostrarMensagem(texto, ok = true) {
-  msg.textContent = texto;
-  msg.style.display = "block";
-  msg.style.backgroundColor = ok ? "#e8f5e9" : "#ffebee";
-  msg.style.color = ok ? "#1b5e20" : "#b71c1c";
-  msg.style.padding = "10px 12px";
-  msg.style.borderRadius = "10px";
-  msg.style.marginTop = "12px";
-  msg.style.marginBottom = "0";
-  msg.style.fontWeight = "600";
-  msg.style.textAlign = "center";
+function ehAulaColetiva() {
+  return aulaColetivaRadio.checked;
+}
 
-  setTimeout(() => {
-    msg.style.display = "none";
-  }, 3500);
+function atualizarCardsTipoAula() {
+  const isColetivo = ehAulaColetiva();
+
+  if (cardAulaIndividual) {
+    cardAulaIndividual.classList.toggle("ativo", !isColetivo);
+  }
+
+  if (cardAulaColetiva) {
+    cardAulaColetiva.classList.toggle("ativo", isColetivo);
+  }
+
+  if (avisoAulaColetiva) {
+    avisoAulaColetiva.style.display = isColetivo ? "block" : "none";
+  }
+
+  const optionPadrao = selectMatricula.querySelector('option[value=""]');
+
+  if (optionPadrao) {
+    optionPadrao.textContent = isColetivo
+      ? "Selecione os alunos participantes"
+      : "Selecione o aluno";
+  }
+}
+
+function atualizarCardsAusenciaGeral() {
+  if (cardAulaGravada) {
+    cardAulaGravada.classList.toggle("ativo", inputAulaGravada.checked);
+  }
+
+  if (cardPrecisaReposicao) {
+    cardPrecisaReposicao.classList.toggle("ativo", inputPrecisaReposicao.checked);
+  }
 }
 
 function setarDataHoje() {
@@ -127,6 +177,58 @@ function formatarDataBR(dataISO) {
   if (!dataISO) return "";
   const [ano, mes, dia] = dataISO.split("-");
   return `${dia}/${mes}/${ano}`;
+}
+
+// ==========================================
+// 4. REGRAS
+// ==========================================
+function statusExigeJustificativa(status) {
+  return (
+    status === STATUS.AUSENTE ||
+    status === STATUS.CANCELADA ||
+    status === STATUS.TRANCADA
+  );
+}
+
+function statusGravaAutomaticamente(status) {
+  return (
+    status === STATUS.PRESENTE ||
+    status === STATUS.REPOSICAO ||
+    status === STATUS.AULA_INSTRUMENTAL ||
+    status === STATUS.PLANTAO_DUVIDAS
+  );
+}
+
+function statusNaoGeraReposicao(status) {
+  return (
+    status === STATUS.PRESENTE ||
+    status === STATUS.AULA_INSTRUMENTAL ||
+    status === STATUS.PLANTAO_DUVIDAS
+  );
+}
+
+function validarJustificativaObrigatoria(status, justificativa) {
+  const texto = (justificativa || "").trim();
+
+  if (statusExigeJustificativa(status) && !texto) {
+    return `Preencha a justificativa para o status "${status}".`;
+  }
+
+  return null;
+}
+
+function validarRegraAusente({ status, aulaGravada, precisaReposicao }) {
+  if (status !== STATUS.AUSENTE) return null;
+
+  if (!aulaGravada && !precisaReposicao) {
+    return 'Em aula ausente, escolha uma opção: "aula foi gravada" ou "precisa de reposição".';
+  }
+
+  if (aulaGravada && precisaReposicao) {
+    return 'A aula ausente não pode ter "aula gravada" e "precisa de reposição" ao mesmo tempo.';
+  }
+
+  return null;
 }
 
 function textoStatusAulaOriginal(aula) {
@@ -167,6 +269,8 @@ function limparCamposAuxiliaresGerais() {
 
   inputAulaGravada.checked = false;
   inputPrecisaReposicao.checked = false;
+  atualizarCardsAusenciaGeral();
+
   aulaOriginalIdGeral.innerHTML = `<option value="">Selecione o aluno primeiro</option>`;
 
   if (reposicaoComCustoGeral) {
@@ -185,31 +289,6 @@ function limparEstadoColetivo() {
   listaAlunosBox.style.display = "none";
 }
 
-function statusExigeJustificativa(status) {
-  return (
-    status === STATUS.AUSENTE ||
-    status === STATUS.CANCELADA ||
-    status === STATUS.TRANCADA
-  );
-}
-
-function statusGravaAutomaticamente(status) {
-  return (
-    status === STATUS.PRESENTE ||
-    status === STATUS.REPOSICAO ||
-    status === STATUS.AULA_INSTRUMENTAL ||
-    status === STATUS.PLANTAO_DUVIDAS
-  );
-}
-
-function statusNaoGeraReposicao(status) {
-  return (
-    status === STATUS.PRESENTE ||
-    status === STATUS.AULA_INSTRUMENTAL ||
-    status === STATUS.PLANTAO_DUVIDAS
-  );
-}
-
 function atualizarBoxJustificativaGeral() {
   const status = selectStatusGeral.value;
   boxJustificativaGeral.style.display = statusExigeJustificativa(status)
@@ -219,6 +298,7 @@ function atualizarBoxJustificativaGeral() {
 
 function atualizarCamposTextoPorStatusGeral() {
   const status = selectStatusGeral.value;
+
   const desabilitar =
     status === STATUS.CANCELADA ||
     status === STATUS.TRANCADA;
@@ -230,16 +310,6 @@ function atualizarCamposTextoPorStatusGeral() {
     inputConteudo.value = "";
     inputLicaoCasa.value = "";
   }
-}
-
-function validarJustificativaObrigatoria(status, justificativa) {
-  const texto = (justificativa || "").trim();
-
-  if (statusExigeJustificativa(status) && !texto) {
-    return `Preencha a justificativa para o status "${status}".`;
-  }
-
-  return null;
 }
 
 function gerarGrupoAulaId() {
@@ -272,15 +342,7 @@ function normalizarAlunoPorStatus(aluno) {
     return;
   }
 
-  if (status === STATUS.CANCELADA) {
-    aluno.aulaGravada = false;
-    aluno.precisaReposicao = true;
-    aluno.aulaOriginalId = null;
-    aluno.reposicaoComCusto = false;
-    return;
-  }
-
-  if (status === STATUS.TRANCADA) {
+  if (status === STATUS.CANCELADA || status === STATUS.TRANCADA) {
     aluno.aulaGravada = false;
     aluno.precisaReposicao = true;
     aluno.aulaOriginalId = null;
@@ -312,11 +374,9 @@ function aplicarRegrasStatusGeral() {
   boxReposicaoGeral.style.display = status === STATUS.REPOSICAO ? "block" : "none";
 
   if (status === STATUS.AUSENTE) {
-    // Usuário escolhe: gravada OU reposição.
-  } else if (status === STATUS.CANCELADA) {
     inputAulaGravada.checked = false;
-    inputPrecisaReposicao.checked = true;
-  } else if (status === STATUS.TRANCADA) {
+    inputPrecisaReposicao.checked = false;
+  } else if (status === STATUS.CANCELADA || status === STATUS.TRANCADA) {
     inputAulaGravada.checked = false;
     inputPrecisaReposicao.checked = true;
   } else if (status === STATUS.REPOSICAO) {
@@ -329,6 +389,8 @@ function aplicarRegrasStatusGeral() {
     inputAulaGravada.checked = false;
     inputPrecisaReposicao.checked = false;
   }
+
+  atualizarCardsAusenciaGeral();
 
   if (status !== STATUS.REPOSICAO) {
     aulaOriginalIdGeral.innerHTML = `<option value="">Selecione o aluno primeiro</option>`;
@@ -357,6 +419,7 @@ async function buscarAulasPendentes(matriculaId) {
     .select("id, data_aula, status, justificativa")
     .eq("matricula_id", matriculaId)
     .eq("precisa_reposicao", true)
+    .in("status", [STATUS.AUSENTE, STATUS.CANCELADA, STATUS.TRANCADA])
     .order("data_aula", { ascending: true });
 
   if (errorPendentes) {
@@ -380,11 +443,9 @@ async function buscarAulasPendentes(matriculaId) {
     (reposicoesJaRegistradas || []).map((item) => Number(item.aula_original_id))
   );
 
-  const pendentesFiltradas = (pendentes || []).filter(
+  return (pendentes || []).filter(
     (aula) => !idsJaRepostos.has(Number(aula.id))
   );
-
-  return pendentesFiltradas;
 }
 
 async function carregarMatriculas() {
@@ -423,6 +484,8 @@ async function carregarMatriculas() {
       opt.dataset.moduloNome = m.modulo?.nome || "Módulo não informado";
       selectMatricula.appendChild(opt);
     });
+
+  atualizarCardsTipoAula();
 }
 
 async function carregarModulos(materiaId, moduloAtual = null) {
@@ -490,6 +553,58 @@ async function carregarAulasPendentesGeral() {
 // ==========================================
 // 6. AULA COLETIVA
 // ==========================================
+function htmlOpcoesAusenciaColetiva(aluno, index) {
+  return `
+    <div class="box-regra-ausencia" style="margin-top:10px;">
+      <h3>Regra da ausência</h3>
+
+      <p>
+        Escolha apenas uma opção para este aluno.
+      </p>
+
+      <label style="font-size:13px; display:block; margin-bottom:10px;">
+        Justificativa
+        <input
+          type="text"
+          class="justificativa-ind"
+          data-index="${index}"
+          value="${aluno.justificativa || ""}"
+          placeholder="Ex: viagem / compromisso / aviso à escola"
+          style="width:100%; margin-top:5px;"
+        >
+      </label>
+
+      <div class="opcoes-ausencia">
+        <label class="card-opcao-ausencia ${aluno.aulaGravada ? "ativo" : ""}">
+          <input
+            type="checkbox"
+            class="gravada-ind"
+            data-index="${index}"
+            ${aluno.aulaGravada ? "checked" : ""}
+          >
+          <span>
+            <strong>Aula foi gravada</strong>
+            <small>O aluno poderá assistir ao conteúdo depois.</small>
+          </span>
+        </label>
+
+        <label class="card-opcao-ausencia ${aluno.precisaReposicao ? "ativo" : ""}">
+          <input
+            type="checkbox"
+            class="reposicao-ind"
+            data-index="${index}"
+            ${aluno.precisaReposicao ? "checked" : ""}
+          >
+          <span>
+            <strong>Precisa de reposição</strong>
+            <small>A aula não foi gravada e deverá ser reposta.</small>
+          </span>
+        </label>
+      </div>
+    </div>
+  `;
+}
+
 async function renderizarAlunosColetivo() {
   alunosSelecionadosDiv.innerHTML = "";
 
@@ -499,34 +614,10 @@ async function renderizarAlunosColetivo() {
     let htmlExtras = "";
 
     if (aluno.status === STATUS.AUSENTE) {
-      htmlExtras = `
-        <div style="margin-top:10px; background:#fff; padding:10px; border-radius:8px; border:1px solid #eee;">
-          <label style="font-size:13px; display:block; margin-bottom:8px;">
-            Justificativa
-            <input
-              type="text"
-              class="justificativa-ind"
-              data-index="${index}"
-              value="${aluno.justificativa || ""}"
-              placeholder="Ex: viagem / compromisso / aviso à escola"
-              style="width:100%; margin-top:5px;"
-            >
-          </label>
-
-          <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-            <input type="checkbox" class="gravada-ind" data-index="${index}" ${aluno.aulaGravada ? "checked" : ""}>
-            Aula gravada
-          </label>
-
-          <label style="display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" class="reposicao-ind" data-index="${index}" ${aluno.precisaReposicao ? "checked" : ""}>
-            Agendar reposição
-          </label>
-        </div>
-      `;
+      htmlExtras = htmlOpcoesAusenciaColetiva(aluno, index);
     } else if (aluno.status === STATUS.CANCELADA) {
       htmlExtras = `
-        <div style="margin-top:10px; background:#fff; padding:10px; border-radius:8px; border:1px solid #eee;">
+        <div class="box-info-status">
           <label style="font-size:13px; display:block;">
             Justificativa
             <input
@@ -540,13 +631,13 @@ async function renderizarAlunosColetivo() {
           </label>
 
           <small style="display:block; margin-top:6px; color:#666;">
-            Aula cancelada gera reposição automática e sem custo.
+            Aula cancelada será salva automaticamente como sem gravação e com reposição pendente.
           </small>
         </div>
       `;
     } else if (aluno.status === STATUS.TRANCADA) {
       htmlExtras = `
-        <div style="margin-top:10px; background:#fff; padding:10px; border-radius:8px; border:1px solid #eee;">
+        <div class="box-info-status">
           <label style="font-size:13px; display:block;">
             Justificativa
             <input
@@ -560,7 +651,7 @@ async function renderizarAlunosColetivo() {
           </label>
 
           <small style="display:block; margin-top:6px; color:#666;">
-            Aula trancada consome o pacote original e gera reposição automática sem custo.
+            Aula trancada será salva automaticamente como sem gravação e com reposição pendente.
           </small>
         </div>
       `;
@@ -569,7 +660,7 @@ async function renderizarAlunosColetivo() {
       const semPendencias = !pendentes.length;
 
       htmlExtras = `
-        <div style="margin-top:10px; background:#fff; padding:10px; border-radius:8px; border:1px solid #eee;">
+        <div class="box-info-status">
           <label style="font-size:13px; font-weight:bold; display:block; margin-bottom:6px;">
             Aula original
           </label>
@@ -590,7 +681,7 @@ async function renderizarAlunosColetivo() {
                   Este aluno não possui aula pendente para vincular a esta reposição.
                 </small>`
               : `<small style="display:block; color:#555;">
-                  A informação de custo não aparece para o professor. Reposição de aula cancelada ou trancada é sem custo.
+                  A reposição não consome pacote novamente. Ela apenas quita uma aula anterior.
                 </small>`
           }
         </div>
@@ -600,42 +691,20 @@ async function renderizarAlunosColetivo() {
       aluno.status === STATUS.PLANTAO_DUVIDAS
     ) {
       htmlExtras = `
-        <div style="margin-top:10px; background:#fff; padding:10px; border-radius:8px; border:1px solid #eee;">
-          <small style="color:#555;">
-            Esta aula será salva como gravada e não gera reposição.
-          </small>
+        <div class="box-info-status">
+          Esta aula será salva como gravada e não gera reposição.
         </div>
       `;
     }
 
     const div = document.createElement("div");
     div.className = "aluno-box";
-    div.style.cssText = `
-      background:#FFF5CC;
-      padding:15px;
-      margin-bottom:10px;
-      border-radius:10px;
-      border:1px solid #FDCC0C;
-      position:relative;
-    `;
 
     div.innerHTML = `
       <button
         type="button"
         class="btn-remover-aluno"
         data-index="${index}"
-        style="
-          position:absolute;
-          right:10px;
-          top:10px;
-          background:#ff6b6b;
-          color:white;
-          border:none;
-          border-radius:5px;
-          cursor:pointer;
-          width:24px;
-          height:24px;
-        "
       >
         ✕
       </button>
@@ -701,6 +770,11 @@ function vincularEventosIndividuais() {
         matriculasLista[index].reposicaoComCusto = false;
       }
 
+      if (novoStatus === STATUS.AUSENTE) {
+        matriculasLista[index].aulaGravada = false;
+        matriculasLista[index].precisaReposicao = false;
+      }
+
       normalizarAlunoPorStatus(matriculasLista[index]);
       await renderizarAlunosColetivo();
     };
@@ -764,10 +838,12 @@ function vincularEventosIndividuais() {
 }
 
 // ==========================================
-// 7. EVENTOS DE INTERFACE
+// 7. EVENTOS
 // ==========================================
-aulaColetivaCheckbox.addEventListener("change", async () => {
-  const isColetivo = aulaColetivaCheckbox.checked;
+async function alternarTipoAula() {
+  const isColetivo = ehAulaColetiva();
+
+  atualizarCardsTipoAula();
 
   if (boxStatusGeral) {
     boxStatusGeral.style.display = isColetivo ? "none" : "block";
@@ -785,13 +861,19 @@ aulaColetivaCheckbox.addEventListener("change", async () => {
   if (!isColetivo) {
     limparEstadoColetivo();
     moduloAula.innerHTML = `<option value="">Selecione o módulo</option>`;
-  } else if (matriculasLista.length > 0) {
-    listaAlunosBox.style.display = "block";
-    await renderizarAlunosColetivo();
+  } else {
+    listaAlunosBox.style.display = matriculasLista.length > 0 ? "block" : "none";
+
+    if (matriculasLista.length > 0) {
+      await renderizarAlunosColetivo();
+    }
   }
 
   esconderCampoReposicaoComCusto();
-});
+}
+
+aulaIndividualRadio.addEventListener("change", alternarTipoAula);
+aulaColetivaRadio.addEventListener("change", alternarTipoAula);
 
 selectMatricula.addEventListener("change", async () => {
   const id = selectMatricula.value;
@@ -803,7 +885,7 @@ selectMatricula.addEventListener("change", async () => {
   const materiaNome = opt.dataset.materiaNome;
   const moduloNome = opt.dataset.moduloNome;
 
-  if (aulaColetivaCheckbox.checked) {
+  if (ehAulaColetiva()) {
     const jaExiste = matriculasLista.find((a) => String(a.id) === String(id));
 
     if (jaExiste) {
@@ -859,6 +941,7 @@ selectMatricula.addEventListener("change", async () => {
     await renderizarAlunosColetivo();
 
     selectMatricula.value = "";
+    atualizarCardsTipoAula();
     return;
   }
 
@@ -884,6 +967,7 @@ inputPrecisaReposicao.addEventListener("change", () => {
     inputAulaGravada.checked = false;
   }
 
+  atualizarCardsAusenciaGeral();
   atualizarBoxJustificativaGeral();
 });
 
@@ -892,6 +976,7 @@ inputAulaGravada.addEventListener("change", () => {
     inputPrecisaReposicao.checked = false;
   }
 
+  atualizarCardsAusenciaGeral();
   atualizarBoxJustificativaGeral();
 });
 
@@ -932,11 +1017,7 @@ function montarRegistroBase({
     conteudo: ehSemConteudo ? null : (conteudo || null),
     licao_casa: ehSemConteudo ? null : (licaoCasa || null),
     aula_original_id: ehReposicao ? Number(aulaOriginalId) : null,
-
-    // Custo não é controlado pelo professor nesta tela.
-    // Reposição de aula trancada/cancelada deve ser tratada como gratuita.
     reposicao_com_custo: false,
-
     aula_gravada: !!aulaGravada,
     precisa_reposicao: !!precisaReposicao,
     aula_coletiva: !!aulaColetiva,
@@ -963,7 +1044,7 @@ form.addEventListener("submit", async (e) => {
 
   let registros = [];
 
-  if (aulaColetivaCheckbox.checked) {
+  if (ehAulaColetiva()) {
     if (matriculasLista.length === 0) {
       mostrarMensagem("Adicione pelo menos um aluno.", false);
       return;
@@ -1010,15 +1091,14 @@ form.addEventListener("submit", async (e) => {
         return;
       }
 
-      if (
-        aluno.status === STATUS.AUSENTE &&
-        !aluno.aulaGravada &&
-        !aluno.precisaReposicao
-      ) {
-        mostrarMensagem(
-          `Aluno ${aluno.nome}: em aula ausente, marque "aula gravada" ou "agendar reposição".`,
-          false
-        );
+      const erroAusente = validarRegraAusente({
+        status: aluno.status,
+        aulaGravada: aluno.aulaGravada,
+        precisaReposicao: aluno.precisaReposicao
+      });
+
+      if (erroAusente) {
+        mostrarMensagem(`Aluno ${aluno.nome}: ${erroAusente}`, false);
         return;
       }
 
@@ -1072,15 +1152,14 @@ form.addEventListener("submit", async (e) => {
       return;
     }
 
-    if (
-      status === STATUS.AUSENTE &&
-      !inputAulaGravada.checked &&
-      !inputPrecisaReposicao.checked
-    ) {
-      mostrarMensagem(
-        'Em aula ausente, marque "aula gravada" ou "agendar reposição".',
-        false
-      );
+    const erroAusente = validarRegraAusente({
+      status,
+      aulaGravada: inputAulaGravada.checked,
+      precisaReposicao: inputPrecisaReposicao.checked
+    });
+
+    if (erroAusente) {
+      mostrarMensagem(erroAusente, false);
       return;
     }
 
@@ -1095,10 +1174,7 @@ form.addEventListener("submit", async (e) => {
     if (status === STATUS.AUSENTE) {
       aulaGravada = inputAulaGravada.checked;
       precisaReposicao = inputPrecisaReposicao.checked;
-    } else if (status === STATUS.CANCELADA) {
-      aulaGravada = false;
-      precisaReposicao = true;
-    } else if (status === STATUS.TRANCADA) {
+    } else if (status === STATUS.CANCELADA || status === STATUS.TRANCADA) {
       aulaGravada = false;
       precisaReposicao = true;
     } else if (statusGravaAutomaticamente(status)) {
@@ -1135,25 +1211,14 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  const idsAulasOriginaisRepostas = registros
-    .filter((reg) => reg.status === STATUS.REPOSICAO && reg.aula_original_id)
-    .map((reg) => Number(reg.aula_original_id));
+  /*
+    Importante:
+    A aula original não é atualizada para precisa_reposicao = false.
+    Ela permanece com seu histórico original.
 
-  if (idsAulasOriginaisRepostas.length > 0) {
-    const { error: errorAtualizarOriginais } = await supabase
-      .from("aula")
-      .update({ precisa_reposicao: false })
-      .in("id", idsAulasOriginaisRepostas);
-
-    if (errorAtualizarOriginais) {
-      console.error("Erro ao atualizar aulas originais repostas:", errorAtualizarOriginais);
-      mostrarMensagem(
-        "A aula foi salva, mas houve erro ao atualizar a pendência da reposição.",
-        false
-      );
-      return;
-    }
-  }
+    Para saber se já foi reposta, o sistema consulta se existe uma aula
+    com status "Reposição" apontando para ela em aula_original_id.
+  */
 
   mostrarMensagem("Aula(s) registrada(s) com sucesso!");
 
@@ -1170,3 +1235,4 @@ esconderCampoReposicaoComCusto();
 setarDataHoje();
 carregarMatriculas();
 aplicarRegrasStatusGeral();
+atualizarCardsTipoAula();
