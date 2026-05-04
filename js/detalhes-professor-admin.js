@@ -3,83 +3,118 @@ import { exigirAdmin } from "./guard.js";
 
 await exigirAdmin();
 
-const matriculaId = localStorage.getItem("matriculaSelecionada");
+// =====================================================
+// 1. PEGAR ID DO PROFESSOR
+// =====================================================
 
-// ===============================
-// ELEMENTOS
-// ===============================
+function obterProfessorIdSelecionado() {
+  const params = new URLSearchParams(window.location.search);
 
-const msg = document.getElementById("msg");
+  const idUrl =
+    params.get("id") ||
+    params.get("professor_id") ||
+    params.get("professorId");
 
-const tituloAluno = document.getElementById("tituloAluno");
-const subtituloAluno = document.getElementById("subtituloAluno");
+  if (idUrl) return Number(idUrl);
 
-const listaAulas = document.getElementById("listaAulas");
-const boxExpandirAulas = document.getElementById("boxExpandirAulas");
-const btnExpandirAulas = document.getElementById("btnExpandirAulas");
-const filtroModuloAula = document.getElementById("filtroModuloAula");
+  const idStorage =
+    localStorage.getItem("professorSelecionadoAdmin") ||
+    localStorage.getItem("professorSelecionado") ||
+    localStorage.getItem("professorIdSelecionado") ||
+    localStorage.getItem("professorAdminId") ||
+    localStorage.getItem("detalhesProfessorId");
 
-const cPresente = document.getElementById("cPresente");
-const cAusente = document.getElementById("cAusente");
-const cCancelada = document.getElementById("cCancelada");
-const cTrancada = document.getElementById("cTrancada");
+  if (idStorage) return Number(idStorage);
 
-const listaNotas = document.getElementById("listaNotas");
+  return null;
+}
 
-const mediaGeral = document.getElementById("mediaGeral");
-const totalNotas = document.getElementById("totalNotas");
-const mediaPorModulo = document.getElementById("mediaPorModulo");
+const professorId = obterProfessorIdSelecionado();
 
-const pacoteSituacao = document.getElementById("pacoteSituacao");
-const pacoteAulasUsadas = document.getElementById("pacoteAulasUsadas");
-const pacoteAulasRestantes = document.getElementById("pacoteAulasRestantes");
-const pacoteInicio = document.getElementById("pacoteInicio");
-const pacoteAlerta = document.getElementById("pacoteAlerta");
-
-const listaPacotesAluno = document.getElementById("listaPacotesAluno");
-
-const boxAcoesPacote = document.getElementById("boxAcoesPacote");
-const btnEncerrarPacote = document.getElementById("btnEncerrarPacote");
-const btnVerAulasPacote = document.getElementById("btnVerAulasPacote");
-
-const boxAulasPacote = document.getElementById("boxAulasPacote");
-const listaAulasPacote = document.getElementById("listaAulasPacote");
-const tituloAulasPacote = document.getElementById("tituloAulasPacote");
-const btnFecharAulasPacote = document.getElementById("btnFecharAulasPacote");
-
-// proteção
-if (!matriculaId) {
+if (!professorId) {
+  alert("Professor não encontrado. Volte ao resumo e selecione um professor.");
   window.location.href = "resumo-geral.html";
 }
 
-// ===============================
-// ESTADO
-// ===============================
+// =====================================================
+// 2. ELEMENTOS DA TELA
+// =====================================================
 
-let todasAulas = [];
+const msg = document.getElementById("msg");
+
+const tituloProfessor = document.getElementById("tituloProfessor");
+const subtituloProfessor = document.getElementById("subtituloProfessor");
+
+const infoNomeProfessor = document.getElementById("infoNomeProfessor");
+const infoEmailProfessor = document.getElementById("infoEmailProfessor");
+const infoStatusProfessor = document.getElementById("infoStatusProfessor");
+const infoCursosProfessor = document.getElementById("infoCursosProfessor");
+
+const qtdMatriculasProfessor = document.getElementById("qtdMatriculasProfessor");
+const qtdAlunosAtivosProfessor = document.getElementById("qtdAlunosAtivosProfessor");
+const qtdCursosProfessor = document.getElementById("qtdCursosProfessor");
+const qtdAulasMesProfessor = document.getElementById("qtdAulasMesProfessor");
+const qtdAulasComputaveisProfessor = document.getElementById("qtdAulasComputaveisProfessor");
+const qtdMinutosProfessor = document.getElementById("qtdMinutosProfessor");
+
+const cardsCursosProfessor = document.getElementById("cardsCursosProfessor");
+
+const listaAlunosProfessor = document.getElementById("listaAlunosProfessor");
+const btnExpandirAlunosProfessor = document.getElementById("btnExpandirAlunosProfessor");
+
+const filtroStatusAulaProfessor = document.getElementById("filtroStatusAulaProfessor");
+const listaAulasProfessor = document.getElementById("listaAulasProfessor");
+const boxExpandirAulasProfessor = document.getElementById("boxExpandirAulasProfessor");
+const btnExpandirAulasProfessor = document.getElementById("btnExpandirAulasProfessor");
+
+const btnMostrarFormOcorrencia = document.getElementById("btnMostrarFormOcorrencia");
+const formOcorrenciaProfessor = document.getElementById("formOcorrenciaProfessor");
+
+const ocorrenciaData = document.getElementById("ocorrenciaData");
+const ocorrenciaTipo = document.getElementById("ocorrenciaTipo");
+const ocorrenciaGravidade = document.getElementById("ocorrenciaGravidade");
+const ocorrenciaMotivo = document.getElementById("ocorrenciaMotivo");
+const ocorrenciaProvidencia = document.getElementById("ocorrenciaProvidencia");
+const ocorrenciaDescricao = document.getElementById("ocorrenciaDescricao");
+
+const btnCancelarOcorrencia = document.getElementById("btnCancelarOcorrencia");
+const btnSalvarOcorrencia = document.getElementById("btnSalvarOcorrencia");
+
+const listaOcorrenciasProfessor = document.getElementById("listaOcorrenciasProfessor");
+const boxExpandirOcorrenciasProfessor = document.getElementById("boxExpandirOcorrenciasProfessor");
+const btnExpandirOcorrenciasProfessor = document.getElementById("btnExpandirOcorrenciasProfessor");
+
+// =====================================================
+// 3. ESTADO
+// =====================================================
+
+let professorAtual = null;
+let cursosProfessor = [];
+let matriculasProfessor = [];
+let aulasProfessor = [];
+let ocorrenciasProfessor = [];
+
+let alunosExpandido = false;
 let aulasExpandido = false;
+let ocorrenciasExpandido = false;
 
-let dadosCabecalho = null;
-let pacotesAluno = [];
-let pacoteAtivoAtual = null;
-let pacoteSelecionadoParaAulas = null;
-
-// ===============================
-// CONSTANTES
-// ===============================
+// =====================================================
+// 4. CONSTANTES
+// =====================================================
 
 const STATUS = {
   PRESENTE: "Presente",
   AUSENTE: "Ausente",
   CANCELADA: "Cancelada",
+  TRANCADA: "Trancada",
   REPOSICAO: "Reposição",
   AULA_INSTRUMENTAL: "Aula Instrumental",
   PLANTAO_DUVIDAS: "Plantão de dúvidas"
 };
 
-// ===============================
-// MENSAGEM
-// ===============================
+// =====================================================
+// 5. UTILITÁRIOS
+// =====================================================
 
 function mostrarMensagem(texto, ok = true) {
   if (!msg) {
@@ -89,55 +124,22 @@ function mostrarMensagem(texto, ok = true) {
 
   msg.textContent = texto;
   msg.style.display = "block";
-
   msg.style.backgroundColor = ok ? "#e8f5e9" : "#ffebee";
   msg.style.color = ok ? "#1b5e20" : "#b71c1c";
   msg.style.padding = "10px 12px";
   msg.style.borderRadius = "10px";
+  msg.style.fontWeight = "600";
+  msg.style.textAlign = "center";
+
+  msg.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
 
   setTimeout(() => {
     msg.style.display = "none";
     msg.textContent = "";
-  }, 2600);
-}
-
-// ===============================
-// UTIL
-// ===============================
-
-function limparLista(ul) {
-  if (!ul) return;
-  ul.innerHTML = "";
-}
-
-function addLi(ul, texto) {
-  if (!ul) return;
-
-  const li = document.createElement("li");
-  li.textContent = texto;
-  ul.appendChild(li);
-}
-
-function hojeISO() {
-  const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-  const dia = String(hoje.getDate()).padStart(2, "0");
-
-  return `${ano}-${mes}-${dia}`;
-}
-
-function formatarDataBR(dataISO) {
-  if (!dataISO) return "-";
-
-  const partes = String(dataISO).split("-");
-  const yyyy = partes[0];
-  const mm = partes[1];
-  const dd = partes[2];
-
-  if (!yyyy || !mm || !dd) return "-";
-
-  return `${dd}/${mm}/${yyyy}`;
+  }, 3500);
 }
 
 function escaparHtml(texto) {
@@ -149,161 +151,151 @@ function escaparHtml(texto) {
     .replaceAll("'", "&#039;");
 }
 
+function formatarDataBR(dataISO) {
+  if (!dataISO) return "-";
+
+  const partes = String(dataISO).split("-");
+  const ano = partes[0];
+  const mes = partes[1];
+  const dia = partes[2];
+
+  if (!ano || !mes || !dia) return "-";
+
+  return `${dia}/${mes}/${ano}`;
+}
+
+function hojeISO() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+function inicioMesISO() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+
+  return `${ano}-${mes}-01`;
+}
+
+function proximoMesISO() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mesAtual = hoje.getMonth();
+
+  const primeiroDiaProximoMes = new Date(ano, mesAtual + 1, 1);
+
+  const anoFinal = primeiroDiaProximoMes.getFullYear();
+  const mesFinal = String(primeiroDiaProximoMes.getMonth() + 1).padStart(2, "0");
+
+  return `${anoFinal}-${mesFinal}-01`;
+}
+
 function normalizarTexto(valor) {
   return String(valor || "").trim().toLowerCase();
 }
 
-function textoParte(parte) {
-  if (!parte) return "Não informada";
-  return `Parte ${parte}`;
+function formatarMinutosDeSegundos(segundos) {
+  const totalSegundos = Number(segundos || 0);
+
+  if (!totalSegundos) return "0";
+
+  const minutos = Math.floor(totalSegundos / 60);
+  const restoSegundos = totalSegundos % 60;
+
+  if (restoSegundos === 0) return String(minutos);
+
+  return `${minutos}m ${restoSegundos}s`;
 }
 
-function textoAulaGravada(aula) {
-  if (aula.status === STATUS.AUSENTE) {
-    return aula.aula_gravada ? "Sim" : "Não";
-  }
-
-  if (
-    aula.status === STATUS.PRESENTE ||
-    aula.status === STATUS.REPOSICAO ||
-    aula.status === STATUS.AULA_INSTRUMENTAL ||
-    aula.status === STATUS.PLANTAO_DUVIDAS
-  ) {
-    return aula.aula_gravada ? "Sim" : "Não";
-  }
-
-  if (aula.status === STATUS.CANCELADA) {
-    return "Não";
-  }
-
-  return aula.aula_gravada ? "Sim" : "Não";
-}
-
-function irParaElemento(elemento) {
-  if (!elemento) return;
-
-  elemento.scrollIntoView({
-    behavior: "smooth",
-    block: "nearest"
-  });
-}
-
-// ===============================
-// REGRAS DO PACOTE
-// ===============================
-
-function obterTipoConsumoPacote(aula, idsAulasOriginaisJaContadas = new Set()) {
-  const status = normalizarTexto(aula?.status);
-  const gravada = aula?.aula_gravada === true;
-  const precisaReposicao = aula?.precisa_reposicao === true;
-  const temAulaOriginal = !!aula?.aula_original_id;
-
-  if (status === "presente" && gravada) {
-    return "Presença";
-  }
-
-  if (status === "ausente" && gravada) {
-    return "Ausência com aula gravada";
-  }
-
-  if (status === "ausente" && !gravada && precisaReposicao) {
-    return "Ausência sem aula gravada";
-  }
-
-  if ((status === "reposição" || status === "reposicao") && gravada) {
-    if (!temAulaOriginal) {
-      return "Reposição sem aula de origem vinculada";
-    }
-
-    const aulaOriginalId = Number(aula.aula_original_id);
-
-    if (idsAulasOriginaisJaContadas.has(aulaOriginalId)) {
-      return "";
-    }
-
-    return "Reposição";
-  }
-
-  return "";
-}
-
-function aulaConsomePacote(aula, idsAulasOriginaisJaContadas = new Set()) {
-  return !!obterTipoConsumoPacote(aula, idsAulasOriginaisJaContadas);
-}
-
-function aulaContaParaAvaliacao(aula) {
+function aulaComputavelFinanceiro(aula) {
   const status = normalizarTexto(aula?.status);
   const gravada = aula?.aula_gravada === true;
 
   if (status === "presente" && gravada) return true;
   if (status === "ausente" && gravada) return true;
   if ((status === "reposição" || status === "reposicao") && gravada) return true;
+  if (status === "aula instrumental" && gravada) return true;
+  if (status === "plantão de dúvidas" && gravada) return true;
+  if (status === "plantao de dúvidas" && gravada) return true;
+  if (status === "plantão de duvidas" && gravada) return true;
+  if (status === "plantao de duvidas" && gravada) return true;
 
   return false;
 }
 
-function aulaDentroDoPeriodoDoPacote(aula, pacote) {
-  const dataAula = String(aula?.data_aula || "");
-  const dataInicio = String(pacote?.data_inicio || "");
-  const dataFim = String(pacote?.data_fim || "");
-
-  if (!dataAula || !dataInicio) return false;
-
-  if (dataAula < dataInicio) return false;
-
-  if (dataFim && dataAula > dataFim) return false;
-
-  return true;
+function textoStatusProfessor(ativo) {
+  if (ativo === false) return "Inativo";
+  return "Ativo";
 }
 
-function obterAulasDoPeriodoDoPacote(pacote) {
-  return todasAulas
-    .filter((aula) => aulaDentroDoPeriodoDoPacote(aula, pacote))
-    .sort((a, b) => {
-      const dataA = String(a.data_aula || "");
-      const dataB = String(b.data_aula || "");
-
-      if (dataA !== dataB) {
-        return dataA.localeCompare(dataB);
-      }
-
-      return Number(a.id || 0) - Number(b.id || 0);
-    });
+function textoParte(parte) {
+  if (!parte) return "Parte não informada";
+  return `Parte ${parte}`;
 }
 
-function obterIdsAulasOriginaisJaContadas(aulasDoPeriodo) {
-  return new Set(
-    (aulasDoPeriodo || [])
-      .filter((aula) => {
-        const status = normalizarTexto(aula.status);
-
-        return (
-          status === "ausente" &&
-          aula.precisa_reposicao === true
-        );
-      })
-      .map((aula) => Number(aula.id))
-  );
+function obterNomeAlunoDaAula(aula) {
+  return aula?.matricula?.aluno?.nome || "Aluno não informado";
 }
 
-function obterAulasConsumidasNoPacote(pacote) {
-  const aulasDoPeriodo = obterAulasDoPeriodoDoPacote(pacote);
-  const idsAulasOriginaisJaContadas = obterIdsAulasOriginaisJaContadas(aulasDoPeriodo);
-
-  return aulasDoPeriodo.filter((aula) => {
-    return aulaConsomePacote(aula, idsAulasOriginaisJaContadas);
-  });
+function obterCursoDaAula(aula) {
+  return aula?.matricula?.materia?.nome || "Curso não informado";
 }
 
-function contarAulasUsadasNoPacote(pacote) {
-  return obterAulasConsumidasNoPacote(pacote).length;
+function obterModuloDaAula(aula) {
+  return aula?.modulo?.nome || aula?.matricula?.modulo?.nome || "Módulo não informado";
 }
 
-// ===============================
-// CABEÇALHO
-// ===============================
+// =====================================================
+// 6. BUSCAS NO BANCO
+// =====================================================
 
-async function carregarCabecalho() {
+async function carregarProfessor() {
+  const { data, error } = await supabase
+    .from("professor")
+    .select("id, nome, email, ativo")
+    .eq("id", professorId)
+    .single();
+
+  if (error || !data) {
+    console.error("Erro ao carregar professor:", error);
+    mostrarMensagem("Erro ao carregar dados do professor.", false);
+    return null;
+  }
+
+  professorAtual = data;
+  return data;
+}
+
+async function carregarCursosProfessor() {
+  const { data, error } = await supabase
+    .from("professor_materia")
+    .select(`
+      id,
+      professor_id,
+      materia_id,
+      valor_hora,
+      materia:materia_id (
+        id,
+        nome
+      )
+    `)
+    .eq("professor_id", professorId);
+
+  if (error) {
+    console.error("Erro ao carregar cursos do professor:", error);
+    cursosProfessor = [];
+    return [];
+  }
+
+  cursosProfessor = data || [];
+  return cursosProfessor;
+}
+
+async function carregarMatriculasProfessor() {
   const { data, error } = await supabase
     .from("matricula")
     .select(`
@@ -312,9 +304,14 @@ async function carregarCabecalho() {
       materia_id,
       modulo_id,
       professor_id,
+      data_inicio,
+      data_fim,
+      ativa,
       aluno:aluno_id (
         id,
-        nome
+        nome,
+        email,
+        telefone
       ),
       materia:materia_id (
         id,
@@ -323,90 +320,26 @@ async function carregarCabecalho() {
       modulo:modulo_id (
         id,
         nome
-      ),
-      professor:professor_id (
-        id,
-        nome
       )
     `)
-    .eq("id", matriculaId)
-    .single();
-
-  if (error || !data) {
-    console.error(error);
-    mostrarMensagem("Erro ao carregar aluno.", false);
-    return null;
-  }
-
-  dadosCabecalho = data;
-
-  if (tituloAluno) {
-    tituloAluno.textContent = data.aluno?.nome || "Aluno";
-  }
-
-  if (subtituloAluno) {
-    subtituloAluno.textContent =
-      `${data.materia?.nome || ""} — ${data.modulo?.nome || ""} — Prof(a). ${data.professor?.nome || ""}`;
-  }
-
-  await carregarModulosDaMatricula(matriculaId);
-
-  return data;
-}
-
-// ===============================
-// FILTRO DE MÓDULO DAS AULAS
-// ===============================
-
-async function carregarModulosDaMatricula(matriculaId) {
-  if (!filtroModuloAula) return;
-
-  const { data, error } = await supabase
-    .from("aula")
-    .select(`
-      modulo_id,
-      modulo:modulo_id (
-        nome
-      )
-    `)
-    .eq("matricula_id", matriculaId)
-    .not("modulo_id", "is", null);
+    .eq("professor_id", professorId)
+    .order("ativa", { ascending: false })
+    .order("id", { ascending: false });
 
   if (error) {
-    console.error(error);
-    return;
+    console.error("Erro ao carregar matrículas do professor:", error);
+    matriculasProfessor = [];
+    return [];
   }
 
-  const mapa = new Map();
-
-  (data || []).forEach((item) => {
-    if (!item.modulo_id) return;
-
-    if (!mapa.has(String(item.modulo_id))) {
-      mapa.set(String(item.modulo_id), {
-        id: item.modulo_id,
-        nome: item.modulo?.nome || "Módulo"
-      });
-    }
-  });
-
-  filtroModuloAula.innerHTML = `<option value="">Todos</option>`;
-
-  Array.from(mapa.values())
-    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
-    .forEach((modulo) => {
-      const option = document.createElement("option");
-      option.value = String(modulo.id);
-      option.textContent = modulo.nome;
-      filtroModuloAula.appendChild(option);
-    });
+  matriculasProfessor = data || [];
+  return matriculasProfessor;
 }
 
-// ===============================
-// AULAS
-// ===============================
+async function carregarAulasProfessor() {
+  const dataInicio = inicioMesISO();
+  const dataFim = proximoMesISO();
 
-async function carregarAulas() {
   const { data, error } = await supabase
     .from("aula")
     .select(`
@@ -419,800 +352,744 @@ async function carregarAulas() {
       parte,
       aula_gravada,
       precisa_reposicao,
+      duracao_segundos,
       aula_original_id,
+      reposicao_com_custo,
+      aula_coletiva,
+      grupo_aula_id,
+      quantidade_alunos,
       modulo_id,
+      matricula_id,
       modulo:modulo_id (
+        id,
         nome
       ),
-      professor:professor_id (
-        nome
+      matricula:matricula_id (
+        id,
+        aluno_id,
+        materia_id,
+        modulo_id,
+        aluno:aluno_id (
+          id,
+          nome
+        ),
+        materia:materia_id (
+          id,
+          nome
+        ),
+        modulo:modulo_id (
+          id,
+          nome
+        )
       )
     `)
-    .eq("matricula_id", matriculaId)
+    .eq("professor_id", professorId)
+    .gte("data_aula", dataInicio)
+    .lt("data_aula", dataFim)
     .order("data_aula", { ascending: false })
     .order("id", { ascending: false });
 
   if (error) {
-    console.error(error);
-    mostrarMensagem("Erro ao carregar aulas.", false);
+    console.error("Erro ao carregar aulas do professor:", error);
+    aulasProfessor = [];
     return [];
   }
 
-  return data || [];
+  aulasProfessor = data || [];
+  return aulasProfessor;
 }
 
-function preencherContadores(aulas) {
-  let p = 0;
-  let a = 0;
-  let c = 0;
-
-  aulas.forEach((x) => {
-    if (x.status === STATUS.PRESENTE) p++;
-    else if (x.status === STATUS.AUSENTE) a++;
-    else if (x.status === STATUS.CANCELADA) c++;
-  });
-
-  if (cPresente) cPresente.textContent = p;
-  if (cAusente) cAusente.textContent = a;
-  if (cCancelada) cCancelada.textContent = c;
-}
-
-function atualizarBotaoExpandirAulas(totalAulas) {
-  if (!boxExpandirAulas || !btnExpandirAulas) return;
-
-  if (totalAulas <= 3) {
-    boxExpandirAulas.style.display = "none";
-    return;
-  }
-
-  boxExpandirAulas.style.display = "block";
-  btnExpandirAulas.textContent = aulasExpandido ? "Ver menos aulas" : "Ver mais aulas";
-}
-
-function obterAulasFiltradas() {
-  const moduloSelecionado = filtroModuloAula?.value || "";
-
-  if (!moduloSelecionado) {
-    return [...todasAulas];
-  }
-
-  return todasAulas.filter(
-    (aula) => String(aula.modulo_id || "") === String(moduloSelecionado)
-  );
-}
-
-function renderAulas(aulasOriginais) {
-  limparLista(listaAulas);
-
-  if (!listaAulas) return;
-
-  if (aulasOriginais.length === 0) {
-    addLi(listaAulas, "Nenhuma aula registrada.");
-    atualizarBotaoExpandirAulas(0);
-    return;
-  }
-
-  const aulasParaMostrar = aulasExpandido ? aulasOriginais : aulasOriginais.slice(0, 3);
-  const totalAulasFiltradas = aulasOriginais.length;
-
-  aulasParaMostrar.forEach((x, index) => {
-    const li = document.createElement("li");
-    li.style.listStyle = "none";
-    li.style.marginBottom = "0";
-    li.style.padding = "10px 0";
-    li.style.borderBottom = "1px solid #e6dfcf";
-
-    const numeroAula = totalAulasFiltradas - index;
-    const dataBR = formatarDataBR(x.data_aula);
-    const professor = x.professor?.nome || "Professor";
-    const status = x.status || "-";
-    const parte = textoParte(x.parte);
-    const justificativa = x.justificativa?.trim() || "";
-    const conteudo = x.conteudo?.trim() || "Sem conteúdo informado";
-    const licao = x.licao_casa?.trim() || "Sem lição";
-    const gravada = textoAulaGravada(x);
-    const nomeModulo = x.modulo?.nome || "Sem módulo";
-
-    const infosNormais = [
-      `Prof(a). ${professor}`,
-      `Módulo: ${nomeModulo}`,
-      `Status: ${status}`,
-      `Parte: ${parte}`
-    ];
-
-    if (justificativa) {
-      infosNormais.push(`Justificativa: ${justificativa}`);
-    }
-
-    if (
-      x.status === STATUS.PRESENTE ||
-      x.status === STATUS.AUSENTE ||
-      x.status === STATUS.REPOSICAO
-    ) {
-      infosNormais.push(`Aula gravada: ${gravada}`);
-    }
-
-    if (x.status === STATUS.AUSENTE && x.precisa_reposicao) {
-      infosNormais.push("Reposição: pendente/solicitada");
-    }
-
-    if (aulaConsomePacote(x)) {
-      infosNormais.push("Pode contar no pacote");
-    }
-
-    if (aulaContaParaAvaliacao(x)) {
-      infosNormais.push("Conta para avaliação");
-    }
-
-    li.innerHTML = `
-      <div class="item-historico-flex">
-        <div class="item-historico-linha">
-          <div class="item-historico-topo-compacto">
-            ${escaparHtml(`Aula ${numeroAula}`)} • ${escaparHtml(dataBR)} - ${escaparHtml(conteudo)} - ${escaparHtml(licao)}
-          </div>
-
-          <div class="item-historico-detalhes">
-            ${escaparHtml(infosNormais.join(" | "))}
-          </div>
-        </div>
-
-        <div class="item-historico-acoes">
-          <button
-            type="button"
-            data-aula-id="${x.id}"
-            class="btn-excluir-aula-admin"
-            title="Excluir aula"
-          >
-            ✖
-          </button>
-        </div>
-      </div>
-    `;
-
-    listaAulas.appendChild(li);
-  });
-
-  atualizarBotaoExpandirAulas(aulasOriginais.length);
-
-  document.querySelectorAll(".btn-excluir-aula-admin").forEach((btn) => {
-    btn.onclick = async () => {
-      const aulaId = Number(btn.dataset.aulaId);
-
-      if (!confirm("Excluir esta aula?")) return;
-
-      const { error } = await supabase
-        .from("aula")
-        .delete()
-        .eq("id", aulaId);
-
-      if (error) {
-        console.error(error);
-        mostrarMensagem("Erro ao excluir aula.", false);
-        return;
-      }
-
-      mostrarMensagem("Aula excluída.");
-      await init();
-    };
-  });
-}
-
-function atualizarRenderAulas() {
-  const aulasFiltradas = obterAulasFiltradas();
-  renderAulas(aulasFiltradas);
-}
-
-// ===============================
-// PACOTES DE AULAS
-// ===============================
-
-async function carregarPacotesDoAluno(alunoId, materiaId) {
-  if (!alunoId || !materiaId) {
-    pacotesAluno = [];
-    pacoteAtivoAtual = null;
-    pacoteSelecionadoParaAulas = null;
-    renderPacotesAluno();
-    return;
-  }
-
+async function carregarOcorrenciasProfessor() {
   const { data, error } = await supabase
-    .from("pacote_aulas")
-    .select(`
-      id,
-      aluno_id,
-      materia_id,
-      quantidade_aulas,
-      data_inicio,
-      data_fim,
-      status,
-      observacao,
-      created_at
-    `)
-    .eq("aluno_id", alunoId)
-    .eq("materia_id", materiaId)
-    .order("data_inicio", { ascending: false })
+    .from("professor_ocorrencia")
+    .select("*")
+    .eq("professor_id", professorId)
+    .order("data_ocorrencia", { ascending: false })
     .order("id", { ascending: false });
 
   if (error) {
-    console.error(error);
-    mostrarMensagem("Erro ao carregar pacotes do aluno.", false);
+    console.error("Erro ao carregar ocorrências do professor:", error);
 
-    pacotesAluno = [];
-    pacoteAtivoAtual = null;
-    pacoteSelecionadoParaAulas = null;
-    renderPacotesAluno();
+    if (listaOcorrenciasProfessor) {
+      listaOcorrenciasProfessor.innerHTML = `
+        <p style="font-size:13px; color:#b71c1c;">
+          Não foi possível carregar as ocorrências. Verifique se a tabela professor_ocorrencia
+          possui as colunas esperadas.
+        </p>
+      `;
+    }
 
-    return;
+    ocorrenciasProfessor = [];
+    return [];
   }
 
-  pacotesAluno = data || [];
-  pacoteAtivoAtual = pacotesAluno.find((p) => p.status === "Ativo") || null;
-
-  console.log("Pacotes encontrados:", pacotesAluno);
-
-  renderPacotesAluno();
+  ocorrenciasProfessor = data || [];
+  return ocorrenciasProfessor;
 }
 
-function renderPacotesAluno() {
-  renderHistoricoPacotes();
+// =====================================================
+// 7. RENDERIZAÇÃO — CABEÇALHO E CARDS
+// =====================================================
 
-  if (!pacotesAluno.length) {
-    if (pacoteSituacao) {
-      pacoteSituacao.textContent = "Sem pacote ativo";
-      pacoteSituacao.style.color = "#b71c1c";
-    }
+function renderProfessor() {
+  if (!professorAtual) return;
 
-    if (pacoteAulasUsadas) pacoteAulasUsadas.textContent = "-";
-    if (pacoteAulasRestantes) pacoteAulasRestantes.textContent = "-";
-    if (pacoteInicio) pacoteInicio.textContent = "-";
+  const nome = professorAtual.nome || "Professor";
+  const email = professorAtual.email || "-";
+  const status = textoStatusProfessor(professorAtual.ativo);
 
-    if (pacoteAlerta) {
-      pacoteAlerta.style.display = "block";
-      pacoteAlerta.style.backgroundColor = "#ffebee";
-      pacoteAlerta.style.color = "#b71c1c";
-      pacoteAlerta.textContent =
-        "Nenhum pacote foi cadastrado para este aluno neste curso.";
-    }
+  const nomesCursos = cursosProfessor
+    .map((item) => item.materia?.nome)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
 
-    if (boxAcoesPacote) boxAcoesPacote.style.display = "none";
-
-    esconderAulasDoPacote();
-
-    return;
+  if (tituloProfessor) {
+    tituloProfessor.textContent = nome;
   }
 
-  if (!pacoteAtivoAtual) {
-    if (pacoteSituacao) {
-      pacoteSituacao.textContent = "Sem pacote ativo";
-      pacoteSituacao.style.color = "#b71c1c";
-    }
-
-    if (pacoteAulasUsadas) pacoteAulasUsadas.textContent = "-";
-    if (pacoteAulasRestantes) pacoteAulasRestantes.textContent = "-";
-    if (pacoteInicio) pacoteInicio.textContent = "-";
-
-    if (pacoteAlerta) {
-      pacoteAlerta.style.display = "block";
-      pacoteAlerta.style.backgroundColor = "#fff4cc";
-      pacoteAlerta.style.color = "#7a4b00";
-      pacoteAlerta.textContent =
-        "Este aluno possui histórico de pacotes, mas nenhum pacote ativo para este curso.";
-    }
-
-    if (boxAcoesPacote) boxAcoesPacote.style.display = "none";
-
-    return;
+  if (subtituloProfessor) {
+    subtituloProfessor.textContent = nomesCursos.length
+      ? `Professor(a) de ${nomesCursos.join(", ")}`
+      : "Professor(a) sem curso vinculado.";
   }
 
-  const usadas = contarAulasUsadasNoPacote(pacoteAtivoAtual);
-  const total = Number(pacoteAtivoAtual.quantidade_aulas || 36);
-  const restantes = Math.max(0, total - usadas);
+  if (infoNomeProfessor) infoNomeProfessor.textContent = nome;
+  if (infoEmailProfessor) infoEmailProfessor.textContent = email;
+  if (infoStatusProfessor) infoStatusProfessor.textContent = status;
 
-  if (pacoteAulasUsadas) pacoteAulasUsadas.textContent = `${usadas} / ${total}`;
-  if (pacoteAulasRestantes) pacoteAulasRestantes.textContent = String(restantes);
-  if (pacoteInicio) pacoteInicio.textContent = formatarDataBR(pacoteAtivoAtual.data_inicio);
+  if (infoStatusProfessor) {
+    infoStatusProfessor.style.color = professorAtual.ativo === false ? "#b71c1c" : "#1b5e20";
+  }
 
-  if (boxAcoesPacote) boxAcoesPacote.style.display = "flex";
-
-  if (usadas >= total) {
-    if (pacoteSituacao) {
-      pacoteSituacao.textContent = "Renovação necessária";
-      pacoteSituacao.style.color = "#b71c1c";
-    }
-
-    if (pacoteAlerta) {
-      pacoteAlerta.style.display = "block";
-      pacoteAlerta.style.backgroundColor = "#ffebee";
-      pacoteAlerta.style.color = "#b71c1c";
-      pacoteAlerta.textContent =
-        "O pacote atingiu a quantidade de aulas contratadas. Verifique a renovação com o aluno.";
-    }
-  } else if (restantes <= 3) {
-    if (pacoteSituacao) {
-      pacoteSituacao.textContent = "Próximo da renovação";
-      pacoteSituacao.style.color = "#7a4b00";
-    }
-
-    if (pacoteAlerta) {
-      pacoteAlerta.style.display = "block";
-      pacoteAlerta.style.backgroundColor = "#fff4cc";
-      pacoteAlerta.style.color = "#7a4b00";
-      pacoteAlerta.textContent =
-        `Atenção: faltam apenas ${restantes} aula(s) para acabar o pacote.`;
-    }
-  } else {
-    if (pacoteSituacao) {
-      pacoteSituacao.textContent = "Em andamento";
-      pacoteSituacao.style.color = "#1b5e20";
-    }
-
-    if (pacoteAlerta) {
-      pacoteAlerta.style.display = "block";
-      pacoteAlerta.style.backgroundColor = "#e8f5e9";
-      pacoteAlerta.style.color = "#1b5e20";
-      pacoteAlerta.textContent =
-        `Pacote ativo em andamento. Ainda restam ${restantes} aula(s).`;
-    }
+  if (infoCursosProfessor) {
+    infoCursosProfessor.textContent = nomesCursos.length
+      ? nomesCursos.join(", ")
+      : "Nenhum curso vinculado";
   }
 }
 
-function renderHistoricoPacotes() {
-  if (!listaPacotesAluno) {
-    console.error("Elemento listaPacotesAluno não encontrado no HTML.");
+function renderIndicadores() {
+  const matriculasAtivas = matriculasProfessor.filter((m) => m.ativa === true);
+
+  const alunosAtivosUnicos = new Set(
+    matriculasAtivas
+      .map((m) => m.aluno_id)
+      .filter(Boolean)
+  );
+
+  const cursosAtivosUnicos = new Set(
+    matriculasAtivas
+      .map((m) => m.materia_id)
+      .filter(Boolean)
+  );
+
+  const aulasMes = aulasProfessor;
+
+  const aulasComputaveis = aulasMes.filter(aulaComputavelFinanceiro);
+
+  const totalSegundos = aulasMes.reduce((total, aula) => {
+    return total + Number(aula.duracao_segundos || 0);
+  }, 0);
+
+  if (qtdMatriculasProfessor) {
+    qtdMatriculasProfessor.textContent = String(matriculasAtivas.length);
+  }
+
+  if (qtdAlunosAtivosProfessor) {
+    qtdAlunosAtivosProfessor.textContent = String(alunosAtivosUnicos.size);
+  }
+
+  if (qtdCursosProfessor) {
+    qtdCursosProfessor.textContent = String(cursosAtivosUnicos.size);
+  }
+
+  if (qtdAulasMesProfessor) {
+    qtdAulasMesProfessor.textContent = String(aulasMes.length);
+  }
+
+  if (qtdAulasComputaveisProfessor) {
+    qtdAulasComputaveisProfessor.textContent = String(aulasComputaveis.length);
+  }
+
+  if (qtdMinutosProfessor) {
+    qtdMinutosProfessor.textContent = formatarMinutosDeSegundos(totalSegundos);
+  }
+}
+
+function renderCursosProfessor() {
+  if (!cardsCursosProfessor) return;
+
+  const matriculasAtivas = matriculasProfessor.filter((m) => m.ativa === true);
+
+  if (!cursosProfessor.length && !matriculasAtivas.length) {
+    cardsCursosProfessor.innerHTML = `
+      <p style="font-size:13px; opacity:0.85;">
+        Nenhum curso vinculado a este professor.
+      </p>
+    `;
     return;
   }
 
-  if (!pacotesAluno.length) {
-    listaPacotesAluno.innerHTML =
-      `<p style="font-size:13px; opacity:0.85;">Nenhum pacote cadastrado para este aluno neste curso.</p>`;
-    return;
-  }
+  const mapa = new Map();
 
-  listaPacotesAluno.innerHTML = pacotesAluno.map((pacote) => {
-    const usadas = contarAulasUsadasNoPacote(pacote);
-    const total = Number(pacote.quantidade_aulas || 36);
-    const restantes = Math.max(0, total - usadas);
+  cursosProfessor.forEach((curso) => {
+    const materiaId = String(curso.materia_id);
 
-    const statusCor =
-      pacote.status === "Ativo"
-        ? "#1b5e20"
-        : pacote.status === "Encerrado"
-          ? "#555"
-          : "#b71c1c";
+    mapa.set(materiaId, {
+      materiaId,
+      nome: curso.materia?.nome || "Curso não informado",
+      valorHora: curso.valor_hora,
+      quantidade: 0
+    });
+  });
 
-    const tituloPacote =
-      pacote.status === "Ativo"
-        ? "Pacote ativo"
-        : pacote.status === "Cancelado"
-          ? "Pacote cancelado"
-          : "Pacote encerrado";
+  matriculasAtivas.forEach((matricula) => {
+    const materiaId = String(matricula.materia_id);
+
+    if (!mapa.has(materiaId)) {
+      mapa.set(materiaId, {
+        materiaId,
+        nome: matricula.materia?.nome || "Curso não informado",
+        valorHora: null,
+        quantidade: 0
+      });
+    }
+
+    const item = mapa.get(materiaId);
+    item.quantidade += 1;
+  });
+
+  const cursos = Array.from(mapa.values())
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+  cardsCursosProfessor.innerHTML = cursos.map((curso) => {
+    const valorHoraTexto =
+      curso.valorHora !== null && curso.valorHora !== undefined
+        ? `Valor hora: R$ ${Number(curso.valorHora).toFixed(2).replace(".", ",")}`
+        : "Valor hora não cadastrado";
 
     return `
-      <div class="card-pacote-historico">
-        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <strong>${escaparHtml(tituloPacote)}</strong>
-
-          <span style="font-size:12px; font-weight:700; color:${statusCor};">
-            ${escaparHtml(pacote.status || "-")}
-          </span>
+      <div style="padding:12px; border:1px solid #eee; border-radius:10px; background:#fffdf5;">
+        <div style="font-weight:700; margin-bottom:6px;">
+          ${escaparHtml(curso.nome)}
         </div>
 
-        <div style="font-size:13px; margin-top:6px;">
-          Aulas usadas: <b>${usadas} / ${total}</b>
-          ${
-            pacote.status === "Ativo"
-              ? ` • Restantes: <b>${restantes}</b>`
-              : ""
-          }
+        <div style="font-size:13px; opacity:0.85;">
+          ${curso.quantidade} matrícula(s) ativa(s)
         </div>
 
-        <div style="font-size:12px; opacity:0.85; margin-top:4px;">
-          Início: ${formatarDataBR(pacote.data_inicio)}
-          ${
-            pacote.data_fim
-              ? ` • Fim: ${formatarDataBR(pacote.data_fim)}`
-              : " • Fim: em aberto"
-          }
-        </div>
-
-        ${
-          pacote.observacao
-            ? `<div style="font-size:12px; opacity:0.85; margin-top:4px;">
-                Obs: ${escaparHtml(pacote.observacao)}
-              </div>`
-            : ""
-        }
-
-        <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-          <button
-            type="button"
-            class="btn-ver-aulas-pacote-historico btn-cinza-pacote"
-            data-pacote-id="${pacote.id}"
-          >
-            Ver aulas deste pacote
-          </button>
+        <div style="font-size:12px; opacity:0.75; margin-top:4px;">
+          ${escaparHtml(valorHoraTexto)}
         </div>
       </div>
     `;
   }).join("");
-
-  document.querySelectorAll(".btn-ver-aulas-pacote-historico").forEach((btn) => {
-    btn.onclick = () => {
-      const pacoteId = Number(btn.dataset.pacoteId);
-      const pacote = pacotesAluno.find((p) => Number(p.id) === pacoteId);
-
-      if (!pacote) {
-        mostrarMensagem("Pacote não encontrado.", false);
-        return;
-      }
-
-      mostrarAulasDeUmPacote(pacote);
-    };
-  });
 }
 
-function esconderAulasDoPacote() {
-  pacoteSelecionadoParaAulas = null;
+// =====================================================
+// 8. RENDERIZAÇÃO — ALUNOS
+// =====================================================
 
-  if (boxAulasPacote) {
-    boxAulasPacote.style.display = "none";
-  }
+function renderAlunosProfessor() {
+  if (!listaAlunosProfessor) return;
 
-  if (btnVerAulasPacote) {
-    btnVerAulasPacote.textContent = "Ver aulas do pacote ativo";
-  }
+  const matriculasAtivas = matriculasProfessor
+    .filter((m) => m.ativa === true)
+    .sort((a, b) => {
+      const nomeA = a.aluno?.nome || "";
+      const nomeB = b.aluno?.nome || "";
+      return nomeA.localeCompare(nomeB, "pt-BR");
+    });
 
-  if (listaAulasPacote) {
-    listaAulasPacote.innerHTML = "";
-  }
+  if (!matriculasAtivas.length) {
+    listaAlunosProfessor.innerHTML = `
+      <p style="font-size:13px; opacity:0.85;">
+        Nenhum aluno ativo vinculado a este professor.
+      </p>
+    `;
 
-  if (tituloAulasPacote) {
-    tituloAulasPacote.textContent = "Aulas consumidas neste pacote";
-  }
-}
+    if (btnExpandirAlunosProfessor) {
+      btnExpandirAlunosProfessor.style.display = "none";
+    }
 
-function alternarAulasDoPacoteAtivo() {
-  if (!pacoteAtivoAtual) {
-    mostrarMensagem("Não há pacote ativo para listar aulas.", false);
     return;
   }
 
-  const mesmoPacoteAberto =
-    pacoteSelecionadoParaAulas &&
-    Number(pacoteSelecionadoParaAulas.id) === Number(pacoteAtivoAtual.id) &&
-    boxAulasPacote &&
-    boxAulasPacote.style.display === "block";
+  const limite = alunosExpandido ? matriculasAtivas.length : 5;
+  const visiveis = matriculasAtivas.slice(0, limite);
 
-  if (mesmoPacoteAberto) {
-    esconderAulasDoPacote();
-    return;
-  }
+  listaAlunosProfessor.innerHTML = visiveis.map((matricula) => {
+    const nome = matricula.aluno?.nome || "Aluno sem nome";
+    const curso = matricula.materia?.nome || "Curso não informado";
+    const modulo = matricula.modulo?.nome || "Módulo não informado";
+    const email = matricula.aluno?.email || "";
+    const telefone = matricula.aluno?.telefone || "";
 
-  mostrarAulasDeUmPacote(pacoteAtivoAtual);
-}
+    return `
+      <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
+        <div style="font-weight:700;">
+          ${escaparHtml(nome)}
+        </div>
 
-function mostrarAulasDeUmPacote(pacote) {
-  pacoteSelecionadoParaAulas = pacote;
+        <div style="font-size:13px; opacity:0.9; margin-top:3px;">
+          ${escaparHtml(curso)} | ${escaparHtml(modulo)}
+        </div>
 
-  renderAulasDoPacote(pacote);
+        ${
+          email || telefone
+            ? `<div style="font-size:12px; opacity:0.75; margin-top:3px;">
+                ${email ? `E-mail: ${escaparHtml(email)}` : ""}
+                ${email && telefone ? " | " : ""}
+                ${telefone ? `Telefone: ${escaparHtml(telefone)}` : ""}
+              </div>`
+            : ""
+        }
+      </div>
+    `;
+  }).join("");
 
-  if (boxAulasPacote) {
-    boxAulasPacote.style.display = "block";
-  }
-
-  if (btnVerAulasPacote) {
-    if (pacoteAtivoAtual && Number(pacote.id) === Number(pacoteAtivoAtual.id)) {
-      btnVerAulasPacote.textContent = "Ocultar aulas do pacote ativo";
+  if (btnExpandirAlunosProfessor) {
+    if (matriculasAtivas.length <= 5) {
+      btnExpandirAlunosProfessor.style.display = "none";
     } else {
-      btnVerAulasPacote.textContent = "Ver aulas do pacote ativo";
+      btnExpandirAlunosProfessor.style.display = "inline-block";
+      btnExpandirAlunosProfessor.textContent = alunosExpandido ? "Ver menos" : "Ver mais";
     }
   }
-
-  irParaElemento(boxAulasPacote);
 }
 
-function renderAulasDoPacote(pacote) {
-  if (!pacote || !listaAulasPacote) return;
+// =====================================================
+// 9. RENDERIZAÇÃO — AULAS
+// =====================================================
 
-  const aulasConsumidas = obterAulasConsumidasNoPacote(pacote);
-  const aulasDoPeriodo = obterAulasDoPeriodoDoPacote(pacote);
-  const idsAulasOriginaisJaContadas = obterIdsAulasOriginaisJaContadas(aulasDoPeriodo);
+function obterAulasFiltradas() {
+  const statusFiltro = filtroStatusAulaProfessor?.value || "";
 
-  const total = Number(pacote.quantidade_aulas || 36);
-  const usadas = aulasConsumidas.length;
+  let aulas = [...aulasProfessor];
 
-  if (tituloAulasPacote) {
-    tituloAulasPacote.textContent =
-      `Aulas consumidas no pacote iniciado em ${formatarDataBR(pacote.data_inicio)} — ${usadas}/${total}`;
+  if (statusFiltro) {
+    aulas = aulas.filter((aula) => aula.status === statusFiltro);
   }
 
-  if (!aulasConsumidas.length) {
-    listaAulasPacote.innerHTML =
-      `<p style="font-size:13px; opacity:0.85;">Nenhuma aula consumida neste pacote.</p>`;
+  return aulas;
+}
+
+function agruparAulasColetivas(aulas) {
+  const grupos = new Map();
+  const individuais = [];
+
+  aulas.forEach((aula) => {
+    if (aula.aula_coletiva && aula.grupo_aula_id) {
+      const chave = aula.grupo_aula_id;
+
+      if (!grupos.has(chave)) {
+        grupos.set(chave, {
+          tipo: "coletiva",
+          grupoAulaId: chave,
+          data_aula: aula.data_aula,
+          status: aula.status,
+          parte: aula.parte,
+          conteudo: aula.conteudo,
+          licao_casa: aula.licao_casa,
+          duracao_segundos: aula.duracao_segundos,
+          quantidade_alunos: aula.quantidade_alunos,
+          modulo: obterModuloDaAula(aula),
+          curso: obterCursoDaAula(aula),
+          alunos: []
+        });
+      }
+
+      grupos.get(chave).alunos.push(obterNomeAlunoDaAula(aula));
+    } else {
+      individuais.push({
+        tipo: "individual",
+        aula
+      });
+    }
+  });
+
+  const coletivas = Array.from(grupos.values()).map((grupo) => {
+    grupo.alunos = grupo.alunos.sort((a, b) => a.localeCompare(b, "pt-BR"));
+    return grupo;
+  });
+
+  const todos = [
+    ...individuais,
+    ...coletivas
+  ];
+
+  todos.sort((a, b) => {
+    const dataA = a.tipo === "individual" ? a.aula.data_aula : a.data_aula;
+    const dataB = b.tipo === "individual" ? b.aula.data_aula : b.data_aula;
+
+    if (String(dataA) !== String(dataB)) {
+      return String(dataB).localeCompare(String(dataA));
+    }
+
+    const idA = a.tipo === "individual" ? Number(a.aula.id || 0) : 0;
+    const idB = b.tipo === "individual" ? Number(b.aula.id || 0) : 0;
+
+    return idB - idA;
+  });
+
+  return todos;
+}
+
+function renderAulaIndividual(aula) {
+  const dataBR = formatarDataBR(aula.data_aula);
+  const aluno = obterNomeAlunoDaAula(aula);
+  const curso = obterCursoDaAula(aula);
+  const modulo = obterModuloDaAula(aula);
+  const status = aula.status || "-";
+  const parte = textoParte(aula.parte);
+  const conteudo = aula.conteudo?.trim() || "Sem conteúdo informado";
+  const licao = aula.licao_casa?.trim() || "Sem lição";
+  const duracao = formatarMinutosDeSegundos(aula.duracao_segundos);
+  const computavel = aulaComputavelFinanceiro(aula);
+
+  return `
+    <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
+      <div style="font-weight:700;">
+        ${escaparHtml(dataBR)}
+        <span style="font-weight:400;"> — Aula individual</span>
+      </div>
+
+      <div style="font-weight:700; margin-top:4px;">
+        • ${escaparHtml(aluno)}
+      </div>
+
+      <div style="font-size:13px; margin-top:4px;">
+        ${escaparHtml(status)} | ${escaparHtml(parte)} | ${escaparHtml(curso)} | ${escaparHtml(modulo)}
+      </div>
+
+      <div style="font-size:13px; margin-top:4px;">
+        Conteúdo: ${escaparHtml(conteudo)}
+      </div>
+
+      <div style="font-size:12px; opacity:0.8; margin-top:4px;">
+        Lição: ${escaparHtml(licao)} | Duração: ${escaparHtml(duracao)} | 
+        ${computavel ? "Computável" : "Não computável"}
+      </div>
+    </div>
+  `;
+}
+
+function renderAulaColetiva(grupo) {
+  const dataBR = formatarDataBR(grupo.data_aula);
+  const status = grupo.status || "-";
+  const parte = textoParte(grupo.parte);
+  const conteudo = grupo.conteudo?.trim() || "Sem conteúdo informado";
+  const licao = grupo.licao_casa?.trim() || "Sem lição";
+  const duracao = formatarMinutosDeSegundos(grupo.duracao_segundos);
+  const quantidade = grupo.alunos.length || grupo.quantidade_alunos || 0;
+
+  return `
+    <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
+      <div style="font-weight:700;">
+        ${escaparHtml(dataBR)}
+        <span style="font-weight:400;"> — Aula coletiva</span>
+      </div>
+
+      <div style="margin-top:4px;">
+        ${grupo.alunos.map((nome) => `
+          <div style="font-weight:700;">• ${escaparHtml(nome)}</div>
+        `).join("")}
+      </div>
+
+      <div style="font-size:13px; margin-top:4px;">
+        ${escaparHtml(status)} | ${escaparHtml(parte)} | ${quantidade} aluno(s) | ${escaparHtml(grupo.curso)} | ${escaparHtml(grupo.modulo)}
+      </div>
+
+      <div style="font-size:13px; margin-top:4px;">
+        Conteúdo: ${escaparHtml(conteudo)}
+      </div>
+
+      <div style="font-size:12px; opacity:0.8; margin-top:4px;">
+        Lição: ${escaparHtml(licao)} | Duração: ${escaparHtml(duracao)}
+      </div>
+    </div>
+  `;
+}
+
+function renderAulasProfessor() {
+  if (!listaAulasProfessor) return;
+
+  const aulasFiltradas = obterAulasFiltradas();
+
+  if (!aulasFiltradas.length) {
+    listaAulasProfessor.innerHTML = `
+      <p style="font-size:13px; opacity:0.85;">
+        Nenhuma aula encontrada para este professor no mês atual.
+      </p>
+    `;
+
+    if (boxExpandirAulasProfessor) {
+      boxExpandirAulasProfessor.style.display = "none";
+    }
+
     return;
   }
 
-  listaAulasPacote.innerHTML = aulasConsumidas.map((aula, index) => {
-    const tipoConsumo = obterTipoConsumoPacote(aula, idsAulasOriginaisJaContadas);
-    const dataBR = formatarDataBR(aula.data_aula);
-    const modulo = aula.modulo?.nome || "Sem módulo";
-    const professor = aula.professor?.nome || "Professor";
-    const conteudo = aula.conteudo?.trim() || "Sem conteúdo informado";
-    const status = aula.status || "-";
-    const parte = textoParte(aula.parte);
+  const agrupadas = agruparAulasColetivas(aulasFiltradas);
+  const limite = aulasExpandido ? agrupadas.length : 3;
+  const visiveis = agrupadas.slice(0, limite);
+
+  listaAulasProfessor.innerHTML = visiveis.map((item) => {
+    if (item.tipo === "coletiva") {
+      return renderAulaColetiva(item);
+    }
+
+    return renderAulaIndividual(item.aula);
+  }).join("");
+
+  if (boxExpandirAulasProfessor && btnExpandirAulasProfessor) {
+    if (agrupadas.length <= 3) {
+      boxExpandirAulasProfessor.style.display = "none";
+    } else {
+      boxExpandirAulasProfessor.style.display = "block";
+      btnExpandirAulasProfessor.textContent = aulasExpandido
+        ? "Ver menos aulas"
+        : "Ver mais aulas";
+    }
+  }
+}
+
+// =====================================================
+// 10. RENDERIZAÇÃO — OCORRÊNCIAS
+// =====================================================
+
+function renderOcorrenciasProfessor() {
+  if (!listaOcorrenciasProfessor) return;
+
+  if (!ocorrenciasProfessor.length) {
+    listaOcorrenciasProfessor.innerHTML = `
+      <p style="font-size:13px; opacity:0.85;">
+        Nenhuma ocorrência registrada para este professor.
+      </p>
+    `;
+
+    if (boxExpandirOcorrenciasProfessor) {
+      boxExpandirOcorrenciasProfessor.style.display = "none";
+    }
+
+    return;
+  }
+
+  const limite = ocorrenciasExpandido ? ocorrenciasProfessor.length : 3;
+  const visiveis = ocorrenciasProfessor.slice(0, limite);
+
+  listaOcorrenciasProfessor.innerHTML = visiveis.map((oc) => {
+    const data = formatarDataBR(oc.data_ocorrencia || oc.data || oc.created_at?.slice(0, 10));
+    const tipo = oc.tipo || oc.tipo_ocorrencia || "Ocorrência";
+    const gravidade = oc.gravidade || "Observação";
+    const motivo = oc.motivo || "";
+    const providencia = oc.providencia || "";
+    const descricao = oc.descricao || oc.observacao || "";
 
     return `
       <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
         <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <strong>${index + 1}. ${escaparHtml(dataBR)} — ${escaparHtml(status)}</strong>
+          <strong>${escaparHtml(data)} — ${escaparHtml(tipo)}</strong>
           <span style="font-size:12px; font-weight:700;">
-            ${escaparHtml(tipoConsumo)}
+            ${escaparHtml(gravidade)}
           </span>
         </div>
 
-        <div style="font-size:13px; margin-top:4px;">
-          ${escaparHtml(modulo)} • ${escaparHtml(parte)} • Prof(a). ${escaparHtml(professor)}
-        </div>
-
-        <div style="font-size:12px; opacity:0.85; margin-top:4px;">
-          Conteúdo: ${escaparHtml(conteudo)}
-        </div>
+        ${
+          motivo
+            ? `<div style="font-size:13px; margin-top:5px;">
+                <b>Motivo:</b> ${escaparHtml(motivo)}
+              </div>`
+            : ""
+        }
 
         ${
-          aula.aula_original_id
-            ? `<div style="font-size:12px; opacity:0.85; margin-top:4px;">
-                Reposição vinculada à aula de origem ID ${Number(aula.aula_original_id)}
+          providencia
+            ? `<div style="font-size:13px; margin-top:5px;">
+                <b>Providência:</b> ${escaparHtml(providencia)}
+              </div>`
+            : ""
+        }
+
+        ${
+          descricao
+            ? `<div style="font-size:12px; opacity:0.85; margin-top:5px;">
+                ${escaparHtml(descricao)}
               </div>`
             : ""
         }
       </div>
     `;
   }).join("");
+
+  if (boxExpandirOcorrenciasProfessor && btnExpandirOcorrenciasProfessor) {
+    if (ocorrenciasProfessor.length <= 3) {
+      boxExpandirOcorrenciasProfessor.style.display = "none";
+    } else {
+      boxExpandirOcorrenciasProfessor.style.display = "block";
+      btnExpandirOcorrenciasProfessor.textContent = ocorrenciasExpandido
+        ? "Ver menos ocorrências"
+        : "Ver mais ocorrências";
+    }
+  }
 }
 
-async function encerrarPacoteAtivo() {
-  if (!pacoteAtivoAtual) {
-    mostrarMensagem("Não há pacote ativo para encerrar.", false);
+// =====================================================
+// 11. OCORRÊNCIA — FORM
+// =====================================================
+
+function prepararFormOcorrencia() {
+  if (ocorrenciaData) {
+    ocorrenciaData.value = hojeISO();
+  }
+}
+
+function abrirFormOcorrencia() {
+  if (!formOcorrenciaProfessor) return;
+
+  formOcorrenciaProfessor.style.display = "block";
+  prepararFormOcorrencia();
+
+  formOcorrenciaProfessor.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+}
+
+function fecharFormOcorrencia() {
+  if (!formOcorrenciaProfessor) return;
+
+  formOcorrenciaProfessor.reset();
+  formOcorrenciaProfessor.style.display = "none";
+  prepararFormOcorrencia();
+}
+
+async function salvarOcorrencia(e) {
+  e.preventDefault();
+
+  const dataOcorrencia = ocorrenciaData?.value;
+  const tipo = ocorrenciaTipo?.value;
+  const gravidade = ocorrenciaGravidade?.value;
+  const motivo = ocorrenciaMotivo?.value?.trim();
+  const providencia = ocorrenciaProvidencia?.value?.trim();
+  const descricao = ocorrenciaDescricao?.value?.trim();
+
+  if (!dataOcorrencia || !tipo || !gravidade || !motivo || !providencia || !descricao) {
+    mostrarMensagem("Preencha todos os campos da ocorrência.", false);
     return;
   }
 
-  const confirmar = confirm(
-    "Encerrar o pacote ativo deste aluno? Depois disso, será possível cadastrar uma renovação."
-  );
+  if (btnSalvarOcorrencia) {
+    btnSalvarOcorrencia.disabled = true;
+    btnSalvarOcorrencia.textContent = "Salvando...";
+  }
 
-  if (!confirmar) return;
+  const payload = {
+    professor_id: professorId,
+    data_ocorrencia: dataOcorrencia,
+    tipo,
+    gravidade,
+    motivo,
+    providencia,
+    descricao
+  };
 
   const { error } = await supabase
-    .from("pacote_aulas")
-    .update({
-      status: "Encerrado",
-      data_fim: hojeISO()
-    })
-    .eq("id", pacoteAtivoAtual.id);
+    .from("professor_ocorrencia")
+    .insert(payload);
+
+  if (btnSalvarOcorrencia) {
+    btnSalvarOcorrencia.disabled = false;
+    btnSalvarOcorrencia.textContent = "Salvar ocorrência";
+  }
 
   if (error) {
-    console.error(error);
-    mostrarMensagem("Erro ao encerrar pacote.", false);
+    console.error("Erro ao salvar ocorrência:", error);
+    mostrarMensagem(
+      "Erro ao salvar ocorrência. Confira se a tabela professor_ocorrencia tem as colunas: professor_id, data_ocorrencia, tipo, gravidade, motivo, providencia e descricao.",
+      false
+    );
     return;
   }
 
-  mostrarMensagem("Pacote encerrado com sucesso!");
+  mostrarMensagem("Ocorrência salva com sucesso!");
 
-  esconderAulasDoPacote();
+  fecharFormOcorrencia();
 
-  await carregarPacotesDoAluno(
-    dadosCabecalho?.aluno_id,
-    dadosCabecalho?.materia_id
-  );
+  await carregarOcorrenciasProfessor();
+  renderOcorrenciasProfessor();
 }
 
-// ===============================
-// EVENTOS PARTICIPADOS
-// ===============================
-
-async function carregarQuantidadeEventosParticipados(alunoId) {
-  if (!alunoId) {
-    if (cTrancada) cTrancada.textContent = "0";
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from("evento_confirmacao")
-    .select("evento_id")
-    .eq("aluno_id", alunoId);
-
-  if (error) {
-    console.error(error);
-    if (cTrancada) cTrancada.textContent = "0";
-    return;
-  }
-
-  const eventosUnicos = new Set((data || []).map((item) => item.evento_id));
-
-  if (cTrancada) {
-    cTrancada.textContent = String(eventosUnicos.size);
-  }
-}
-
-// ===============================
-// NOTAS
-// ===============================
-
-async function carregarNotas() {
-  const { data, error } = await supabase
-    .from("nota")
-    .select(`
-      id,
-      data,
-      tipo,
-      valor,
-      observacao,
-      modulo_id,
-      modulo:modulo_id (
-        nome
-      )
-    `)
-    .eq("matricula_id", matriculaId)
-    .order("data", { ascending: false });
-
-  if (error) {
-    console.error(error);
-    mostrarMensagem("Erro ao carregar notas.", false);
-    return [];
-  }
-
-  return data || [];
-}
-
-function renderNotas(notas) {
-  limparLista(listaNotas);
-
-  if (!listaNotas) return;
-
-  if (notas.length === 0) {
-    addLi(listaNotas, "Nenhuma nota registrada.");
-    return;
-  }
-
-  notas.forEach((n) => {
-    const li = document.createElement("li");
-
-    const dataBR = formatarDataBR(n.data);
-    const modulo = n.modulo?.nome || "Sem módulo";
-    const obs = n.observacao ? ` — ${n.observacao}` : "";
-
-    const texto = `${dataBR} — ${n.tipo} — ${modulo} — ${n.valor}${obs}`;
-
-    const span = document.createElement("span");
-    span.textContent = texto;
-
-    const btnExcluir = document.createElement("button");
-    btnExcluir.textContent = "🗑";
-    btnExcluir.style.marginLeft = "10px";
-    btnExcluir.style.cursor = "pointer";
-
-    btnExcluir.onclick = async () => {
-      if (!confirm("Excluir esta nota?")) return;
-
-      const { error } = await supabase
-        .from("nota")
-        .delete()
-        .eq("id", n.id);
-
-      if (error) {
-        console.error(error);
-        mostrarMensagem("Erro ao excluir nota.", false);
-        return;
-      }
-
-      mostrarMensagem("Nota excluída.");
-      await init();
-    };
-
-    li.appendChild(span);
-    li.appendChild(btnExcluir);
-
-    listaNotas.appendChild(li);
-  });
-}
-
-// ===============================
-// MÉDIAS
-// ===============================
-
-function calcularMedias(notas) {
-  if (!mediaGeral || !totalNotas || !mediaPorModulo) return;
-
-  if (notas.length === 0) {
-    mediaGeral.textContent = "-";
-    totalNotas.textContent = "0";
-    mediaPorModulo.textContent = "Nenhuma média";
-    return;
-  }
-
-  let soma = 0;
-
-  notas.forEach((n) => {
-    soma += Number(n.valor) || 0;
-  });
-
-  const media = soma / notas.length;
-
-  mediaGeral.textContent = media.toFixed(2);
-  totalNotas.textContent = notas.length;
-
-  const modulos = {};
-
-  notas.forEach((n) => {
-    const nome = n.modulo?.nome || "Sem módulo";
-
-    if (!modulos[nome]) {
-      modulos[nome] = [];
-    }
-
-    modulos[nome].push(Number(n.valor) || 0);
-  });
-
-  mediaPorModulo.innerHTML = "";
-
-  Object.keys(modulos).forEach((m) => {
-    const lista = modulos[m];
-
-    let somaModulo = 0;
-
-    lista.forEach((v) => {
-      somaModulo += v;
-    });
-
-    const mediaModulo = somaModulo / lista.length;
-
-    const p = document.createElement("p");
-    p.textContent = `${m}: ${mediaModulo.toFixed(2)} (${lista.length} avaliações)`;
-
-    mediaPorModulo.appendChild(p);
-  });
-}
-
-// ===============================
-// INIT
-// ===============================
+// =====================================================
+// 12. INIT
+// =====================================================
 
 async function init() {
-  const cabecalho = await carregarCabecalho();
-  if (!cabecalho) return;
+  if (subtituloProfessor) {
+    subtituloProfessor.textContent = "Carregando informações...";
+  }
 
-  todasAulas = await carregarAulas();
+  prepararFormOcorrencia();
 
-  preencherContadores(todasAulas);
-  atualizarRenderAulas();
+  await carregarProfessor();
 
-  await carregarPacotesDoAluno(cabecalho.aluno_id, cabecalho.materia_id);
+  if (!professorAtual) return;
 
-  await carregarQuantidadeEventosParticipados(cabecalho.aluno_id);
+  await carregarCursosProfessor();
+  await carregarMatriculasProfessor();
+  await carregarAulasProfessor();
+  await carregarOcorrenciasProfessor();
 
-  const notas = await carregarNotas();
-  renderNotas(notas);
-  calcularMedias(notas);
+  renderProfessor();
+  renderIndicadores();
+  renderCursosProfessor();
+  renderAlunosProfessor();
+  renderAulasProfessor();
+  renderOcorrenciasProfessor();
+
+  if (subtituloProfessor && professorAtual) {
+    const cursos = cursosProfessor
+      .map((c) => c.materia?.nome)
+      .filter(Boolean);
+
+    subtituloProfessor.textContent = cursos.length
+      ? `Professor(a) de ${cursos.join(", ")}`
+      : "Professor(a) sem curso vinculado.";
+  }
 }
 
-// ===============================
-// EVENTOS DA INTERFACE
-// ===============================
+// =====================================================
+// 13. EVENTOS DA INTERFACE
+// =====================================================
 
-btnExpandirAulas?.addEventListener("click", () => {
-  aulasExpandido = !aulasExpandido;
-  atualizarRenderAulas();
+btnExpandirAlunosProfessor?.addEventListener("click", () => {
+  alunosExpandido = !alunosExpandido;
+  renderAlunosProfessor();
 });
 
-filtroModuloAula?.addEventListener("change", () => {
+filtroStatusAulaProfessor?.addEventListener("change", () => {
   aulasExpandido = false;
-  atualizarRenderAulas();
+  renderAulasProfessor();
 });
 
-btnEncerrarPacote?.addEventListener("click", encerrarPacoteAtivo);
+btnExpandirAulasProfessor?.addEventListener("click", () => {
+  aulasExpandido = !aulasExpandido;
+  renderAulasProfessor();
+});
 
-btnVerAulasPacote?.addEventListener("click", alternarAulasDoPacoteAtivo);
+btnMostrarFormOcorrencia?.addEventListener("click", () => {
+  abrirFormOcorrencia();
+});
 
-btnFecharAulasPacote?.addEventListener("click", esconderAulasDoPacote);
+btnCancelarOcorrencia?.addEventListener("click", () => {
+  fecharFormOcorrencia();
+});
+
+formOcorrenciaProfessor?.addEventListener("submit", salvarOcorrencia);
+
+btnExpandirOcorrenciasProfessor?.addEventListener("click", () => {
+  ocorrenciasExpandido = !ocorrenciasExpandido;
+  renderOcorrenciasProfessor();
+});
 
 init();
