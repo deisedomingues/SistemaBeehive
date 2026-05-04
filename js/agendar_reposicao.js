@@ -21,7 +21,7 @@ let aulasPendentes = [];
 let aulaSelecionadaId = null;
 
 // =============================
-// whatsapp da escola
+// WhatsApp da escola
 // =============================
 const TELEFONE_ESCOLA = "5511956177084";
 const MENSAGEM_CANCELAMENTO = "Olá! Gostaria de cancelar uma reposição agendada.";
@@ -31,7 +31,7 @@ function gerarLinkWhatsApp() {
 }
 
 // =============================
-// mensagem
+// Mensagem
 // =============================
 function mostrarMensagem(texto, erro = false) {
   if (!msg) return;
@@ -48,7 +48,7 @@ function mostrarMensagem(texto, erro = false) {
 }
 
 // =============================
-// utilitários gerais
+// Utilitários gerais
 // =============================
 function formatarDataBR(dataISO) {
   if (!dataISO) return "";
@@ -107,7 +107,7 @@ function obterAulaPendenteMaisAntiga() {
 }
 
 // =============================
-// datas locais
+// Datas locais
 // =============================
 function criarDataLocal(dataISO, hora = 0, minuto = 0, segundo = 0) {
   const [ano, mes, dia] = dataISO.split("-").map(Number);
@@ -123,8 +123,8 @@ function hojeISO() {
 }
 
 // =============================
-// regra do prazo
-// até 21h do dia anterior
+// Regra do prazo
+// Até 21h do dia anterior
 // =============================
 function obterPrazoLimiteAgendamento(dataReposicao) {
   const limite = criarDataLocal(dataReposicao, 21, 0, 0);
@@ -151,9 +151,9 @@ function formatarPrazoLimite(dataReposicao) {
 }
 
 // =============================
-// regra cobrança
-// ausente + mês diferente = cobra
-// cancelada = nunca cobra
+// Regra cobrança
+// Ausente + mês diferente = cobra
+// Cancelada = nunca cobra
 // =============================
 function extrairAnoMes(dataISO) {
   const [ano, mes] = dataISO.split("-");
@@ -224,7 +224,7 @@ function atualizarAlertaCobranca() {
 }
 
 // =============================
-// curso selecionado
+// Curso selecionado
 // =============================
 function definirMatriculaSelecionadaInicial() {
   if (!matriculasAtivas.length) {
@@ -248,7 +248,12 @@ function definirMatriculaSelecionadaInicial() {
 }
 
 function preencherSelectMatriculas() {
-  if (!blocoCursoReposicao || !textoCursoReposicao || !labelSelectMatriculaReposicao || !selectMatriculaReposicao) {
+  if (
+    !blocoCursoReposicao ||
+    !textoCursoReposicao ||
+    !labelSelectMatriculaReposicao ||
+    !selectMatriculaReposicao
+  ) {
     return;
   }
 
@@ -278,7 +283,7 @@ function preencherSelectMatriculas() {
 }
 
 // =============================
-// buscar aluno logado
+// Buscar aluno logado
 // =============================
 async function buscarAluno() {
   const alunoId = obterAlunoIdLogado();
@@ -307,7 +312,7 @@ async function buscarAluno() {
 }
 
 // =============================
-// buscar matrículas ativas
+// Buscar matrículas ativas
 // =============================
 async function buscarMatriculasAtivas(alunoId) {
   const { data, error } = await supabase
@@ -342,7 +347,7 @@ async function buscarMatriculasAtivas(alunoId) {
 }
 
 // =============================
-// buscar aulas pendentes
+// Buscar aulas pendentes
 // =============================
 async function buscarAulasPendentes(matriculaId) {
   const { data: aulasBase, error: errorAulas } = await supabase
@@ -351,7 +356,8 @@ async function buscarAulasPendentes(matriculaId) {
     .eq("matricula_id", matriculaId)
     .in("status", ["Ausente", "Cancelada", "ausente", "cancelada"])
     .eq("precisa_reposicao", true)
-    .order("data_aula", { ascending: true });
+    .order("data_aula", { ascending: true })
+    .order("id", { ascending: true });
 
   if (errorAulas) {
     console.error("Erro ao buscar aulas pendentes:", errorAulas);
@@ -389,7 +395,7 @@ async function buscarAulasPendentes(matriculaId) {
 }
 
 // =============================
-// buscar reposições ativas da matrícula
+// Buscar reposições ativas da matrícula
 // =============================
 async function buscarReposicoesAtivasDaMatricula(matriculaId) {
   const { data, error } = await supabase
@@ -419,7 +425,7 @@ async function buscarReposicoesAtivasDaMatricula(matriculaId) {
 }
 
 // =============================
-// renderizar aulas pendentes
+// Renderizar aulas pendentes
 // =============================
 function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
   if (!aulasLivres.length) {
@@ -458,7 +464,7 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
       <div class="item-pendente ${selecionada ? "item-pendente-selecionado" : ""}" style="${!ehMaisAntiga ? "opacity:0.75;" : ""}">
         <div class="item-pendente-conteudo">
           <p><strong>${status} em ${dataBR}</strong></p>
-          <p class="justificativa-aula">${status} em ${dataBR} - ${justificativa}</p>
+          <p class="justificativa-aula">${justificativa}</p>
           ${
             ehMaisAntiga
               ? `<p style="margin-top:8px; color:#1d5e1d; font-size:13px;"><strong>Disponível para agendamento agora.</strong></p>`
@@ -557,7 +563,7 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
 }
 
 // =============================
-// carregar pendências
+// Carregar pendências
 // =============================
 async function carregarPendencias() {
   const aulas = await buscarAulasPendentes(matriculaSelecionada.id);
@@ -586,7 +592,8 @@ async function carregarPendencias() {
 }
 
 // =============================
-// buscar horários livres
+// Buscar horários livres
+// Agora horários com prazo encerrado NÃO aparecem na tela
 // =============================
 async function buscarHorariosLivres() {
   const hoje = hojeISO();
@@ -619,16 +626,22 @@ async function buscarHorariosLivres() {
   return (data || []).filter((horario) => {
     if (horario.disponivel === false) return false;
 
+    // Aqui está o ajuste principal:
+    // se o prazo para agendar já passou, o horário nem aparece para o aluno.
+    if (!podeAgendarHorario(horario.data)) return false;
+
     const temAgendamentoAtivo = (horario.reposicao_agendada || []).some(
       (ag) => ag.cancelado === false
     );
 
-    return !temAgendamentoAtivo;
+    if (temAgendamentoAtivo) return false;
+
+    return true;
   });
 }
 
 // =============================
-// renderizar horários disponíveis
+// Renderizar horários disponíveis
 // =============================
 async function carregarHorariosDisponiveis() {
   if (!aulaSelecionadaId) {
@@ -657,15 +670,18 @@ async function carregarHorariosDisponiveis() {
   const horariosLivres = await buscarHorariosLivres();
 
   if (!horariosLivres.length) {
-    listaReposicoes.innerHTML = `<p>Nenhum horário disponível no momento para este curso.</p>`;
+    listaReposicoes.innerHTML = `
+      <p>Nenhum horário disponível no momento para este curso.</p>
+      <p style="margin-top:8px; opacity:0.8; font-size:14px;">
+        Horários cujo prazo de agendamento já foi encerrado não aparecem nesta lista.
+      </p>
+    `;
     return;
   }
 
   listaReposicoes.innerHTML = "";
 
   horariosLivres.forEach((horario) => {
-    const dentroDoPrazo = podeAgendarHorario(horario.data);
-    const prazoTexto = formatarPrazoLimite(horario.data);
     const geraCobranca = reposicaoGeraCobranca(
       aulaSelecionada.status,
       aulaSelecionada.data_aula,
@@ -680,8 +696,9 @@ async function carregarHorariosDisponiveis() {
       <p><strong>Horário:</strong> ${horario.hora_inicio} - ${horario.hora_fim}</p>
       <p><strong>Professor:</strong> ${horario.professor?.nome || "Não informado"}</p>
       <p><strong>Curso:</strong> ${horario.materia?.nome || "Não informado"}</p>
+
       <p class="prazo-agendamento">
-        <strong>Prazo para agendar:</strong> ${prazoTexto}
+        <strong>Prazo para agendar:</strong> ${formatarPrazoLimite(horario.data)}
       </p>
 
       ${
@@ -699,21 +716,13 @@ async function carregarHorariosDisponiveis() {
           `
       }
 
-      ${
-        dentroDoPrazo
-          ? `
-            <button
-              type="button"
-              class="btn btnEscolherHorario"
-              data-horario-id="${horario.id}"
-            >
-              Agendar este horário
-            </button>
-          `
-          : `
-            <p class="prazo-encerrado">Prazo encerrado para este horário</p>
-          `
-      }
+      <button
+        type="button"
+        class="btn btnEscolherHorario"
+        data-horario-id="${horario.id}"
+      >
+        Agendar este horário
+      </button>
     `;
 
     listaReposicoes.appendChild(div);
@@ -723,7 +732,7 @@ async function carregarHorariosDisponiveis() {
 }
 
 // =============================
-// agendar horário
+// Agendar horário
 // =============================
 function ativarEscolhaHorario() {
   document.querySelectorAll(".btnEscolherHorario").forEach((btn) => {
@@ -779,6 +788,9 @@ function ativarEscolhaHorario() {
           throw erroHorario || new Error("Horário não encontrado.");
         }
 
+        // Segurança extra:
+        // mesmo que o aluno tenha aberto a tela antes do prazo acabar,
+        // o sistema confere novamente antes de salvar.
         if (!podeAgendarHorario(horarioAtual.data)) {
           mostrarMensagem("O prazo para agendar esta reposição já foi encerrado.", true);
           await carregarTudo();
@@ -872,7 +884,7 @@ function ativarEscolhaHorario() {
 }
 
 // =============================
-// carregar tudo da matrícula
+// Carregar tudo da matrícula
 // =============================
 async function carregarTudo() {
   faltasAluno.innerHTML = "Carregando pendências...";
@@ -920,7 +932,7 @@ async function carregarTudo() {
 }
 
 // =============================
-// troca de curso
+// Troca de curso
 // =============================
 if (selectMatriculaReposicao) {
   selectMatriculaReposicao.addEventListener("change", async () => {
@@ -943,6 +955,6 @@ if (selectMatriculaReposicao) {
 }
 
 // =============================
-// iniciar
+// Iniciar
 // =============================
 carregarTudo();
