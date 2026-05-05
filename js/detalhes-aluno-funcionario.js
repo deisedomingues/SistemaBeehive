@@ -45,7 +45,18 @@ const listaHistoricoAulas = document.getElementById("listaHistoricoAulas");
 /* =========================================================
    ESTADO
 ========================================================= */
-const alunoId = localStorage.getItem("alunoIdVisualizacao");
+const params = new URLSearchParams(window.location.search);
+
+/*
+  Tenta encontrar o aluno de mais de uma forma.
+  Isso evita erro caso uma tela anterior tenha salvo com outro nome.
+*/
+const alunoId =
+  params.get("aluno_id") ||
+  params.get("alunoId") ||
+  localStorage.getItem("alunoIdVisualizacao") ||
+  localStorage.getItem("alunoId") ||
+  localStorage.getItem("alunoSelecionadoId");
 
 let aluno = null;
 let matriculas = [];
@@ -57,12 +68,16 @@ let eventosAluno = [];
    UTILITÁRIOS
 ========================================================= */
 function mostrarMensagem(texto, ok = true) {
+  if (!msg) return;
+
   msg.textContent = texto;
   msg.style.display = "block";
   msg.className = ok ? "msg-resumo-professor ok" : "msg-resumo-professor erro";
 }
 
 function limparMensagem() {
+  if (!msg) return;
+
   msg.style.display = "none";
   msg.textContent = "";
   msg.className = "";
@@ -82,20 +97,29 @@ function formatarData(dataIso) {
 
   const [ano, mes, dia] = String(dataIso).split("-");
   if (!ano || !mes || !dia) return dataIso;
+
   return `${dia}/${mes}/${ano}`;
+}
+
+function formatarHora(hora) {
+  if (!hora) return "—";
+  return String(hora).slice(0, 5);
 }
 
 function hojeMesDia() {
   const hoje = new Date();
   const mes = String(hoje.getMonth() + 1).padStart(2, "0");
   const dia = String(hoje.getDate()).padStart(2, "0");
+
   return `${mes}-${dia}`;
 }
 
 function ehAniversarioHoje(dataNascimento) {
   if (!dataNascimento) return false;
+
   const partes = String(dataNascimento).split("-");
   if (partes.length !== 3) return false;
+
   return `${partes[1]}-${partes[2]}` === hojeMesDia();
 }
 
@@ -103,33 +127,69 @@ function obterClasseStatus(status) {
   switch (status) {
     case "Presente":
       return "status-presente";
+
     case "Ausente":
       return "status-ausente";
+
     case "Cancelada":
       return "status-cancelada";
+
     case "Reposição":
       return "status-reposicao";
+
     case "Aula Instrumental":
       return "status-instrumental";
+
     case "Plantão de dúvidas":
       return "status-plantao";
+
     default:
       return "";
   }
 }
 
 function calcularFrequencia(aulas) {
-  const totalConsiderado = aulas.filter((a) =>
-    ["Presente", "Ausente", "Cancelada", "Reposição"].includes(a.status)
+  /*
+    Frequência aqui considera:
+    - Presente como presença;
+    - Reposição como presença;
+    - Ausente como ausência;
+    - Cancelada não deveria prejudicar o aluno, então também entra como presença técnica.
+  */
+
+  const totalConsiderado = aulas.filter((aula) =>
+    ["Presente", "Ausente", "Cancelada", "Reposição"].includes(aula.status)
   );
 
   if (!totalConsiderado.length) return 0;
 
-  const presencas = totalConsiderado.filter((a) =>
-    a.status === "Presente" || a.status === "Cancelada" || a.status === "Reposição"
+  const presencas = totalConsiderado.filter((aula) =>
+    ["Presente", "Cancelada", "Reposição"].includes(aula.status)
   ).length;
 
   return Math.round((presencas / totalConsiderado.length) * 100);
+}
+
+function formatarDuracao(segundos) {
+  if (!segundos && segundos !== 0) return "—";
+
+  const totalSegundos = Number(segundos);
+
+  if (Number.isNaN(totalSegundos)) return "—";
+
+  const horas = Math.floor(totalSegundos / 3600);
+  const minutos = Math.floor((totalSegundos % 3600) / 60);
+  const segundosRestantes = totalSegundos % 60;
+
+  if (horas > 0) {
+    return `${horas}h ${String(minutos).padStart(2, "0")}min`;
+  }
+
+  if (minutos > 0) {
+    return `${minutos}min`;
+  }
+
+  return `${segundosRestantes}s`;
 }
 
 /* =========================================================
@@ -154,7 +214,10 @@ async function carregarAluno() {
     .eq("id", alunoId)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erro ao buscar aluno:", error);
+    throw error;
+  }
 
   aluno = data;
 }
@@ -187,12 +250,21 @@ async function carregarMatriculas() {
     .order("ativa", { ascending: false })
     .order("data_inicio", { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erro ao buscar matrículas:", error);
+    throw error;
+  }
 
   matriculas = data || [];
 }
 
 async function carregarAulasDaMatricula(matriculaId) {
+  /*
+    CORREÇÃO IMPORTANTE:
+    sua tabela usa duracao_segundos, não duracao_minutos.
+    Se buscar duracao_minutos, o Supabase dá erro e nada carrega.
+  */
+
   const { data, error } = await supabase
     .from("aula")
     .select(`
@@ -205,13 +277,21 @@ async function carregarAulasDaMatricula(matriculaId) {
       aula_original_id,
       precisa_reposicao,
       aula_gravada,
-      duracao_minutos
+      duracao_segundos,
+      parte,
+      evento_id,
+      aula_coletiva,
+      grupo_aula_id,
+      quantidade_alunos
     `)
     .eq("matricula_id", matriculaId)
     .order("data_aula", { ascending: false })
     .order("id", { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erro ao buscar aulas da matrícula:", error);
+    throw error;
+  }
 
   aulasMatriculaAtual = data || [];
 }
@@ -233,12 +313,17 @@ async function carregarEventosDoAluno() {
     `)
     .eq("aluno_id", alunoId);
 
-  if (error) throw error;
+  if (error) {
+    console.error("Erro ao buscar eventos do aluno:", error);
+    throw error;
+  }
 
   eventosAluno = (data || [])
     .map((item) => item.evento)
     .filter(Boolean)
-    .sort((a, b) => String(b.data_evento || "").localeCompare(String(a.data_evento || "")));
+    .sort((a, b) =>
+      String(b.data_evento || "").localeCompare(String(a.data_evento || ""))
+    );
 }
 
 /* =========================================================
@@ -250,9 +335,11 @@ function renderTopoAluno() {
 
   infoEmail.textContent = aluno?.email || "—";
   infoTelefone.textContent = aluno?.telefone || "—";
+
   infoNascimento.textContent = aluno?.data_nascimento
     ? formatarData(aluno.data_nascimento)
     : "—";
+
   infoEmpresa.textContent = aluno?.empresa?.nome || "—";
 
   if (ehAniversarioHoje(aluno?.data_nascimento)) {
@@ -266,27 +353,34 @@ function renderTopoAluno() {
 
 function renderSelectMatriculas() {
   if (!matriculas.length) {
-    selectMatriculaFuncionario.innerHTML = `<option value="">Nenhum curso encontrado</option>`;
+    selectMatriculaFuncionario.innerHTML = `
+      <option value="">Nenhum curso encontrado</option>
+    `;
     selectMatriculaFuncionario.disabled = true;
     return;
   }
 
   selectMatriculaFuncionario.disabled = false;
-  selectMatriculaFuncionario.innerHTML = `<option value="">Selecione o curso</option>`;
+  selectMatriculaFuncionario.innerHTML = `
+    <option value="">Selecione o curso</option>
+  `;
 
-  matriculas.forEach((m) => {
+  matriculas.forEach((matricula) => {
     const opt = document.createElement("option");
-    opt.value = m.id;
 
-    const materia = m?.materia?.nome || "Matéria";
-    const modulo = m?.modulo?.nome || "Módulo";
-    const situacao = m?.ativa ? "ativo" : "inativo";
+    opt.value = matricula.id;
+
+    const materia = matricula?.materia?.nome || "Matéria";
+    const modulo = matricula?.modulo?.nome || "Módulo";
+    const situacao = matricula?.ativa ? "ativo" : "inativo";
 
     opt.textContent = `${materia} (${modulo}) — ${situacao}`;
+
     selectMatriculaFuncionario.appendChild(opt);
   });
 
-  const primeiraAtiva = matriculas.find((m) => m.ativa) || matriculas[0];
+  const primeiraAtiva = matriculas.find((matricula) => matricula.ativa) || matriculas[0];
+
   if (primeiraAtiva) {
     selectMatriculaFuncionario.value = String(primeiraAtiva.id);
   }
@@ -308,15 +402,16 @@ function renderResumoCurso() {
     return;
   }
 
-  const presencas = aulasMatriculaAtual.filter((a) => a.status === "Presente").length;
-  const ausencias = aulasMatriculaAtual.filter((a) => a.status === "Ausente").length;
-  const reposicoes = aulasMatriculaAtual.filter((a) => a.status === "Reposição").length;
+  const presencas = aulasMatriculaAtual.filter((aula) => aula.status === "Presente").length;
+  const ausencias = aulasMatriculaAtual.filter((aula) => aula.status === "Ausente").length;
+  const reposicoes = aulasMatriculaAtual.filter((aula) => aula.status === "Reposição").length;
   const frequencia = calcularFrequencia(aulasMatriculaAtual);
 
   resumoMateria.textContent = matriculaAtual?.materia?.nome || "—";
   resumoModulo.textContent = matriculaAtual?.modulo?.nome || "—";
   resumoProfessor.textContent = matriculaAtual?.professor?.nome || "—";
   resumoInicio.textContent = formatarData(matriculaAtual?.data_inicio);
+
   resumoPresencas.textContent = String(presencas);
   resumoAusencias.textContent = String(ausencias);
   resumoReposicoes.textContent = String(reposicoes);
@@ -333,6 +428,7 @@ function renderLinksCurso() {
     linkZoom.style.display = "inline-block";
   } else {
     textoZoom.textContent = "Nenhum link cadastrado.";
+    linkZoom.removeAttribute("href");
     linkZoom.style.display = "none";
   }
 
@@ -342,6 +438,7 @@ function renderLinksCurso() {
     linkYoutube.style.display = "inline-block";
   } else {
     textoYoutube.textContent = "Nenhum link cadastrado.";
+    linkYoutube.removeAttribute("href");
     linkYoutube.style.display = "none";
   }
 }
@@ -353,26 +450,34 @@ function renderEventosAluno() {
   qtdEventosParticipados.textContent = `${eventosAluno.length} evento(s)`;
 
   if (!eventosAluno.length) {
-    listaEventosAluno.innerHTML = `<p class="vazio-box">Nenhum evento com participação registrada.</p>`;
+    listaEventosAluno.innerHTML = `
+      <p class="vazio-box">Nenhum evento com participação registrada.</p>
+    `;
     btnToggleEventos.style.display = "none";
+    boxEventosAluno.style.display = "none";
     return;
   }
 
   btnToggleEventos.style.display = "inline-block";
 
-  listaEventosAluno.innerHTML = eventosAluno.map((evento) => `
-    <div class="item-evento-aluno">
-      <div class="item-evento-aluno-topo">
-        <strong>${escapeHtml(evento.titulo || "Evento")}</strong>
-        <span class="badge-evento-aluno">
-          ${escapeHtml(formatarData(evento.data_evento))}
-        </span>
-      </div>
-      <p><b>Tipo:</b> ${escapeHtml(evento.tipo_evento || "—")}</p>
-      <p><b>Horário:</b> ${escapeHtml((evento.hora_evento || "").slice(0, 5) || "—")}</p>
-      <p><b>Local:</b> ${escapeHtml(evento.local || "—")}</p>
-    </div>
-  `).join("");
+  listaEventosAluno.innerHTML = eventosAluno
+    .map((evento) => {
+      return `
+        <div class="item-evento-aluno">
+          <div class="item-evento-aluno-topo">
+            <strong>${escapeHtml(evento.titulo || "Evento")}</strong>
+            <span class="badge-evento-aluno">
+              ${escapeHtml(formatarData(evento.data_evento))}
+            </span>
+          </div>
+
+          <p><b>Tipo:</b> ${escapeHtml(evento.tipo_evento || "—")}</p>
+          <p><b>Horário:</b> ${escapeHtml(formatarHora(evento.hora_evento))}</p>
+          <p><b>Local:</b> ${escapeHtml(evento.local || "—")}</p>
+        </div>
+      `;
+    })
+    .join("");
 }
 
 /* =========================================================
@@ -384,51 +489,82 @@ function renderHistorico() {
   let lista = [...aulasMatriculaAtual];
 
   if (statusSelecionado) {
-    lista = lista.filter((a) => a.status === statusSelecionado);
+    if (statusSelecionado === "evento") {
+      /*
+        O option do HTML usa value="evento".
+        Evento não é status da aula.
+        Então aqui filtramos por aula que tem evento_id.
+      */
+      lista = lista.filter((aula) => aula.evento_id);
+    } else {
+      lista = lista.filter((aula) => aula.status === statusSelecionado);
+    }
   }
 
   if (!lista.length) {
-    listaHistoricoAulas.innerHTML = `<p class="vazio-box">Nenhuma aula encontrada para os filtros selecionados.</p>`;
+    listaHistoricoAulas.innerHTML = `
+      <p class="vazio-box">Nenhuma aula encontrada para os filtros selecionados.</p>
+    `;
     return;
   }
 
-  listaHistoricoAulas.innerHTML = lista.map((aula) => {
-    const classeStatus = obterClasseStatus(aula.status);
+  listaHistoricoAulas.innerHTML = lista
+    .map((aula) => {
+      const classeStatus = obterClasseStatus(aula.status);
 
-    return `
-      <div class="item-historico">
-        <div class="item-historico-topo">
-          <strong>${escapeHtml(formatarData(aula.data_aula))}</strong>
-          <span class="status-badge ${classeStatus}">
-            ${escapeHtml(aula.status || "—")}
-          </span>
+      const infoParte = aula.parte ? `Parte ${aula.parte}` : "";
+      const infoColetiva = aula.aula_coletiva ? "Aula coletiva" : "Aula individual";
+      const qtdAlunos = aula.quantidade_alunos ? `${aula.quantidade_alunos} aluno(s)` : "";
+      const duracao = aula.duracao_segundos ? formatarDuracao(aula.duracao_segundos) : "";
+
+      return `
+        <div class="item-historico">
+          <div class="item-historico-topo">
+            <strong>${escapeHtml(formatarData(aula.data_aula))}</strong>
+
+            <span class="status-badge ${classeStatus}">
+              ${escapeHtml(aula.status || "—")}
+            </span>
+          </div>
+
+          <p style="margin-top:6px;">
+            ${escapeHtml(infoColetiva)}
+            ${infoParte ? ` | ${escapeHtml(infoParte)}` : ""}
+            ${qtdAlunos ? ` | ${escapeHtml(qtdAlunos)}` : ""}
+            ${aula.evento_id ? ` | Evento` : ""}
+          </p>
+
+          ${aula.conteudo ? `<p><b>Conteúdo:</b> ${escapeHtml(aula.conteudo)}</p>` : ""}
+          ${aula.licao_casa ? `<p><b>Lição de casa:</b> ${escapeHtml(aula.licao_casa)}</p>` : ""}
+          ${aula.justificativa ? `<p><b>Justificativa:</b> ${escapeHtml(aula.justificativa)}</p>` : ""}
+          ${aula.aula_gravada ? `<p><b>Aula gravada:</b> Sim</p>` : ""}
+          ${aula.precisa_reposicao ? `<p><b>Reposição pendente:</b> Sim</p>` : ""}
+          ${duracao ? `<p><b>Duração registrada:</b> ${escapeHtml(duracao)}</p>` : ""}
         </div>
-
-        ${aula.conteudo ? `<p><b>Conteúdo:</b> ${escapeHtml(aula.conteudo)}</p>` : ""}
-        ${aula.licao_casa ? `<p><b>Lição de casa:</b> ${escapeHtml(aula.licao_casa)}</p>` : ""}
-        ${aula.justificativa ? `<p><b>Justificativa:</b> ${escapeHtml(aula.justificativa)}</p>` : ""}
-        ${aula.aula_gravada ? `<p><b>Aula gravada:</b> Sim</p>` : ""}
-        ${aula.precisa_reposicao ? `<p><b>Reposição pendente:</b> Sim</p>` : ""}
-      </div>
-    `;
-  }).join("");
+      `;
+    })
+    .join("");
 }
 
 /* =========================================================
    FLUXO
 ========================================================= */
 async function selecionarMatricula(matriculaId) {
-  matriculaAtual = matriculas.find((m) => String(m.id) === String(matriculaId)) || null;
+  matriculaAtual =
+    matriculas.find((matricula) => String(matricula.id) === String(matriculaId)) || null;
 
   if (!matriculaAtual) {
     aulasMatriculaAtual = [];
+
     renderResumoCurso();
     renderLinksCurso();
     renderHistorico();
+
     return;
   }
 
   await carregarAulasDaMatricula(matriculaAtual.id);
+
   renderResumoCurso();
   renderLinksCurso();
   renderHistorico();
@@ -440,9 +576,11 @@ async function iniciarTela() {
 
     if (!alunoId) {
       mostrarMensagem("Não foi possível identificar o aluno para visualização.", false);
+
       setTimeout(() => {
         window.location.href = "home-professor.html";
       }, 1200);
+
       return;
     }
 
@@ -460,10 +598,16 @@ async function iniciarTela() {
       renderResumoCurso();
       renderLinksCurso();
       renderHistorico();
+
+      mostrarMensagem("Este aluno ainda não possui matrícula cadastrada.", false);
     }
   } catch (error) {
     console.error("Erro ao carregar visualização do aluno:", error);
-    mostrarMensagem("Erro ao carregar os dados do aluno.", false);
+
+    mostrarMensagem(
+      "Erro ao carregar os dados do aluno. Verifique se o ID do aluno foi enviado corretamente e se as colunas existem no banco.",
+      false
+    );
   }
 }
 
@@ -472,6 +616,7 @@ async function iniciarTela() {
 ========================================================= */
 selectMatriculaFuncionario?.addEventListener("change", async () => {
   try {
+    limparMensagem();
     await selecionarMatricula(selectMatriculaFuncionario.value);
   } catch (error) {
     console.error("Erro ao trocar matrícula:", error);
@@ -483,14 +628,27 @@ filtroStatusHistorico?.addEventListener("change", renderHistorico);
 
 btnToggleEventos?.addEventListener("click", () => {
   const aberto = boxEventosAluno.style.display === "block";
+
   boxEventosAluno.style.display = aberto ? "none" : "block";
   btnToggleEventos.textContent = aberto ? "Ver mais" : "Ver menos";
 });
 
-btnSair?.addEventListener("click", () => {
+btnSair?.addEventListener("click", async () => {
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.error("Erro ao sair:", error);
+  }
+
+  localStorage.removeItem("role");
   localStorage.removeItem("professorId");
+  localStorage.removeItem("professorNome");
+  localStorage.removeItem("professorEmail");
   localStorage.removeItem("matriculaSelecionada");
   localStorage.removeItem("alunoIdVisualizacao");
+  localStorage.removeItem("alunoId");
+  localStorage.removeItem("alunoSelecionadoId");
+
   window.location.href = "index.html";
 });
 
