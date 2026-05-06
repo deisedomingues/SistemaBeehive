@@ -133,7 +133,7 @@ function converterTempoDigitadoParaSegundos(valorDigitado) {
     // Exemplo: 3050 = 30 minutos e 50 segundos
     const minutos = Number(limpo.slice(0, -2) || 0);
     const segundos = Number(limpo.slice(-2) || 0);
-    return (minutos * 60) + segundos;
+    return minutos * 60 + segundos;
   }
 
   // Exemplo: 13050 = 1 hora, 30 minutos e 50 segundos
@@ -141,7 +141,7 @@ function converterTempoDigitadoParaSegundos(valorDigitado) {
   const minutos = Number(limpo.slice(-4, -2) || 0);
   const horas = Number(limpo.slice(0, -4) || 0);
 
-  return (horas * 3600) + (minutos * 60) + segundos;
+  return horas * 3600 + minutos * 60 + segundos;
 }
 
 function formatarSegundosParaCampo(valorSegundos) {
@@ -315,6 +315,7 @@ function agruparAulasParaFinanceiro(aulas) {
           grupo_aula_id: aula.grupo_aula_id,
           aula_coletiva: true,
           ids_aula: [Number(aula.id)],
+          professor_id: aula.professor_id,
           data_aula: aula.data_aula,
           status: aula.status,
           conteudo: aula.conteudo || "",
@@ -366,6 +367,7 @@ function agruparAulasParaFinanceiro(aulas) {
         grupo_aula_id: null,
         aula_coletiva: false,
         ids_aula: [Number(aula.id)],
+        professor_id: aula.professor_id,
         data_aula: aula.data_aula,
         status: aula.status,
         conteudo: aula.conteudo || "",
@@ -428,7 +430,6 @@ function renderItensFinanceiro() {
 
     const estaEditando = Boolean(item.editando);
 
-    // Se já tem minutagem salva e não está em modo edição, trava o campo.
     const campoTravado = temMinutagemSalva && !estaEditando;
 
     const textoBotao = campoTravado ? "Editar" : "Salvar";
@@ -760,8 +761,35 @@ async function buscarAulas() {
     return;
   }
 
+  /*
+    REGRA IMPORTANTE:
+
+    O financeiro deve considerar quem DEU a aula.
+    Por isso, a prioridade é aula.professor_id.
+
+    Antes, o sistema usava matricula.professor_id.
+    Isso dava erro quando a matrícula era temporariamente mudada para outro professor
+    e depois voltava para o professor original.
+
+    Exemplo:
+    - Aluno é da Gretha.
+    - Fez uma aula com a Juno.
+    - A aula precisa ficar no financeiro da Juno.
+    - Mesmo que depois a matrícula volte para a Gretha.
+  */
   const aulasProfessor = (data || []).filter((aula) => {
-    return Number(aula?.matricula?.professor_id) === professorId;
+    const professorDaAula = aula.professor_id ? Number(aula.professor_id) : null;
+    const professorAtualDaMatricula = aula?.matricula?.professor_id
+      ? Number(aula.matricula.professor_id)
+      : null;
+
+    // Para aulas novas/corretas, usa professor_id da aula.
+    if (professorDaAula) {
+      return professorDaAula === professorId;
+    }
+
+    // Fallback para aulas antigas que talvez tenham professor_id vazio.
+    return professorAtualDaMatricula === professorId;
   });
 
   const aulasFiltradas = aplicarFiltrosLocais(aulasProfessor);
