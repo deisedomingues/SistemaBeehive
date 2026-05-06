@@ -448,6 +448,127 @@ async function buscarAulasPendentes(matriculaId) {
   );
 }
 
+async function buscarMaiorParteDaMatriculaNaData(matriculaId, dataAula) {
+  if (!matriculaId || !dataAula) return 0;
+
+  const { data, error } = await supabase
+    .from("aula")
+    .select("parte")
+    .eq("matricula_id", matriculaId)
+    .eq("data_aula", dataAula)
+    .order("parte", { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.error("Erro ao buscar maior parte da aula:", error);
+    return 0;
+  }
+
+  const maiorParte = Number(data?.[0]?.parte || 0);
+  return maiorParte;
+}
+
+async function buscarProximaParteParaMatricula(matriculaId, dataAula) {
+  const maiorParte = await buscarMaiorParteDaMatriculaNaData(matriculaId, dataAula);
+  return maiorParte + 1;
+}
+
+async function buscarProximaParteParaVariasMatriculas(matriculasIds, dataAula) {
+  if (!matriculasIds.length || !dataAula) return 1;
+
+  const maioresPartes = await Promise.all(
+    matriculasIds.map((id) => buscarMaiorParteDaMatriculaNaData(id, dataAula))
+  );
+
+  const maiorParteGeral = Math.max(...maioresPartes, 0);
+  return maiorParteGeral + 1;
+}
+
+function garantirOpcaoParte(valorParte) {
+  if (!selectParte) return;
+
+  const valor = String(valorParte);
+
+  const jaExiste = Array.from(selectParte.options).some(
+    (opt) => opt.value === valor
+  );
+
+  if (!jaExiste) {
+    const opt = document.createElement("option");
+    opt.value = valor;
+    opt.textContent = `Parte ${valor}`;
+    selectParte.appendChild(opt);
+  }
+}
+
+async function atualizarParteAutomatica() {
+  const dataAula = inputDataAula.value;
+
+  if (!dataAula) {
+    garantirOpcaoParte(1);
+    selectParte.value = "1";
+    return;
+  }
+
+  if (ehAulaColetiva()) {
+    const idsSelecionados = matriculasLista.map((aluno) => aluno.id);
+
+    if (!idsSelecionados.length) {
+      garantirOpcaoParte(1);
+      selectParte.value = "1";
+      return;
+    }
+
+    const proximaParte = await buscarProximaParteParaVariasMatriculas(
+      idsSelecionados,
+      dataAula
+    );
+
+    garantirOpcaoParte(proximaParte);
+    selectParte.value = String(proximaParte);
+    return;
+  }
+
+  const matriculaId = selectMatricula.value;
+
+  if (!matriculaId) {
+    garantirOpcaoParte(1);
+    selectParte.value = "1";
+    return;
+  }
+
+  const proximaParte = await buscarProximaParteParaMatricula(
+    matriculaId,
+    dataAula
+  );
+
+  garantirOpcaoParte(proximaParte);
+  selectParte.value = String(proximaParte);
+}
+
+async function validarParteNaoDuplicada(registros) {
+  for (const registro of registros) {
+    const { data, error } = await supabase
+      .from("aula")
+      .select("id")
+      .eq("matricula_id", registro.matricula_id)
+      .eq("data_aula", registro.data_aula)
+      .eq("parte", registro.parte)
+      .limit(1);
+
+    if (error) {
+      console.error("Erro ao validar parte duplicada:", error);
+      return "Não foi possível validar se esta parte da aula já existe.";
+    }
+
+    if (data && data.length > 0) {
+      return `Já existe uma Parte ${registro.parte} registrada para este aluno nesta data. O sistema ajustou automaticamente, mas revise antes de salvar.`;
+    }
+  }
+
+  return null;
+}
+
 async function carregarMatriculas() {
   const professorId = Number(localStorage.getItem("professorId"));
 
@@ -777,6 +898,7 @@ function vincularEventosIndividuais() {
 
       normalizarAlunoPorStatus(matriculasLista[index]);
       await renderizarAlunosColetivo();
+      await atualizarParteAutomatica();
     };
   });
 
@@ -790,6 +912,7 @@ function vincularEventosIndividuais() {
       }
 
       await renderizarAlunosColetivo();
+      await atualizarParteAutomatica();
     };
   });
 
@@ -803,6 +926,7 @@ function vincularEventosIndividuais() {
       }
 
       await renderizarAlunosColetivo();
+      await atualizarParteAutomatica();
     };
   });
 
@@ -829,10 +953,12 @@ function vincularEventosIndividuais() {
       if (matriculasLista.length === 0) {
         limparEstadoColetivo();
         moduloAula.innerHTML = `<option value="">Selecione o módulo</option>`;
+        await atualizarParteAutomatica();
         return;
       }
 
       await renderizarAlunosColetivo();
+      await atualizarParteAutomatica();
     };
   });
 }
@@ -869,15 +995,28 @@ async function alternarTipoAula() {
     }
   }
 
+  await atualizarParteAutomatica();
   esconderCampoReposicaoComCusto();
 }
 
 aulaIndividualRadio.addEventListener("change", alternarTipoAula);
 aulaColetivaRadio.addEventListener("change", alternarTipoAula);
 
+inputDataAula.addEventListener("change", async () => {
+  await atualizarParteAutomatica();
+
+  if (!ehAulaColetiva() && selectStatusGeral.value === STATUS.REPOSICAO) {
+    await carregarAulasPendentesGeral();
+  }
+});
+
 selectMatricula.addEventListener("change", async () => {
   const id = selectMatricula.value;
-  if (!id) return;
+
+  if (!id) {
+    await atualizarParteAutomatica();
+    return;
+  }
 
   const opt = selectMatricula.selectedOptions[0];
   const materiaId = opt.dataset.materiaId;
@@ -939,6 +1078,7 @@ selectMatricula.addEventListener("change", async () => {
 
     listaAlunosBox.style.display = "block";
     await renderizarAlunosColetivo();
+    await atualizarParteAutomatica();
 
     selectMatricula.value = "";
     atualizarCardsTipoAula();
@@ -946,6 +1086,7 @@ selectMatricula.addEventListener("change", async () => {
   }
 
   await carregarModulos(materiaId, moduloAtual);
+  await atualizarParteAutomatica();
 
   if (selectStatusGeral.value === STATUS.REPOSICAO) {
     await carregarAulasPendentesGeral();
@@ -959,6 +1100,7 @@ selectStatusGeral.addEventListener("change", async () => {
     await carregarAulasPendentesGeral();
   }
 
+  await atualizarParteAutomatica();
   esconderCampoReposicaoComCusto();
 });
 
@@ -1075,6 +1217,8 @@ form.addEventListener("submit", async (e) => {
       return;
     }
 
+    await atualizarParteAutomatica();
+
     const grupoAulaId = gerarGrupoAulaId();
     const quantidadeAlunos = matriculasLista.length;
 
@@ -1145,6 +1289,8 @@ form.addEventListener("submit", async (e) => {
       return;
     }
 
+    await atualizarParteAutomatica();
+
     const erroJustificativa = validarJustificativaObrigatoria(status, justificativa);
 
     if (erroJustificativa) {
@@ -1203,6 +1349,14 @@ form.addEventListener("submit", async (e) => {
     ];
   }
 
+  const erroParteDuplicada = await validarParteNaoDuplicada(registros);
+
+  if (erroParteDuplicada) {
+    mostrarMensagem(erroParteDuplicada, false);
+    await atualizarParteAutomatica();
+    return;
+  }
+
   const { error } = await supabase.from("aula").insert(registros);
 
   if (error) {
@@ -1230,9 +1384,16 @@ form.addEventListener("submit", async (e) => {
 // ==========================================
 // 10. INICIAR
 // ==========================================
-prepararMensagemAbaixoDoBotao();
-esconderCampoReposicaoComCusto();
-setarDataHoje();
-carregarMatriculas();
-aplicarRegrasStatusGeral();
-atualizarCardsTipoAula();
+async function iniciar() {
+  prepararMensagemAbaixoDoBotao();
+  esconderCampoReposicaoComCusto();
+  setarDataHoje();
+
+  await carregarMatriculas();
+
+  aplicarRegrasStatusGeral();
+  atualizarCardsTipoAula();
+  await atualizarParteAutomatica();
+}
+
+iniciar();
