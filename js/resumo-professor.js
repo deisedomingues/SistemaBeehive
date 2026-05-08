@@ -185,7 +185,21 @@ function statusContaComoAulaPedagogicaNoPeriodo(aula) {
   ].includes(status);
 }
 
+function aulaAusentePendenteReposicao(aula) {
+  const status = normalizarTexto(aula?.status);
+
+  return (
+    status === "ausente" &&
+    aula?.precisa_reposicao === true &&
+    aula?.aula_gravada !== true
+  );
+}
+
 function obterSegundosAula(aula) {
+  if (aulaAusentePendenteReposicao(aula)) {
+    return 0;
+  }
+
   const segundos = Number(aula?.duracao_segundos);
 
   if (!Number.isNaN(segundos) && segundos > 0) {
@@ -250,7 +264,19 @@ function nomeAlunoDaAula(aula) {
   return aula?.matricula?.aluno?.nome || "Aluno não informado";
 }
 
+function textoStatusAulaProfessor(aula) {
+  if (aulaAusentePendenteReposicao(aula)) {
+    return "Ausente — pendente de reposição";
+  }
+
+  return aula?.status || "Não informado";
+}
+
 function textoReposicaoAulaOriginal(aula) {
+  if (aulaAusentePendenteReposicao(aula)) {
+    return "aguardando reposição";
+  }
+
   if (normalizarTexto(aula?.status) !== "reposicao") return "";
 
   const original = aula?.aula_original;
@@ -260,6 +286,20 @@ function textoReposicaoAulaOriginal(aula) {
   }
 
   return `repõe ${formatarDataBR(original.data_aula)} (${original.status || "status não informado"})`;
+}
+
+function textoDuracaoAulaProfessor(aula) {
+  if (aulaAusentePendenteReposicao(aula)) {
+    return "0 min";
+  }
+
+  const minutos = obterMinutosAula(aula);
+
+  if (minutos > 0) {
+    return `${minutos} min`;
+  }
+
+  return "Sem minutagem";
 }
 
 function ordenarAulasPorDataDesc(a, b) {
@@ -370,6 +410,7 @@ async function buscarAulasComDuracao() {
       data_aula,
       status,
       aula_gravada,
+      precisa_reposicao,
       matricula_id,
       modulo_id,
       professor_id,
@@ -803,16 +844,15 @@ function renderListaAulasPeriodo() {
 
   const html = visiveis
     .map((aula) => {
-      const minutos = obterMinutosAula(aula);
       const infoReposicao = textoReposicaoAulaOriginal(aula);
 
       return `
         <div class="item-aula-periodo item-aula-periodo-linha">
           <span class="col-aula col-aula-data">${formatarDataBR(aula.data_aula)}</span>
           <span class="col-aula col-aula-aluno">${escapeHtml(nomeAlunoDaAula(aula))}</span>
-          <span class="col-aula col-aula-status">${escapeHtml(aula.status || "Não informado")}</span>
+          <span class="col-aula col-aula-status">${escapeHtml(textoStatusAulaProfessor(aula))}</span>
           <span class="col-aula col-aula-reposicao">${escapeHtml(infoReposicao || "-")}</span>
-          <span class="col-aula col-aula-duracao">${minutos > 0 ? `${minutos} min` : "Sem minutagem"}</span>
+          <span class="col-aula col-aula-duracao">${escapeHtml(textoDuracaoAulaProfessor(aula))}</span>
         </div>
       `;
     })
