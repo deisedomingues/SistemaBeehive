@@ -53,6 +53,8 @@ let aulasPeriodoExpandida = false;
    UTILITÁRIOS
 ========================================================= */
 function mostrarMensagem(texto, ok = true) {
+  if (!msg) return;
+
   msg.textContent = texto;
   msg.style.display = "block";
   msg.className = ok ? "msg-resumo-professor ok" : "msg-resumo-professor erro";
@@ -102,8 +104,8 @@ async function preencherFiltroInicial() {
   const primeiraAula = await buscarPrimeiraAulaProfessor();
   const hoje = hojeISO();
 
-  dataInicio.value = primeiraAula || hoje;
-  dataFim.value = hoje;
+  if (dataInicio) dataInicio.value = primeiraAula || hoje;
+  if (dataFim) dataFim.value = hoje;
 
   if (filtroStatusPeriodo) {
     filtroStatusPeriodo.value = "";
@@ -149,28 +151,38 @@ function ehNotaDeAvaliacao(nota) {
   return tipo.includes("avalia");
 }
 
-function aulaContaParaCicloDeAvaliacao(aula) {
-  const status = normalizarTexto(aula?.status);
-  const gravada = aula?.aula_gravada === true;
+/*
+  REGRA OFICIAL DE AULA VÁLIDA PARA AVALIAÇÃO
 
-  if (status === "presente" && gravada) return true;
-  if (status === "reposicao" && gravada) return true;
-  if (status === "ausente" && gravada) return true;
+  Conta:
+  - Presente
+  - Ausente + aula_gravada = true
+  - Reposição + aula_gravada = true
 
-  return false;
-}
-
-function aulaValidaParaProfessor(aula) {
+  Não conta:
+  - Ausente sem gravação
+  - Ausente pendente de reposição
+  - Cancelada
+  - Aula Instrumental
+  - Plantão de dúvidas
+*/
+function aulaValidaParaAvaliacao(aula) {
   const status = normalizarTexto(aula?.status);
   const gravada = aula?.aula_gravada === true;
 
   if (status === "presente") return true;
   if (status === "ausente" && gravada) return true;
-  if (status === "reposicao") return true;
-  if (status === "aula instrumental") return true;
-  if (status === "plantao de duvidas") return true;
+  if (status === "reposicao" && gravada) return true;
 
   return false;
+}
+
+function aulaContaParaCicloDeAvaliacao(aula) {
+  return aulaValidaParaAvaliacao(aula);
+}
+
+function aulaValidaParaProfessor(aula) {
+  return aulaValidaParaAvaliacao(aula);
 }
 
 function statusContaComoAulaPedagogicaNoPeriodo(aula) {
@@ -314,6 +326,144 @@ function ordenarAulasPorDataDesc(a, b) {
 }
 
 /* =========================================================
+   BUSCAS PAGINADAS
+
+   O Supabase pode devolver só o primeiro bloco de registros.
+   Então, para resumo geral do professor, precisamos buscar de 1000 em 1000.
+========================================================= */
+async function buscarAulasPorPeriodoPaginado() {
+  const inicio = dataInicio?.value || null;
+  const fim = dataFim?.value || null;
+
+  const tamanhoPagina = 1000;
+  let pagina = 0;
+  let todas = [];
+
+  while (true) {
+    const from = pagina * tamanhoPagina;
+    const to = from + tamanhoPagina - 1;
+
+    let query = supabase
+      .from("aula")
+      .select(`
+        id,
+        data_aula,
+        status,
+        aula_gravada,
+        precisa_reposicao,
+        matricula_id,
+        modulo_id,
+        professor_id,
+        aula_original_id,
+        duracao_segundos,
+        matricula:matricula_id (
+          id,
+          aluno:aluno_id (
+            id,
+            nome
+          )
+        )
+      `)
+      .eq("professor_id", professorId)
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (inicio) query = query.gte("data_aula", inicio);
+    if (fim) query = query.lte("data_aula", fim);
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    const lote = data || [];
+    todas = todas.concat(lote);
+
+    if (lote.length < tamanhoPagina) break;
+
+    pagina++;
+  }
+
+  return todas;
+}
+
+async function buscarTodasAulasDasMatriculasPaginado(idsMatriculas) {
+  if (!idsMatriculas.length) return [];
+
+  const tamanhoPagina = 1000;
+  let pagina = 0;
+  let todas = [];
+
+  while (true) {
+    const from = pagina * tamanhoPagina;
+    const to = from + tamanhoPagina - 1;
+
+    const { data, error } = await supabase
+      .from("aula")
+      .select(`
+        id,
+        matricula_id,
+        modulo_id,
+        status,
+        aula_gravada,
+        data_aula
+      `)
+      .in("matricula_id", idsMatriculas)
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error) throw error;
+
+    const lote = data || [];
+    todas = todas.concat(lote);
+
+    if (lote.length < tamanhoPagina) break;
+
+    pagina++;
+  }
+
+  return todas;
+}
+
+async function buscarNotasDasMatriculasPaginado(idsMatriculas) {
+  if (!idsMatriculas.length) return [];
+
+  const tamanhoPagina = 1000;
+  let pagina = 0;
+  let todas = [];
+
+  while (true) {
+    const from = pagina * tamanhoPagina;
+    const to = from + tamanhoPagina - 1;
+
+    const { data, error } = await supabase
+      .from("nota")
+      .select(`
+        id,
+        matricula_id,
+        modulo_id,
+        tipo,
+        valor,
+        observacao,
+        data
+      `)
+      .in("matricula_id", idsMatriculas)
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error) throw error;
+
+    const lote = data || [];
+    todas = todas.concat(lote);
+
+    if (lote.length < tamanhoPagina) break;
+
+    pagina++;
+  }
+
+  return todas;
+}
+
+/* =========================================================
    BUSCAS
 ========================================================= */
 async function carregarProfessor() {
@@ -326,9 +476,15 @@ async function carregarProfessor() {
   if (error) throw error;
 
   professorNome = data?.nome || "Professor(a)";
-  tituloResumoProfessor.textContent = `Olá, ${professorNome}!`;
-  subtituloResumoProfessor.textContent =
-    "Acompanhe seus alunos, aulas e notificações importantes.";
+
+  if (tituloResumoProfessor) {
+    tituloResumoProfessor.textContent = `Olá, ${professorNome}!`;
+  }
+
+  if (subtituloResumoProfessor) {
+    subtituloResumoProfessor.textContent =
+      "Acompanhe seus alunos, aulas e notificações importantes.";
+  }
 }
 
 async function carregarMateriasProfessor() {
@@ -349,7 +505,7 @@ async function carregarMateriasProfessor() {
     .map((item) => item.materia)
     .filter(Boolean);
 
-  materiaIdsProfessor = materiasProfessor.map((m) => m.id);
+  materiaIdsProfessor = materiasProfessor.map((m) => Number(m.id));
 }
 
 async function carregarMatriculasRelacionadas() {
@@ -380,7 +536,7 @@ async function carregarMatriculasRelacionadas() {
   if (error) throw error;
 
   matriculasFiltradas = (data || []).filter((m) => {
-    const materiaId = m?.modulo?.materia_id;
+    const materiaId = Number(m?.modulo?.materia_id || 0);
     return materiaIdsProfessor.includes(materiaId);
   });
 }
@@ -399,53 +555,22 @@ async function buscarPrimeiraAulaProfessor() {
   return data?.[0]?.data_aula || null;
 }
 
-async function buscarAulasComDuracao() {
-  const inicio = dataInicio.value || null;
-  const fim = dataFim.value || null;
-
-  let query = supabase
-    .from("aula")
-    .select(`
-      id,
-      data_aula,
-      status,
-      aula_gravada,
-      precisa_reposicao,
-      matricula_id,
-      modulo_id,
-      professor_id,
-      aula_original_id,
-      duracao_segundos,
-      matricula:matricula_id (
-        id,
-        aluno:aluno_id (
-          id,
-          nome
-        )
-      )
-    `)
-    .eq("professor_id", professorId);
-
-  if (inicio) query = query.gte("data_aula", inicio);
-  if (fim) query = query.lte("data_aula", fim);
-
-  return await query;
-}
-
 async function carregarAulasProfessorPorPeriodo() {
   const statusSelecionado = filtroStatusPeriodo?.value || "";
 
-  const { data, error } = await buscarAulasComDuracao();
+  const data = await buscarAulasPorPeriodoPaginado();
 
-  if (error) throw error;
-
-  const matriculaIdsPermitidas = new Set(matriculasFiltradas.map((m) => m.id));
-
-  let filtradas = (data || []).filter((aula) =>
-    matriculaIdsPermitidas.has(aula.matricula_id)
+  const matriculaIdsPermitidas = new Set(
+    matriculasFiltradas.map((m) => Number(m.id))
   );
 
-  filtradas = filtradas.filter((aula) => statusContaComoAulaPedagogicaNoPeriodo(aula));
+  let filtradas = (data || []).filter((aula) =>
+    matriculaIdsPermitidas.has(Number(aula.matricula_id))
+  );
+
+  filtradas = filtradas.filter((aula) =>
+    statusContaComoAulaPedagogicaNoPeriodo(aula)
+  );
 
   if (statusSelecionado === "aulas_validas") {
     filtradas = filtradas.filter((aula) => aulaValidaParaProfessor(aula));
@@ -488,76 +613,59 @@ async function carregarAulasProfessorPorPeriodo() {
 }
 
 async function carregarNotasSistema() {
-  const idsMatriculas = matriculasFiltradas.map((m) => m.id);
+  const idsMatriculas = matriculasFiltradas.map((m) => Number(m.id));
 
   if (!idsMatriculas.length) {
     notasDoSistema = [];
     return;
   }
 
-  const { data, error } = await supabase
-    .from("nota")
-    .select(`
-      id,
-      matricula_id,
-      modulo_id,
-      tipo,
-      valor,
-      observacao,
-      data
-    `)
-    .in("matricula_id", idsMatriculas);
-
-  if (error) {
+  try {
+    notasDoSistema = await buscarNotasDasMatriculasPaginado(idsMatriculas);
+  } catch (error) {
     console.warn("Não foi possível carregar notas:", error.message);
     notasDoSistema = [];
-    return;
   }
-
-  notasDoSistema = data || [];
 }
 
+/* =========================================================
+   AVALIAÇÕES
+========================================================= */
 async function carregarPendenciasAvaliacaoPorMatricula() {
-  const idsMatriculas = matriculasFiltradas.map((m) => m.id);
-  if (!idsMatriculas.length) return [];
+  const idsMatriculas = matriculasFiltradas.map((m) => Number(m.id));
+
+  if (!idsMatriculas.length) {
+    return [];
+  }
 
   const moduloAtualPorMatricula = {};
   const metaPorMatricula = {};
 
   matriculasFiltradas.forEach((m) => {
-    const mid = String(m.id);
+    const matriculaId = Number(m.id);
+    const mid = String(matriculaId);
 
     moduloAtualPorMatricula[mid] = Number(m.modulo_id || 0);
 
     metaPorMatricula[mid] = {
-      matriculaId: m.id,
+      matriculaId,
       aluno: m?.aluno?.nome || "Aluno",
       materia: m?.modulo?.materia?.nome || "Matéria",
       modulo: m?.modulo?.nome || "Módulo"
     };
   });
 
-  const { data: aulas, error: errorAulas } = await supabase
-    .from("aula")
-    .select(`
-      id,
-      matricula_id,
-      modulo_id,
-      status,
-      aula_gravada
-    `)
-    .in("matricula_id", idsMatriculas);
-
-  if (errorAulas) throw errorAulas;
+  const aulas = await buscarTodasAulasDasMatriculasPaginado(idsMatriculas);
 
   const aulasValidasPorMatricula = {};
 
   (aulas || []).forEach((aula) => {
-    const mid = String(aula.matricula_id);
+    const mid = String(Number(aula.matricula_id));
     const moduloAtual = Number(moduloAtualPorMatricula[mid] || 0);
     const moduloDaAula = Number(aula.modulo_id || 0);
 
-    if (!moduloAtual || moduloDaAula !== moduloAtual) return;
+    if (!moduloAtual) return;
+    if (moduloDaAula !== moduloAtual) return;
     if (!aulaContaParaCicloDeAvaliacao(aula)) return;
 
     aulasValidasPorMatricula[mid] = (aulasValidasPorMatricula[mid] || 0) + 1;
@@ -566,25 +674,43 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
   const avaliacoesPorMatricula = {};
 
   notasDoSistema.forEach((nota) => {
-    const mid = String(nota.matricula_id);
+    const mid = String(Number(nota.matricula_id));
     const moduloAtual = Number(moduloAtualPorMatricula[mid] || 0);
     const moduloDaNota = Number(nota.modulo_id || 0);
 
-    if (!moduloAtual || moduloDaNota !== moduloAtual) return;
+    if (!moduloAtual) return;
+    if (moduloDaNota !== moduloAtual) return;
     if (!ehNotaDeAvaliacao(nota)) return;
 
     avaliacoesPorMatricula[mid] = (avaliacoesPorMatricula[mid] || 0) + 1;
   });
 
   const pendencias = [];
+  const auditoria = [];
 
   idsMatriculas.forEach((matriculaId) => {
-    const mid = String(matriculaId);
+    const mid = String(Number(matriculaId));
+
     const totalAulasValidas = aulasValidasPorMatricula[mid] || 0;
     const totalAvaliacoesLancadas = avaliacoesPorMatricula[mid] || 0;
 
     const avaliacoesEsperadas = Math.floor(totalAulasValidas / 14);
-    const avaliacoesPendentes = Math.max(0, avaliacoesEsperadas - totalAvaliacoesLancadas);
+    const avaliacoesPendentes = Math.max(
+      0,
+      avaliacoesEsperadas - totalAvaliacoesLancadas
+    );
+
+    auditoria.push({
+      matriculaId,
+      aluno: metaPorMatricula[mid]?.aluno || "Aluno",
+      materia: metaPorMatricula[mid]?.materia || "Matéria",
+      moduloAtual: metaPorMatricula[mid]?.modulo || "Módulo",
+      aulasValidasModuloAtual: totalAulasValidas,
+      avaliacoesLancadasModuloAtual: totalAvaliacoesLancadas,
+      avaliacoesEsperadas,
+      avaliacoesPendentes,
+      apareceNoCard: avaliacoesPendentes > 0 ? "SIM" : "NÃO"
+    });
 
     if (avaliacoesPendentes <= 0) return;
 
@@ -601,6 +727,9 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
     }
   });
 
+  console.table(auditoria);
+  console.log("Auditoria de avaliações do professor:", auditoria);
+
   return pendencias;
 }
 
@@ -608,6 +737,8 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
    RENDERIZAÇÃO
 ========================================================= */
 function renderAulasPeriodo() {
+  if (!textoResumoAulasPeriodo || !textoResumoDuracaoPeriodo) return;
+
   const totalAulas = aulasFiltradasProfessor.length;
 
   const totalSegundos = aulasFiltradasProfessor.reduce(
@@ -625,6 +756,8 @@ function renderAulasPeriodo() {
 }
 
 function renderSelectMatriculas() {
+  if (!selectMatricula) return;
+
   selectMatricula.innerHTML = `<option value="">Selecione o aluno (curso)</option>`;
 
   const listaOrdenada = [...matriculasFiltradas].sort((a, b) => {
@@ -665,7 +798,7 @@ function renderVisaoGeralUnificada() {
 
   const htmlCursos = materiasOrdenadas.map((materia) => {
     const matriculasDaMateria = matriculasFiltradas.filter(
-      (m) => m?.modulo?.materia?.id === materia.id
+      (m) => Number(m?.modulo?.materia?.id || 0) === Number(materia.id)
     );
 
     const alunosDaMateria = new Set(
@@ -754,7 +887,7 @@ function htmlItemAvaliacao(item) {
           <p>${escapeHtml(item.materia)} • ${escapeHtml(item.modulo)}</p>
           <p>
             ${item.aulasValidas} aula(s) válidas no módulo atual •
-            ${item.avaliacoesLancadas} avaliação(ões) lançada(s)
+            ${item.avaliacoesLancadas} avaliação(ões) lançada(s) neste módulo
           </p>
         </div>
 
@@ -785,6 +918,8 @@ function vincularBotoesEnviarAvaliacao() {
 }
 
 function renderAvaliacoes(pendencias) {
+  if (!listaAvaliacoesContainer || !btnToggleAvaliacoes) return;
+
   avaliacoesPendentesAtuais = [...pendencias];
 
   if (!avaliacoesPendentesAtuais.length) {
@@ -816,6 +951,10 @@ function renderAvaliacoes(pendencias) {
 }
 
 function renderListaAulasPeriodo() {
+  if (!listaAulasPeriodoContainer || !btnToggleAulasPeriodo || !btnExpandirAulasPeriodo) {
+    return;
+  }
+
   if (!aulasFiltradasProfessor.length) {
     listaAulasPeriodoContainer.innerHTML = criarParagrafoVazio(
       "Nenhuma aula encontrada para o filtro selecionado."
@@ -882,20 +1021,42 @@ async function montarResumo() {
     await carregarMateriasProfessor();
 
     if (!materiaIdsProfessor.length) {
-      textoResumoAulasPeriodo.innerHTML = `
-        Foram encontradas <b>0</b> aula(s) em <b>todas</b> no período selecionado.
-      `;
+      if (textoResumoAulasPeriodo) {
+        textoResumoAulasPeriodo.innerHTML = `
+          Foram encontradas <b>0</b> aula(s) em <b>todas</b> no período selecionado.
+        `;
+      }
 
-      textoResumoDuracaoPeriodo.innerHTML = `
-        Totalizando <b>0 minuto(s) registrados</b>.
-      `;
+      if (textoResumoDuracaoPeriodo) {
+        textoResumoDuracaoPeriodo.innerHTML = `
+          Totalizando <b>0 minuto(s) registrados</b>.
+        `;
+      }
 
-      listaAvaliacoesContainer.innerHTML = criarParagrafoVazio("Sem dados para exibir.");
-      cardVisaoGeralProfessor.innerHTML = `<p style="font-size:14px;">Sem matérias vinculadas.</p>`;
-      selectMatricula.innerHTML = `<option value="">Nenhum aluno disponível</option>`;
-      listaAulasPeriodoContainer.innerHTML = "";
-      btnToggleAulasPeriodo.style.display = "none";
-      btnExpandirAulasPeriodo.style.display = "none";
+      if (listaAvaliacoesContainer) {
+        listaAvaliacoesContainer.innerHTML = criarParagrafoVazio("Sem dados para exibir.");
+      }
+
+      if (cardVisaoGeralProfessor) {
+        cardVisaoGeralProfessor.innerHTML = `<p style="font-size:14px;">Sem matérias vinculadas.</p>`;
+      }
+
+      if (selectMatricula) {
+        selectMatricula.innerHTML = `<option value="">Nenhum aluno disponível</option>`;
+      }
+
+      if (listaAulasPeriodoContainer) {
+        listaAulasPeriodoContainer.innerHTML = "";
+      }
+
+      if (btnToggleAulasPeriodo) {
+        btnToggleAulasPeriodo.style.display = "none";
+      }
+
+      if (btnExpandirAulasPeriodo) {
+        btnExpandirAulasPeriodo.style.display = "none";
+      }
+
       return;
     }
 
@@ -935,7 +1096,7 @@ btnLimparFiltro?.addEventListener("click", async () => {
 });
 
 btnDetalhes?.addEventListener("click", () => {
-  const matriculaIdSelecionada = selectMatricula.value;
+  const matriculaIdSelecionada = selectMatricula?.value;
 
   if (!matriculaIdSelecionada) {
     mostrarMensagem("Selecione o aluno (curso).", false);
