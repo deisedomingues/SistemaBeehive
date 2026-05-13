@@ -5,8 +5,6 @@
   <title>Registrar Aula | Beehive</title>
   <link rel="stylesheet" href="css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  
 </head>
 
 <body>
@@ -75,11 +73,28 @@
             <option value="Reposição">Reposição</option>
             <option value="Aula Instrumental">Aula Instrumental</option>
             <option value="Plantão de dúvidas">Plantão de dúvidas</option>
+            <option value="Aula Experimental">Aula Experimental</option>
           </select>
         </label>
+
+        <small
+          id="avisoAulaExperimental"
+          style="
+            display:none;
+            background:#fff8dc;
+            border:1px solid #f1bc32;
+            color:#5f4700;
+            padding:10px 12px;
+            border-radius:10px;
+            margin-top:8px;
+            line-height:1.4;
+          "
+        >
+          Aulas experimentais são registradas com 40 minutos de duração e contam como aulas válidas.
+        </small>
       </div>
 
-      <label>
+      <label id="labelParteAula">
         Parte da aula
         <select id="parteAula">
           <option value="1">Parte 1</option>
@@ -157,10 +172,10 @@
 
       <label>
         Conteúdo da aula
-        <input type="text" id="conteudo" placeholder="Ex: Unidade 3 – pág. 25">
+        <input type="text" id="conteudo" placeholder="Ex: Aula experimental — nivelamento/conversa inicial">
       </label>
 
-      <label>
+      <label id="labelLicaoCasa">
         Lição de casa
         <input type="text" id="licaoCasa" placeholder="Ex: Exercícios da pág. 26">
       </label>

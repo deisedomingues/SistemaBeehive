@@ -21,9 +21,11 @@ const alunosSelecionadosDiv = document.getElementById("alunosSelecionados");
 
 const boxStatusGeral = document.getElementById("boxStatus");
 const selectStatusGeral = document.getElementById("status");
+const avisoAulaExperimental = document.getElementById("avisoAulaExperimental");
 const boxAusenciaGeral = document.getElementById("boxAusencia");
 const boxReposicaoGeral = document.getElementById("boxReposicao");
 
+const labelParteAula = document.getElementById("labelParteAula");
 const selectParte = document.getElementById("parteAula");
 const moduloAula = document.getElementById("moduloAula");
 
@@ -31,6 +33,7 @@ const boxJustificativaGeral = document.getElementById("boxJustificativa");
 const inputJustificativa = document.getElementById("justificativa");
 
 const inputConteudo = document.getElementById("conteudo");
+const labelLicaoCasa = document.getElementById("labelLicaoCasa");
 const inputLicaoCasa = document.getElementById("licaoCasa");
 
 const inputAulaGravada = document.getElementById("aulaGravada");
@@ -60,8 +63,11 @@ const STATUS = {
   TRANCADA: "Trancada",
   REPOSICAO: "Reposição",
   AULA_INSTRUMENTAL: "Aula Instrumental",
-  PLANTAO_DUVIDAS: "Plantão de dúvidas"
+  PLANTAO_DUVIDAS: "Plantão de dúvidas",
+  AULA_EXPERIMENTAL: "Aula Experimental"
 };
+
+const DURACAO_AULA_EXPERIMENTAL_SEGUNDOS = 40 * 60;
 
 // ==========================================
 // 3. UI / MENSAGENS
@@ -128,6 +134,10 @@ function esconderCampoReposicaoComCusto() {
 
 function ehAulaColetiva() {
   return aulaColetivaRadio.checked;
+}
+
+function ehAulaExperimentalGeral() {
+  return selectStatusGeral.value === STATUS.AULA_EXPERIMENTAL;
 }
 
 function atualizarCardsTipoAula() {
@@ -203,7 +213,8 @@ function statusNaoGeraReposicao(status) {
   return (
     status === STATUS.PRESENTE ||
     status === STATUS.AULA_INSTRUMENTAL ||
-    status === STATUS.PLANTAO_DUVIDAS
+    status === STATUS.PLANTAO_DUVIDAS ||
+    status === STATUS.AULA_EXPERIMENTAL
   );
 }
 
@@ -299,16 +310,48 @@ function atualizarBoxJustificativaGeral() {
 function atualizarCamposTextoPorStatusGeral() {
   const status = selectStatusGeral.value;
 
-  const desabilitar =
+  const desabilitarConteudo =
     status === STATUS.CANCELADA ||
     status === STATUS.TRANCADA;
 
-  inputConteudo.disabled = desabilitar;
-  inputLicaoCasa.disabled = desabilitar;
+  inputConteudo.disabled = desabilitarConteudo;
 
-  if (desabilitar) {
+  if (desabilitarConteudo) {
     inputConteudo.value = "";
+  }
+
+  if (status === STATUS.AULA_EXPERIMENTAL) {
     inputLicaoCasa.value = "";
+    inputLicaoCasa.disabled = true;
+  } else {
+    inputLicaoCasa.disabled = desabilitarConteudo;
+
+    if (desabilitarConteudo) {
+      inputLicaoCasa.value = "";
+    }
+  }
+}
+
+function atualizarCamposAulaExperimental() {
+  const ehExperimental = ehAulaExperimentalGeral();
+
+  if (avisoAulaExperimental) {
+    avisoAulaExperimental.style.display = ehExperimental ? "block" : "none";
+  }
+
+  if (labelParteAula) {
+    labelParteAula.style.display = ehExperimental ? "none" : "block";
+  }
+
+  if (labelLicaoCasa) {
+    labelLicaoCasa.style.display = ehExperimental ? "none" : "block";
+  }
+
+  if (ehExperimental) {
+    selectParte.value = "1";
+    inputLicaoCasa.value = "";
+    inputAulaGravada.checked = false;
+    inputPrecisaReposicao.checked = false;
   }
 }
 
@@ -329,6 +372,7 @@ function normalizarAlunoPorStatus(aluno) {
     aluno.justificativa = "";
     aluno.aulaOriginalId = null;
     aluno.reposicaoComCusto = false;
+    aluno.duracaoSegundos = null;
     return;
   }
 
@@ -339,6 +383,7 @@ function normalizarAlunoPorStatus(aluno) {
 
     aluno.aulaOriginalId = null;
     aluno.reposicaoComCusto = false;
+    aluno.duracaoSegundos = null;
     return;
   }
 
@@ -347,6 +392,7 @@ function normalizarAlunoPorStatus(aluno) {
     aluno.precisaReposicao = true;
     aluno.aulaOriginalId = null;
     aluno.reposicaoComCusto = false;
+    aluno.duracaoSegundos = null;
     return;
   }
 
@@ -354,6 +400,7 @@ function normalizarAlunoPorStatus(aluno) {
     aluno.aulaGravada = true;
     aluno.precisaReposicao = false;
     aluno.reposicaoComCusto = false;
+    aluno.duracaoSegundos = null;
     return;
   }
 
@@ -363,6 +410,17 @@ function normalizarAlunoPorStatus(aluno) {
     aluno.justificativa = "";
     aluno.aulaOriginalId = null;
     aluno.reposicaoComCusto = false;
+    aluno.duracaoSegundos = null;
+    return;
+  }
+
+  if (status === STATUS.AULA_EXPERIMENTAL) {
+    aluno.aulaGravada = false;
+    aluno.precisaReposicao = false;
+    aluno.justificativa = "";
+    aluno.aulaOriginalId = null;
+    aluno.reposicaoComCusto = false;
+    aluno.duracaoSegundos = DURACAO_AULA_EXPERIMENTAL_SEGUNDOS;
     return;
   }
 }
@@ -381,6 +439,9 @@ function aplicarRegrasStatusGeral() {
     inputPrecisaReposicao.checked = true;
   } else if (status === STATUS.REPOSICAO) {
     inputAulaGravada.checked = true;
+    inputPrecisaReposicao.checked = false;
+  } else if (status === STATUS.AULA_EXPERIMENTAL) {
+    inputAulaGravada.checked = false;
     inputPrecisaReposicao.checked = false;
   } else if (statusNaoGeraReposicao(status)) {
     inputAulaGravada.checked = statusGravaAutomaticamente(status);
@@ -407,6 +468,7 @@ function aplicarRegrasStatusGeral() {
 
   atualizarBoxJustificativaGeral();
   atualizarCamposTextoPorStatusGeral();
+  atualizarCamposAulaExperimental();
   esconderCampoReposicaoComCusto();
 }
 
@@ -503,6 +565,12 @@ function garantirOpcaoParte(valorParte) {
 
 async function atualizarParteAutomatica() {
   const dataAula = inputDataAula.value;
+
+  if (ehAulaExperimentalGeral()) {
+    garantirOpcaoParte(1);
+    selectParte.value = "1";
+    return;
+  }
 
   if (!dataAula) {
     garantirOpcaoParte(1);
@@ -995,6 +1063,7 @@ async function alternarTipoAula() {
     }
   }
 
+  atualizarCamposAulaExperimental();
   await atualizarParteAutomatica();
   esconderCampoReposicaoComCusto();
 }
@@ -1071,7 +1140,8 @@ selectMatricula.addEventListener("change", async () => {
       precisaReposicao: false,
       justificativa: "",
       aulaOriginalId: null,
-      reposicaoComCusto: false
+      reposicaoComCusto: false,
+      duracaoSegundos: null
     };
 
     matriculasLista.push(novoAluno);
@@ -1147,21 +1217,23 @@ function montarRegistroBase({
     status === STATUS.TRANCADA;
 
   const ehReposicao = status === STATUS.REPOSICAO;
+  const ehAulaExperimental = status === STATUS.AULA_EXPERIMENTAL;
 
   return {
     matricula_id: Number(matriculaId),
     professor_id: professorId,
     data_aula: dataAula,
-    parte: Number(parte),
+    parte: ehAulaExperimental ? 1 : Number(parte),
     modulo_id: moduloId,
     status: status,
     justificativa: statusExigeJustificativa(status) ? justificativa.trim() : null,
     conteudo: ehSemConteudo ? null : (conteudo || null),
-    licao_casa: ehSemConteudo ? null : (licaoCasa || null),
+    licao_casa: ehAulaExperimental || ehSemConteudo ? null : (licaoCasa || null),
     aula_original_id: ehReposicao ? Number(aulaOriginalId) : null,
     reposicao_com_custo: false,
-    aula_gravada: !!aulaGravada,
-    precisa_reposicao: !!precisaReposicao,
+    aula_gravada: ehAulaExperimental ? false : !!aulaGravada,
+    precisa_reposicao: ehAulaExperimental ? false : !!precisaReposicao,
+    duracao_segundos: ehAulaExperimental ? DURACAO_AULA_EXPERIMENTAL_SEGUNDOS : null,
     aula_coletiva: !!aulaColetiva,
     grupo_aula_id: aulaColetiva ? grupoAulaId : null,
     quantidade_alunos: Number(quantidadeAlunos || 1)
@@ -1323,6 +1395,9 @@ form.addEventListener("submit", async (e) => {
     } else if (status === STATUS.CANCELADA || status === STATUS.TRANCADA) {
       aulaGravada = false;
       precisaReposicao = true;
+    } else if (status === STATUS.AULA_EXPERIMENTAL) {
+      aulaGravada = false;
+      precisaReposicao = false;
     } else if (statusGravaAutomaticamente(status)) {
       aulaGravada = true;
       precisaReposicao = false;
@@ -1364,15 +1439,6 @@ form.addEventListener("submit", async (e) => {
     mostrarMensagem("Erro ao salvar os dados.", false);
     return;
   }
-
-  /*
-    Importante:
-    A aula original não é atualizada para precisa_reposicao = false.
-    Ela permanece com seu histórico original.
-
-    Para saber se já foi reposta, o sistema consulta se existe uma aula
-    com status "Reposição" apontando para ela em aula_original_id.
-  */
 
   mostrarMensagem("Aula(s) registrada(s) com sucesso!");
 
