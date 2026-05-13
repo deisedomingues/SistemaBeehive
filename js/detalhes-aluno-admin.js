@@ -168,20 +168,25 @@ function aulaTemOrigemVinculada(aula) {
 
   Conta no pacote:
   - Presente
-  - Ausente com aula gravada
-  - Ausente sem aula gravada, quando gerou reposição
-  - Cancelada, quando gerou reposição
-  - Trancada, quando gerou reposição
-  - Aula Instrumental
-  - Plantão de dúvidas
-  - Reposição sem aula original vinculada, para evitar que registros antigos soltos sumam da contagem
+  - Ausente, com gravação ou sem gravação
+  - Cancelada
+  - Trancada
 
   NÃO conta no pacote:
-  - Qualquer Reposição vinculada a uma aula original
+  - Reposição
+  - Aula Instrumental
+  - Plantão de dúvidas
 
-  Motivo:
-  A aula original já consumiu o pacote.
-  Se a reposição vinculada contar de novo, o aluno perde duas aulas do pacote.
+  Observação:
+  A ausência conta no pacote porque aquele horário fazia parte
+  das aulas contratadas pelo aluno.
+
+  A reposição não conta de novo porque ela apenas compensa
+  uma aula original que já consumiu o pacote.
+
+  Aula Instrumental e Plantão de dúvidas são benefícios da escola.
+  O professor pode receber por elas no financeiro, mas elas NÃO diminuem
+  a quantidade de aulas compradas pelo aluno.
 */
 function obterTipoConsumoPacote(aula) {
   const status = normalizarTexto(aula?.status);
@@ -192,38 +197,40 @@ function obterTipoConsumoPacote(aula) {
     return "Presença";
   }
 
-  if (status === "ausente" && gravada) {
-    return "Ausência com aula gravada";
+  if (status === "ausente") {
+    if (gravada) {
+      return "Ausência com aula gravada";
+    }
+
+    if (precisaReposicao) {
+      return "Ausência com reposição pendente";
+    }
+
+    return "Ausência sem gravação";
   }
 
-  if (status === "ausente" && !gravada && precisaReposicao) {
-    return "Ausência com reposição pendente";
-  }
-
-  if (status === "cancelada" && precisaReposicao) {
+  if (status === "cancelada") {
     return "Cancelada com reposição gratuita";
   }
 
-  if (status === "trancada" && precisaReposicao) {
+  if (status === "trancada") {
     return "Trancada com reposição gratuita";
   }
 
+  // Reposição NUNCA consome pacote novamente.
+  // A aula original já consumiu o pacote.
+  if (status === "reposicao") {
+    return "";
+  }
+
+  // Benefícios da escola.
+  // O professor recebe, mas o aluno não perde aula do pacote.
   if (status === "aula instrumental") {
-    return "Aula Instrumental";
+    return "";
   }
 
   if (status === "plantao de duvidas") {
-    return "Plantão de dúvidas";
-  }
-
-  if (status === "reposicao") {
-    if (aulaTemOrigemVinculada(aula)) {
-      return "";
-    }
-
-    if (gravada) {
-      return "Reposição sem aula de origem vinculada";
-    }
+    return "";
   }
 
   return "";
@@ -240,9 +247,8 @@ function aulaContaParaAvaliacao(aula) {
   if (status === "presente" && gravada) return true;
   if (status === "ausente" && gravada) return true;
   if (status === "reposicao" && gravada) return true;
-  if (status === "aula instrumental" && gravada) return true;
-  if (status === "plantao de duvidas" && gravada) return true;
 
+  // Aula Instrumental e Plantão de dúvidas NÃO contam para avaliação.
   return false;
 }
 
@@ -530,9 +536,20 @@ function renderAulas(aulasOriginais) {
       infosNormais.push("Reposição: pendente sem custo por trancamento");
     }
 
-    if (aulaEhReposicao(x) && aulaTemOrigemVinculada(x)) {
-      infosNormais.push("Reposição vinculada a aula original");
+    if (aulaEhReposicao(x)) {
+      if (aulaTemOrigemVinculada(x)) {
+        infosNormais.push("Reposição vinculada a aula original");
+      } else {
+        infosNormais.push("Reposição sem aula original vinculada");
+      }
+
       infosNormais.push("Não consome pacote novamente");
+    } else if (
+      normalizarTexto(x.status) === "aula instrumental" ||
+      normalizarTexto(x.status) === "plantao de duvidas"
+    ) {
+      infosNormais.push("Benefício da escola");
+      infosNormais.push("Não consome pacote");
     } else if (aulaConsomePacote(x)) {
       infosNormais.push("Conta no pacote");
     }
