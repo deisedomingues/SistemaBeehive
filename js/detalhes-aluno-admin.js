@@ -26,6 +26,8 @@ const cTrancada = document.getElementById("cTrancada");
 const cEventos = document.getElementById("cEventos");
 
 const listaNotas = document.getElementById("listaNotas");
+const listaReposicoesPendentes = document.getElementById("listaReposicoesPendentes");
+const totalReposicoesPendentes = document.getElementById("totalReposicoesPendentes");
 
 const mediaGeral = document.getElementById("mediaGeral");
 const totalNotas = document.getElementById("totalNotas");
@@ -43,6 +45,7 @@ const btnVerAulasPacote = document.getElementById("btnVerAulasPacote");
 const btnFecharAulasPacote = document.getElementById("btnFecharAulasPacote");
 const boxAulasPacote = document.getElementById("boxAulasPacote");
 const listaAulasPacote = document.getElementById("listaAulasPacote");
+const tituloAulasPacote = document.getElementById("tituloAulasPacote");
 
 // proteção
 if (!matriculaId) {
@@ -56,6 +59,7 @@ if (!matriculaId) {
 let todasAulas = [];
 let aulasExpandido = false;
 let aulasPacoteExpandido = false;
+let pacoteSelecionadoParaAulas = null;
 let dadosCabecalho = null;
 let pacotesAluno = [];
 let pacoteAtivoAtual = null;
@@ -118,8 +122,19 @@ function hojeISO() {
 
 function formatarDataBR(dataISO) {
   if (!dataISO) return "-";
-  const [yyyy, mm, dd] = dataISO.split("-");
+  const [yyyy, mm, dd] = String(dataISO).split("-");
   return `${dd}/${mm}/${yyyy}`;
+}
+
+function ultimoDiaDoMesISO(dataISO) {
+  if (!dataISO) return "";
+
+  const [ano, mes] = String(dataISO).split("-").map(Number);
+  if (!ano || !mes) return "";
+
+  const ultimoDia = new Date(ano, mes, 0).getDate();
+
+  return `${ano}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
 }
 
 function escaparHtml(texto) {
@@ -155,89 +170,26 @@ function textoAulaGravada(aula) {
 }
 
 function aulaEhReposicao(aula) {
-  const status = normalizarTexto(aula?.status);
-  return status === "reposicao";
+  return normalizarTexto(aula?.status) === "reposicao";
 }
 
 function aulaTemOrigemVinculada(aula) {
   return !!aula?.aula_original_id;
 }
 
-/*
-  REGRA DO PACOTE
-
-  Conta no pacote:
-  - Presente
-  - Ausente, com gravação ou sem gravação
-  - Cancelada
-  - Trancada
-
-  NÃO conta no pacote:
-  - Reposição
-  - Aula Instrumental
-  - Plantão de dúvidas
-
-  Observação:
-  A ausência conta no pacote porque aquele horário fazia parte
-  das aulas contratadas pelo aluno.
-
-  A reposição não conta de novo porque ela apenas compensa
-  uma aula original que já consumiu o pacote.
-
-  Aula Instrumental e Plantão de dúvidas são benefícios da escola.
-  O professor pode receber por elas no financeiro, mas elas NÃO diminuem
-  a quantidade de aulas compradas pelo aluno.
-*/
-function obterTipoConsumoPacote(aula) {
-  const status = normalizarTexto(aula?.status);
-  const gravada = aula?.aula_gravada === true;
-  const precisaReposicao = aula?.precisa_reposicao === true;
-
-  if (status === "presente") {
-    return "Presença";
-  }
-
-  if (status === "ausente") {
-    if (gravada) {
-      return "Ausência com aula gravada";
-    }
-
-    if (precisaReposicao) {
-      return "Ausência com reposição pendente";
-    }
-
-    return "Ausência sem gravação";
-  }
-
-  if (status === "cancelada") {
-    return "Cancelada com reposição gratuita";
-  }
-
-  if (status === "trancada") {
-    return "Trancada com reposição gratuita";
-  }
-
-  // Reposição NUNCA consome pacote novamente.
-  // A aula original já consumiu o pacote.
-  if (status === "reposicao") {
-    return "";
-  }
-
-  // Benefícios da escola.
-  // O professor recebe, mas o aluno não perde aula do pacote.
-  if (status === "aula instrumental") {
-    return "";
-  }
-
-  if (status === "plantao de duvidas") {
-    return "";
-  }
-
-  return "";
-}
+// ===============================
+// REGRAS DE PACOTE
+// ===============================
 
 function aulaConsomePacote(aula) {
-  return !!obterTipoConsumoPacote(aula);
+  const status = normalizarTexto(aula?.status);
+
+  if (status === "presente") return true;
+  if (status === "ausente") return true;
+  if (status === "cancelada") return true;
+  if (status === "trancada") return true;
+
+  return false;
 }
 
 function aulaContaParaAvaliacao(aula) {
@@ -248,9 +200,93 @@ function aulaContaParaAvaliacao(aula) {
   if (status === "ausente" && gravada) return true;
   if (status === "reposicao" && gravada) return true;
 
-  // Aula Instrumental e Plantão de dúvidas NÃO contam para avaliação.
   return false;
 }
+
+// ===============================
+// REGRAS DE REPOSIÇÃO PENDENTE
+// ===============================
+
+function aulaPodeGerarReposicaoPendente(aula) {
+  const status = normalizarTexto(aula?.status);
+
+  return (
+    aula?.precisa_reposicao === true &&
+    (status === "ausente" || status === "cancelada" || status === "trancada")
+  );
+}
+
+function aulaJaFoiReposta(aulaOriginal, aulas) {
+  if (!aulaOriginal?.id) return false;
+
+  return aulas.some((aula) => {
+    return (
+      normalizarTexto(aula?.status) === "reposicao" &&
+      Number(aula?.aula_original_id || 0) === Number(aulaOriginal.id)
+    );
+  });
+}
+
+function obterReposicoesPendentes(aulas) {
+  return aulas
+    .filter((aula) => aulaPodeGerarReposicaoPendente(aula))
+    .filter((aula) => !aulaJaFoiReposta(aula, aulas))
+    .sort((a, b) => {
+      const dataA = String(a.data_aula || "");
+      const dataB = String(b.data_aula || "");
+
+      if (dataA !== dataB) {
+        return dataB.localeCompare(dataA);
+      }
+
+      return Number(b.id || 0) - Number(a.id || 0);
+    });
+}
+
+function obterSituacaoCobrancaReposicao(aula) {
+  const status = normalizarTexto(aula?.status);
+  const hoje = hojeISO();
+
+  if (status === "cancelada") {
+    return {
+      paga: false,
+      texto: "Sem cobrança"
+    };
+  }
+
+  if (status === "trancada") {
+    return {
+      paga: false,
+      texto: "Sem cobrança"
+    };
+  }
+
+  if (status === "ausente") {
+    const limiteGratuito = ultimoDiaDoMesISO(aula?.data_aula);
+    const aindaNoMesmoMes = limiteGratuito ? hoje <= limiteGratuito : false;
+
+    if (aindaNoMesmoMes) {
+      return {
+        paga: false,
+        texto: "Sem cobrança"
+      };
+    }
+
+    return {
+      paga: true,
+      texto: "A cobrar do aluno"
+    };
+  }
+
+  return {
+    paga: false,
+    texto: "Verificar"
+  };
+}
+
+// ===============================
+// PERÍODO DO PACOTE
+// ===============================
 
 function aulaDentroDoPeriodoDoPacote(aula, pacote) {
   const dataAula = String(aula?.data_aula || "");
@@ -282,11 +318,7 @@ function obterAulasDoPeriodoDoPacote(pacote) {
 }
 
 function obterAulasConsumidasNoPacote(pacote) {
-  const aulasDoPeriodo = obterAulasDoPeriodoDoPacote(pacote);
-
-  return aulasDoPeriodo.filter((aula) => {
-    return aulaConsomePacote(aula);
-  });
+  return obterAulasDoPeriodoDoPacote(pacote).filter((aula) => aulaConsomePacote(aula));
 }
 
 function contarAulasUsadasNoPacote(pacote) {
@@ -525,31 +557,30 @@ function renderAulas(aulasOriginais) {
     }
 
     if (x.status === STATUS.AUSENTE && x.precisa_reposicao) {
-      infosNormais.push("Reposição: pendente/solicitada");
+      infosNormais.push("Solicitou reposição");
     }
 
     if (x.status === STATUS.CANCELADA && x.precisa_reposicao) {
-      infosNormais.push("Reposição: pendente sem custo");
+      infosNormais.push("Solicitou reposição");
     }
 
     if (x.status === STATUS.TRANCADA && x.precisa_reposicao) {
-      infosNormais.push("Reposição: pendente sem custo por trancamento");
+      infosNormais.push("Solicitou reposição");
     }
 
     if (aulaEhReposicao(x)) {
       if (aulaTemOrigemVinculada(x)) {
-        infosNormais.push("Reposição vinculada a aula original");
+        infosNormais.push("Reposição vinculada");
       } else {
-        infosNormais.push("Reposição sem aula original vinculada");
+        infosNormais.push("Reposição sem vínculo");
       }
 
-      infosNormais.push("Não consome pacote novamente");
+      infosNormais.push("Não conta no pacote");
     } else if (
       normalizarTexto(x.status) === "aula instrumental" ||
       normalizarTexto(x.status) === "plantao de duvidas"
     ) {
-      infosNormais.push("Benefício da escola");
-      infosNormais.push("Não consome pacote");
+      infosNormais.push("Não conta no pacote");
     } else if (aulaConsomePacote(x)) {
       infosNormais.push("Conta no pacote");
     }
@@ -741,8 +772,8 @@ function renderPacotesAluno() {
         `Pacote ativo em andamento. Ainda restam ${restantes} aula(s).`;
     }
 
-    if (aulasPacoteExpandido) {
-      renderAulasDoPacote();
+    if (aulasPacoteExpandido && pacoteSelecionadoParaAulas) {
+      renderAulasDoPacote(pacoteSelecionadoParaAulas);
     }
   }
 
@@ -769,7 +800,7 @@ function renderHistoricoPacotes() {
           : "#b71c1c";
 
     return `
-      <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
+      <div class="card-pacote-historico">
         <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
           <strong>
             ${escaparHtml(pacote.status === "Ativo" ? "Pacote ativo" : "Pacote")}
@@ -805,13 +836,31 @@ function renderHistoricoPacotes() {
               </div>`
             : ""
         }
+
+        <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+          <button
+            type="button"
+            class="btn-cinza-pacote btn-ver-aulas-historico-pacote"
+            data-pacote-id="${pacote.id}"
+          >
+            Ver aulas
+          </button>
+        </div>
       </div>
     `;
   }).join("");
+
+  document.querySelectorAll(".btn-ver-aulas-historico-pacote").forEach((btn) => {
+    btn.onclick = () => {
+      const pacoteId = Number(btn.dataset.pacoteId);
+      visualizarAulasDeUmPacote(pacoteId);
+    };
+  });
 }
 
 function esconderAulasDoPacote() {
   aulasPacoteExpandido = false;
+  pacoteSelecionadoParaAulas = null;
 
   if (boxAulasPacote) {
     boxAulasPacote.style.display = "none";
@@ -819,6 +868,10 @@ function esconderAulasDoPacote() {
 
   if (btnVerAulasPacote) {
     btnVerAulasPacote.textContent = "Ver aulas do pacote ativo";
+  }
+
+  if (tituloAulasPacote) {
+    tituloAulasPacote.textContent = "Aulas do pacote";
   }
 
   if (listaAulasPacote) {
@@ -832,30 +885,64 @@ function alternarAulasDoPacote() {
     return;
   }
 
-  aulasPacoteExpandido = !aulasPacoteExpandido;
-
-  if (aulasPacoteExpandido) {
-    renderAulasDoPacote();
-    btnVerAulasPacote.textContent = "Ocultar aulas do pacote";
-    boxAulasPacote.style.display = "block";
-  } else {
+  if (
+    aulasPacoteExpandido &&
+    pacoteSelecionadoParaAulas &&
+    Number(pacoteSelecionadoParaAulas.id) === Number(pacoteAtivoAtual.id)
+  ) {
     esconderAulasDoPacote();
-  }
-}
-
-function renderAulasDoPacote() {
-  if (!pacoteAtivoAtual || !listaAulasPacote) return;
-
-  const aulasConsumidas = obterAulasConsumidasNoPacote(pacoteAtivoAtual);
-
-  if (!aulasConsumidas.length) {
-    listaAulasPacote.innerHTML =
-      `<p style="font-size:13px; opacity:0.85;">Nenhuma aula consumida neste pacote ainda.</p>`;
     return;
   }
 
-  listaAulasPacote.innerHTML = aulasConsumidas.map((aula, index) => {
-    const tipoConsumo = obterTipoConsumoPacote(aula);
+  visualizarAulasDeUmPacote(pacoteAtivoAtual.id);
+}
+
+function visualizarAulasDeUmPacote(pacoteId) {
+  const pacote = pacotesAluno.find((item) => Number(item.id) === Number(pacoteId));
+
+  if (!pacote) {
+    mostrarMensagem("Pacote não encontrado.", false);
+    return;
+  }
+
+  pacoteSelecionadoParaAulas = pacote;
+  aulasPacoteExpandido = true;
+
+  renderAulasDoPacote(pacote);
+
+  if (boxAulasPacote) {
+    boxAulasPacote.style.display = "block";
+    boxAulasPacote.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  if (btnVerAulasPacote) {
+    btnVerAulasPacote.textContent =
+      Number(pacote.id) === Number(pacoteAtivoAtual?.id)
+        ? "Ocultar aulas do pacote"
+        : "Ver aulas do pacote ativo";
+  }
+}
+
+function renderAulasDoPacote(pacote = pacoteSelecionadoParaAulas || pacoteAtivoAtual) {
+  if (!pacote || !listaAulasPacote) return;
+
+  const aulasDoPeriodo = obterAulasDoPeriodoDoPacote(pacote);
+  const aulasQueContam = aulasDoPeriodo.filter((aula) => aulaConsomePacote(aula)).length;
+  const total = Number(pacote.quantidade_aulas || 36);
+
+  if (tituloAulasPacote) {
+    tituloAulasPacote.textContent =
+      `Aulas do pacote iniciado em ${formatarDataBR(pacote.data_inicio)} (${aulasQueContam}/${total})`;
+  }
+
+  if (!aulasDoPeriodo.length) {
+    listaAulasPacote.innerHTML =
+      `<p style="font-size:13px; opacity:0.85;">Nenhuma aula encontrada dentro do período deste pacote.</p>`;
+    return;
+  }
+
+  listaAulasPacote.innerHTML = aulasDoPeriodo.map((aula, index) => {
+    const contaNoPacote = aulaConsomePacote(aula);
     const dataBR = formatarDataBR(aula.data_aula);
     const modulo = aula.modulo?.nome || "Sem módulo";
     const professor = aula.professor?.nome || "Professor";
@@ -864,13 +951,29 @@ function renderAulasDoPacote() {
     const parte = textoParte(aula.parte);
     const justificativa = aula.justificativa?.trim() || "";
 
+    let textoBadge = "";
+    let classeBadge = "";
+
+    if (contaNoPacote) {
+      textoBadge = "Conta no pacote";
+      classeBadge = "badge-conta-pacote";
+    } else if (normalizarTexto(aula.status) === "reposicao") {
+      textoBadge = "Reposição não conta";
+      classeBadge = "badge-nao-conta-pacote";
+    }
+
     return `
       <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
         <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
           <strong>${index + 1}. ${escaparHtml(dataBR)} — ${escaparHtml(status)}</strong>
-          <span style="font-size:12px; font-weight:700;">
-            ${escaparHtml(tipoConsumo)}
-          </span>
+
+          ${
+            textoBadge
+              ? `<span class="badge-pacote ${classeBadge}">
+                  ${escaparHtml(textoBadge)}
+                </span>`
+              : ""
+          }
         </div>
 
         <div style="font-size:13px; margin-top:4px;">
@@ -888,10 +991,75 @@ function renderAulasDoPacote() {
               </div>`
             : ""
         }
+
+        ${
+          aula.precisa_reposicao
+            ? `<div style="font-size:12px; opacity:0.85; margin-top:4px;">
+                Solicitou reposição
+              </div>`
+            : ""
+        }
       </div>
     `;
   }).join("");
 }
+
+// ===============================
+// REPOSIÇÕES PENDENTES
+// ===============================
+
+function renderReposicoesPendentes(aulas) {
+  if (!listaReposicoesPendentes) return;
+
+  const reposicoesPendentes = obterReposicoesPendentes(aulas);
+
+  if (totalReposicoesPendentes) {
+    totalReposicoesPendentes.textContent = `${reposicoesPendentes.length} pendente(s)`;
+  }
+
+  if (!reposicoesPendentes.length) {
+    listaReposicoesPendentes.innerHTML =
+      `<p style="font-size:13px; opacity:0.85; margin:0;">Nenhuma reposição pendente para este aluno neste curso.</p>`;
+    return;
+  }
+
+  listaReposicoesPendentes.innerHTML = reposicoesPendentes.map((aula) => {
+    const cobranca = obterSituacaoCobrancaReposicao(aula);
+    const dataBR = formatarDataBR(aula.data_aula);
+    const status = aula.status || "-";
+    const modulo = aula.modulo?.nome || "Sem módulo";
+    const professor = aula.professor?.nome || "Professor";
+    const parte = textoParte(aula.parte);
+    const justificativa = aula.justificativa?.trim() || "Sem motivo informado";
+    const classeBadge = cobranca.paga ? "badge-reposicao-paga" : "badge-reposicao-gratuita";
+
+    return `
+      <div class="card-reposicao-pendente">
+        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;">
+          <div>
+            <strong>${escaparHtml(dataBR)} — ${escaparHtml(status)}</strong>
+
+            <div style="font-size:12px; opacity:0.85; margin-top:4px;">
+              ${escaparHtml(modulo)} • ${escaparHtml(parte)} • Prof(a). ${escaparHtml(professor)}
+            </div>
+          </div>
+
+          <span class="badge-pacote ${classeBadge}">
+            ${escaparHtml(cobranca.texto)}
+          </span>
+        </div>
+
+        <div style="font-size:12px; opacity:0.9; margin-top:6px;">
+          Motivo/justificativa: ${escaparHtml(justificativa)}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// ===============================
+// ENCERRAR PACOTE
+// ===============================
 
 async function encerrarPacoteAtivo() {
   if (!pacoteAtivoAtual) {
@@ -1100,6 +1268,7 @@ async function init() {
   todasAulas = await carregarAulas();
 
   preencherContadores(todasAulas);
+  renderReposicoesPendentes(todasAulas);
   atualizarRenderAulas();
 
   await carregarPacotesDoAluno(cabecalho.aluno_id, cabecalho.materia_id);
