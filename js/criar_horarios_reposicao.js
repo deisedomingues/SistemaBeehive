@@ -11,6 +11,9 @@ const addHorarioBtn = document.getElementById("addHorario");
 const form = document.getElementById("formHorario");
 const msg = document.getElementById("msg");
 
+// =============================
+// Mensagem
+// =============================
 function mostrarMensagem(texto, erro = false) {
   msg.textContent = texto;
   msg.style.color = erro ? "#b42318" : "#027a48";
@@ -22,6 +25,9 @@ function mostrarMensagem(texto, erro = false) {
   }, 4000);
 }
 
+// =============================
+// Data de amanhã
+// =============================
 function obterDataAmanhaISO() {
   const hoje = new Date();
   hoje.setDate(hoje.getDate() + 1);
@@ -39,6 +45,18 @@ function definirDataAmanha() {
   dataInput.min = amanha;
 }
 
+// =============================
+// Estado inicial do select de curso
+// =============================
+function limparSelectMaterias(texto = "Escolha primeiro o professor") {
+  materiaSelect.innerHTML = `<option value="">${texto}</option>`;
+  materiaSelect.value = "";
+  materiaSelect.disabled = true;
+}
+
+// =============================
+// Carregar professores
+// =============================
 async function carregarProfessores() {
   const { data, error } = await supabase
     .from("professor")
@@ -62,28 +80,83 @@ async function carregarProfessores() {
   });
 }
 
-async function carregarMaterias() {
-  const { data, error } = await supabase
-    .from("materia")
-    .select("id, nome")
-    .order("nome");
+// =============================
+// Buscar cursos vinculados ao professor
+// pela tabela professor_materia
+// =============================
+async function carregarMateriasDoProfessor(professorId) {
+  limparSelectMaterias("Carregando cursos...");
 
-  if (error) {
-    console.error("Erro ao carregar cursos:", error);
-    mostrarMensagem("Erro ao carregar cursos.", true);
+  if (!professorId) {
+    limparSelectMaterias("Escolha primeiro o professor");
     return;
   }
 
-  materiaSelect.innerHTML = `<option value="">Escolha o curso</option>`;
+  const { data, error } = await supabase
+    .from("professor_materia")
+    .select(`
+      id,
+      professor_id,
+      materia_id,
+      materia:materia_id (
+        id,
+        nome
+      )
+    `)
+    .eq("professor_id", professorId);
 
-  (data || []).forEach((m) => {
+  if (error) {
+    console.error("Erro ao carregar cursos do professor:", error);
+    limparSelectMaterias("Erro ao carregar cursos");
+    mostrarMensagem("Erro ao carregar os cursos deste professor.", true);
+    return;
+  }
+
+  const cursos = (data || [])
+    .filter((item) => item.materia)
+    .map((item) => ({
+      id: item.materia.id,
+      nome: item.materia.nome
+    }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+  if (!cursos.length) {
+    limparSelectMaterias("Professor sem curso vinculado");
+    mostrarMensagem(
+      "Este professor não possui curso vinculado em professor_materia.",
+      true
+    );
+    return;
+  }
+
+  materiaSelect.innerHTML = "";
+
+  cursos.forEach((curso) => {
     const option = document.createElement("option");
-    option.value = m.id;
-    option.textContent = m.nome;
+    option.value = curso.id;
+    option.textContent = curso.nome;
     materiaSelect.appendChild(option);
   });
+
+  if (cursos.length === 1) {
+    materiaSelect.value = String(cursos[0].id);
+    materiaSelect.disabled = true;
+
+    mostrarMensagem(
+      `Curso selecionado automaticamente: ${cursos[0].nome}.`
+    );
+    return;
+  }
+
+  materiaSelect.disabled = false;
+
+  materiaSelect.innerHTML = `<option value="">Escolha o curso</option>` + materiaSelect.innerHTML;
+  materiaSelect.value = "";
 }
 
+// =============================
+// Criar linha de horário
+// =============================
 function criarLinhaHorario(horaSugerida = "") {
   const div = document.createElement("div");
   div.className = "linha-horario-reposicao";
@@ -140,6 +213,9 @@ function criarLinhaHorario(horaSugerida = "") {
   horariosContainer.appendChild(div);
 }
 
+// =============================
+// Sugerir próximo horário
+// =============================
 function sugerirProximoHorario() {
   const horariosFim = document.querySelectorAll(".horaFim");
 
@@ -148,6 +224,9 @@ function sugerirProximoHorario() {
   return horariosFim[horariosFim.length - 1].value || "";
 }
 
+// =============================
+// Coletar horários do formulário
+// =============================
 function coletarHorariosDoFormulario() {
   const horasInicio = document.querySelectorAll(".horaInicio");
   const horasFim = document.querySelectorAll(".horaFim");
@@ -166,6 +245,11 @@ function coletarHorariosDoFormulario() {
   return horarios;
 }
 
+// =============================
+// Remover duplicados internos
+// Exemplo: se colocou 14:00 duas vezes,
+// salva só uma vez.
+// =============================
 function removerDuplicadosInternos(horarios) {
   const vistos = new Set();
   const resultado = [];
@@ -182,6 +266,9 @@ function removerDuplicadosInternos(horarios) {
   return resultado;
 }
 
+// =============================
+// Buscar horários já existentes
+// =============================
 async function buscarHorariosJaExistentes({ professorId, materiaId, data }) {
   const { data: existentes, error } = await supabase
     .from("horarios_reposicao")
@@ -198,10 +285,44 @@ async function buscarHorariosJaExistentes({ professorId, materiaId, data }) {
   return existentes || [];
 }
 
+// =============================
+// Conferir se o professor realmente dá o curso
+// Segurança extra antes de salvar
+// =============================
+async function professorDaMateria(professorId, materiaId) {
+  const { data, error } = await supabase
+    .from("professor_materia")
+    .select("id")
+    .eq("professor_id", professorId)
+    .eq("materia_id", materiaId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Erro ao conferir vínculo professor/matéria:", error);
+    throw error;
+  }
+
+  return !!data;
+}
+
+// =============================
+// Troca de professor
+// =============================
+professorSelect.addEventListener("change", async () => {
+  const professorId = professorSelect.value;
+  await carregarMateriasDoProfessor(professorId);
+});
+
+// =============================
+// Adicionar horário
+// =============================
 addHorarioBtn.addEventListener("click", () => {
   criarLinhaHorario(sugerirProximoHorario());
 });
 
+// =============================
+// Salvar horários
+// =============================
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -209,9 +330,17 @@ form.addEventListener("submit", async (e) => {
   const materiaId = materiaSelect.value;
   const data = dataInput.value;
 
-  if (!professorId) return mostrarMensagem("Selecione o professor.", true);
-  if (!materiaId) return mostrarMensagem("Selecione o curso.", true);
-  if (!data) return mostrarMensagem("Selecione a data.", true);
+  if (!professorId) {
+    return mostrarMensagem("Selecione o professor.", true);
+  }
+
+  if (!materiaId) {
+    return mostrarMensagem("Selecione o curso.", true);
+  }
+
+  if (!data) {
+    return mostrarMensagem("Selecione a data.", true);
+  }
 
   const amanha = obterDataAmanhaISO();
 
@@ -235,6 +364,15 @@ form.addEventListener("submit", async (e) => {
   }
 
   try {
+    const vinculoExiste = await professorDaMateria(professorId, materiaId);
+
+    if (!vinculoExiste) {
+      return mostrarMensagem(
+        "Este professor não está vinculado a este curso. Verifique o cadastro do professor.",
+        true
+      );
+    }
+
     const existentes = await buscarHorariosJaExistentes({
       professorId,
       materiaId,
@@ -242,7 +380,11 @@ form.addEventListener("submit", async (e) => {
     });
 
     const chavesExistentes = new Set(
-      existentes.map((h) => `${String(h.hora_inicio).slice(0, 5)}-${String(h.hora_fim).slice(0, 5)}`)
+      existentes.map((h) => {
+        const inicio = String(h.hora_inicio).slice(0, 5);
+        const fim = String(h.hora_fim).slice(0, 5);
+        return `${inicio}-${fim}`;
+      })
     );
 
     const horariosNovos = horarios.filter((h) => {
@@ -251,7 +393,10 @@ form.addEventListener("submit", async (e) => {
     });
 
     if (!horariosNovos.length) {
-      return mostrarMensagem("Todos os horários informados já existem para este professor, curso e data.", true);
+      return mostrarMensagem(
+        "Todos os horários informados já existem para este professor, curso e data.",
+        true
+      );
     }
 
     const registros = horariosNovos.map((h) => ({
@@ -276,11 +421,16 @@ form.addEventListener("submit", async (e) => {
 
     mostrarMensagem(`${registros.length} horário(s) salvo(s) com sucesso!`);
 
+    const professorSelecionadoAposSalvar = professorId;
+
     form.reset();
     horariosContainer.innerHTML = "";
 
     definirDataAmanha();
     criarLinhaHorario();
+
+    professorSelect.value = professorSelecionadoAposSalvar;
+    await carregarMateriasDoProfessor(professorSelecionadoAposSalvar);
 
   } catch (error) {
     console.error("Erro geral ao salvar horários:", error);
@@ -288,6 +438,9 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
+// =============================
+// ENTER cria novo horário
+// =============================
 form.addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;
 
@@ -314,7 +467,10 @@ form.addEventListener("keydown", (e) => {
   }, 50);
 });
 
+// =============================
+// Iniciar
+// =============================
+limparSelectMaterias();
 carregarProfessores();
-carregarMaterias();
 definirDataAmanha();
 criarLinhaHorario();
