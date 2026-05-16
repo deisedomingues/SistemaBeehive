@@ -11,9 +11,6 @@ const addHorarioBtn = document.getElementById("addHorario");
 const form = document.getElementById("formHorario");
 const msg = document.getElementById("msg");
 
-// =============================
-// Mensagem
-// =============================
 function mostrarMensagem(texto, erro = false) {
   msg.textContent = texto;
   msg.style.color = erro ? "#b42318" : "#027a48";
@@ -25,9 +22,6 @@ function mostrarMensagem(texto, erro = false) {
   }, 4000);
 }
 
-// =============================
-// Data de amanhã
-// =============================
 function obterDataAmanhaISO() {
   const hoje = new Date();
   hoje.setDate(hoje.getDate() + 1);
@@ -45,18 +39,12 @@ function definirDataAmanha() {
   dataInput.min = amanha;
 }
 
-// =============================
-// Estado inicial do select de curso
-// =============================
 function limparSelectMaterias(texto = "Escolha primeiro o professor") {
   materiaSelect.innerHTML = `<option value="">${texto}</option>`;
   materiaSelect.value = "";
   materiaSelect.disabled = true;
 }
 
-// =============================
-// Carregar professores
-// =============================
 async function carregarProfessores() {
   const { data, error } = await supabase
     .from("professor")
@@ -80,10 +68,6 @@ async function carregarProfessores() {
   });
 }
 
-// =============================
-// Buscar cursos vinculados ao professor
-// pela tabela professor_materia
-// =============================
 async function carregarMateriasDoProfessor(professorId) {
   limparSelectMaterias("Carregando cursos...");
 
@@ -133,7 +117,7 @@ async function carregarMateriasDoProfessor(professorId) {
 
   cursos.forEach((curso) => {
     const option = document.createElement("option");
-    option.value = curso.id;
+    option.value = String(curso.id);
     option.textContent = curso.nome;
     materiaSelect.appendChild(option);
   });
@@ -141,22 +125,15 @@ async function carregarMateriasDoProfessor(professorId) {
   if (cursos.length === 1) {
     materiaSelect.value = String(cursos[0].id);
     materiaSelect.disabled = true;
-
-    mostrarMensagem(
-      `Curso selecionado automaticamente: ${cursos[0].nome}.`
-    );
+    mostrarMensagem(`Curso selecionado automaticamente: ${cursos[0].nome}.`);
     return;
   }
 
   materiaSelect.disabled = false;
-
   materiaSelect.innerHTML = `<option value="">Escolha o curso</option>` + materiaSelect.innerHTML;
   materiaSelect.value = "";
 }
 
-// =============================
-// Criar linha de horário
-// =============================
 function criarLinhaHorario(horaSugerida = "") {
   const div = document.createElement("div");
   div.className = "linha-horario-reposicao";
@@ -213,9 +190,6 @@ function criarLinhaHorario(horaSugerida = "") {
   horariosContainer.appendChild(div);
 }
 
-// =============================
-// Sugerir próximo horário
-// =============================
 function sugerirProximoHorario() {
   const horariosFim = document.querySelectorAll(".horaFim");
 
@@ -224,9 +198,6 @@ function sugerirProximoHorario() {
   return horariosFim[horariosFim.length - 1].value || "";
 }
 
-// =============================
-// Coletar horários do formulário
-// =============================
 function coletarHorariosDoFormulario() {
   const horasInicio = document.querySelectorAll(".horaInicio");
   const horasFim = document.querySelectorAll(".horaFim");
@@ -245,11 +216,6 @@ function coletarHorariosDoFormulario() {
   return horarios;
 }
 
-// =============================
-// Remover duplicados internos
-// Exemplo: se colocou 14:00 duas vezes,
-// salva só uma vez.
-// =============================
 function removerDuplicadosInternos(horarios) {
   const vistos = new Set();
   const resultado = [];
@@ -266,9 +232,6 @@ function removerDuplicadosInternos(horarios) {
   return resultado;
 }
 
-// =============================
-// Buscar horários já existentes
-// =============================
 async function buscarHorariosJaExistentes({ professorId, materiaId, data }) {
   const { data: existentes, error } = await supabase
     .from("horarios_reposicao")
@@ -285,10 +248,6 @@ async function buscarHorariosJaExistentes({ professorId, materiaId, data }) {
   return existentes || [];
 }
 
-// =============================
-// Conferir se o professor realmente dá o curso
-// Segurança extra antes de salvar
-// =============================
 async function professorDaMateria(professorId, materiaId) {
   const { data, error } = await supabase
     .from("professor_materia")
@@ -305,24 +264,15 @@ async function professorDaMateria(professorId, materiaId) {
   return !!data;
 }
 
-// =============================
-// Troca de professor
-// =============================
 professorSelect.addEventListener("change", async () => {
   const professorId = professorSelect.value;
   await carregarMateriasDoProfessor(professorId);
 });
 
-// =============================
-// Adicionar horário
-// =============================
 addHorarioBtn.addEventListener("click", () => {
   criarLinhaHorario(sugerirProximoHorario());
 });
 
-// =============================
-// Salvar horários
-// =============================
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -422,6 +372,7 @@ form.addEventListener("submit", async (e) => {
     mostrarMensagem(`${registros.length} horário(s) salvo(s) com sucesso!`);
 
     const professorSelecionadoAposSalvar = professorId;
+    const materiaSelecionadaAposSalvar = materiaId;
 
     form.reset();
     horariosContainer.innerHTML = "";
@@ -431,6 +382,7 @@ form.addEventListener("submit", async (e) => {
 
     professorSelect.value = professorSelecionadoAposSalvar;
     await carregarMateriasDoProfessor(professorSelecionadoAposSalvar);
+    materiaSelect.value = materiaSelecionadaAposSalvar;
 
   } catch (error) {
     console.error("Erro geral ao salvar horários:", error);
@@ -438,9 +390,6 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
-// =============================
-// ENTER cria novo horário
-// =============================
 form.addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;
 
@@ -467,9 +416,6 @@ form.addEventListener("keydown", (e) => {
   }, 50);
 });
 
-// =============================
-// Iniciar
-// =============================
 limparSelectMaterias();
 carregarProfessores();
 definirDataAmanha();
