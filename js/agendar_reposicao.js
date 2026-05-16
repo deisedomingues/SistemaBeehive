@@ -56,6 +56,11 @@ function formatarDataBR(dataISO) {
   return `${dia}/${mes}/${ano}`;
 }
 
+function formatarHora(hora) {
+  if (!hora) return "";
+  return String(hora).slice(0, 5);
+}
+
 function textoStatusBonito(status) {
   if (!status) return "Aula";
 
@@ -63,6 +68,7 @@ function textoStatusBonito(status) {
 
   if (s === "ausente") return "Ausente";
   if (s === "cancelada") return "Cancelada";
+  if (s === "trancada") return "Trancada";
 
   return status;
 }
@@ -87,6 +93,7 @@ function salvarMatriculaSelecionada(matricula) {
   localStorage.setItem("matriculaSelecionadaId", String(matricula.id));
   localStorage.setItem("materiaSelecionadaId", String(matricula.materia_id || ""));
   localStorage.setItem("moduloSelecionadoId", String(matricula.modulo_id || ""));
+  localStorage.setItem("professorSelecionadoId", String(matricula.professor_id || ""));
   localStorage.setItem("nomeCursoSelecionado", montarNomeCurso(matricula));
 }
 
@@ -188,7 +195,9 @@ function atualizarAlertaCobranca() {
     return;
   }
 
-  const aulaSelecionada = aulasPendentes.find((a) => a.id === aulaSelecionadaId);
+  const aulaSelecionada = aulasPendentes.find(
+    (a) => Number(a.id) === Number(aulaSelecionadaId)
+  );
 
   if (!aulaSelecionada) {
     alertaCobrancaReposicao.style.display = "none";
@@ -275,8 +284,13 @@ function preencherSelectMatriculas() {
 
   if (matriculaSelecionada?.id) {
     selectMatriculaReposicao.value = String(matriculaSelecionada.id);
+
+    const nomeProfessor = matriculaSelecionada?.professor?.nome
+      ? ` Professor: ${matriculaSelecionada.professor.nome}.`
+      : "";
+
     textoCursoReposicao.textContent =
-      `Você está visualizando as reposições do curso ${montarNomeCurso(matriculaSelecionada)}.`;
+      `Você está visualizando as reposições do curso ${montarNomeCurso(matriculaSelecionada)}.${nomeProfessor}`;
   } else {
     textoCursoReposicao.textContent = "Nenhum curso ativo encontrado.";
   }
@@ -313,6 +327,7 @@ async function buscarAluno() {
 
 // =============================
 // Buscar matrículas ativas
+// Agora também busca professor_id
 // =============================
 async function buscarMatriculasAtivas(alunoId) {
   const { data, error } = await supabase
@@ -322,6 +337,7 @@ async function buscarMatriculasAtivas(alunoId) {
       aluno_id,
       materia_id,
       modulo_id,
+      professor_id,
       ativa,
       materia:materia_id (
         id,
@@ -332,6 +348,10 @@ async function buscarMatriculasAtivas(alunoId) {
         nome,
         ordem,
         materia_id
+      ),
+      professor:professor_id (
+        id,
+        nome
       )
     `)
     .eq("aluno_id", alunoId)
@@ -354,7 +374,14 @@ async function buscarAulasPendentes(matriculaId) {
     .from("aula")
     .select("id, data_aula, status, justificativa, aula_gravada, precisa_reposicao")
     .eq("matricula_id", matriculaId)
-    .in("status", ["Ausente", "Cancelada", "ausente", "cancelada"])
+    .in("status", [
+      "Ausente",
+      "Cancelada",
+      "Trancada",
+      "ausente",
+      "cancelada",
+      "trancada"
+    ])
     .eq("precisa_reposicao", true)
     .order("data_aula", { ascending: true })
     .order("id", { ascending: true });
@@ -385,6 +412,7 @@ async function buscarAulasPendentes(matriculaId) {
 
     const elegivelPorStatus =
       statusNormalizado === "cancelada" ||
+      statusNormalizado === "trancada" ||
       (statusNormalizado === "ausente" && aula.aula_gravada === false);
 
     if (!elegivelPorStatus) return false;
@@ -398,20 +426,14 @@ async function buscarAulasPendentes(matriculaId) {
 // Buscar reposições ativas da matrícula
 // =============================
 async function buscarReposicoesAtivasDaMatricula(matriculaId) {
-  const { data, error } = await supabase
+  const { data: agendamentos, error } = await supabase
     .from("reposicao_agendada")
     .select(`
       id,
       aula_id,
       horario_reposicao_id,
       cancelado,
-      matricula_id,
-      horarios_reposicao (
-        id,
-        data,
-        hora_inicio,
-        hora_fim
-      )
+      matricula_id
     `)
     .eq("matricula_id", matriculaId)
     .eq("cancelado", false);
@@ -421,7 +443,34 @@ async function buscarReposicoesAtivasDaMatricula(matriculaId) {
     throw error;
   }
 
-  return data || [];
+  const lista = agendamentos || [];
+
+  if (!lista.length) return [];
+
+  const horariosIds = lista
+    .map((item) => item.horario_reposicao_id)
+    .filter(Boolean);
+
+  if (!horariosIds.length) return lista;
+
+  const { data: horarios, error: errorHorarios } = await supabase
+    .from("horarios_reposicao")
+    .select("id, data, hora_inicio, hora_fim")
+    .in("id", horariosIds);
+
+  if (errorHorarios) {
+    console.error("Erro ao buscar horários das reposições ativas:", errorHorarios);
+    throw errorHorarios;
+  }
+
+  const mapaHorarios = new Map(
+    (horarios || []).map((h) => [Number(h.id), h])
+  );
+
+  return lista.map((item) => ({
+    ...item,
+    horario: mapaHorarios.get(Number(item.horario_reposicao_id)) || null
+  }));
 }
 
 // =============================
@@ -454,7 +503,7 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
   `;
 
   aulasLivres.forEach((aula) => {
-    const selecionada = aula.id === aulaSelecionadaId;
+    const selecionada = Number(aula.id) === Number(aulaSelecionadaId);
     const status = textoStatusBonito(aula.status);
     const dataBR = formatarDataBR(aula.data_aula);
     const justificativa = textoJustificativa(aula.justificativa);
@@ -502,12 +551,12 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
     `;
 
     reposicoesAtivas.forEach((item) => {
-      const h = item.horarios_reposicao;
+      const h = item.horario;
       if (!h) return;
 
       html += `
         <li>
-          ${formatarDataBR(h.data)} - ${h.hora_inicio} às ${h.hora_fim}
+          ${formatarDataBR(h.data)} - ${formatarHora(h.hora_inicio)} às ${formatarHora(h.hora_fim)}
         </li>
       `;
     });
@@ -548,7 +597,9 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
 
       aulaSelecionadaId = aulaId;
 
-      const aulaEscolhida = aulasLivres.find((a) => a.id === aulaSelecionadaId);
+      const aulaEscolhida = aulasLivres.find(
+        (a) => Number(a.id) === Number(aulaSelecionadaId)
+      );
 
       if (aulaEscolhida) {
         const status = textoStatusBonito(aulaEscolhida.status);
@@ -593,27 +644,21 @@ async function carregarPendencias() {
 
 // =============================
 // Buscar horários livres
-// Agora horários com prazo encerrado NÃO aparecem na tela
+// CORREÇÃO PRINCIPAL:
+// agora busca pelo professor_id da matrícula
 // =============================
 async function buscarHorariosLivres() {
   const hoje = hojeISO();
 
-  const { data, error } = await supabase
+  if (!matriculaSelecionada?.professor_id) {
+    console.warn("Matrícula selecionada sem professor_id:", matriculaSelecionada);
+    return [];
+  }
+
+  const { data: horarios, error } = await supabase
     .from("horarios_reposicao")
-    .select(`
-      id,
-      data,
-      hora_inicio,
-      hora_fim,
-      disponivel,
-      professor (nome),
-      materia (nome),
-      reposicao_agendada (
-        id,
-        cancelado
-      )
-    `)
-    .eq("materia_id", matriculaSelecionada.materia_id)
+    .select("id, data, hora_inicio, hora_fim, disponivel, professor_id, materia_id")
+    .eq("professor_id", matriculaSelecionada.professor_id)
     .gte("data", hoje)
     .order("data", { ascending: true })
     .order("hora_inicio", { ascending: true });
@@ -623,21 +668,91 @@ async function buscarHorariosLivres() {
     throw error;
   }
 
-  return (data || []).filter((horario) => {
-    if (horario.disponivel === false) return false;
+  const listaHorarios = horarios || [];
 
-    // Aqui está o ajuste principal:
-    // se o prazo para agendar já passou, o horário nem aparece para o aluno.
-    if (!podeAgendarHorario(horario.data)) return false;
-
-    const temAgendamentoAtivo = (horario.reposicao_agendada || []).some(
-      (ag) => ag.cancelado === false
+  if (!listaHorarios.length) {
+    console.log(
+      "Nenhum horário encontrado para professor_id:",
+      matriculaSelecionada.professor_id
     );
+    return [];
+  }
 
-    if (temAgendamentoAtivo) return false;
+  const idsHorarios = listaHorarios.map((h) => h.id);
 
-    return true;
-  });
+  const { data: agendamentos, error: errorAgendamentos } = await supabase
+    .from("reposicao_agendada")
+    .select("id, horario_reposicao_id, cancelado")
+    .in("horario_reposicao_id", idsHorarios)
+    .eq("cancelado", false);
+
+  if (errorAgendamentos) {
+    console.error("Erro ao buscar agendamentos dos horários:", errorAgendamentos);
+    throw errorAgendamentos;
+  }
+
+  const horariosOcupados = new Set(
+    (agendamentos || []).map((ag) => Number(ag.horario_reposicao_id))
+  );
+
+  const professorIds = [
+    ...new Set(listaHorarios.map((h) => h.professor_id).filter(Boolean))
+  ];
+
+  const materiaIds = [
+    ...new Set(listaHorarios.map((h) => h.materia_id).filter(Boolean))
+  ];
+
+  let mapaProfessores = new Map();
+  let mapaMaterias = new Map();
+
+  if (professorIds.length) {
+    const { data: professores, error: errorProfessores } = await supabase
+      .from("professor")
+      .select("id, nome")
+      .in("id", professorIds);
+
+    if (errorProfessores) {
+      console.error("Erro ao buscar professores:", errorProfessores);
+      throw errorProfessores;
+    }
+
+    mapaProfessores = new Map(
+      (professores || []).map((p) => [Number(p.id), p.nome])
+    );
+  }
+
+  if (materiaIds.length) {
+    const { data: materias, error: errorMaterias } = await supabase
+      .from("materia")
+      .select("id, nome")
+      .in("id", materiaIds);
+
+    if (errorMaterias) {
+      console.error("Erro ao buscar matérias:", errorMaterias);
+      throw errorMaterias;
+    }
+
+    mapaMaterias = new Map(
+      (materias || []).map((m) => [Number(m.id), m.nome])
+    );
+  }
+
+  return listaHorarios
+    .filter((horario) => {
+      if (horario.disponivel === false) return false;
+
+      if (horariosOcupados.has(Number(horario.id))) return false;
+
+      if (!podeAgendarHorario(horario.data)) return false;
+
+      return true;
+    })
+    .map((horario) => ({
+      ...horario,
+      professor_nome: mapaProfessores.get(Number(horario.professor_id)) || "Não informado",
+      materia_nome: mapaMaterias.get(Number(horario.materia_id)) || "Não informado"
+    }));
 }
 
 // =============================
@@ -660,7 +775,9 @@ async function carregarHorariosDisponiveis() {
     return;
   }
 
-  const aulaSelecionada = aulasPendentes.find((a) => a.id === aulaSelecionadaId);
+  const aulaSelecionada = aulasPendentes.find(
+    (a) => Number(a.id) === Number(aulaSelecionadaId)
+  );
 
   if (!aulaSelecionada) {
     listaReposicoes.innerHTML = `<p>Selecione uma aula pendente.</p>`;
@@ -671,9 +788,10 @@ async function carregarHorariosDisponiveis() {
 
   if (!horariosLivres.length) {
     listaReposicoes.innerHTML = `
-      <p>Nenhum horário disponível no momento para este curso.</p>
+      <p>Nenhum horário disponível no momento para o professor deste curso.</p>
       <p style="margin-top:8px; opacity:0.8; font-size:14px;">
-        Horários cujo prazo de agendamento já foi encerrado não aparecem nesta lista.
+        Verifique se o horário foi cadastrado para o mesmo professor da matrícula do aluno
+        e se ainda está dentro do prazo de agendamento.
       </p>
     `;
     return;
@@ -693,9 +811,9 @@ async function carregarHorariosDisponiveis() {
 
     div.innerHTML = `
       <p><strong>Data:</strong> ${formatarDataBR(horario.data)}</p>
-      <p><strong>Horário:</strong> ${horario.hora_inicio} - ${horario.hora_fim}</p>
-      <p><strong>Professor:</strong> ${horario.professor?.nome || "Não informado"}</p>
-      <p><strong>Curso:</strong> ${horario.materia?.nome || "Não informado"}</p>
+      <p><strong>Horário:</strong> ${formatarHora(horario.hora_inicio)} - ${formatarHora(horario.hora_fim)}</p>
+      <p><strong>Professor:</strong> ${horario.professor_nome}</p>
+      <p><strong>Curso:</strong> ${horario.materia_nome}</p>
 
       <p class="prazo-agendamento">
         <strong>Prazo para agendar:</strong> ${formatarPrazoLimite(horario.data)}
@@ -756,7 +874,9 @@ function ativarEscolhaHorario() {
       btn.textContent = "Agendando...";
 
       try {
-        const aulaEscolhida = aulasPendentes.find((a) => a.id === aulaSelecionadaId);
+        const aulaEscolhida = aulasPendentes.find(
+          (a) => Number(a.id) === Number(aulaSelecionadaId)
+        );
 
         if (!aulaEscolhida) {
           mostrarMensagem("A aula selecionada não está mais disponível para reposição.", true);
@@ -772,15 +892,7 @@ function ativarEscolhaHorario() {
 
         const { data: horarioAtual, error: erroHorario } = await supabase
           .from("horarios_reposicao")
-          .select(`
-            id,
-            data,
-            disponivel,
-            reposicao_agendada (
-              id,
-              cancelado
-            )
-          `)
+          .select("id, data, disponivel, professor_id")
           .eq("id", horarioId)
           .maybeSingle();
 
@@ -788,20 +900,29 @@ function ativarEscolhaHorario() {
           throw erroHorario || new Error("Horário não encontrado.");
         }
 
-        // Segurança extra:
-        // mesmo que o aluno tenha aberto a tela antes do prazo acabar,
-        // o sistema confere novamente antes de salvar.
+        if (Number(horarioAtual.professor_id) !== Number(matriculaSelecionada.professor_id)) {
+          mostrarMensagem("Este horário não pertence ao professor deste curso.", true);
+          await carregarTudo();
+          return;
+        }
+
         if (!podeAgendarHorario(horarioAtual.data)) {
           mostrarMensagem("O prazo para agendar esta reposição já foi encerrado.", true);
           await carregarTudo();
           return;
         }
 
-        const horarioOcupado = (horarioAtual.reposicao_agendada || []).some(
-          (item) => item.cancelado === false
-        );
+        const { data: horarioJaAgendado, error: erroHorarioJaAgendado } = await supabase
+          .from("reposicao_agendada")
+          .select("id")
+          .eq("horario_reposicao_id", horarioId)
+          .eq("cancelado", false);
 
-        if (horarioAtual.disponivel === false || horarioOcupado) {
+        if (erroHorarioJaAgendado) {
+          throw erroHorarioJaAgendado;
+        }
+
+        if (horarioAtual.disponivel === false || horarioJaAgendado.length > 0) {
           mostrarMensagem("Este horário não está mais disponível.", true);
           await carregarTudo();
           return;
