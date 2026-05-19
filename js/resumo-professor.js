@@ -66,7 +66,7 @@ function mostrarMensagem(texto, ok = true) {
     msg.style.display = "none";
     msg.textContent = "";
     msg.className = "msg-resumo-professor";
-  }, 2500);
+  }, 3000);
 }
 
 function mostrarMensagemLocal(elementoReferencia, texto, ok = true) {
@@ -142,7 +142,20 @@ function escapeHtml(texto) {
 function formatarDataBR(dataISO) {
   if (!dataISO) return "Data não informada";
 
-  const [ano, mes, dia] = String(dataISO).split("-");
+  const texto = String(dataISO);
+
+  if (texto.includes("T")) {
+    const data = new Date(texto);
+
+    if (!Number.isNaN(data.getTime())) {
+      return data.toLocaleDateString("pt-BR");
+    }
+  }
+
+  const [ano, mes, dia] = texto.split("-");
+
+  if (!ano || !mes || !dia) return texto;
+
   return `${dia}/${mes}/${ano}`;
 }
 
@@ -155,7 +168,13 @@ function formatarDataHoraBR(dataISO) {
     return formatarDataBR(dataISO);
   }
 
-  return data.toLocaleDateString("pt-BR");
+  return data.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 
 function calcularIdade(dataNascimentoISO) {
@@ -227,6 +246,7 @@ function aulaValidaParaAvaliacao(aula) {
   if (status === "presente") return true;
   if (status === "ausente" && gravada) return true;
   if (status === "reposicao" && gravada) return true;
+  if (status === "reposição" && gravada) return true;
 
   return false;
 }
@@ -246,8 +266,12 @@ function statusContaComoAulaPedagogicaNoPeriodo(aula) {
     "presente",
     "ausente",
     "reposicao",
+    "reposição",
     "aula instrumental",
-    "plantao de duvidas"
+    "plantao de duvidas",
+    "plantão de duvidas",
+    "plantao de dúvidas",
+    "plantão de dúvidas"
   ].includes(status);
 }
 
@@ -343,7 +367,9 @@ function textoReposicaoAulaOriginal(aula) {
     return "aguardando reposição";
   }
 
-  if (normalizarTexto(aula?.status) !== "reposicao") return "";
+  if (normalizarTexto(aula?.status) !== "reposicao" && normalizarTexto(aula?.status) !== "reposição") {
+    return "";
+  }
 
   const original = aula?.aula_original;
 
@@ -1068,7 +1094,11 @@ function renderAniversariantesDoDia() {
   listaAniversariantesContainer.innerHTML = aniversariantes
     .map((aluno) => {
       const idade = calcularIdade(aluno.data_nascimento);
-      const textoIdade = idade !== null ? ` faz ${idade} ano(s) hoje.` : " faz aniversário hoje.";
+
+      const textoIdade =
+        idade !== null
+          ? ` faz ${idade} ano(s) hoje.`
+          : " faz aniversário hoje.";
 
       return `
         <div class="item-avaliacao-resumo">
@@ -1290,12 +1320,14 @@ function vincularBotoesEnviarAvaliacao() {
 
         if (resultado.jaExistia) {
           btn.textContent = "Já enviada";
+          mostrarMensagem("Esta avaliação já tinha sido enviada para o aluno.");
           mostrarMensagemLocal(
             btn,
             "Esta avaliação já tinha sido enviada para o aluno."
           );
         } else {
           btn.textContent = "Já enviada";
+          mostrarMensagem("Avaliação enviada!");
           mostrarMensagemLocal(btn, "Avaliação enviada!");
         }
 
@@ -1308,6 +1340,11 @@ function vincularBotoesEnviarAvaliacao() {
 
         btn.disabled = false;
         btn.textContent = textoOriginal;
+
+        mostrarMensagem(
+          "Não foi possível enviar a avaliação. Confira se o formulário está cadastrado no Supabase.",
+          false
+        );
 
         mostrarMensagemLocal(
           btn,
