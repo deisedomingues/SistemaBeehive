@@ -66,6 +66,7 @@ const btnExpandirAulas = document.getElementById("btnExpandirAulas");
 let todasNotas = [];
 let todasAulas = [];
 let eventosAluno = [];
+let avaliacoesAluno = [];
 let dadosCabecalho = null;
 let aulasExpandido = false;
 let reposicoesExpandido = false;
@@ -89,6 +90,8 @@ const STATUS = {
 // ===============================
 
 function mostrarMensagem(texto, ok = true) {
+  if (!msg) return;
+
   msg.textContent = texto;
   msg.style.display = "block";
   msg.style.backgroundColor = ok ? "#e8f5e9" : "#ffebee";
@@ -98,7 +101,7 @@ function mostrarMensagem(texto, ok = true) {
 
   setTimeout(() => {
     msg.style.display = "none";
-  }, 2200);
+  }, 2500);
 }
 
 function limparLista(el) {
@@ -108,8 +111,42 @@ function limparLista(el) {
 
 function formatarDataBR(dataISO) {
   if (!dataISO) return "-";
-  const [yyyy, mm, dd] = dataISO.split("-");
+
+  const texto = String(dataISO);
+
+  if (texto.includes("T")) {
+    const data = new Date(texto);
+
+    if (!Number.isNaN(data.getTime())) {
+      return data.toLocaleDateString("pt-BR");
+    }
+  }
+
+  const [yyyy, mm, dd] = texto.split("-");
+
+  if (!yyyy || !mm || !dd) {
+    return texto;
+  }
+
   return `${dd}/${mm}/${yyyy}`;
+}
+
+function formatarDataHoraBR(dataISO) {
+  if (!dataISO) return "-";
+
+  const data = new Date(dataISO);
+
+  if (Number.isNaN(data.getTime())) {
+    return formatarDataBR(dataISO);
+  }
+
+  return data.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 
 function hojeISO() {
@@ -130,7 +167,11 @@ function escaparHtml(texto) {
 }
 
 function normalizarTexto(valor) {
-  return String(valor || "").trim().toLowerCase();
+  return String(valor || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function ehAniversarioHoje(dataNascimento) {
@@ -179,7 +220,7 @@ function aulaContaComoValida(aula) {
 
   if (status === "presente" && gravada) return true;
   if (status === "ausente" && gravada) return true;
-  if ((status === "reposição" || status === "reposicao") && gravada) return true;
+  if ((status === "reposicao" || status === "reposição") && gravada) return true;
 
   return false;
 }
@@ -230,14 +271,6 @@ function contarAulasValidasDesdeUltimaAvaliacao() {
 
   return aulasValidas.filter((aula) => {
     const dataAula = String(aula.data_aula || "");
-
-    /*
-      Regra:
-      Depois que a avaliação é lançada, o contador pedagógico recomeça.
-      Como a tabela nota não está ligada a uma aula específica, usamos a data da nota
-      como ponto de corte. Se a avaliação for registrada no mesmo dia de uma aula,
-      essa aula não entra no próximo ciclo.
-    */
     return dataAula > dataUltimaAvaliacao;
   }).length;
 }
@@ -337,6 +370,142 @@ function obterTextoRodapeHistorico(aula, mapaAulas) {
   }
 
   return partes.join(" | ");
+}
+
+// ===============================
+// BLOCO DINÂMICO DE AVALIAÇÕES ENVIADAS
+// ===============================
+
+function obterOuCriarBlocoAvaliacoesEnviadas() {
+  let bloco = document.getElementById("blocoAvaliacoesEnviadasAluno");
+
+  if (bloco) return bloco;
+
+  bloco = document.createElement("section");
+  bloco.id = "blocoAvaliacoesEnviadasAluno";
+  bloco.className = "card";
+  bloco.style.marginBottom = "16px";
+
+  bloco.innerHTML = `
+    <h2>📝 Avaliações enviadas ao aluno</h2>
+    <p style="font-size:14px; opacity:0.9; margin-bottom:12px;">
+      Acompanhe as avaliações liberadas para este aluno e o status informado pelo sistema.
+    </p>
+    <div id="listaAvaliacoesEnviadasAluno">
+      <p style="font-size:14px;">Carregando avaliações enviadas...</p>
+    </div>
+  `;
+
+  const referencia =
+    document.getElementById("form-nota")?.closest("section") ||
+    document.getElementById("form-nota")?.closest(".card") ||
+    listaNotas?.closest("section") ||
+    listaNotas?.closest(".card");
+
+  if (referencia?.parentElement) {
+    referencia.parentElement.insertBefore(bloco, referencia);
+  } else {
+    document.querySelector("main")?.appendChild(bloco);
+  }
+
+  return bloco;
+}
+
+function textoStatusAvaliacaoAluno(avaliacao) {
+  if (avaliacao.status === "Pendente") {
+    return "Pendente — enviada ao aluno, aguardando realização.";
+  }
+
+  if (avaliacao.status === "Realizada pelo aluno") {
+    return "Realizada pelo aluno — aguardando conferência/correção e lançamento de nota.";
+  }
+
+  if (avaliacao.status === "Concluída") {
+    return "Concluída — nota lançada no sistema.";
+  }
+
+  if (avaliacao.status === "Cancelada") {
+    return "Cancelada.";
+  }
+
+  return avaliacao.status || "Status não informado.";
+}
+
+function tituloAvaliacaoAluno(avaliacao) {
+  const tituloFormulario = avaliacao?.avaliacao_formulario?.titulo;
+  const numero = avaliacao?.numero_avaliacao;
+
+  if (tituloFormulario) return tituloFormulario;
+  if (numero) return `Progress Check ${numero}`;
+
+  return "Avaliação";
+}
+
+function renderAvaliacoesEnviadasAluno() {
+  obterOuCriarBlocoAvaliacoesEnviadas();
+
+  const lista = document.getElementById("listaAvaliacoesEnviadasAluno");
+
+  if (!lista) return;
+
+  if (!avaliacoesAluno.length) {
+    lista.innerHTML = `
+      <p style="font-size:14px;">
+        Nenhuma avaliação foi enviada para este aluno até o momento.
+      </p>
+    `;
+    return;
+  }
+
+  const ordenadas = [...avaliacoesAluno].sort((a, b) => {
+    const dataA = String(a.enviado_em || "");
+    const dataB = String(b.enviado_em || "");
+
+    if (dataA !== dataB) return dataB.localeCompare(dataA);
+
+    return Number(b.id || 0) - Number(a.id || 0);
+  });
+
+  lista.innerHTML = ordenadas
+    .map((avaliacao) => {
+      const titulo = tituloAvaliacaoAluno(avaliacao);
+      const materia = avaliacao?.materia?.nome || dadosCabecalho?.materia?.nome || "Matéria";
+      const modulo = avaliacao?.modulo?.nome || dadosCabecalho?.modulo?.nome || "Módulo";
+      const enviadaEm = formatarDataHoraBR(avaliacao.enviado_em);
+      const realizadaEm = avaliacao.aluno_confirmou_realizacao_em
+        ? formatarDataHoraBR(avaliacao.aluno_confirmou_realizacao_em)
+        : "-";
+      const concluidaEm = avaliacao.concluida_em
+        ? formatarDataHoraBR(avaliacao.concluida_em)
+        : "-";
+
+      return `
+        <div style="padding:12px 0; border-bottom:1px solid #e6dfcf;">
+          <strong>${escaparHtml(titulo)} — ${escaparHtml(modulo)}</strong>
+
+          <p style="font-size:13px; margin:6px 0 4px 0;">
+            ${escaparHtml(materia)} • ${escaparHtml(modulo)}
+          </p>
+
+          <p style="font-size:13px; margin:4px 0;">
+            <b>Status:</b> ${escaparHtml(textoStatusAvaliacaoAluno(avaliacao))}
+          </p>
+
+          <p style="font-size:13px; margin:4px 0;">
+            <b>Enviada em:</b> ${escaparHtml(enviadaEm)}
+          </p>
+
+          <p style="font-size:13px; margin:4px 0;">
+            <b>Aluno informou realização em:</b> ${escaparHtml(realizadaEm)}
+          </p>
+
+          <p style="font-size:13px; margin:4px 0;">
+            <b>Concluída em:</b> ${escaparHtml(concluidaEm)}
+          </p>
+        </div>
+      `;
+    })
+    .join("");
 }
 
 // ===============================
@@ -580,6 +749,107 @@ function renderAulas(aulasOriginais) {
 function atualizarRenderAulas() {
   const aulasFiltradas = obterAulasFiltradas();
   renderAulas(aulasFiltradas);
+}
+
+// ===============================
+// AVALIAÇÕES ENVIADAS
+// ===============================
+
+async function carregarAvaliacoesAluno() {
+  const { data, error } = await supabase
+    .from("avaliacao_aluno")
+    .select(`
+      id,
+      aluno_id,
+      matricula_id,
+      materia_id,
+      modulo_id,
+      avaliacao_formulario_id,
+      numero_avaliacao,
+      status,
+      enviado_em,
+      visualizado,
+      concluida_em,
+      aluno_confirmou_realizacao_em,
+      observacao,
+      materia:materia_id (
+        id,
+        nome
+      ),
+      modulo:modulo_id (
+        id,
+        nome,
+        ordem
+      ),
+      avaliacao_formulario:avaliacao_formulario_id (
+        id,
+        titulo,
+        link_formulario
+      )
+    `)
+    .eq("matricula_id", matriculaId)
+    .order("enviado_em", { ascending: false });
+
+  if (error) {
+    console.error("Erro ao carregar avaliações enviadas:", error);
+    avaliacoesAluno = [];
+    renderAvaliacoesEnviadasAluno();
+    return;
+  }
+
+  avaliacoesAluno = data || [];
+  renderAvaliacoesEnviadasAluno();
+}
+
+async function marcarAvaliacaoComoConcluidaAposNota(moduloId, tipoNota) {
+  const tipo = normalizarTexto(tipoNota);
+
+  if (!tipo.includes("avalia")) {
+    return;
+  }
+
+  const modulo = Number(moduloId || 0);
+
+  if (!modulo) return;
+
+  const avaliacoesAbertas = avaliacoesAluno
+    .filter((avaliacao) => {
+      const mesmoModulo = Number(avaliacao.modulo_id || 0) === modulo;
+      const aberta =
+        avaliacao.status === "Pendente" ||
+        avaliacao.status === "Realizada pelo aluno";
+
+      return mesmoModulo && aberta;
+    })
+    .sort((a, b) => {
+      const numeroA = Number(a.numero_avaliacao || 0);
+      const numeroB = Number(b.numero_avaliacao || 0);
+
+      if (numeroA !== numeroB) return numeroA - numeroB;
+
+      return Number(a.id || 0) - Number(b.id || 0);
+    });
+
+  const avaliacaoParaConcluir = avaliacoesAbertas[0];
+
+  if (!avaliacaoParaConcluir) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("avaliacao_aluno")
+    .update({
+      status: "Concluída",
+      concluida_em: new Date().toISOString()
+    })
+    .eq("id", avaliacaoParaConcluir.id);
+
+  if (error) {
+    console.warn("Nota salva, mas não foi possível marcar avaliação como concluída:", error.message);
+    return;
+  }
+
+  await carregarAvaliacoesAluno();
 }
 
 // ===============================
@@ -967,6 +1237,8 @@ formNota.addEventListener("submit", async (e) => {
     return;
   }
 
+  await marcarAvaliacaoComoConcluidaAposNota(moduloId, tipo);
+
   mostrarMensagem("Nota salva!");
 
   formNota.reset();
@@ -974,6 +1246,7 @@ formNota.addEventListener("submit", async (e) => {
   notaTipo.value = "Avaliação";
 
   await carregarNotas();
+  await carregarAvaliacoesAluno();
 });
 
 // ===============================
@@ -999,6 +1272,7 @@ async function init() {
   atualizarRenderAulas();
   atualizarCardAulasValidasEAvaliacao();
 
+  await carregarAvaliacoesAluno();
   await carregarEventosAluno();
   await carregarNotas();
 }

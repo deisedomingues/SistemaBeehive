@@ -25,6 +25,8 @@ const textoResumoDuracaoPeriodo = document.getElementById("textoResumoDuracaoPer
 const listaAvaliacoesContainer = document.getElementById("listaAvaliacoesContainer");
 const btnToggleAvaliacoes = document.getElementById("btnToggleAvaliacoes");
 
+const listaAniversariantesContainer = document.getElementById("listaAniversariantesContainer");
+
 const listaAulasPeriodoContainer = document.getElementById("listaAulasPeriodoContainer");
 const btnToggleAulasPeriodo = document.getElementById("btnToggleAulasPeriodo");
 const btnExpandirAulasPeriodo = document.getElementById("btnExpandirAulasPeriodo");
@@ -43,6 +45,7 @@ let materiaIdsProfessor = [];
 let matriculasFiltradas = [];
 let aulasFiltradasProfessor = [];
 let notasDoSistema = [];
+let avaliacoesEnviadasDoSistema = [];
 let avaliacoesPendentesAtuais = [];
 
 let avaliacoesExpandidas = false;
@@ -141,6 +144,57 @@ function formatarDataBR(dataISO) {
 
   const [ano, mes, dia] = String(dataISO).split("-");
   return `${dia}/${mes}/${ano}`;
+}
+
+function formatarDataHoraBR(dataISO) {
+  if (!dataISO) return "data não informada";
+
+  const data = new Date(dataISO);
+
+  if (Number.isNaN(data.getTime())) {
+    return formatarDataBR(dataISO);
+  }
+
+  return data.toLocaleDateString("pt-BR");
+}
+
+function calcularIdade(dataNascimentoISO) {
+  if (!dataNascimentoISO) return null;
+
+  const hoje = new Date();
+  const nascimento = new Date(`${dataNascimentoISO}T00:00:00`);
+
+  if (Number.isNaN(nascimento.getTime())) return null;
+
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+
+  const mesAtual = hoje.getMonth();
+  const diaAtual = hoje.getDate();
+  const mesNascimento = nascimento.getMonth();
+  const diaNascimento = nascimento.getDate();
+
+  if (
+    mesAtual < mesNascimento ||
+    (mesAtual === mesNascimento && diaAtual < diaNascimento)
+  ) {
+    idade--;
+  }
+
+  return idade;
+}
+
+function ehAniversarianteHoje(dataNascimentoISO) {
+  if (!dataNascimentoISO) return false;
+
+  const hoje = new Date();
+  const nascimento = new Date(`${dataNascimentoISO}T00:00:00`);
+
+  if (Number.isNaN(nascimento.getTime())) return false;
+
+  return (
+    hoje.getDate() === nascimento.getDate() &&
+    hoje.getMonth() === nascimento.getMonth()
+  );
 }
 
 function ehNotaDeAvaliacao(nota) {
@@ -325,11 +379,12 @@ function ordenarAulasPorDataDesc(a, b) {
   return Number(b?.id || 0) - Number(a?.id || 0);
 }
 
+function chaveAvaliacao({ matriculaId, moduloId, numeroAvaliacao }) {
+  return `${Number(matriculaId)}-${Number(moduloId)}-${Number(numeroAvaliacao)}`;
+}
+
 /* =========================================================
    BUSCAS PAGINADAS
-
-   O Supabase pode devolver só o primeiro bloco de registros.
-   Então, para resumo geral do professor, precisamos buscar de 1000 em 1000.
 ========================================================= */
 async function buscarAulasPorPeriodoPaginado() {
   const inicio = dataInicio?.value || null;
@@ -463,6 +518,50 @@ async function buscarNotasDasMatriculasPaginado(idsMatriculas) {
   return todas;
 }
 
+async function buscarAvaliacoesAlunosPaginado(idsMatriculas) {
+  if (!idsMatriculas.length) return [];
+
+  const tamanhoPagina = 1000;
+  let pagina = 0;
+  let todas = [];
+
+  while (true) {
+    const from = pagina * tamanhoPagina;
+    const to = from + tamanhoPagina - 1;
+
+    const { data, error } = await supabase
+      .from("avaliacao_aluno")
+      .select(`
+        id,
+        aluno_id,
+        matricula_id,
+        materia_id,
+        modulo_id,
+        avaliacao_formulario_id,
+        numero_avaliacao,
+        status,
+        enviado_em,
+        aluno_confirmou_realizacao_em,
+        concluida_em,
+        visualizado
+      `)
+      .in("matricula_id", idsMatriculas)
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error) throw error;
+
+    const lote = data || [];
+    todas = todas.concat(lote);
+
+    if (lote.length < tamanhoPagina) break;
+
+    pagina++;
+  }
+
+  return todas;
+}
+
 /* =========================================================
    BUSCAS
 ========================================================= */
@@ -518,7 +617,8 @@ async function carregarMatriculasRelacionadas() {
       modulo_id,
       aluno:aluno_id (
         id,
-        nome
+        nome,
+        data_nascimento
       ),
       modulo:modulo_id (
         id,
@@ -628,6 +728,22 @@ async function carregarNotasSistema() {
   }
 }
 
+async function carregarAvaliacoesEnviadasSistema() {
+  const idsMatriculas = matriculasFiltradas.map((m) => Number(m.id));
+
+  if (!idsMatriculas.length) {
+    avaliacoesEnviadasDoSistema = [];
+    return;
+  }
+
+  try {
+    avaliacoesEnviadasDoSistema = await buscarAvaliacoesAlunosPaginado(idsMatriculas);
+  } catch (error) {
+    console.warn("Não foi possível carregar avaliações enviadas:", error.message);
+    avaliacoesEnviadasDoSistema = [];
+  }
+}
+
 /* =========================================================
    AVALIAÇÕES
 ========================================================= */
@@ -649,9 +765,13 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
 
     metaPorMatricula[mid] = {
       matriculaId,
+      alunoId: Number(m?.aluno?.id || 0),
       aluno: m?.aluno?.nome || "Aluno",
+      dataNascimento: m?.aluno?.data_nascimento || null,
       materia: m?.modulo?.materia?.nome || "Matéria",
-      modulo: m?.modulo?.nome || "Módulo"
+      materiaId: Number(m?.modulo?.materia?.id || m?.modulo?.materia_id || 0),
+      modulo: m?.modulo?.nome || "Módulo",
+      moduloId: Number(m?.modulo_id || 0)
     };
   });
 
@@ -685,6 +805,18 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
     avaliacoesPorMatricula[mid] = (avaliacoesPorMatricula[mid] || 0) + 1;
   });
 
+  const mapaEnvios = {};
+
+  avaliacoesEnviadasDoSistema.forEach((envio) => {
+    const chave = chaveAvaliacao({
+      matriculaId: envio.matricula_id,
+      moduloId: envio.modulo_id,
+      numeroAvaliacao: envio.numero_avaliacao
+    });
+
+    mapaEnvios[chave] = envio;
+  });
+
   const pendencias = [];
   const auditoria = [];
 
@@ -704,7 +836,9 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
       matriculaId,
       aluno: metaPorMatricula[mid]?.aluno || "Aluno",
       materia: metaPorMatricula[mid]?.materia || "Matéria",
+      materiaId: metaPorMatricula[mid]?.materiaId || 0,
       moduloAtual: metaPorMatricula[mid]?.modulo || "Módulo",
+      moduloId: metaPorMatricula[mid]?.moduloId || 0,
       aulasValidasModuloAtual: totalAulasValidas,
       avaliacoesLancadasModuloAtual: totalAvaliacoesLancadas,
       avaliacoesEsperadas,
@@ -715,14 +849,30 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
     if (avaliacoesPendentes <= 0) return;
 
     for (let i = 1; i <= avaliacoesPendentes; i++) {
+      const numeroAvaliacao = totalAvaliacoesLancadas + i;
+      const meta = metaPorMatricula[mid];
+
+      const chave = chaveAvaliacao({
+        matriculaId: meta?.matriculaId,
+        moduloId: meta?.moduloId,
+        numeroAvaliacao
+      });
+
+      const envio = mapaEnvios[chave] || null;
+
       pendencias.push({
-        matriculaId: metaPorMatricula[mid]?.matriculaId || null,
-        aluno: metaPorMatricula[mid]?.aluno || "Aluno",
-        materia: metaPorMatricula[mid]?.materia || "Matéria",
-        modulo: metaPorMatricula[mid]?.modulo || "Módulo",
-        avaliacao: `Avaliação ${totalAvaliacoesLancadas + i}`,
+        matriculaId: meta?.matriculaId || null,
+        alunoId: meta?.alunoId || null,
+        aluno: meta?.aluno || "Aluno",
+        materia: meta?.materia || "Matéria",
+        materiaId: meta?.materiaId || 0,
+        modulo: meta?.modulo || "Módulo",
+        moduloId: meta?.moduloId || 0,
+        numeroAvaliacao,
+        avaliacao: `Progress Check ${numeroAvaliacao}`,
         aulasValidas: totalAulasValidas,
-        avaliacoesLancadas: totalAvaliacoesLancadas
+        avaliacoesLancadas: totalAvaliacoesLancadas,
+        envio
       });
     }
   });
@@ -731,6 +881,124 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
   console.log("Auditoria de avaliações do professor:", auditoria);
 
   return pendencias;
+}
+
+async function buscarFormularioAvaliacao({ materiaId, moduloId, numeroAvaliacao }) {
+  if (!materiaId || !moduloId || !numeroAvaliacao) {
+    throw new Error("Dados insuficientes para localizar o formulário.");
+  }
+
+  const { data, error } = await supabase
+    .from("avaliacao_formulario")
+    .select("id, titulo, link_formulario")
+    .eq("materia_id", materiaId)
+    .eq("modulo_id", moduloId)
+    .eq("numero_avaliacao", numeroAvaliacao)
+    .eq("ativo", true)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data?.id) {
+    throw new Error("Nenhum formulário ativo encontrado para esta avaliação.");
+  }
+
+  return data;
+}
+
+async function enviarAvaliacaoParaAluno({
+  alunoId,
+  matriculaId,
+  materiaId,
+  moduloId,
+  numeroAvaliacao
+}) {
+  if (!alunoId || !matriculaId || !materiaId || !moduloId || !numeroAvaliacao) {
+    throw new Error("Dados insuficientes para enviar a avaliação.");
+  }
+
+  const formulario = await buscarFormularioAvaliacao({
+    materiaId,
+    moduloId,
+    numeroAvaliacao
+  });
+
+  const { data: existente, error: erroExistente } = await supabase
+    .from("avaliacao_aluno")
+    .select("id, status, enviado_em")
+    .eq("matricula_id", matriculaId)
+    .eq("modulo_id", moduloId)
+    .eq("numero_avaliacao", numeroAvaliacao)
+    .maybeSingle();
+
+  if (erroExistente) {
+    throw erroExistente;
+  }
+
+  if (existente && existente.status !== "Cancelada") {
+    return {
+      jaExistia: true,
+      formulario,
+      envio: existente
+    };
+  }
+
+  if (existente && existente.status === "Cancelada") {
+    const { data, error } = await supabase
+      .from("avaliacao_aluno")
+      .update({
+        aluno_id: alunoId,
+        matricula_id: matriculaId,
+        materia_id: materiaId,
+        modulo_id: moduloId,
+        avaliacao_formulario_id: formulario.id,
+        numero_avaliacao: numeroAvaliacao,
+        status: "Pendente",
+        enviado_por_professor_id: professorId,
+        enviado_em: new Date().toISOString(),
+        visualizado: false,
+        aluno_confirmou_realizacao_em: null,
+        concluida_em: null
+      })
+      .eq("id", existente.id)
+      .select("id, status, enviado_em")
+      .single();
+
+    if (error) throw error;
+
+    return {
+      jaExistia: false,
+      formulario,
+      envio: data
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("avaliacao_aluno")
+    .insert({
+      aluno_id: alunoId,
+      matricula_id: matriculaId,
+      materia_id: materiaId,
+      modulo_id: moduloId,
+      avaliacao_formulario_id: formulario.id,
+      numero_avaliacao: numeroAvaliacao,
+      status: "Pendente",
+      enviado_por_professor_id: professorId,
+      enviado_em: new Date().toISOString(),
+      visualizado: false
+    })
+    .select("id, status, enviado_em")
+    .single();
+
+  if (error) throw error;
+
+  return {
+    jaExistia: false,
+    formulario,
+    envio: data
+  };
 }
 
 /* =========================================================
@@ -772,6 +1040,44 @@ function renderSelectMatriculas() {
     opt.textContent = `${m.aluno?.nome || "Aluno"} — ${m.modulo?.materia?.nome || "Matéria"} (${m.modulo?.nome || "Módulo"})`;
     selectMatricula.appendChild(opt);
   });
+}
+
+function renderAniversariantesDoDia() {
+  if (!listaAniversariantesContainer) return;
+
+  const mapaAlunos = {};
+
+  matriculasFiltradas.forEach((m) => {
+    const aluno = m?.aluno;
+    if (!aluno?.id) return;
+
+    mapaAlunos[String(aluno.id)] = aluno;
+  });
+
+  const aniversariantes = Object.values(mapaAlunos)
+    .filter((aluno) => ehAniversarianteHoje(aluno.data_nascimento))
+    .sort((a, b) => String(a.nome || "").localeCompare(String(b.nome || "")));
+
+  if (!aniversariantes.length) {
+    listaAniversariantesContainer.innerHTML = criarParagrafoVazio(
+      "Nenhum aluno vinculado a você faz aniversário hoje."
+    );
+    return;
+  }
+
+  listaAniversariantesContainer.innerHTML = aniversariantes
+    .map((aluno) => {
+      const idade = calcularIdade(aluno.data_nascimento);
+      const textoIdade = idade !== null ? ` faz ${idade} ano(s) hoje.` : " faz aniversário hoje.";
+
+      return `
+        <div class="item-avaliacao-resumo">
+          <strong>🎂 ${escapeHtml(aluno.nome)}${escapeHtml(textoIdade)}</strong>
+          <p>Dê os parabéns! 🎉</p>
+        </div>
+      `;
+    })
+    .join("");
 }
 
 function renderVisaoGeralUnificada() {
@@ -878,7 +1184,48 @@ function renderVisaoGeralUnificada() {
   `;
 }
 
+function textoStatusEnvioAvaliacao(envio) {
+  if (!envio) return "";
+
+  if (envio.status === "Pendente") {
+    return `Avaliação enviada em ${formatarDataHoraBR(envio.enviado_em)}. Aguardando realização pelo aluno.`;
+  }
+
+  if (envio.status === "Realizada pelo aluno") {
+    return `O aluno informou que realizou em ${formatarDataHoraBR(envio.aluno_confirmou_realizacao_em)}. Aguardando correção/lançamento de nota.`;
+  }
+
+  if (envio.status === "Concluída") {
+    return "Avaliação concluída.";
+  }
+
+  if (envio.status === "Cancelada") {
+    return "Avaliação cancelada.";
+  }
+
+  return `Status: ${envio.status}`;
+}
+
 function htmlItemAvaliacao(item) {
+  const envio = item.envio || null;
+  const jaEnviada = envio && envio.status !== "Cancelada";
+
+  let textoBotao = "Enviar avaliação";
+
+  if (envio?.status === "Pendente") {
+    textoBotao = "Já enviada";
+  }
+
+  if (envio?.status === "Realizada pelo aluno") {
+    textoBotao = "Aluno informou realização";
+  }
+
+  if (envio?.status === "Concluída") {
+    textoBotao = "Concluída";
+  }
+
+  const textoStatus = textoStatusEnvioAvaliacao(envio);
+
   return `
     <div class="item-avaliacao-resumo">
       <div class="item-avaliacao-topo">
@@ -889,16 +1236,26 @@ function htmlItemAvaliacao(item) {
             ${item.aulasValidas} aula(s) válidas no módulo atual •
             ${item.avaliacoesLancadas} avaliação(ões) lançada(s) neste módulo
           </p>
+          ${
+            textoStatus
+              ? `<p><b>Status:</b> ${escapeHtml(textoStatus)}</p>`
+              : ""
+          }
         </div>
 
         <div class="item-avaliacao-acoes">
           <button
             type="button"
             class="btn btn-neutro btn-enviar-avaliacao"
+            data-aluno-id="${item.alunoId || ""}"
             data-matricula-id="${item.matriculaId || ""}"
+            data-materia-id="${item.materiaId || ""}"
+            data-modulo-id="${item.moduloId || ""}"
+            data-numero-avaliacao="${item.numeroAvaliacao || ""}"
             data-avaliacao="${escapeHtml(item.avaliacao)}"
+            ${jaEnviada ? "disabled" : ""}
           >
-            Enviar avaliação
+            ${escapeHtml(textoBotao)}
           </button>
         </div>
       </div>
@@ -908,11 +1265,56 @@ function htmlItemAvaliacao(item) {
 
 function vincularBotoesEnviarAvaliacao() {
   document.querySelectorAll(".btn-enviar-avaliacao").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      mostrarMensagemLocal(
-        btn,
-        "Funcionalidade de envio de avaliação será implementada em breve."
-      );
+    if (btn.disabled) return;
+
+    btn.addEventListener("click", async () => {
+      const alunoId = Number(btn.dataset.alunoId || 0);
+      const matriculaId = Number(btn.dataset.matriculaId || 0);
+      const materiaId = Number(btn.dataset.materiaId || 0);
+      const moduloId = Number(btn.dataset.moduloId || 0);
+      const numeroAvaliacao = Number(btn.dataset.numeroAvaliacao || 0);
+
+      const textoOriginal = btn.textContent;
+
+      btn.disabled = true;
+      btn.textContent = "Enviando...";
+
+      try {
+        const resultado = await enviarAvaliacaoParaAluno({
+          alunoId,
+          matriculaId,
+          materiaId,
+          moduloId,
+          numeroAvaliacao
+        });
+
+        if (resultado.jaExistia) {
+          btn.textContent = "Já enviada";
+          mostrarMensagemLocal(
+            btn,
+            "Esta avaliação já tinha sido enviada para o aluno."
+          );
+        } else {
+          btn.textContent = "Já enviada";
+          mostrarMensagemLocal(btn, "Avaliação enviada!");
+        }
+
+        await carregarAvaliacoesEnviadasSistema();
+
+        const pendencias = await carregarPendenciasAvaliacaoPorMatricula();
+        renderAvaliacoes(pendencias);
+      } catch (error) {
+        console.error("Erro ao enviar avaliação:", error);
+
+        btn.disabled = false;
+        btn.textContent = textoOriginal;
+
+        mostrarMensagemLocal(
+          btn,
+          "Não foi possível enviar a avaliação. Confira se o formulário está cadastrado no Supabase.",
+          false
+        );
+      }
     });
   });
 }
@@ -1037,6 +1439,10 @@ async function montarResumo() {
         listaAvaliacoesContainer.innerHTML = criarParagrafoVazio("Sem dados para exibir.");
       }
 
+      if (listaAniversariantesContainer) {
+        listaAniversariantesContainer.innerHTML = criarParagrafoVazio("Sem dados para exibir.");
+      }
+
       if (cardVisaoGeralProfessor) {
         cardVisaoGeralProfessor.innerHTML = `<p style="font-size:14px;">Sem matérias vinculadas.</p>`;
       }
@@ -1063,9 +1469,11 @@ async function montarResumo() {
     await carregarMatriculasRelacionadas();
     await carregarAulasProfessorPorPeriodo();
     await carregarNotasSistema();
+    await carregarAvaliacoesEnviadasSistema();
 
     renderAulasPeriodo();
     renderSelectMatriculas();
+    renderAniversariantesDoDia();
     renderVisaoGeralUnificada();
     renderListaAulasPeriodo();
 

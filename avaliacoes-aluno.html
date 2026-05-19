@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Avaliações | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+
+    <div style="display:flex; justify-content:flex-start; margin-bottom:10px;">
+      <a href="home-aluno.html" class="link-voltar link-voltar-topo">
+        ← Voltar
+      </a>
+    </div>
+
+    <section class="cabecalho-admin-central">
+      <p class="rotulo-admin">Área do aluno</p>
+      <h1>Minhas avaliações</h1>
+      <p class="subtitulo-admin">
+        Veja as avaliações liberadas pela escola e acesse o formulário para responder.
+      </p>
+    </section>
+
+    <div id="msg" style="display:none; margin-bottom:12px;"></div>
+
+    <section
+      id="blocoCursoSelecionado"
+      class="card"
+      style="margin-bottom:16px; display:none;"
+    >
+      <h2 style="margin-bottom:8px;">Curso selecionado</h2>
+      <p id="textoCursoSelecionado" style="margin:0; opacity:0.9;">
+        Carregando curso...
+      </p>
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <h2>📝 Avaliações pendentes</h2>
+
+      <p style="font-size:14px; opacity:0.9; margin-bottom:14px;">
+        Clique em <b>Realizar avaliação</b> para abrir o formulário.
+        Depois de responder, volte para esta tela e clique em
+        <b>Já realizei a avaliação</b>.
+      </p>
+
+      <div id="listaAvaliacoesPendentes">
+        <p style="font-size:14px;">Carregando avaliações...</p>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <h2>✅ Avaliações informadas como realizadas</h2>
+
+      <p style="font-size:14px; opacity:0.9; margin-bottom:14px;">
+        Estas avaliações já foram marcadas por você como realizadas e aguardam conferência/correção pela escola.
+      </p>
+
+      <div id="listaAvaliacoesRealizadas">
+        <p style="font-size:14px;">Carregando...</p>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <h2>ℹ️ Orientação</h2>
+      <p style="font-size:14px; margin-bottom:8px;">
+        As respostas são enviadas pelo Google Forms. O sistema da Beehive registra que a avaliação foi liberada
+        e permite que você informe quando já realizou.
+      </p>
+      <p style="font-size:14px; margin:0;">
+        Após a correção, sua nota será lançada pela escola no sistema.
+      </p>
+    </section>
+
+    <a href="home-aluno.html" class="link-voltar link-voltar-topo">← Voltar</a>
+
+  </main>
+
+  <script type="module" src="js/avaliacoes-aluno.js"></script>
+
+</body>
+</html>

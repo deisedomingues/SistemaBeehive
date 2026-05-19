@@ -16,6 +16,10 @@ const textoCardPainel = document.getElementById("textoCardPainel");
 const badgeEventos = document.getElementById("badgeEventos");
 const textoEventosHome = document.getElementById("textoEventosHome");
 
+const btnAvaliacoes = document.getElementById("btnAvaliacoes");
+const badgeAvaliacoes = document.getElementById("badgeAvaliacoes");
+const textoAvaliacoesHome = document.getElementById("textoAvaliacoesHome");
+
 const blocoCursoAtual = document.getElementById("blocoCursoAtual");
 const textoCursoAtual = document.getElementById("textoCursoAtual");
 const labelSelectMatricula = document.getElementById("labelSelectMatricula");
@@ -76,6 +80,33 @@ function atualizarBadgeEventos(totalNaoVisualizados) {
     textoEventosHome.textContent = "Você tem 1 evento novo aguardando sua visualização.";
   } else {
     textoEventosHome.textContent = `Você tem ${totalNaoVisualizados} eventos novos aguardando sua visualização.`;
+  }
+}
+
+function atualizarBadgeAvaliacoes(totalPendentes) {
+  if (!btnAvaliacoes || !badgeAvaliacoes || !textoAvaliacoesHome) return;
+
+  btnAvaliacoes.style.display = "block";
+  btnAvaliacoes.href = "avaliacoes-aluno.html";
+  btnAvaliacoes.classList.remove("link-indisponivel");
+
+  if (!totalPendentes || totalPendentes <= 0) {
+    badgeAvaliacoes.style.display = "none";
+    badgeAvaliacoes.textContent = "0";
+    textoAvaliacoesHome.textContent =
+      "Você não possui avaliações pendentes no momento.";
+    return;
+  }
+
+  badgeAvaliacoes.style.display = "inline-flex";
+  badgeAvaliacoes.textContent = totalPendentes > 99 ? "99+" : String(totalPendentes);
+
+  if (totalPendentes === 1) {
+    textoAvaliacoesHome.textContent =
+      "Você tem 1 avaliação pendente para realizar.";
+  } else {
+    textoAvaliacoesHome.textContent =
+      `Você tem ${totalPendentes} avaliações pendentes para realizar.`;
   }
 }
 
@@ -191,6 +222,7 @@ function atualizarCardsLinks() {
         "Selecione um curso para visualizar seu painel acadêmico.";
     }
 
+    atualizarBadgeAvaliacoes(0);
     return;
   }
 
@@ -288,6 +320,8 @@ function atualizarTelaComMatriculaSelecionada() {
   if (matriculaSelecionada) {
     salvarContextoDaMatricula(matriculaSelecionada);
   }
+
+  carregarBadgeAvaliacoes();
 }
 
 /* ======================
@@ -427,6 +461,38 @@ async function carregarBadgeEventos() {
   }
 }
 
+async function carregarBadgeAvaliacoes() {
+  try {
+    if (!alunoId) {
+      atualizarBadgeAvaliacoes(0);
+      return;
+    }
+
+    let query = supabase
+      .from("avaliacao_aluno")
+      .select("id", { count: "exact", head: true })
+      .eq("aluno_id", alunoId)
+      .eq("status", "Pendente");
+
+    if (matriculaSelecionada?.id) {
+      query = query.eq("matricula_id", matriculaSelecionada.id);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      console.error("Erro ao carregar avaliações pendentes:", error);
+      atualizarBadgeAvaliacoes(0);
+      return;
+    }
+
+    atualizarBadgeAvaliacoes(count || 0);
+  } catch (erro) {
+    console.error("Erro inesperado ao carregar badge de avaliações:", erro);
+    atualizarBadgeAvaliacoes(0);
+  }
+}
+
 /* ======================
    carga da home
 ====================== */
@@ -459,6 +525,7 @@ async function carregarAluno() {
         textoCursoAtual.textContent = "Não foi possível carregar os cursos deste aluno.";
       }
 
+      atualizarBadgeAvaliacoes(0);
       await carregarBadgeEventos();
       return;
     }
@@ -495,6 +562,7 @@ async function carregarAluno() {
           "Você precisa ter uma matrícula ativa para visualizar seu painel acadêmico.";
       }
 
+      atualizarBadgeAvaliacoes(0);
       await carregarBadgeEventos();
       return;
     }
@@ -502,7 +570,9 @@ async function carregarAluno() {
     definirMatriculaSelecionadaInicial();
     preencherSelectMatriculas();
     atualizarTelaComMatriculaSelecionada();
+
     await carregarBadgeEventos();
+    await carregarBadgeAvaliacoes();
   } catch (erro) {
     console.error("Erro inesperado na home do aluno:", erro);
 
@@ -525,6 +595,7 @@ async function carregarAluno() {
       textoCursoAtual.textContent = "Ocorreu um erro ao carregar os cursos deste aluno.";
     }
 
+    atualizarBadgeAvaliacoes(0);
     await carregarBadgeEventos();
   }
 }
@@ -533,7 +604,7 @@ async function carregarAluno() {
    troca de curso
 ====================== */
 if (selectMatricula) {
-  selectMatricula.addEventListener("change", () => {
+  selectMatricula.addEventListener("change", async () => {
     const matriculaIdSelecionada = selectMatricula.value;
 
     const encontrada = matriculasAtivas.find(
@@ -544,6 +615,8 @@ if (selectMatricula) {
 
     matriculaSelecionada = encontrada;
     atualizarTelaComMatriculaSelecionada();
+
+    await carregarBadgeAvaliacoes();
   });
 }
 
