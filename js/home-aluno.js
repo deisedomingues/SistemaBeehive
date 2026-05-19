@@ -7,9 +7,11 @@ const saudacao = document.getElementById("saudacao");
 const btnSair = document.getElementById("btnSair");
 const btnZoom = document.getElementById("btnZoom");
 const btnYoutube = document.getElementById("btnYoutube");
+const btnMaterialEstudo = document.getElementById("btnMaterialEstudo");
 
 const textoCardZoom = document.getElementById("textoCardZoom");
 const textoCardYoutube = document.getElementById("textoCardYoutube");
+const textoCardMaterialEstudo = document.getElementById("textoCardMaterialEstudo");
 const textoCardReposicao = document.getElementById("textoCardReposicao");
 const textoCardPainel = document.getElementById("textoCardPainel");
 
@@ -44,6 +46,8 @@ function desabilitarCard(linkEl, tituloIndisponivel, descricaoIndisponivel) {
   if (!linkEl) return;
 
   linkEl.removeAttribute("href");
+  linkEl.removeAttribute("target");
+  linkEl.removeAttribute("rel");
   linkEl.classList.add("link-indisponivel");
 
   const titulo = linkEl.querySelector(".card-admin-conteudo h2");
@@ -198,7 +202,7 @@ function atualizarResumoDoCursoSelecionado() {
   }
 }
 
-function atualizarCardsLinks() {
+function atualizarCardsLinksBasicos() {
   if (!matriculaSelecionada) {
     desabilitarCard(
       btnZoom,
@@ -209,6 +213,12 @@ function atualizarCardsLinks() {
     desabilitarCard(
       btnYoutube,
       "Aulas gravadas indisponíveis",
+      "Não foi possível identificar um curso ativo para este aluno."
+    );
+
+    desabilitarCard(
+      btnMaterialEstudo,
+      "Material indisponível",
       "Não foi possível identificar um curso ativo para este aluno."
     );
 
@@ -313,15 +323,82 @@ function definirMatriculaSelecionadaInicial() {
   salvarContextoDaMatricula(matriculaSelecionada);
 }
 
-function atualizarTelaComMatriculaSelecionada() {
+async function atualizarCardMaterialEstudo() {
+  if (!btnMaterialEstudo || !textoCardMaterialEstudo) return;
+
+  if (!matriculaSelecionada?.materia_id || !matriculaSelecionada?.modulo_id) {
+    desabilitarCard(
+      btnMaterialEstudo,
+      "Material indisponível",
+      "Não foi possível identificar o curso e o módulo da matrícula selecionada."
+    );
+    return;
+  }
+
+  const nomeCurso = montarNomeCurso(matriculaSelecionada);
+
+  try {
+    const { data, error } = await supabase
+      .from("material_estudo")
+      .select("id, titulo, link_drive, ativo")
+      .eq("materia_id", matriculaSelecionada.materia_id)
+      .eq("modulo_id", matriculaSelecionada.modulo_id)
+      .eq("ativo", true)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Erro ao carregar material de estudo:", error);
+
+      desabilitarCard(
+        btnMaterialEstudo,
+        "Material indisponível",
+        `Não foi possível carregar o material de estudo de ${nomeCurso}.`
+      );
+
+      return;
+    }
+
+    if (!data?.link_drive) {
+      desabilitarCard(
+        btnMaterialEstudo,
+        "Material indisponível",
+        `O material de estudo de ${nomeCurso} ainda não foi cadastrado.`
+      );
+
+      return;
+    }
+
+    habilitarCard(btnMaterialEstudo, data.link_drive);
+
+    const tituloMaterial = btnMaterialEstudo.querySelector(".card-admin-conteudo h2");
+    if (tituloMaterial) {
+      tituloMaterial.textContent = "Ver material de estudo";
+    }
+
+    textoCardMaterialEstudo.textContent =
+      `Acesse livros, workbooks e materiais do módulo ${nomeCurso}.`;
+
+  } catch (erro) {
+    console.error("Erro inesperado ao carregar material de estudo:", erro);
+
+    desabilitarCard(
+      btnMaterialEstudo,
+      "Material indisponível",
+      `Ocorreu um erro ao carregar o material de estudo de ${nomeCurso}.`
+    );
+  }
+}
+
+async function atualizarTelaComMatriculaSelecionada() {
   atualizarResumoDoCursoSelecionado();
-  atualizarCardsLinks();
+  atualizarCardsLinksBasicos();
 
   if (matriculaSelecionada) {
     salvarContextoDaMatricula(matriculaSelecionada);
   }
 
-  carregarBadgeAvaliacoes();
+  await atualizarCardMaterialEstudo();
+  await carregarBadgeAvaliacoes();
 }
 
 /* ======================
@@ -520,6 +597,12 @@ async function carregarAluno() {
         "Não foi possível carregar seus dados no momento."
       );
 
+      desabilitarCard(
+        btnMaterialEstudo,
+        "Material indisponível",
+        "Não foi possível carregar seus dados no momento."
+      );
+
       if (blocoCursoAtual) blocoCursoAtual.style.display = "block";
       if (textoCursoAtual) {
         textoCursoAtual.textContent = "Não foi possível carregar os cursos deste aluno.";
@@ -552,6 +635,12 @@ async function carregarAluno() {
         "Você não possui matrícula ativa no momento."
       );
 
+      desabilitarCard(
+        btnMaterialEstudo,
+        "Material indisponível",
+        "Você precisa ter uma matrícula ativa para acessar o material de estudo."
+      );
+
       if (textoCardReposicao) {
         textoCardReposicao.textContent =
           "Você precisa ter uma matrícula ativa para visualizar suas reposições.";
@@ -569,10 +658,11 @@ async function carregarAluno() {
 
     definirMatriculaSelecionadaInicial();
     preencherSelectMatriculas();
-    atualizarTelaComMatriculaSelecionada();
 
+    await atualizarTelaComMatriculaSelecionada();
     await carregarBadgeEventos();
     await carregarBadgeAvaliacoes();
+
   } catch (erro) {
     console.error("Erro inesperado na home do aluno:", erro);
 
@@ -587,6 +677,12 @@ async function carregarAluno() {
     desabilitarCard(
       btnYoutube,
       "Aulas gravadas indisponíveis",
+      "Ocorreu um erro ao carregar sua área."
+    );
+
+    desabilitarCard(
+      btnMaterialEstudo,
+      "Material indisponível",
       "Ocorreu um erro ao carregar sua área."
     );
 
@@ -614,8 +710,7 @@ if (selectMatricula) {
     if (!encontrada) return;
 
     matriculaSelecionada = encontrada;
-    atualizarTelaComMatriculaSelecionada();
-
+    await atualizarTelaComMatriculaSelecionada();
     await carregarBadgeAvaliacoes();
   });
 }
