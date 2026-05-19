@@ -22,9 +22,26 @@ if (!professorId) {
   window.location.href = "index.html";
 }
 
-// ======================
-// carregar professor logado
-// ======================
+/* ======================
+   Mensagem simples
+====================== */
+function mostrarInfoPerfilAluno(texto, tipo = "neutro") {
+  if (!infoPerfilAluno) return;
+
+  infoPerfilAluno.textContent = texto;
+
+  if (tipo === "ok") {
+    infoPerfilAluno.style.color = "#1b5e20";
+  } else if (tipo === "erro") {
+    infoPerfilAluno.style.color = "#b71c1c";
+  } else {
+    infoPerfilAluno.style.color = "";
+  }
+}
+
+/* ======================
+   Carregar professor logado
+====================== */
 async function carregarProfessor() {
   const { data, error } = await supabase
     .from("professor")
@@ -34,30 +51,37 @@ async function carregarProfessor() {
 
   if (error || !data) {
     console.error("Erro ao carregar professor:", error);
-    saudacao.textContent = "Olá!";
-    tituloProfessor.textContent = "Bem-vindo(a)";
+
+    if (saudacao) saudacao.textContent = "Olá!";
+    if (tituloProfessor) tituloProfessor.textContent = "Bem-vindo(a)";
+
+    mostrarInfoPerfilAluno("Não foi possível carregar os dados do professor.", "erro");
     return;
   }
 
   professorLogado = data;
 
-  saudacao.textContent = `Olá, ${data.nome}!`;
-  tituloProfessor.textContent = "Bem-vindo(a)";
+  if (saudacao) saudacao.textContent = `Olá, ${data.nome}!`;
+  if (tituloProfessor) tituloProfessor.textContent = "Bem-vindo(a)";
 
-  // por padrão, exibe professor
-  selectPerfilVisualizacao.value = "professor";
-  painelProfessorCards.style.display = "grid";
+  if (selectPerfilVisualizacao) {
+    selectPerfilVisualizacao.value = "professor";
+  }
+
+  if (painelProfessorCards) {
+    painelProfessorCards.style.display = "grid";
+  }
 
   await verificarVinculoAluno();
 }
 
-// ======================
-// verificar se esse professor também é aluno
-// ======================
+/* ======================
+   Verificar se esse professor também é aluno
+====================== */
 async function verificarVinculoAluno() {
   if (!professorLogado?.email) {
-    optionAluno.disabled = true;
-    infoPerfilAluno.textContent = "Perfil de aluno indisponível.";
+    if (optionAluno) optionAluno.disabled = true;
+    mostrarInfoPerfilAluno("Perfil de aluno indisponível.", "erro");
     return;
   }
 
@@ -69,53 +93,120 @@ async function verificarVinculoAluno() {
 
   if (error) {
     console.error("Erro ao verificar vínculo como aluno:", error);
-    optionAluno.disabled = true;
-    infoPerfilAluno.textContent = "Não foi possível verificar o perfil de aluno.";
+
+    if (optionAluno) optionAluno.disabled = true;
+    mostrarInfoPerfilAluno("Não foi possível verificar o perfil de aluno.", "erro");
     return;
   }
 
   if (!data) {
-    optionAluno.disabled = true;
-    infoPerfilAluno.textContent = "Este usuário não possui cadastro como aluno.";
+    alunoVinculado = null;
+
+    if (optionAluno) optionAluno.disabled = true;
+
+    mostrarInfoPerfilAluno(
+      "Este usuário não possui cadastro como aluno.",
+      "neutro"
+    );
+
     return;
   }
 
   alunoVinculado = data;
-  optionAluno.disabled = false;
-  infoPerfilAluno.textContent = "Perfil de aluno disponível.";
+
+  if (optionAluno) optionAluno.disabled = false;
+
+  mostrarInfoPerfilAluno("Perfil de aluno disponível.", "ok");
 }
 
-// ======================
-// abrir perfil escolhido
-// ======================
-btnAbrirPerfil?.addEventListener("click", () => {
+/* ======================
+   Trocar visualização automaticamente
+====================== */
+selectPerfilVisualizacao?.addEventListener("change", () => {
   const perfilSelecionado = selectPerfilVisualizacao.value;
 
   if (perfilSelecionado === "professor") {
-    painelProfessorCards.style.display = "grid";
+    if (painelProfessorCards) {
+      painelProfessorCards.style.display = "grid";
+    }
+
     return;
   }
 
   if (perfilSelecionado === "aluno") {
     if (!alunoVinculado?.id) {
-      alert("Este usuário não possui perfil de aluno disponível.");
+      mostrarInfoPerfilAluno(
+        "Este usuário não possui perfil de aluno disponível.",
+        "erro"
+      );
+
+      selectPerfilVisualizacao.value = "professor";
+
+      if (painelProfessorCards) {
+        painelProfessorCards.style.display = "grid";
+      }
+
       return;
     }
 
     localStorage.setItem("alunoIdVisualizacao", alunoVinculado.id);
-    window.location.href = "detalhes-aluno-funcionario.html";
+
+    window.location.href = "home-aluno-funcionario.html";
   }
 });
 
-// ======================
-// sair
-// ======================
-btnSair?.addEventListener("click", () => {
+/* ======================
+   Compatibilidade com botão antigo "Ir"
+   Pode apagar o botão do HTML depois.
+====================== */
+btnAbrirPerfil?.addEventListener("click", () => {
+  const perfilSelecionado = selectPerfilVisualizacao?.value;
+
+  if (perfilSelecionado === "professor") {
+    if (painelProfessorCards) {
+      painelProfessorCards.style.display = "grid";
+    }
+
+    return;
+  }
+
+  if (perfilSelecionado === "aluno") {
+    if (!alunoVinculado?.id) {
+      mostrarInfoPerfilAluno(
+        "Este usuário não possui perfil de aluno disponível.",
+        "erro"
+      );
+
+      return;
+    }
+
+    localStorage.setItem("alunoIdVisualizacao", alunoVinculado.id);
+
+    window.location.href = "home-aluno-funcionario.html";
+  }
+});
+
+/* ======================
+   Sair
+====================== */
+btnSair?.addEventListener("click", async () => {
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.error("Erro ao sair:", error);
+  }
+
+  localStorage.removeItem("role");
   localStorage.removeItem("professorId");
+  localStorage.removeItem("professorNome");
+  localStorage.removeItem("professorEmail");
   localStorage.removeItem("matriculaSelecionada");
   localStorage.removeItem("alunoIdVisualizacao");
+
   window.location.href = "index.html";
 });
 
-// iniciar
-carregarProfessor();
+/* ======================
+   Iniciar
+====================== */
+await carregarProfessor();

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Eventos do Professor | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container home-admin-page">
+
+    <div class="topo-acoes-admin topo-acoes-duplo">
+      <a href="home-professor.html" class="link-voltar-admin">← Voltar</a>
+
+      <button id="btnSair" class="btn-sair-admin" type="button">
+        Sair
+      </button>
+    </div>
+
+    <img
+      src="images/logo.png"
+      alt="Beehive Escola de Idiomas"
+      class="logo logo-admin-centralizada"
+    />
+
+    <section class="cabecalho-admin-central">
+      <h1>Eventos do Professor</h1>
+
+      <p class="subtitulo-admin">
+        Veja os eventos em que você está como professor responsável ou professor de apoio.
+      </p>
+    </section>
+
+    <div id="msg" style="display:none; margin-bottom:14px;"></div>
+
+    <!-- RESUMO -->
+    <section class="dashboard" style="margin-bottom:16px;">
+
+      <article class="card-admin">
+        <div class="card-admin-icone">🎤</div>
+
+        <div class="card-admin-conteudo">
+          <h2>Responsável</h2>
+          <p>
+            <strong id="qtdEventosResponsavel">0</strong>
+            evento(s) como anfitrião/responsável.
+          </p>
+        </div>
+      </article>
+
+      <article class="card-admin">
+        <div class="card-admin-icone">🤝</div>
+
+        <div class="card-admin-conteudo">
+          <h2>Apoio</h2>
+          <p>
+            <strong id="qtdEventosApoio">0</strong>
+            evento(s) como professor de apoio.
+          </p>
+        </div>
+      </article>
+
+      <article class="card-admin">
+        <div class="card-admin-icone">📅</div>
+
+        <div class="card-admin-conteudo">
+          <h2>Próximos</h2>
+          <p>
+            <strong id="qtdEventosProximos">0</strong>
+            evento(s) ainda vão acontecer.
+          </p>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- FILTROS -->
+    <section class="card" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:10px;">Filtrar eventos</h2>
+
+      <div class="filtros-historico-aluno">
+        <label>
+          Período
+          <select id="filtroPeriodoEventos">
+            <option value="proximos" selected>Próximos eventos</option>
+            <option value="anteriores">Eventos anteriores</option>
+            <option value="todos">Todos os eventos</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <!-- EVENTOS COMO RESPONSÁVEL -->
+    <section class="card" style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap;">
+        <div>
+          <h2 style="margin-bottom:4px;">🎤 Eventos como responsável</h2>
+          <p style="font-size:14px; opacity:0.85; margin:0;">
+            Eventos em que você é o professor anfitrião ou responsável principal.
+          </p>
+        </div>
+      </div>
+
+      <div
+        id="listaEventosResponsavel"
+        class="lista-historico"
+        style="margin-top:14px;"
+      >
+        <p class="vazio-box">Carregando eventos...</p>
+      </div>
+    </section>
+
+    <!-- EVENTOS COMO APOIO -->
+    <section class="card" style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap;">
+        <div>
+          <h2 style="margin-bottom:4px;">🤝 Eventos como apoio</h2>
+          <p style="font-size:14px; opacity:0.85; margin:0;">
+            Eventos em que você participa como apoio, sem entrar como aluno convidado.
+          </p>
+        </div>
+      </div>
+
+      <div
+        id="listaEventosApoio"
+        class="lista-historico"
+        style="margin-top:14px;"
+      >
+        <p class="vazio-box">Carregando eventos...</p>
+      </div>
+    </section>
+
+    <!-- OBSERVAÇÃO FINANCEIRA -->
+    <section class="card" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:8px;">💰 Pagamento de apoio</h2>
+
+      <p style="font-size:14px; opacity:0.9; margin-bottom:0;">
+        Quando o professor atuar como apoio em um evento, o pagamento poderá ser lançado
+        no financeiro como custo adicional, conforme combinado pela administração.
+      </p>
+    </section>
+
+    <div style="display:flex; justify-content:flex-start; margin-top:18px;">
+      <a href="home-professor.html" class="btn">
+        ← Voltar para a área do professor
+      </a>
+    </div>
+
+  </main>
+
+  <script type="module" src="js/eventos-professor.js"></script>
+</body>
+</html>
