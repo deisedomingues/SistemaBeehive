@@ -23,8 +23,8 @@
 
       <div class="form" style="margin-top:10px; gap:10px;">
 
-    
-
+        <label style="margin-bottom:8px;">
+          Buscar aluno
           <input
             type="text"
             id="inputAluno"
@@ -32,10 +32,9 @@
             autocomplete="off"
             style="padding:8px; width:100%;"
           />
-
-          <div id="listaSugestoes" class="lista-sugestoes"></div>
-
         </label>
+
+        <div id="listaSugestoes" class="lista-sugestoes"></div>
 
         <div style="display:flex; gap:10px; justify-content:flex-end;">
           <button
@@ -75,13 +74,12 @@
           <input
             type="date"
             id="dataNascimento"
-            required
             style="padding:8px;"
           />
         </label>
 
         <label style="margin-bottom:8px;">
-          E-mail (opcional)
+          E-mail opcional
           <input
             type="email"
             id="email"
@@ -91,7 +89,7 @@
         </label>
 
         <label style="margin-bottom:10px;">
-          Telefone (opcional)
+          Telefone opcional
           <input
             type="text"
             id="telefone"
@@ -101,16 +99,15 @@
         </label>
 
         <label style="margin-bottom:10px;">
-        Empresa
+          Empresa
 
-        <select
-          id="empresa"
-          style="padding:8px; width:100%;"
-        >
-          <option value="">Carregando empresas...</option>
-        </select>
-
-      </label>
+          <select
+            id="empresa"
+            style="padding:8px; width:100%;"
+          >
+            <option value="">Carregando empresas...</option>
+          </select>
+        </label>
 
         <button
           type="submit"
@@ -121,14 +118,12 @@
         >
           Salvar alterações
         </button>
-      <div id="msgSalvar" class="msg-salvar"></div>
+
+        <div id="msgSalvar" class="msg-salvar" style="display:none;"></div>
 
       </form>
-      
 
     </div>
-
-    
 
     <a href="menu-edicoes.html" class="link-voltar" style="margin-top:10px;">
       ← Voltar
