@@ -7,7 +7,7 @@ await exigirAdmin();
    CONFIGURAÇÃO
 ========================================================= */
 
-// TROQUE pelo CNPJ exato que você cadastrou para a Beehive
+// CNPJ da Beehive para identificar alunos internos/funcionários.
 const CNPJ_BEEHIVE = "50715902000182";
 
 // Quando o pacote chegar em 28 aulas usadas, aparece em pontos de atenção.
@@ -38,6 +38,8 @@ const listaPacotesProximosResumo = document.getElementById("listaPacotesProximos
 
 const qtdAvaliacoesPendentesResumo = document.getElementById("qtdAvaliacoesPendentesResumo");
 const listaAvaliacoesPendentesResumo = document.getElementById("listaAvaliacoesPendentesResumo");
+
+const listaAniversariantesDiaResumo = document.getElementById("listaAniversariantesDiaResumo");
 
 const selectMatriculaAdmin = document.getElementById("selectMatriculaAdmin");
 const btnDetalhesAdmin = document.getElementById("btnDetalhesAdmin");
@@ -125,6 +127,32 @@ function formatarDataBR(dataISO) {
   if (!dataISO) return "-";
   const [yyyy, mm, dd] = String(dataISO).split("-");
   return `${dd}/${mm}/${yyyy}`;
+}
+
+function obterDiaMesDeData(dataISO) {
+  if (!dataISO) return null;
+
+  const partes = String(dataISO).split("-");
+  if (partes.length < 3) return null;
+
+  const mes = String(partes[1]).padStart(2, "0");
+  const dia = String(partes[2]).slice(0, 2).padStart(2, "0");
+
+  if (!mes || !dia) return null;
+
+  return {
+    dia,
+    mes
+  };
+}
+
+function ehAniversarioHoje(dataNascimento) {
+  const nascimento = obterDiaMesDeData(dataNascimento);
+  const hoje = obterDiaMesDeData(hojeISO());
+
+  if (!nascimento || !hoje) return false;
+
+  return nascimento.dia === hoje.dia && nascimento.mes === hoje.mes;
 }
 
 function ehAlunoInternoBeehive(matricula) {
@@ -262,7 +290,7 @@ function configurarBotoesAbrirAluno() {
 async function carregarProfessoresAtivos() {
   const { data, error } = await supabase
     .from("professor")
-    .select("id, nome, email, ativo")
+    .select("id, nome, email, ativo, data_nascimento")
     .eq("ativo", true)
     .order("nome", { ascending: true });
 
@@ -284,6 +312,7 @@ async function carregarMatriculasAtivas() {
       aluno:aluno_id (
         id,
         nome,
+        data_nascimento,
         empresa_cnpj
       ),
       materia:materia_id (
@@ -547,6 +576,47 @@ function obterMatriculasComAvaliacaoPendente() {
 }
 
 /* =========================================================
+   CÁLCULOS - ANIVERSARIANTES
+========================================================= */
+
+function obterAniversariantesDoDia() {
+  const aniversariantes = [];
+  const alunosJaIncluidos = new Set();
+
+  matriculasAtivasResumo.forEach((matricula) => {
+    const aluno = matricula?.aluno;
+
+    if (!aluno?.id || alunosJaIncluidos.has(aluno.id)) return;
+    if (!ehAniversarioHoje(aluno.data_nascimento)) return;
+
+    alunosJaIncluidos.add(aluno.id);
+
+    aniversariantes.push({
+      tipo: "aluno",
+      nome: aluno.nome || "Aluno"
+    });
+  });
+
+  professoresAtivos.forEach((professor) => {
+    if (!professor?.id) return;
+    if (!ehAniversarioHoje(professor.data_nascimento)) return;
+
+    aniversariantes.push({
+      tipo: "professor",
+      nome: professor.nome || "Professor(a)"
+    });
+  });
+
+  return aniversariantes.sort((a, b) => {
+    if (a.tipo !== b.tipo) {
+      return a.tipo.localeCompare(b.tipo, "pt-BR");
+    }
+
+    return a.nome.localeCompare(b.nome, "pt-BR");
+  });
+}
+
+/* =========================================================
    RENDER - VISÃO GERAL
 ========================================================= */
 
@@ -706,6 +776,43 @@ function renderAlertaEventosSemConfirmacao() {
   });
 
   qtdEventosSemConfirmacaoResumo.textContent = String(eventosSemConfirmacao.length);
+}
+
+/* =========================================================
+   RENDER - ANIVERSARIANTES
+========================================================= */
+
+function renderAniversariantesDoDia() {
+  if (!listaAniversariantesDiaResumo) return;
+
+  const aniversariantes = obterAniversariantesDoDia();
+
+  if (!aniversariantes.length) {
+    listaAniversariantesDiaResumo.innerHTML = `
+      <p style="font-size:14px; margin:0; opacity:0.9;">
+        Nenhum aniversariante no dia de hoje.
+      </p>
+    `;
+    return;
+  }
+
+  listaAniversariantesDiaResumo.innerHTML = aniversariantes.map((pessoa) => {
+    const nome = escapeHtml(pessoa.nome);
+
+    if (pessoa.tipo === "aluno") {
+      return `
+        <p style="font-size:14px; margin:6px 0;">
+          🎉 Hoje é aniversário do aluno <strong>${nome}</strong>.
+        </p>
+      `;
+    }
+
+    return `
+      <p style="font-size:14px; margin:6px 0;">
+        🎉 Hoje é aniversário do(a) professor(a) <strong>${nome}</strong>.
+      </p>
+    `;
+  }).join("");
 }
 
 /* =========================================================
@@ -985,6 +1092,7 @@ async function montarResumoGeral() {
     await carregarPacotesAulasResumo();
 
     renderAlertasResumo();
+    renderAniversariantesDoDia();
     renderIndicadoresGerais();
     renderSelectMatriculasAdmin();
     renderCardsProfessores();
