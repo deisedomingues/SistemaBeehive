@@ -695,11 +695,16 @@ function agruparAulasColetivas(aulas) {
           quantidade_alunos: aula.quantidade_alunos,
           modulo: obterModuloDaAula(aula),
           curso: obterCursoDaAula(aula),
-          alunos: []
+          alunos: [],
+          aulas: [],
+          ids: []
         });
       }
 
-      grupos.get(chave).alunos.push(obterNomeAlunoDaAula(aula));
+      const grupoAtual = grupos.get(chave);
+      grupoAtual.alunos.push(obterNomeAlunoDaAula(aula));
+      grupoAtual.aulas.push(aula);
+      grupoAtual.ids.push(aula.id);
     } else {
       individuais.push({
         tipo: "individual",
@@ -726,8 +731,13 @@ function agruparAulasColetivas(aulas) {
       return String(dataB).localeCompare(String(dataA));
     }
 
-    const idA = a.tipo === "individual" ? Number(a.aula.id || 0) : 0;
-    const idB = b.tipo === "individual" ? Number(b.aula.id || 0) : 0;
+    const idA = a.tipo === "individual"
+      ? Number(a.aula.id || 0)
+      : Math.max(...(a.ids || [0]).map((id) => Number(id || 0)));
+
+    const idB = b.tipo === "individual"
+      ? Number(b.aula.id || 0)
+      : Math.max(...(b.ids || [0]).map((id) => Number(id || 0)));
 
     return idB - idA;
   });
@@ -749,13 +759,26 @@ function renderAulaIndividual(aula) {
 
   return `
     <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
-      <div style="font-weight:700;">
-        ${escaparHtml(dataBR)}
-        <span style="font-weight:400;"> — Aula individual</span>
-      </div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:700;">
+            ${escaparHtml(dataBR)}
+            <span style="font-weight:400;"> — Aula individual</span>
+          </div>
 
-      <div style="font-weight:700; margin-top:4px;">
-        • ${escaparHtml(aluno)}
+          <div style="font-weight:700; margin-top:4px;">
+            • ${escaparHtml(aluno)}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn-secundario btn-excluir-aula-professor"
+          data-excluir-aula-id="${aula.id}"
+          style="padding:7px 10px; font-size:12px; border-color:#ffcdd2; color:#b71c1c; background:#fff5f5;"
+        >
+          Excluir aula
+        </button>
       </div>
 
       <div style="font-size:13px; margin-top:4px;">
@@ -785,9 +808,26 @@ function renderAulaColetiva(grupo) {
 
   return `
     <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
-      <div style="font-weight:700;">
-        ${escaparHtml(dataBR)}
-        <span style="font-weight:400;"> — Aula coletiva</span>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:700;">
+            ${escaparHtml(dataBR)}
+            <span style="font-weight:400;"> — Aula coletiva</span>
+          </div>
+
+          <div style="font-size:12px; opacity:0.75; margin-top:3px;">
+            Excluir aqui apaga esta aula coletiva para todos os alunos listados abaixo.
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn-secundario btn-excluir-aula-professor"
+          data-excluir-grupo-aula-id="${escaparHtml(grupo.grupoAulaId)}"
+          style="padding:7px 10px; font-size:12px; border-color:#ffcdd2; color:#b71c1c; background:#fff5f5;"
+        >
+          Excluir aula coletiva
+        </button>
       </div>
 
       <div style="margin-top:4px;">
@@ -935,7 +975,152 @@ function renderOcorrenciasProfessor() {
 }
 
 // =====================================================
-// 11. OCORRÊNCIA — FORM
+// 11. EXCLUSÃO DE AULAS
+// =====================================================
+
+async function limparReposicoesAgendadasDasAulas(aulaIds) {
+  const idsValidos = (aulaIds || [])
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id) && id > 0);
+
+  if (!idsValidos.length) return;
+
+  const { error } = await supabase
+    .from("reposicao_agendada")
+    .delete()
+    .in("aula_id", idsValidos);
+
+  if (error) {
+    console.warn(
+      "Não foi possível limpar registros de reposição_agendada antes de excluir a aula. A exclusão da aula ainda será tentada.",
+      error
+    );
+  }
+}
+
+async function excluirAulaIndividual(aulaId, botao = null) {
+  const id = Number(aulaId);
+
+  if (!id) {
+    mostrarMensagem("Aula não encontrada para exclusão.", false);
+    return;
+  }
+
+  const aula = aulasProfessor.find((item) => Number(item.id) === id);
+
+  const aluno = aula ? obterNomeAlunoDaAula(aula) : "este aluno";
+  const data = aula ? formatarDataBR(aula.data_aula) : "data não informada";
+
+  const confirmou = confirm(
+    `Deseja excluir esta aula?\n\nAluno: ${aluno}\nData: ${data}\n\nEssa ação não pode ser desfeita.`
+  );
+
+  if (!confirmou) return;
+
+  if (botao) {
+    botao.disabled = true;
+    botao.textContent = "Excluindo...";
+  }
+
+  await limparReposicoesAgendadasDasAulas([id]);
+
+  const { error } = await supabase
+    .from("aula")
+    .delete()
+    .eq("professor_id", professorId)
+    .eq("id", id);
+
+  if (botao) {
+    botao.disabled = false;
+    botao.textContent = "Excluir aula";
+  }
+
+  if (error) {
+    console.error("Erro ao excluir aula:", error);
+    mostrarMensagem(
+      "Não foi possível excluir a aula. Se ela estiver vinculada a outra reposição, exclua primeiro o vínculo relacionado.",
+      false
+    );
+    return;
+  }
+
+  mostrarMensagem("Aula excluída com sucesso.");
+
+  await carregarAulasProfessor();
+  renderIndicadores();
+  renderAulasProfessor();
+}
+
+async function excluirAulaColetiva(grupoAulaId, botao = null) {
+  const grupoId = String(grupoAulaId || "").trim();
+
+  if (!grupoId) {
+    mostrarMensagem("Grupo da aula coletiva não encontrado para exclusão.", false);
+    return;
+  }
+
+  const aulasDoGrupo = aulasProfessor.filter((aula) => {
+    return aula.aula_coletiva === true && String(aula.grupo_aula_id || "") === grupoId;
+  });
+
+  if (!aulasDoGrupo.length) {
+    mostrarMensagem("Nenhuma aula encontrada neste grupo coletivo.", false);
+    return;
+  }
+
+  const ids = aulasDoGrupo
+    .map((aula) => Number(aula.id))
+    .filter((id) => Number.isFinite(id) && id > 0);
+
+  const nomesAlunos = aulasDoGrupo
+    .map(obterNomeAlunoDaAula)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  const data = formatarDataBR(aulasDoGrupo[0]?.data_aula);
+
+  const confirmou = confirm(
+    `Deseja excluir esta aula coletiva?\n\nData: ${data}\nAlunos:\n- ${nomesAlunos.join("\n- ")}\n\nEssa ação apaga a aula para todos os alunos acima e não pode ser desfeita.`
+  );
+
+  if (!confirmou) return;
+
+  if (botao) {
+    botao.disabled = true;
+    botao.textContent = "Excluindo...";
+  }
+
+  await limparReposicoesAgendadasDasAulas(ids);
+
+  const { error } = await supabase
+    .from("aula")
+    .delete()
+    .eq("professor_id", professorId)
+    .in("id", ids);
+
+  if (botao) {
+    botao.disabled = false;
+    botao.textContent = "Excluir aula coletiva";
+  }
+
+  if (error) {
+    console.error("Erro ao excluir aula coletiva:", error);
+    mostrarMensagem(
+      "Não foi possível excluir a aula coletiva. Se alguma aula estiver vinculada a uma reposição, exclua primeiro o vínculo relacionado.",
+      false
+    );
+    return;
+  }
+
+  mostrarMensagem("Aula coletiva excluída com sucesso para todos os alunos do grupo.");
+
+  await carregarAulasProfessor();
+  renderIndicadores();
+  renderAulasProfessor();
+}
+
+// =====================================================
+// 12. OCORRÊNCIA — FORM
 // =====================================================
 
 function prepararFormOcorrencia() {
@@ -1021,7 +1206,7 @@ async function salvarOcorrencia(e) {
 }
 
 // =====================================================
-// 12. INIT
+// 13. INIT
 // =====================================================
 
 async function init() {
@@ -1059,8 +1244,26 @@ async function init() {
 }
 
 // =====================================================
-// 13. EVENTOS DA INTERFACE
+// 14. EVENTOS DA INTERFACE
 // =====================================================
+
+listaAulasProfessor?.addEventListener("click", async (event) => {
+  const botao = event.target.closest("[data-excluir-aula-id], [data-excluir-grupo-aula-id]");
+
+  if (!botao) return;
+
+  const aulaId = botao.dataset.excluirAulaId;
+  const grupoAulaId = botao.dataset.excluirGrupoAulaId;
+
+  if (grupoAulaId) {
+    await excluirAulaColetiva(grupoAulaId, botao);
+    return;
+  }
+
+  if (aulaId) {
+    await excluirAulaIndividual(aulaId, botao);
+  }
+});
 
 btnExpandirAlunosProfessor?.addEventListener("click", () => {
   alunosExpandido = !alunosExpandido;
