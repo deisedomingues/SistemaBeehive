@@ -90,6 +90,15 @@ function preencherAnos() {
   }
 }
 
+function escaparHtml(valor) {
+  return String(valor ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 // ======================
 // Tempo / duração
 // ======================
@@ -193,6 +202,14 @@ function normalizarDuracaoSegundos(valor) {
 // ======================
 // Regras de cálculo
 // ======================
+function ehEvento(aulaOuItem) {
+  return (
+    aulaOuItem?.status === "Evento" ||
+    aulaOuItem?.evento_id !== null &&
+    aulaOuItem?.evento_id !== undefined
+  );
+}
+
 function obterValorHoraDaMateria(materiaId) {
   const registro = valoresHoraProfessor.find(
     (item) => Number(item.materia_id) === Number(materiaId)
@@ -208,6 +225,14 @@ function calcularValorItem(item) {
 
   let valorHora = Number(item.valor_hora || 0);
 
+  /*
+    Regra atual:
+    - Aula coletiva recebe valor 1.5x.
+    - Evento registrado como aula coletiva também entra nessa regra.
+
+    Se depois você decidir que evento deve pagar valor normal,
+    basta alterar aqui para tratar item.eh_evento separadamente.
+  */
   if (item.aula_coletiva) {
     valorHora = valorHora * 1.5;
   }
@@ -294,6 +319,24 @@ function ordenarNomes(lista) {
 // ======================
 // Agrupamento
 // ======================
+function montarChaveGrupo(aula) {
+  /*
+    Para evento, é melhor agrupar por evento_id.
+    Assim, se o mesmo evento tiver vários alunos, aparece um card só no financeiro.
+
+    Se não tiver evento_id, usa grupo_aula_id.
+  */
+  if (ehEvento(aula) && aula.evento_id) {
+    return `evento_${aula.evento_id}`;
+  }
+
+  if (aula.grupo_aula_id) {
+    return `grupo_${aula.grupo_aula_id}`;
+  }
+
+  return `aula_${aula.id}`;
+}
+
 function agruparAulasParaFinanceiro(aulas) {
   const grupos = new Map();
 
@@ -303,17 +346,25 @@ function agruparAulasParaFinanceiro(aulas) {
     const nomeAluno = aula?.matricula?.aluno?.nome || "Aluno não identificado";
     const materiaNome = aula?.matricula?.materia?.nome || "Matéria não identificada";
 
-    const ehColetiva = Boolean(aula.aula_coletiva) && aula.grupo_aula_id;
+    const aulaEhEvento = ehEvento(aula);
+
+    /*
+      Evento com participantes deve entrar como coletivo no financeiro,
+      mesmo que tenha apenas 1 aluno no teste.
+    */
+    const ehColetiva = Boolean(aula.aula_coletiva) || aulaEhEvento;
 
     if (ehColetiva) {
-      const chave = `grupo_${aula.grupo_aula_id}`;
+      const chave = montarChaveGrupo(aula);
 
       if (!grupos.has(chave)) {
         grupos.set(chave, {
-          tipo: "coletiva",
+          tipo: aulaEhEvento ? "evento" : "coletiva",
           chave,
-          grupo_aula_id: aula.grupo_aula_id,
+          evento_id: aula.evento_id || null,
+          grupo_aula_id: aula.grupo_aula_id || null,
           aula_coletiva: true,
+          eh_evento: aulaEhEvento,
           ids_aula: [Number(aula.id)],
           professor_id: aula.professor_id,
           data_aula: aula.data_aula,
@@ -364,8 +415,10 @@ function agruparAulasParaFinanceiro(aulas) {
       grupos.set(chave, {
         tipo: "individual",
         chave,
+        evento_id: aula.evento_id || null,
         grupo_aula_id: null,
         aula_coletiva: false,
+        eh_evento: false,
         ids_aula: [Number(aula.id)],
         professor_id: aula.professor_id,
         data_aula: aula.data_aula,
@@ -387,7 +440,8 @@ function agruparAulasParaFinanceiro(aulas) {
 
   const itens = [...grupos.values()].map((item) => ({
     ...item,
-    alunos: ordenarNomes(item.alunos)
+    alunos: ordenarNomes(item.alunos),
+    quantidade_alunos: Number(item.quantidade_alunos || item.alunos.length || 1)
   }));
 
   return itens.sort((a, b) => {
@@ -405,10 +459,16 @@ function montarHtmlAlunos(alunos) {
   return `
     <ul style="margin:6px 0 0 18px; padding:0; line-height:1.55;">
       ${alunos
-        .map((nome) => `<li style="margin-bottom:4px;"><strong style="font-size:15px;">${nome}</strong></li>`)
+        .map((nome) => `<li style="margin-bottom:4px;"><strong style="font-size:15px;">${escaparHtml(nome)}</strong></li>`)
         .join("")}
     </ul>
   `;
+}
+
+function obterTipoTextoItem(item) {
+  if (item.eh_evento) return "Evento coletivo";
+  if (item.aula_coletiva) return "Aula coletiva";
+  return "Aula individual";
 }
 
 function renderItensFinanceiro() {
@@ -416,7 +476,9 @@ function renderItensFinanceiro() {
 
   if (!itensFinanceiroCache.length) {
     listaAulas.innerHTML = `
-      <div style="opacity:0.8; font-size:13px;">Nenhuma aula encontrada para este filtro.</div>
+      <div style="opacity:0.8; font-size:13px;">
+        Nenhuma aula ou evento encontrado para este filtro.
+      </div>
     `;
     atualizarResumo();
     return;
@@ -450,7 +512,7 @@ function renderItensFinanceiro() {
     titulo.style.flexWrap = "wrap";
     titulo.style.marginBottom = "12px";
 
-    const tipoTexto = item.aula_coletiva ? "Aula coletiva" : "Aula individual";
+    const tipoTexto = obterTipoTextoItem(item);
 
     titulo.innerHTML = `
       <div>
@@ -469,8 +531,27 @@ function renderItensFinanceiro() {
           color:#6b5200;
           white-space:nowrap;
         ">
-          ${item.materia_nome}
+          ${escaparHtml(item.materia_nome)}
         </span>
+
+        ${
+          item.eh_evento
+            ? `
+              <span style="
+                font-size:12px;
+                padding:4px 8px;
+                border-radius:999px;
+                background:#e8f0ff;
+                color:#173f8a;
+                border:1px solid #9bbcff;
+                font-weight:700;
+                white-space:nowrap;
+              ">
+                Evento
+              </span>
+            `
+            : ""
+        }
 
         <span style="
           font-size:12px;
@@ -502,9 +583,14 @@ function renderItensFinanceiro() {
     linhaInfo.style.fontSize = "13px";
 
     linhaInfo.innerHTML = `
-      <span><strong>Status:</strong> ${item.status || "-"}</span>
+      <span><strong>Status:</strong> ${escaparHtml(item.status || "-")}</span>
       <span><strong>${formatarParte(item.parte)}</strong></span>
       <span><strong>Qtd. alunos:</strong> ${item.quantidade_alunos || item.alunos.length}</span>
+      ${
+        item.evento_id
+          ? `<span><strong>ID evento:</strong> ${Number(item.evento_id)}</span>`
+          : ""
+      }
     `;
 
     card.appendChild(linhaInfo);
@@ -514,7 +600,7 @@ function renderItensFinanceiro() {
 
     blocoConteudo.innerHTML = `
       <div style="font-size:14px;">
-        <strong>Conteúdo:</strong> ${item.conteudo || "-"}
+        <strong>Conteúdo:</strong> ${escaparHtml(item.conteudo || "-")}
       </div>
     `;
 
@@ -543,8 +629,8 @@ function renderItensFinanceiro() {
         <input
           type="text"
           inputmode="numeric"
-          value="${item.duracao_input || ""}"
-          data-chave-item="${item.chave}"
+          value="${escaparHtml(item.duracao_input || "")}"
+          data-chave-item="${escaparHtml(item.chave)}"
           class="input-duracao-aula"
           style="
             margin-top:6px;
@@ -564,7 +650,7 @@ function renderItensFinanceiro() {
 
       <div>
         <div style="font-size:12px; opacity:0.75;">Valor estimado</div>
-        <div id="valor-item-${item.chave}" style="font-weight:700; margin-top:4px;">
+        <div id="valor-item-${escaparHtml(item.chave)}" style="font-weight:700; margin-top:4px;">
           ${formatarMoeda(valorPrevio)}
         </div>
       </div>
@@ -582,7 +668,7 @@ function renderItensFinanceiro() {
       <button
         type="button"
         class="btn btn-acao-item"
-        data-chave-item="${item.chave}"
+        data-chave-item="${escaparHtml(item.chave)}"
         data-acao="${acaoBotao}"
         style="padding:10px 14px;"
       >
@@ -609,7 +695,7 @@ function renderItensFinanceiro() {
       item.duracao_input = formatado;
       item.duracao_segundos = converterTempoDigitadoParaSegundos(limpo);
 
-      const valorEl = document.getElementById(`valor-item-${chave}`);
+      const valorEl = document.getElementById(`valor-item-${CSS.escape(chave)}`);
 
       if (valorEl) {
         valorEl.textContent = formatarMoeda(calcularValorItem(item));
@@ -627,7 +713,7 @@ function renderItensFinanceiro() {
       const item = itensFinanceiroCache.find((x) => x.chave === chave);
 
       if (!item) {
-        mostrarMensagem("Aula não encontrada.", false);
+        mostrarMensagem("Aula/evento não encontrado.", false);
         return;
       }
 
@@ -637,7 +723,7 @@ function renderItensFinanceiro() {
 
         setTimeout(() => {
           const input = document.querySelector(
-            `.input-duracao-aula[data-chave-item="${chave}"]`
+            `.input-duracao-aula[data-chave-item="${CSS.escape(chave)}"]`
           );
 
           if (input) {
@@ -707,7 +793,11 @@ async function buscarAulas() {
     return;
   }
 
-  listaAulas.innerHTML = `<div style="opacity:0.8; font-size:13px;">Carregando aulas...</div>`;
+  listaAulas.innerHTML = `
+    <div style="opacity:0.8; font-size:13px;">
+      Carregando aulas e eventos...
+    </div>
+  `;
 
   itensFinanceiroCache = [];
   valoresHoraProfessor = [];
@@ -734,6 +824,7 @@ async function buscarAulas() {
       aula_gravada,
       professor_id,
       parte,
+      evento_id,
       aula_coletiva,
       grupo_aula_id,
       quantidade_alunos,
@@ -749,22 +840,33 @@ async function buscarAulas() {
         )
       )
     `)
-    .eq("aula_gravada", true)
+    /*
+      Antes estava assim:
+      .eq("aula_gravada", true)
+
+      Isso deixava evento de fora, porque evento pode não ter aula_gravada = true.
+
+      Agora busca:
+      - aulas gravadas;
+      - OU status Evento;
+      - OU registros com evento_id preenchido.
+    */
+    .or("aula_gravada.eq.true,status.eq.Evento,evento_id.not.is.null")
     .order("data_aula", { ascending: false })
     .order("parte", { ascending: false });
 
   if (error) {
-    console.error("Erro ao buscar aulas:", error);
+    console.error("Erro ao buscar aulas/eventos:", error);
     itensFinanceiroCache = [];
     renderItensFinanceiro();
-    mostrarMensagem("Erro ao buscar aulas.", false);
+    mostrarMensagem("Erro ao buscar aulas e eventos.", false);
     return;
   }
 
   /*
     REGRA IMPORTANTE:
 
-    O financeiro deve considerar quem DEU a aula.
+    O financeiro deve considerar quem DEU a aula ou conduziu o evento.
     Por isso, a prioridade é aula.professor_id.
 
     Antes, o sistema usava matricula.professor_id.
@@ -776,6 +878,9 @@ async function buscarAulas() {
     - Fez uma aula com a Juno.
     - A aula precisa ficar no financeiro da Juno.
     - Mesmo que depois a matrícula volte para a Gretha.
+
+    Para evento, também usa aula.professor_id.
+    Esse professor_id deve ser o professor responsável/anfitrião do evento.
   */
   const aulasProfessor = (data || []).filter((aula) => {
     const professorDaAula = aula.professor_id ? Number(aula.professor_id) : null;
@@ -783,12 +888,10 @@ async function buscarAulas() {
       ? Number(aula.matricula.professor_id)
       : null;
 
-    // Para aulas novas/corretas, usa professor_id da aula.
     if (professorDaAula) {
       return professorDaAula === professorId;
     }
 
-    // Fallback para aulas antigas que talvez tenham professor_id vazio.
     return professorAtualDaMatricula === professorId;
   });
 
@@ -805,7 +908,7 @@ async function salvarDuracaoItem(chave, botao) {
   const item = itensFinanceiroCache.find((x) => x.chave === chave);
 
   if (!item) {
-    mostrarMensagem("Aula não encontrada.", false);
+    mostrarMensagem("Aula/evento não encontrado.", false);
     return;
   }
 
@@ -822,6 +925,10 @@ async function salvarDuracaoItem(chave, botao) {
   botao.textContent = "Salvando...";
 
   try {
+    /*
+      Se for evento/aula coletiva, salva a mesma minutagem em todas as linhas do grupo.
+      Assim evita pagar por aluno separadamente e mantém todas as participações com a mesma duração.
+    */
     for (const id of item.ids_aula) {
       const { error } = await supabase
         .from("aula")
@@ -845,7 +952,7 @@ async function salvarDuracaoItem(chave, botao) {
     renderItensFinanceiro();
   } catch (error) {
     console.error("Erro ao salvar minutagem:", error);
-    mostrarMensagem("Erro ao salvar a minutagem desta aula.", false);
+    mostrarMensagem("Erro ao salvar a minutagem desta aula/evento.", false);
 
     botao.disabled = false;
     botao.textContent = textoOriginal;
