@@ -119,7 +119,7 @@ async function preencherFiltroInicial() {
 }
 
 function criarParagrafoVazio(texto) {
-  return `<p style="font-size:14px;">${texto}</p>`;
+  return `<p style="font-size:14px;">${escapeHtml(texto)}</p>`;
 }
 
 function normalizarTexto(valor) {
@@ -224,21 +224,9 @@ function ehNotaDeAvaliacao(nota) {
   return tipo.includes("avalia");
 }
 
-/*
-  REGRA OFICIAL DE AULA VÁLIDA PARA AVALIAÇÃO
-
-  Conta:
-  - Presente
-  - Ausente + aula_gravada = true
-  - Reposição + aula_gravada = true
-
-  Não conta:
-  - Ausente sem gravação
-  - Ausente pendente de reposição
-  - Cancelada
-  - Aula Instrumental
-  - Plantão de dúvidas
-*/
+/* =========================================================
+   REGRAS DE AULA
+========================================================= */
 function aulaValidaParaAvaliacao(aula) {
   const status = normalizarTexto(aula?.status);
   const gravada = aula?.aula_gravada === true;
@@ -271,7 +259,8 @@ function statusContaComoAulaPedagogicaNoPeriodo(aula) {
     "plantao de duvidas",
     "plantão de duvidas",
     "plantao de dúvidas",
-    "plantão de dúvidas"
+    "plantão de dúvidas",
+    "evento"
   ].includes(status);
 }
 
@@ -286,6 +275,21 @@ function aulaAusentePendenteReposicao(aula) {
 }
 
 function obterSegundosAula(aula) {
+  /*
+    Aula coletiva já vem agrupada para o resumo.
+    Então a duração representa o grupo inteiro,
+    não cada aluno individualmente.
+  */
+  if (aula?.ids_aulas_resumo?.length > 1) {
+    const segundosGrupo = Number(aula?.duracao_segundos);
+
+    if (!Number.isNaN(segundosGrupo) && segundosGrupo > 0) {
+      return segundosGrupo;
+    }
+
+    return 0;
+  }
+
   if (aulaAusentePendenteReposicao(aula)) {
     return 0;
   }
@@ -367,7 +371,10 @@ function textoReposicaoAulaOriginal(aula) {
     return "aguardando reposição";
   }
 
-  if (normalizarTexto(aula?.status) !== "reposicao" && normalizarTexto(aula?.status) !== "reposição") {
+  if (
+    normalizarTexto(aula?.status) !== "reposicao" &&
+    normalizarTexto(aula?.status) !== "reposição"
+  ) {
     return "";
   }
 
@@ -402,11 +409,188 @@ function ordenarAulasPorDataDesc(a, b) {
     return dataB.localeCompare(dataA);
   }
 
+  const parteA = Number(a?.parte || 1);
+  const parteB = Number(b?.parte || 1);
+
+  if (parteA !== parteB) {
+    return parteB - parteA;
+  }
+
   return Number(b?.id || 0) - Number(a?.id || 0);
 }
 
 function chaveAvaliacao({ matriculaId, moduloId, numeroAvaliacao }) {
   return `${Number(matriculaId)}-${Number(moduloId)}-${Number(numeroAvaliacao)}`;
+}
+
+/* =========================================================
+   AGRUPAMENTO DAS AULAS DO RESUMO DO PROFESSOR
+========================================================= */
+function ehGrupoAulaPeriodo(aula) {
+  return Boolean(aula?.aula_coletiva && aula?.grupo_aula_id);
+}
+
+function chaveGrupoAulaPeriodo(aula) {
+  if (aula?.evento_id) {
+    return `evento_${aula.evento_id}`;
+  }
+
+  if (ehGrupoAulaPeriodo(aula)) {
+    return `grupo_${aula.grupo_aula_id}`;
+  }
+
+  return `aula_${aula.id}`;
+}
+
+function obterMateriaModuloResumo(aula) {
+  const materia =
+    aula?.matricula?.modulo?.materia?.nome ||
+    aula?.matricula?.materia?.nome ||
+    "";
+
+  const modulo =
+    aula?.matricula?.modulo?.nome ||
+    "";
+
+  if (materia && modulo) return `${materia} | ${modulo}`;
+  if (materia) return materia;
+  if (modulo) return modulo;
+
+  return "";
+}
+
+function agruparAulasPeriodoProfessor(aulas) {
+  const grupos = new Map();
+
+  aulas.forEach((aula) => {
+    const chave = chaveGrupoAulaPeriodo(aula);
+    const nomeAluno = nomeAlunoDaAula(aula);
+    const statusAluno = textoStatusAulaProfessor(aula);
+    const duracao = obterSegundosAula(aula);
+
+    if (!grupos.has(chave)) {
+      grupos.set(chave, {
+        ...aula,
+        chave_resumo: chave,
+        aula_coletiva_resumo: ehGrupoAulaPeriodo(aula),
+        ids_aulas_resumo: [Number(aula.id)],
+        participantes_resumo: [
+          {
+            nome: nomeAluno,
+            status: statusAluno
+          }
+        ],
+        status_resumo: [statusAluno],
+        duracao_segundos: duracao,
+        quantidade_alunos_resumo: Number(aula.quantidade_alunos || 0) || 1,
+        materia_modulo_resumo: obterMateriaModuloResumo(aula)
+      });
+
+      return;
+    }
+
+    const grupo = grupos.get(chave);
+
+    grupo.ids_aulas_resumo.push(Number(aula.id));
+
+    if (
+      !grupo.participantes_resumo.some(
+        (p) => normalizarTexto(p.nome) === normalizarTexto(nomeAluno)
+      )
+    ) {
+      grupo.participantes_resumo.push({
+        nome: nomeAluno,
+        status: statusAluno
+      });
+    }
+
+    if (!grupo.status_resumo.includes(statusAluno)) {
+      grupo.status_resumo.push(statusAluno);
+    }
+
+    grupo.quantidade_alunos_resumo = Math.max(
+      Number(grupo.quantidade_alunos_resumo || 0),
+      Number(aula.quantidade_alunos || 0),
+      grupo.participantes_resumo.length
+    );
+
+    /*
+      Aula coletiva tem várias linhas no banco, uma por aluno.
+      No resumo do professor, a duração precisa contar uma vez só.
+      Por segurança, usamos a maior duração encontrada no grupo.
+    */
+    grupo.duracao_segundos = Math.max(
+      Number(grupo.duracao_segundos || 0),
+      Number(duracao || 0)
+    );
+
+    if (!grupo.conteudo && aula.conteudo) {
+      grupo.conteudo = aula.conteudo;
+    }
+
+    if (!grupo.licao_casa && aula.licao_casa) {
+      grupo.licao_casa = aula.licao_casa;
+    }
+
+    if (!grupo.materia_modulo_resumo) {
+      grupo.materia_modulo_resumo = obterMateriaModuloResumo(aula);
+    }
+  });
+
+  return [...grupos.values()].map((grupo) => ({
+    ...grupo,
+    participantes_resumo: [...grupo.participantes_resumo].sort((a, b) =>
+      a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+    )
+  }));
+}
+
+function textoTipoAulaResumo(aula) {
+  if (aula?.evento_id) return "Evento";
+  return aula?.aula_coletiva_resumo ? "Aula coletiva" : "Aula individual";
+}
+
+function htmlParticipantesResumo(aula) {
+  const participantes = aula?.participantes_resumo || [
+    {
+      nome: nomeAlunoDaAula(aula),
+      status: textoStatusAulaProfessor(aula)
+    }
+  ];
+
+  return participantes
+    .map((p) => {
+      return `
+        <span style="
+          display:inline-flex;
+          align-items:center;
+          gap:4px;
+          padding:3px 7px;
+          border:1px solid #f1d98a;
+          border-radius:999px;
+          background:#fffdf8;
+          white-space:nowrap;
+        ">
+          <b>${escapeHtml(p.nome)}</b>
+          <span style="opacity:.75;">${escapeHtml(p.status)}</span>
+        </span>
+      `;
+    })
+    .join("");
+}
+
+function textoStatusResumoGrupo(aula) {
+  if (!aula?.aula_coletiva_resumo) {
+    return textoStatusAulaProfessor(aula);
+  }
+
+  const statuses = aula.status_resumo || [];
+
+  if (statuses.length === 1) {
+    return statuses[0];
+  }
+
+  return "Status misto";
 }
 
 /* =========================================================
@@ -430,6 +614,8 @@ async function buscarAulasPorPeriodoPaginado() {
         id,
         data_aula,
         status,
+        conteudo,
+        licao_casa,
         aula_gravada,
         precisa_reposicao,
         matricula_id,
@@ -437,9 +623,29 @@ async function buscarAulasPorPeriodoPaginado() {
         professor_id,
         aula_original_id,
         duracao_segundos,
+        parte,
+        evento_id,
+        aula_coletiva,
+        grupo_aula_id,
+        quantidade_alunos,
         matricula:matricula_id (
           id,
+          professor_id,
+          materia_id,
           aluno:aluno_id (
+            id,
+            nome
+          ),
+          modulo:modulo_id (
+            id,
+            nome,
+            materia_id,
+            materia:materia_id (
+              id,
+              nome
+            )
+          ),
+          materia:materia_id (
             id,
             nome
           )
@@ -730,12 +936,14 @@ async function carregarAulasProfessorPorPeriodo() {
     }
   }
 
-  aulasFiltradasProfessor = filtradas.map((aula) => ({
+  const comOriginais = filtradas.map((aula) => ({
     ...aula,
     aula_original: aula.aula_original_id
       ? mapaOriginais[String(aula.aula_original_id)] || null
       : null
   }));
+
+  aulasFiltradasProfessor = agruparAulasPeriodoProfessor(comOriginais);
 }
 
 async function carregarNotasSistema() {
@@ -1423,14 +1631,83 @@ function renderListaAulasPeriodo() {
   const html = visiveis
     .map((aula) => {
       const infoReposicao = textoReposicaoAulaOriginal(aula);
+      const conteudo = aula.conteudo || "-";
+      const licao = aula.licao_casa || "";
+      const materiaModulo = aula.materia_modulo_resumo || "";
+      const tipo = textoTipoAulaResumo(aula);
+      const status = textoStatusResumoGrupo(aula);
 
       return `
-        <div class="item-aula-periodo item-aula-periodo-linha">
-          <span class="col-aula col-aula-data">${formatarDataBR(aula.data_aula)}</span>
-          <span class="col-aula col-aula-aluno">${escapeHtml(nomeAlunoDaAula(aula))}</span>
-          <span class="col-aula col-aula-status">${escapeHtml(textoStatusAulaProfessor(aula))}</span>
-          <span class="col-aula col-aula-reposicao">${escapeHtml(infoReposicao || "-")}</span>
-          <span class="col-aula col-aula-duracao">${escapeHtml(textoDuracaoAulaProfessor(aula))}</span>
+        <div
+          class="item-aula-periodo"
+          style="
+            display:grid;
+            grid-template-columns: 110px 1fr 85px;
+            gap:10px;
+            align-items:center;
+            padding:9px 12px;
+            margin-bottom:8px;
+            border:1px solid #f1d98a;
+            border-radius:12px;
+            background:#fffdf8;
+            font-size:13px;
+          "
+        >
+          <div>
+            <div style="font-weight:700;">${formatarDataBR(aula.data_aula)}</div>
+            <div style="font-size:12px; opacity:.75;">${escapeHtml(tipo)}</div>
+          </div>
+
+          <div style="min-width:0;">
+            <div style="
+              display:flex;
+              flex-wrap:wrap;
+              gap:6px;
+              margin-bottom:5px;
+            ">
+              ${htmlParticipantesResumo(aula)}
+            </div>
+
+            <div style="font-size:12px; opacity:.9;">
+              <b>Status:</b> ${escapeHtml(status)}
+              ${
+                materiaModulo
+                  ? ` | <b>${escapeHtml(materiaModulo)}</b>`
+                  : ""
+              }
+              ${
+                aula.parte
+                  ? ` | Parte ${Number(aula.parte || 1)}`
+                  : ""
+              }
+              ${
+                aula.aula_coletiva_resumo
+                  ? ` | ${Number(aula.quantidade_alunos_resumo || aula.participantes_resumo?.length || 0)} aluno(s)`
+                  : ""
+              }
+              ${
+                infoReposicao
+                  ? ` | ${escapeHtml(infoReposicao)}`
+                  : ""
+              }
+            </div>
+
+            <div style="
+              font-size:12px;
+              opacity:.85;
+              margin-top:3px;
+              white-space:nowrap;
+              overflow:hidden;
+              text-overflow:ellipsis;
+            ">
+              <b>Conteúdo:</b> ${escapeHtml(conteudo)}
+              ${licao ? ` | <b>Lição:</b> ${escapeHtml(licao)}` : ""}
+            </div>
+          </div>
+
+          <div style="text-align:right; font-weight:700;">
+            ${escapeHtml(textoDuracaoAulaProfessor(aula))}
+          </div>
         </div>
       `;
     })
