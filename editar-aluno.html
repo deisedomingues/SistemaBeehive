@@ -36,7 +36,7 @@
 
         <div id="listaSugestoes" class="lista-sugestoes"></div>
 
-        <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
           <button
             type="button"
             class="btn"
@@ -53,7 +53,7 @@
     </div>
 
     <!-- EDITAR DADOS -->
-    <div class="card">
+    <div class="card" style="margin-bottom:14px;">
 
       <h2>2) Editar dados</h2>
 
@@ -100,7 +100,6 @@
 
         <label style="margin-bottom:10px;">
           Empresa
-
           <select
             id="empresa"
             style="padding:8px; width:100%;"
@@ -109,12 +108,29 @@
           </select>
         </label>
 
+        <!-- HORÁRIOS -->
+        <div
+          id="secaoHorarios"
+          style="display:none; margin-top:16px; padding-top:12px; border-top:1px solid #eee;"
+        >
+          <h2 style="font-size:15px; text-align:left; margin-bottom:6px;">
+            3) Horários de aula
+          </h2>
+
+          <p style="margin:0 0 10px 0; font-size:12px; color:#5f4b00; line-height:1.45;">
+            Edite os horários fixos do aluno em cada curso. Se o aluno tiver duas aulas seguidas,
+            cadastre uma linha para cada aula, por exemplo: 10:00 às 10:40 e 10:40 às 11:20.
+          </p>
+
+          <div id="horariosCursos"></div>
+        </div>
+
         <button
           type="submit"
           class="btn"
           id="btnSalvar"
           disabled
-          style="padding:12px;"
+          style="padding:12px; margin-top:12px;"
         >
           Salvar alterações
         </button>

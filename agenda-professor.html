@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Agenda do Professor | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+      <a href="home-professor.html" class="link-voltar" style="margin:0;">
+        ← Voltar
+      </a>
+
+      <button
+        type="button"
+        id="btnAtualizarAgenda"
+        class="btn"
+        style="padding:8px 12px; font-size:12px; width:auto;"
+      >
+        Atualizar
+      </button>
+    </div>
+
+    <section class="cabecalho-admin-central" style="margin-bottom:14px;">
+      <h1>Minha agenda</h1>
+      <p class="subtitulo-admin">
+        Consulte seus alunos do dia e os próximos horários da semana.
+      </p>
+    </section>
+
+    <div id="msgAgenda" style="display:none; margin-bottom:10px;"></div>
+
+    <section class="card" style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+        <div>
+          <h2 style="margin-bottom:4px;">Meus alunos de hoje</h2>
+          <p id="textoHoje" style="margin:0; font-size:12px; color:#666;"></p>
+        </div>
+
+        <span
+          id="contadorHoje"
+          style="background:#FFF5CC; border:1px solid #F1BC32; color:#5f4b00; padding:5px 9px; border-radius:999px; font-size:12px; font-weight:700;"
+        >
+          0 horário(s)
+        </span>
+      </div>
+
+      <div id="listaHoje" style="margin-top:12px;"></div>
+    </section>
+
+    <section class="card">
+      <h2 style="margin-bottom:4px;">Próximos dias da semana</h2>
+      <p style="margin:0 0 12px 0; font-size:12px; color:#666;">
+        Horários fixos cadastrados para os próximos dias.
+      </p>
+
+      <div id="listaProximosDias"></div>
+    </section>
+
+    <a href="home-professor.html" class="link-voltar" style="margin-top:10px;">
+      ← Voltar
+    </a>
+
+  </main>
+<script type="module" src="js/agenda-professor.js"></script>
+
+</body>
+</html>

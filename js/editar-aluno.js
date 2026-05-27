@@ -18,10 +18,13 @@ const inputTelefone = document.getElementById("telefone");
 const inputEmpresa = document.getElementById("empresa");
 
 const btnSalvar = document.getElementById("btnSalvar");
+const secaoHorarios = document.getElementById("secaoHorarios");
+const horariosCursosDiv = document.getElementById("horariosCursos");
 
 let alunosCache = [];
 let empresasCache = [];
 let alunoAtualId = null;
+let matriculasAlunoAtual = [];
 
 /* =========================
    MENSAGEM DO TOPO
@@ -49,7 +52,7 @@ function mostrarMensagem(texto, ok = true) {
   setTimeout(() => {
     msg.style.display = "none";
     msg.textContent = "";
-  }, 3000);
+  }, 3500);
 }
 
 /* =========================
@@ -79,7 +82,7 @@ function mostrarMsgSalvar(texto, ok = true) {
   setTimeout(() => {
     msgSalvar.style.display = "none";
     msgSalvar.textContent = "";
-  }, 3000);
+  }, 4000);
 }
 
 /* =========================
@@ -87,6 +90,7 @@ function mostrarMsgSalvar(texto, ok = true) {
 ========================= */
 function limparFormulario() {
   alunoAtualId = null;
+  matriculasAlunoAtual = [];
 
   inputNome.value = "";
   inputData.value = "";
@@ -98,6 +102,14 @@ function limparFormulario() {
   btnSalvar.textContent = "Salvar alterações";
 
   btnVerMatriculas.disabled = true;
+
+  if (secaoHorarios) {
+    secaoHorarios.style.display = "none";
+  }
+
+  if (horariosCursosDiv) {
+    horariosCursosDiv.innerHTML = "";
+  }
 }
 
 /* =========================
@@ -218,6 +230,417 @@ async function carregarAlunoPorId(id) {
 }
 
 /* =========================
+   HORÁRIOS - HELPERS
+========================= */
+function somarMinutos(hora, minutosParaSomar) {
+  if (!hora) return "";
+
+  const [horas, minutos] = hora.split(":").map(Number);
+
+  const data = new Date();
+  data.setHours(horas);
+  data.setMinutes(minutos + minutosParaSomar);
+  data.setSeconds(0);
+  data.setMilliseconds(0);
+
+  const novaHora = String(data.getHours()).padStart(2, "0");
+  const novoMinuto = String(data.getMinutes()).padStart(2, "0");
+
+  return `${novaHora}:${novoMinuto}`;
+}
+
+function nomeDiaSemana(numero) {
+  const nomes = {
+    1: "Segunda-feira",
+    2: "Terça-feira",
+    3: "Quarta-feira",
+    4: "Quinta-feira",
+    5: "Sexta-feira",
+    6: "Sábado"
+  };
+
+  return nomes[Number(numero)] || "";
+}
+
+function criarLinhaHorario(cardCurso, horario = {}) {
+  const lista = cardCurso.querySelector(".lista-horarios-curso");
+
+  const linha = document.createElement("div");
+  linha.className = "linha-horario-aula";
+  linha.dataset.horarioId = horario.id || "";
+
+  linha.style.display = "grid";
+  linha.style.gridTemplateColumns = "1.4fr 1fr 1fr auto";
+  linha.style.gap = "8px";
+  linha.style.alignItems = "end";
+  linha.style.marginBottom = "8px";
+
+  linha.innerHTML = `
+    <label style="margin-bottom:0;">
+      Dia
+      <select class="horario-dia" style="padding:8px;">
+        <option value="">Selecione</option>
+        <option value="1">Segunda-feira</option>
+        <option value="2">Terça-feira</option>
+        <option value="3">Quarta-feira</option>
+        <option value="4">Quinta-feira</option>
+        <option value="5">Sexta-feira</option>
+        <option value="6">Sábado</option>
+      </select>
+    </label>
+
+    <label style="margin-bottom:0;">
+      Início
+      <input
+        type="time"
+        class="horario-inicio"
+        style="padding:8px;"
+      />
+    </label>
+
+    <label style="margin-bottom:0;">
+      Fim
+      <input
+        type="time"
+        class="horario-fim"
+        style="padding:8px;"
+      />
+    </label>
+
+    <button
+      type="button"
+      class="btn-remover-horario"
+      style="background:#fff; border:1px solid #d8d8d8; color:#444; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:12px;"
+    >
+      Remover
+    </button>
+  `;
+
+  const selectDia = linha.querySelector(".horario-dia");
+  const inputInicio = linha.querySelector(".horario-inicio");
+  const inputFim = linha.querySelector(".horario-fim");
+  const btnRemover = linha.querySelector(".btn-remover-horario");
+
+  if (horario.dia_semana) {
+    selectDia.value = String(horario.dia_semana);
+  }
+
+  if (horario.hora_inicio) {
+    inputInicio.value = String(horario.hora_inicio).slice(0, 5);
+  }
+
+  if (horario.hora_fim) {
+    inputFim.value = String(horario.hora_fim).slice(0, 5);
+  }
+
+  inputInicio.addEventListener("change", () => {
+    if (!inputInicio.value) return;
+    inputFim.value = somarMinutos(inputInicio.value, 40);
+  });
+
+  btnRemover.addEventListener("click", () => {
+    linha.remove();
+  });
+
+  lista.appendChild(linha);
+}
+
+async function carregarMatriculasDoAluno(alunoId) {
+  const { data, error } = await supabase
+    .from("matricula")
+    .select(`
+      id,
+      aluno_id,
+      materia_id,
+      modulo_id,
+      professor_id,
+      ativa,
+      materia:materia_id ( id, nome ),
+      modulo:modulo_id ( id, nome ),
+      professor:professor_id ( id, nome )
+    `)
+    .eq("aluno_id", alunoId)
+    .order("id", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao carregar matrículas do aluno:", error);
+    mostrarMensagem("Erro ao carregar matrículas do aluno.", false);
+    return [];
+  }
+
+  return data || [];
+}
+
+async function carregarHorariosDoAluno(alunoId) {
+  const { data, error } = await supabase
+    .from("aluno_horario_aula")
+    .select(`
+      id,
+      aluno_id,
+      matricula_id,
+      materia_id,
+      modulo_id,
+      professor_id,
+      dia_semana,
+      hora_inicio,
+      hora_fim,
+      ativo
+    `)
+    .eq("aluno_id", alunoId)
+    .eq("ativo", true)
+    .order("dia_semana", { ascending: true })
+    .order("hora_inicio", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao carregar horários do aluno:", error);
+    mostrarMensagem("Erro ao carregar horários do aluno.", false);
+    return [];
+  }
+
+  return data || [];
+}
+
+function encontrarHorariosDaMatricula(horarios, matricula) {
+  return horarios.filter((h) => {
+    if (h.matricula_id) {
+      return Number(h.matricula_id) === Number(matricula.id);
+    }
+
+    return (
+      Number(h.materia_id) === Number(matricula.materia_id) &&
+      Number(h.professor_id) === Number(matricula.professor_id)
+    );
+  });
+}
+
+function renderizarHorariosDoAluno(matriculas, horarios) {
+  horariosCursosDiv.innerHTML = "";
+
+  if (!matriculas.length) {
+    secaoHorarios.style.display = "block";
+    horariosCursosDiv.innerHTML = `
+      <div style="padding:10px; border:1px solid #eee; background:#fffdf4; border-radius:10px; font-size:13px; color:#5f4b00;">
+        Este aluno ainda não possui matrícula cadastrada. Cadastre a matrícula primeiro para vincular horários.
+      </div>
+    `;
+    return;
+  }
+
+  secaoHorarios.style.display = "block";
+
+  matriculas.forEach((matricula) => {
+    const card = document.createElement("div");
+    card.className = "card-horario-curso";
+    card.dataset.matriculaId = matricula.id;
+    card.dataset.materiaId = matricula.materia_id || "";
+    card.dataset.moduloId = matricula.modulo_id || "";
+    card.dataset.professorId = matricula.professor_id || "";
+
+    card.style.border = "1px solid #f1e4a7";
+    card.style.background = "#fffdf4";
+    card.style.borderRadius = "12px";
+    card.style.padding = "12px";
+    card.style.marginBottom = "10px";
+
+    const nomeMateria = matricula.materia?.nome || "Curso sem nome";
+    const nomeModulo = matricula.modulo?.nome || "Módulo não informado";
+    const nomeProfessor = matricula.professor?.nome || "Professor(a) não informado";
+
+    card.innerHTML = `
+      <div style="margin-bottom:10px;">
+        <strong style="font-size:13px; color:#5f4b00;">
+          ${nomeMateria}
+        </strong>
+
+        <p style="margin:4px 0 0 0; font-size:12px; color:#555; line-height:1.4;">
+          ${nomeModulo} | ${nomeProfessor}
+        </p>
+      </div>
+
+      <div class="lista-horarios-curso"></div>
+
+      <div style="text-align:right;">
+        <button
+          type="button"
+          class="btn-add-horario-curso"
+          style="background-color:#FFF5CC; border:1px solid #F1BC32; color:#000; padding:5px 10px; border-radius:8px; font-size:11.5px; cursor:pointer;"
+        >
+          + adicionar horário
+        </button>
+      </div>
+    `;
+
+    horariosCursosDiv.appendChild(card);
+
+    const horariosDessaMatricula = encontrarHorariosDaMatricula(horarios, matricula);
+
+    if (horariosDessaMatricula.length) {
+      horariosDessaMatricula.forEach((horario) => {
+        criarLinhaHorario(card, horario);
+      });
+    } else {
+      criarLinhaHorario(card);
+    }
+
+    const btnAddHorario = card.querySelector(".btn-add-horario-curso");
+
+    btnAddHorario.addEventListener("click", () => {
+      criarLinhaHorario(card);
+    });
+  });
+}
+
+function coletarHorariosDaTela() {
+  const cards = [...document.querySelectorAll(".card-horario-curso")];
+
+  const horarios = [];
+
+  cards.forEach((card) => {
+    const matriculaId = Number(card.dataset.matriculaId);
+    const materiaId = Number(card.dataset.materiaId);
+    const moduloId = card.dataset.moduloId ? Number(card.dataset.moduloId) : null;
+    const professorId = Number(card.dataset.professorId);
+
+    const linhas = [...card.querySelectorAll(".linha-horario-aula")];
+
+    linhas.forEach((linha) => {
+      const diaSemana = linha.querySelector(".horario-dia")?.value || "";
+      const horaInicio = linha.querySelector(".horario-inicio")?.value || "";
+      const horaFim = linha.querySelector(".horario-fim")?.value || "";
+
+      const vazia = !diaSemana && !horaInicio && !horaFim;
+
+      if (vazia) {
+        return;
+      }
+
+      if (!diaSemana || !horaInicio || !horaFim) {
+        throw new Error("Preencha dia, início e fim em todos os horários adicionados.");
+      }
+
+      if (horaFim <= horaInicio) {
+        throw new Error("O horário final precisa ser maior que o horário inicial.");
+      }
+
+      horarios.push({
+        aluno_id: Number(alunoAtualId),
+        matricula_id: matriculaId,
+        materia_id: materiaId,
+        modulo_id: moduloId,
+        professor_id: professorId,
+        dia_semana: Number(diaSemana),
+        hora_inicio: horaInicio,
+        hora_fim: horaFim,
+        ativo: true
+      });
+    });
+  });
+
+  return horarios;
+}
+
+function validarConflitoDeHorariosDoAluno(horarios) {
+  for (let i = 0; i < horarios.length; i++) {
+    for (let j = i + 1; j < horarios.length; j++) {
+      const atual = horarios[i];
+      const outro = horarios[j];
+
+      const mesmoDia = atual.dia_semana === outro.dia_semana;
+
+      const horariosCruzam =
+        atual.hora_inicio < outro.hora_fim &&
+        atual.hora_fim > outro.hora_inicio;
+
+      if (mesmoDia && horariosCruzam) {
+        throw new Error(
+          `Conflito de horário do aluno: ${nomeDiaSemana(atual.dia_semana)} das ${atual.hora_inicio} às ${atual.hora_fim} cruza com outro horário cadastrado.`
+        );
+      }
+    }
+  }
+}
+
+async function validarConflitoProfessorAntesDeSalvar(horarios) {
+  for (const horario of horarios) {
+    const { data, error } = await supabase
+      .from("aluno_horario_aula")
+      .select("id, aluno_id, hora_inicio, hora_fim")
+      .eq("professor_id", horario.professor_id)
+      .eq("dia_semana", horario.dia_semana)
+      .eq("ativo", true);
+
+    if (error) {
+      console.error("Erro ao validar agenda do professor:", error);
+      throw new Error("Erro ao validar agenda do professor.");
+    }
+
+    const conflitos = (data || []).filter((existente) => {
+      const ehDoMesmoAluno = Number(existente.aluno_id) === Number(alunoAtualId);
+
+      if (ehDoMesmoAluno) {
+        return false;
+      }
+
+      const cruza =
+        horario.hora_inicio < String(existente.hora_fim).slice(0, 5) &&
+        horario.hora_fim > String(existente.hora_inicio).slice(0, 5);
+
+      const mesmoHorarioExato =
+        horario.hora_inicio === String(existente.hora_inicio).slice(0, 5) &&
+        horario.hora_fim === String(existente.hora_fim).slice(0, 5);
+
+      return cruza && !mesmoHorarioExato;
+    });
+
+    if (conflitos.length) {
+      throw new Error(
+        `Conflito na agenda do professor: ${nomeDiaSemana(horario.dia_semana)} das ${horario.hora_inicio} às ${horario.hora_fim} cruza com outro horário já cadastrado.`
+      );
+    }
+  }
+}
+
+async function salvarHorariosDoAluno() {
+  const horarios = coletarHorariosDaTela();
+
+  validarConflitoDeHorariosDoAluno(horarios);
+  await validarConflitoProfessorAntesDeSalvar(horarios);
+
+  const { error: erroDelete } = await supabase
+    .from("aluno_horario_aula")
+    .delete()
+    .eq("aluno_id", alunoAtualId);
+
+  if (erroDelete) {
+    console.error("Erro ao apagar horários antigos:", erroDelete);
+    throw new Error("Erro ao atualizar horários antigos do aluno.");
+  }
+
+  if (!horarios.length) {
+    return;
+  }
+
+  const { error: erroInsert } = await supabase
+    .from("aluno_horario_aula")
+    .insert(horarios);
+
+  if (erroInsert) {
+    console.error("Erro ao salvar novos horários:", erroInsert);
+
+    const mensagemBanco = erroInsert.message || "";
+
+    if (
+      mensagemBanco.includes("Conflito de horário") ||
+      mensagemBanco.includes("conflito")
+    ) {
+      throw new Error("Erro ao salvar horários: existe conflito de horário.");
+    }
+
+    throw new Error("Erro ao salvar horários do aluno.");
+  }
+}
+
+/* =========================
    SELECIONAR ALUNO
 ========================= */
 async function selecionarAluno(aluno) {
@@ -238,6 +661,11 @@ async function selecionarAluno(aluno) {
   inputEmail.value = dados.email || "";
   inputTelefone.value = dados.telefone || "";
   inputEmpresa.value = dados.empresa_cnpj || "";
+
+  matriculasAlunoAtual = await carregarMatriculasDoAluno(aluno.id);
+  const horarios = await carregarHorariosDoAluno(aluno.id);
+
+  renderizarHorariosDoAluno(matriculasAlunoAtual, horarios);
 
   btnSalvar.disabled = false;
   btnSalvar.textContent = "Salvar alterações";
@@ -299,6 +727,16 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
+  let horariosColetados = [];
+
+  try {
+    horariosColetados = coletarHorariosDaTela();
+    validarConflitoDeHorariosDoAluno(horariosColetados);
+  } catch (erro) {
+    mostrarMsgSalvar(erro.message, false);
+    return;
+  }
+
   btnSalvar.disabled = true;
   btnSalvar.textContent = "Salvando...";
 
@@ -318,23 +756,32 @@ form.addEventListener("submit", async (e) => {
 
     if (error) {
       console.error("Erro ao salvar alterações:", error);
-      mostrarMsgSalvar("Erro ao salvar alterações. Verifique os dados e tente novamente.", false);
+      mostrarMsgSalvar("Erro ao salvar dados do aluno. Verifique os dados e tente novamente.", false);
       return;
     }
 
+    await salvarHorariosDoAluno();
+
     btnSalvar.textContent = "✔ Salvo";
-    mostrarMsgSalvar("Salvo com sucesso!", true);
+    mostrarMsgSalvar("Dados e horários salvos com sucesso!", true);
 
     await carregarAlunosComQtdCursos();
 
     const alunoAtualizado = alunosCache.find((a) => Number(a.id) === Number(alunoAtualId));
+
     if (alunoAtualizado) {
       inputAluno.value = alunoAtualizado.nome;
     }
 
+    const horariosAtualizados = await carregarHorariosDoAluno(alunoAtualId);
+    renderizarHorariosDoAluno(matriculasAlunoAtual, horariosAtualizados);
+
   } catch (erro) {
     console.error("Erro inesperado ao salvar:", erro);
-    mostrarMsgSalvar("Erro inesperado ao salvar. Veja o console para detalhes.", false);
+    mostrarMsgSalvar(
+      erro.message || "Erro inesperado ao salvar. Veja o console para detalhes.",
+      false
+    );
 
   } finally {
     setTimeout(() => {
