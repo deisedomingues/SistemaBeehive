@@ -104,6 +104,50 @@ function formatarHora(hora) {
 }
 
 /* =====================================================
+   GOOGLE AGENDA
+===================================================== */
+function montarDataHoraGoogle(dataISO, hora) {
+  const dataLimpa = String(dataISO || "").replaceAll("-", "");
+  const horaLimpa = String(hora || "").slice(0, 5).replace(":", "");
+
+  return `${dataLimpa}T${horaLimpa}00`;
+}
+
+function montarLinkGoogleAgenda(item, dataISO) {
+  const alunoNome = item.aluno?.nome || "Aluno";
+  const materiaNome = item.materia?.nome || "Curso";
+  const moduloNome = item.modulo?.nome || "Módulo";
+
+  const horaInicio = formatarHora(item.hora_inicio);
+  const horaFim = formatarHora(item.hora_fim);
+
+  const titulo = `Beehive - ${alunoNome}`;
+
+  const detalhes = [
+    `Aluno: ${alunoNome}`,
+    `Curso: ${materiaNome}`,
+    `Módulo: ${moduloNome}`,
+    `Horário: ${horaInicio} às ${horaFim}`,
+    "",
+    "Aula fixa semanal cadastrada no Sistema Beehive."
+  ].join("\n");
+
+  const inicioGoogle = montarDataHoraGoogle(dataISO, horaInicio);
+  const fimGoogle = montarDataHoraGoogle(dataISO, horaFim);
+
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: titulo,
+    dates: `${inicioGoogle}/${fimGoogle}`,
+    details: detalhes,
+    ctz: "America/Sao_Paulo",
+    recur: "RRULE:FREQ=WEEKLY"
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+/* =====================================================
    PROFESSOR LOGADO
 ===================================================== */
 async function obterProfessorAtualId() {
@@ -292,7 +336,9 @@ function aplicarStatusDeRegistro(horarios, aulasRegistradas) {
 /* =====================================================
    RENDER
 ===================================================== */
-function criarCardHorario(item, dataISO, mostrarDia = false) {
+function criarCardHorario(item, dataISO, opcoes = {}) {
+  const { mostrarDia = false, mostrarStatus = false } = opcoes;
+
   const alunoNome = item.aluno?.nome || "Aluno não informado";
   const materiaNome = item.materia?.nome || "Curso não informado";
   const moduloNome = item.modulo?.nome || "Módulo não informado";
@@ -300,10 +346,22 @@ function criarCardHorario(item, dataISO, mostrarDia = false) {
   const horaInicio = formatarHora(item.hora_inicio);
   const horaFim = formatarHora(item.hora_fim);
 
-  const statusTexto = item.registrada ? "Aula registrada" : "Pendente de registro";
-  const statusCor = item.registrada ? "#1b5e20" : "#9a6700";
-  const statusFundo = item.registrada ? "#e8f5e9" : "#fff8e1";
-  const statusBorda = item.registrada ? "#a5d6a7" : "#f1bc32";
+  const linkGoogleAgenda = montarLinkGoogleAgenda(item, dataISO);
+
+  let htmlStatus = "";
+
+  if (mostrarStatus) {
+    const statusTexto = item.registrada ? "Aula registrada" : "Pendente de registro";
+    const statusCor = item.registrada ? "#1b5e20" : "#9a6700";
+    const statusFundo = item.registrada ? "#e8f5e9" : "#fff8e1";
+    const statusBorda = item.registrada ? "#a5d6a7" : "#f1bc32";
+
+    htmlStatus = `
+      <span style="background:${statusFundo}; border:1px solid ${statusBorda}; color:${statusCor}; padding:5px 9px; border-radius:999px; font-size:12px; font-weight:700; text-align:center;">
+        ${statusTexto}
+      </span>
+    `;
+  }
 
   const card = document.createElement("div");
   card.style.border = "1px solid #f1e4a7";
@@ -314,7 +372,7 @@ function criarCardHorario(item, dataISO, mostrarDia = false) {
 
   card.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
-      <div>
+      <div style="min-width:220px; flex:1;">
         <strong style="font-size:14px; color:#3a2c00;">
           ${alunoNome}
         </strong>
@@ -329,9 +387,18 @@ function criarCardHorario(item, dataISO, mostrarDia = false) {
         </p>
       </div>
 
-      <span style="background:${statusFundo}; border:1px solid ${statusBorda}; color:${statusCor}; padding:5px 9px; border-radius:999px; font-size:12px; font-weight:700;">
-        ${statusTexto}
-      </span>
+      <div style="display:flex; flex-direction:column; gap:7px; align-items:flex-end;">
+        ${htmlStatus}
+
+        <a
+          href="${linkGoogleAgenda}"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="background:#fff; border:1px solid #d8d8d8; color:#333; padding:6px 9px; border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap;"
+        >
+          + Google Agenda
+        </a>
+      </div>
     </div>
   `;
 
@@ -356,7 +423,12 @@ function renderizarHoje(horariosComStatus, dataISO) {
   }
 
   horariosComStatus.forEach((item) => {
-    listaHoje.appendChild(criarCardHorario(item, dataISO, false));
+    listaHoje.appendChild(
+      criarCardHorario(item, dataISO, {
+        mostrarDia: false,
+        mostrarStatus: true
+      })
+    );
   });
 }
 
@@ -391,7 +463,12 @@ function renderizarProximosDias(listaPorDia) {
     `;
 
     dia.horarios.forEach((item) => {
-      bloco.appendChild(criarCardHorario(item, dia.dataISO, false));
+      bloco.appendChild(
+        criarCardHorario(item, dia.dataISO, {
+          mostrarDia: false,
+          mostrarStatus: false
+        })
+      );
     });
 
     listaProximosDias.appendChild(bloco);
@@ -439,13 +516,11 @@ async function carregarAgenda() {
     }
 
     const horarios = await buscarHorariosPorDia(diaSemana);
-    const aulasRegistradas = await buscarAulasRegistradasNaData(dataISO);
-    const horariosComStatus = aplicarStatusDeRegistro(horarios, aulasRegistradas);
 
     proximosDias.push({
       dataISO,
       diaSemana,
-      horarios: horariosComStatus
+      horarios
     });
   }
 
