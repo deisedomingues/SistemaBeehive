@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Editar Aula | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+
+    <div style="display:flex; justify-content:flex-start; margin-bottom:10px;">
+      <button
+        id="btnVoltarTopo"
+        type="button"
+        class="btn"
+        style="padding:8px 14px;"
+      >
+        ← Voltar
+      </button>
+    </div>
+
+    <h1 style="margin-bottom:8px;">Editar aula</h1>
+
+    <p style="font-size:14px; opacity:0.9; margin-top:0; margin-bottom:12px;">
+      Esta tela permite corrigir somente informações pedagógicas. Data, status, professor, aluno, parte, gravação, reposição e duração não podem ser alterados aqui.
+    </p>
+
+    <div id="msg" style="display:none; margin-bottom:10px;"></div>
+
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <h2 style="margin:0 0 10px 0;">Dados bloqueados da aula</h2>
+
+      <div
+        style="
+          display:grid;
+          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+          gap:8px;
+        "
+      >
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Aluno</div>
+          <strong id="infoAluno" style="font-size:13px;">Carregando...</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Curso</div>
+          <strong id="infoMateria" style="font-size:13px;">-</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Módulo</div>
+          <strong id="infoModulo" style="font-size:13px;">-</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Professor(a)</div>
+          <strong id="infoProfessor" style="font-size:13px;">-</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Data da aula</div>
+          <strong id="infoData" style="font-size:13px;">-</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Status</div>
+          <strong id="infoStatus" style="font-size:13px;">-</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Parte</div>
+          <strong id="infoParte" style="font-size:13px;">-</strong>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.45); border:1px solid #eadb9a; border-radius:10px; padding:8px 10px;">
+          <div style="font-size:11px; opacity:0.75;">Gravação/reposição</div>
+          <strong id="infoRegras" style="font-size:13px;">-</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <h2 style="margin:0 0 10px 0;">Campos permitidos para edição</h2>
+
+      <form id="formEditarAula">
+        <label style="display:block; margin-bottom:10px;">
+          Conteúdo da aula
+          <textarea
+            id="conteudo"
+            rows="5"
+            style="width:100%; margin-top:4px;"
+            placeholder="Digite o conteúdo trabalhado na aula"
+          ></textarea>
+        </label>
+
+        <label style="display:block; margin-bottom:10px;">
+          Lição de casa
+          <textarea
+            id="licaoCasa"
+            rows="4"
+            style="width:100%; margin-top:4px;"
+            placeholder="Digite a lição de casa, se houver"
+          ></textarea>
+        </label>
+
+        <label style="display:block; margin-bottom:12px;">
+          Justificativa / observação
+          <textarea
+            id="justificativa"
+            rows="4"
+            style="width:100%; margin-top:4px;"
+            placeholder="Use este campo para observações, ausência, cancelamento ou justificativas"
+          ></textarea>
+        </label>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+          <button type="button" id="btnCancelar" class="btn" style="padding:8px 14px;">
+            Cancelar
+          </button>
+
+          <button type="submit" id="btnSalvar" class="btn" style="padding:8px 14px;">
+            Salvar alterações
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <div style="display:flex; justify-content:center; margin:16px 0 4px;">
+      <button
+        id="btnVoltarRodape"
+        type="button"
+        class="btn"
+        style="padding:8px 14px;"
+      >
+        ← Voltar
+      </button>
+    </div>
+
+  </main>
+
+  <script type="module" src="js/editar-aula.js"></script>
+</body>
+</html>

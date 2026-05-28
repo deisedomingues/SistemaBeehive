@@ -82,7 +82,9 @@ const STATUS = {
   CANCELADA: "Cancelada",
   REPOSICAO: "Reposição",
   AULA_INSTRUMENTAL: "Aula Instrumental",
-  PLANTAO_DUVIDAS: "Plantão de dúvidas"
+  PLANTAO_DUVIDAS: "Plantão de dúvidas",
+  TRANCADA: "Trancada",
+  AULA_EXPERIMENTAL: "Aula Experimental"
 };
 
 // ===============================
@@ -225,6 +227,12 @@ function aulaContaComoValida(aula) {
   return false;
 }
 
+function irParaEditarAula(aulaId) {
+  localStorage.setItem("aulaSelecionadaEdicao", String(aulaId));
+  localStorage.setItem("matriculaSelecionadaEdicao", String(matriculaId));
+  window.location.href = `editar-aula.html?id=${encodeURIComponent(aulaId)}`;
+}
+
 function obterAulasValidasModuloAtual() {
   const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
 
@@ -339,7 +347,7 @@ function obterTextoRodapeHistorico(aula, mapaAulas) {
     return partes.join(" | ");
   }
 
-  if (aula.status === STATUS.CANCELADA) {
+  if (aula.status === STATUS.CANCELADA || aula.status === STATUS.TRANCADA) {
     if (aula.precisa_reposicao) {
       partes.push("Reposição pendente");
     }
@@ -362,10 +370,18 @@ function obterTextoRodapeHistorico(aula, mapaAulas) {
     return partes.join(" | ");
   }
 
-  if (aula.status === STATUS.AULA_INSTRUMENTAL || aula.status === STATUS.PLANTAO_DUVIDAS) {
+  if (
+    aula.status === STATUS.AULA_INSTRUMENTAL ||
+    aula.status === STATUS.PLANTAO_DUVIDAS
+  ) {
     if (aula.aula_gravada) {
       partes.push("Aula gravada");
     }
+    return partes.join(" | ");
+  }
+
+  if (aula.status === STATUS.AULA_EXPERIMENTAL) {
+    partes.push("Duração padrão de 40 minutos");
     return partes.join(" | ");
   }
 
@@ -718,8 +734,19 @@ function renderAulas(aulasOriginais) {
 
     li.innerHTML = `
       <div style="display:flex; flex-direction:column; gap:6px;">
-        <div style="font-weight:700; font-size:14px;">
-          ${escaparHtml(`Aula ${numeroAula} — ${dataBR}`)}
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+          <div style="font-weight:700; font-size:14px;">
+            ${escaparHtml(`Aula ${numeroAula} — ${dataBR}`)}
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-editar-aula"
+            data-aula-id="${escaparHtml(aula.id)}"
+            style="padding:6px 10px; font-size:12px;"
+          >
+            ✏️ Editar aula
+          </button>
         </div>
 
         <div style="font-size:13px; line-height:1.45;">
@@ -739,6 +766,12 @@ function renderAulas(aulasOriginais) {
         </div>
       </div>
     `;
+
+    const btnEditar = li.querySelector(".btn-editar-aula");
+
+    btnEditar?.addEventListener("click", () => {
+      irParaEditarAula(aula.id);
+    });
 
     listaAulas.appendChild(li);
   });
@@ -961,7 +994,8 @@ function obterReposicoesPendentes(aulas) {
       const status = normalizarTexto(x.status);
       const statusGeraReposicao =
         status === normalizarTexto(STATUS.AUSENTE) ||
-        status === normalizarTexto(STATUS.CANCELADA);
+        status === normalizarTexto(STATUS.CANCELADA) ||
+        status === normalizarTexto(STATUS.TRANCADA);
 
       if (!statusGeraReposicao) return false;
       if (x.precisa_reposicao !== true) return false;
@@ -1006,7 +1040,9 @@ function renderReposicoesPendentes() {
     const textoPadrao =
       status === normalizarTexto(STATUS.CANCELADA)
         ? "Aula cancelada"
-        : "Reposição solicitada";
+        : status === normalizarTexto(STATUS.TRANCADA)
+          ? "Aula trancada"
+          : "Reposição solicitada";
 
     li.textContent =
       `${formatarDataBR(x.data_aula)} — ${x.justificativa || textoPadrao}`;
@@ -1213,8 +1249,13 @@ formNota.addEventListener("submit", async (e) => {
   const obs = notaObs.value.trim();
   const moduloId = notaModulo.value;
 
-  if (!data || !tipo || !valor || !moduloId) {
+  if (!data || !tipo || Number.isNaN(valor) || !moduloId) {
     mostrarMensagem("Preencha todos os campos", false);
+    return;
+  }
+
+  if (valor < 0 || valor > 10) {
+    mostrarMensagem("A nota precisa estar entre 0 e 10.", false);
     return;
   }
 
