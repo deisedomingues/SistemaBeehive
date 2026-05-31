@@ -100,6 +100,21 @@ function escaparHtml(valor) {
 }
 
 // ======================
+// Datas
+// ======================
+function ehSabado(dataIso) {
+  if (!dataIso) return false;
+
+  const [ano, mes, dia] = String(dataIso).split("-").map(Number);
+
+  if (!ano || !mes || !dia) return false;
+
+  const dataLocal = new Date(ano, mes - 1, dia);
+
+  return dataLocal.getDay() === 6;
+}
+
+// ======================
 // Tempo / duração
 // ======================
 function somenteDigitos(valor) {
@@ -134,18 +149,15 @@ function converterTempoDigitadoParaSegundos(valorDigitado) {
   if (!limpo) return null;
 
   if (limpo.length <= 2) {
-    // Exemplo: 30 = 30 minutos
     return Number(limpo) * 60;
   }
 
   if (limpo.length <= 4) {
-    // Exemplo: 3050 = 30 minutos e 50 segundos
     const minutos = Number(limpo.slice(0, -2) || 0);
     const segundos = Number(limpo.slice(-2) || 0);
     return minutos * 60 + segundos;
   }
 
-  // Exemplo: 13050 = 1 hora, 30 minutos e 50 segundos
   const segundos = Number(limpo.slice(-2) || 0);
   const minutos = Number(limpo.slice(-4, -2) || 0);
   const horas = Number(limpo.slice(0, -4) || 0);
@@ -218,26 +230,28 @@ function obterValorHoraDaMateria(materiaId) {
   return Number(registro?.valor_hora || 0);
 }
 
+function deveAplicarValorColetivo(item) {
+  return Boolean(item.aula_coletiva) || Boolean(item.aula_sabado);
+}
+
+function obterValorHoraAplicado(item) {
+  const valorHoraBase = Number(item.valor_hora || 0);
+
+  if (deveAplicarValorColetivo(item)) {
+    return valorHoraBase * 1.5;
+  }
+
+  return valorHoraBase;
+}
+
 function calcularValorItem(item) {
   const segundos = Number(item.duracao_segundos || 0);
 
   if (!segundos) return 0;
 
-  let valorHora = Number(item.valor_hora || 0);
+  const valorHoraAplicado = obterValorHoraAplicado(item);
 
-  /*
-    Regra atual:
-    - Aula coletiva recebe valor 1.5x.
-    - Evento registrado como aula coletiva também entra nessa regra.
-
-    Se depois você decidir que evento deve pagar valor normal,
-    basta alterar aqui para tratar item.eh_evento separadamente.
-  */
-  if (item.aula_coletiva) {
-    valorHora = valorHora * 1.5;
-  }
-
-  return (valorHora / 3600) * segundos;
+  return (valorHoraAplicado / 3600) * segundos;
 }
 
 function obterEstadoMinutagem(item) {
@@ -320,12 +334,6 @@ function ordenarNomes(lista) {
 // Agrupamento
 // ======================
 function montarChaveGrupo(aula) {
-  /*
-    Para evento, é melhor agrupar por evento_id.
-    Assim, se o mesmo evento tiver vários alunos, aparece um card só no financeiro.
-
-    Se não tiver evento_id, usa grupo_aula_id.
-  */
   if (ehEvento(aula) && aula.evento_id) {
     return `evento_${aula.evento_id}`;
   }
@@ -347,11 +355,8 @@ function agruparAulasParaFinanceiro(aulas) {
     const materiaNome = aula?.matricula?.materia?.nome || "Matéria não identificada";
 
     const aulaEhEvento = ehEvento(aula);
+    const aulaEhSabado = ehSabado(aula.data_aula);
 
-    /*
-      Evento com participantes deve entrar como coletivo no financeiro,
-      mesmo que tenha apenas 1 aluno no teste.
-    */
     const ehColetiva = Boolean(aula.aula_coletiva) || aulaEhEvento;
 
     if (ehColetiva) {
@@ -364,6 +369,7 @@ function agruparAulasParaFinanceiro(aulas) {
           evento_id: aula.evento_id || null,
           grupo_aula_id: aula.grupo_aula_id || null,
           aula_coletiva: true,
+          aula_sabado: aulaEhSabado,
           eh_evento: aulaEhEvento,
           ids_aula: [Number(aula.id)],
           professor_id: aula.professor_id,
@@ -385,6 +391,7 @@ function agruparAulasParaFinanceiro(aulas) {
         const grupo = grupos.get(chave);
 
         grupo.ids_aula.push(Number(aula.id));
+        grupo.aula_sabado = grupo.aula_sabado || aulaEhSabado;
 
         if (!grupo.alunos.includes(nomeAluno)) {
           grupo.alunos.push(nomeAluno);
@@ -413,11 +420,12 @@ function agruparAulasParaFinanceiro(aulas) {
       const chave = `aula_${aula.id}`;
 
       grupos.set(chave, {
-        tipo: "individual",
+        tipo: aulaEhSabado ? "individual_sabado" : "individual",
         chave,
         evento_id: aula.evento_id || null,
         grupo_aula_id: null,
         aula_coletiva: false,
+        aula_sabado: aulaEhSabado,
         eh_evento: false,
         ids_aula: [Number(aula.id)],
         professor_id: aula.professor_id,
@@ -468,7 +476,48 @@ function montarHtmlAlunos(alunos) {
 function obterTipoTextoItem(item) {
   if (item.eh_evento) return "Evento coletivo";
   if (item.aula_coletiva) return "Aula coletiva";
+  if (item.aula_sabado) return "Aula individual — valor coletivo por ser sábado";
   return "Aula individual";
+}
+
+function montarBadgesExtras(item) {
+  let html = "";
+
+  if (item.eh_evento) {
+    html += `
+      <span style="
+        font-size:12px;
+        padding:4px 8px;
+        border-radius:999px;
+        background:#e8f0ff;
+        color:#173f8a;
+        border:1px solid #9bbcff;
+        font-weight:700;
+        white-space:nowrap;
+      ">
+        Evento
+      </span>
+    `;
+  }
+
+  if (item.aula_sabado) {
+    html += `
+      <span style="
+        font-size:12px;
+        padding:4px 8px;
+        border-radius:999px;
+        background:#fff3cd;
+        color:#7a5200;
+        border:1px solid #f1bc32;
+        font-weight:700;
+        white-space:nowrap;
+      ">
+        Sábado: valor coletivo
+      </span>
+    `;
+  }
+
+  return html;
 }
 
 function renderItensFinanceiro() {
@@ -497,12 +546,14 @@ function renderItensFinanceiro() {
     const textoBotao = campoTravado ? "Editar" : "Salvar";
     const acaoBotao = campoTravado ? "editar" : "salvar";
 
+    const aplicaValorColetivo = deveAplicarValorColetivo(item);
+
     const card = document.createElement("div");
-    card.style.border = item.aula_coletiva ? "1px solid #f1d98a" : "1px solid #eee";
+    card.style.border = aplicaValorColetivo ? "1px solid #f1d98a" : "1px solid #eee";
     card.style.borderRadius = "12px";
     card.style.padding = "14px";
     card.style.marginBottom = "14px";
-    card.style.background = item.aula_coletiva ? "#fff8e8" : "#fffdf8";
+    card.style.background = aplicaValorColetivo ? "#fff8e8" : "#fffdf8";
 
     const titulo = document.createElement("div");
     titulo.style.display = "flex";
@@ -534,24 +585,7 @@ function renderItensFinanceiro() {
           ${escaparHtml(item.materia_nome)}
         </span>
 
-        ${
-          item.eh_evento
-            ? `
-              <span style="
-                font-size:12px;
-                padding:4px 8px;
-                border-radius:999px;
-                background:#e8f0ff;
-                color:#173f8a;
-                border:1px solid #9bbcff;
-                font-weight:700;
-                white-space:nowrap;
-              ">
-                Evento
-              </span>
-            `
-            : ""
-        }
+        ${montarBadgesExtras(item)}
 
         <span style="
           font-size:12px;
@@ -606,10 +640,23 @@ function renderItensFinanceiro() {
 
     card.appendChild(blocoConteudo);
 
-    const valorHoraAplicado = item.aula_coletiva
-      ? Number(item.valor_hora || 0) * 1.5
-      : Number(item.valor_hora || 0);
+    if (item.aula_sabado && !item.aula_coletiva && !item.eh_evento) {
+      const avisoSabado = document.createElement("div");
+      avisoSabado.style.marginBottom = "12px";
+      avisoSabado.style.padding = "10px";
+      avisoSabado.style.borderRadius = "10px";
+      avisoSabado.style.background = "#fff3cd";
+      avisoSabado.style.border = "1px solid #f1bc32";
+      avisoSabado.style.fontSize = "13px";
 
+      avisoSabado.innerHTML = `
+        <strong>Regra aplicada:</strong> esta aula foi dada em sábado, por isso o valor usado é o mesmo da hora-aula coletiva.
+      `;
+
+      card.appendChild(avisoSabado);
+    }
+
+    const valorHoraAplicado = obterValorHoraAplicado(item);
     const valorPrevio = calcularValorItem(item);
 
     const linhaFinal = document.createElement("div");
@@ -840,17 +887,6 @@ async function buscarAulas() {
         )
       )
     `)
-    /*
-      Antes estava assim:
-      .eq("aula_gravada", true)
-
-      Isso deixava evento de fora, porque evento pode não ter aula_gravada = true.
-
-      Agora busca:
-      - aulas gravadas;
-      - OU status Evento;
-      - OU registros com evento_id preenchido.
-    */
     .or("aula_gravada.eq.true,status.eq.Evento,evento_id.not.is.null")
     .order("data_aula", { ascending: false })
     .order("parte", { ascending: false });
@@ -863,25 +899,6 @@ async function buscarAulas() {
     return;
   }
 
-  /*
-    REGRA IMPORTANTE:
-
-    O financeiro deve considerar quem DEU a aula ou conduziu o evento.
-    Por isso, a prioridade é aula.professor_id.
-
-    Antes, o sistema usava matricula.professor_id.
-    Isso dava erro quando a matrícula era temporariamente mudada para outro professor
-    e depois voltava para o professor original.
-
-    Exemplo:
-    - Aluno é da Gretha.
-    - Fez uma aula com a Juno.
-    - A aula precisa ficar no financeiro da Juno.
-    - Mesmo que depois a matrícula volte para a Gretha.
-
-    Para evento, também usa aula.professor_id.
-    Esse professor_id deve ser o professor responsável/anfitrião do evento.
-  */
   const aulasProfessor = (data || []).filter((aula) => {
     const professorDaAula = aula.professor_id ? Number(aula.professor_id) : null;
     const professorAtualDaMatricula = aula?.matricula?.professor_id
@@ -925,10 +942,6 @@ async function salvarDuracaoItem(chave, botao) {
   botao.textContent = "Salvando...";
 
   try {
-    /*
-      Se for evento/aula coletiva, salva a mesma minutagem em todas as linhas do grupo.
-      Assim evita pagar por aluno separadamente e mantém todas as participações com a mesma duração.
-    */
     for (const id of item.ids_aula) {
       const { error } = await supabase
         .from("aula")
