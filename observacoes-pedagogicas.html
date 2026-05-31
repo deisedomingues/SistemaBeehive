@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Observações Pedagógicas | Beehive</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+
+    <div style="display:flex; justify-content:flex-start; margin-bottom:10px;">
+      <button
+        id="btnVoltar"
+        type="button"
+        class="btn"
+        style="padding:8px 14px;"
+      >
+        ← Voltar
+      </button>
+    </div>
+
+    <h1 style="margin-bottom:8px;">Observações pedagógicas</h1>
+
+    <p style="margin-bottom:18px; opacity:0.9;">
+      Registre informações importantes sobre o aluno que possam ajudar na condução das aulas.
+    </p>
+
+    <div id="msg" style="display:none; margin-bottom:12px;"></div>
+
+    <section class="card" style="margin-bottom:16px; padding:12px 14px;">
+      <h2 style="margin:0 0 8px 0;">Aluno</h2>
+
+      <p id="nomeAluno" style="margin:0 0 6px 0; font-weight:700;">
+        Carregando...
+      </p>
+
+      <p id="infoAluno" style="margin:0; font-size:13px; opacity:0.85;">
+        Carregando informações...
+      </p>
+    </section>
+
+    <section class="card" style="margin-bottom:16px; padding:12px 14px;">
+      <h2 style="margin:0 0 10px 0;">Nova observação</h2>
+
+      <form id="formObservacaoPedagogica">
+        <label style="display:block; margin-bottom:10px;">
+          Data da inclusão
+          <input
+            type="text"
+            id="dataInclusao"
+            disabled
+            style="margin-top:6px;"
+          />
+        </label>
+
+        <label style="display:block; margin-bottom:10px;">
+          Professor responsável
+          <input
+            type="text"
+            id="nomeProfessor"
+            disabled
+            style="margin-top:6px;"
+          />
+        </label>
+
+        <label style="display:block; margin-bottom:12px;">
+          Observação
+          <textarea
+            id="campoObservacao"
+            rows="8"
+            required
+            placeholder="Exemplo: aluno não se sente confortável falando sobre determinado tema..."
+            style="margin-top:6px; width:100%; resize:vertical;"
+          ></textarea>
+        </label>
+
+        <button type="submit" id="btnSalvarObservacao" class="btn">
+          Salvar observação
+        </button>
+      </form>
+    </section>
+
+  </main>
+
+  <script type="module" src="js/observacoes-pedagogicas.js"></script>
+</body>
+</html>

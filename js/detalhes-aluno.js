@@ -59,6 +59,9 @@ const btnVoltarRodape = document.getElementById("btnVoltarRodape");
 const boxExpandirAulas = document.getElementById("boxExpandirAulas");
 const btnExpandirAulas = document.getElementById("btnExpandirAulas");
 
+const listaObservacoesPedagogicas = document.getElementById("listaObservacoesPedagogicas");
+const btnAdicionarObservacaoPedagogica = document.getElementById("btnAdicionarObservacaoPedagogica");
+
 // ===============================
 // ESTADO
 // ===============================
@@ -232,7 +235,6 @@ function irParaEditarAula(aulaId) {
   localStorage.setItem("matriculaSelecionadaEdicao", String(matriculaId));
   window.location.href = `editar-aula.html?id=${encodeURIComponent(aulaId)}`;
 }
-
 function obterAulasValidasModuloAtual() {
   const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
 
@@ -388,6 +390,112 @@ function obterTextoRodapeHistorico(aula, mapaAulas) {
   return partes.join(" | ");
 }
 
+// ===============================
+// OBSERVAÇÕES PEDAGÓGICAS
+// ===============================
+
+function obterAlunoIdAtual() {
+  return dadosCabecalho?.aluno?.id || null;
+}
+
+function irParaAdicionarObservacaoPedagogica() {
+  const alunoId = obterAlunoIdAtual();
+
+  if (!alunoId) {
+    mostrarMensagem("Não foi possível identificar o aluno.", false);
+    return;
+  }
+
+  localStorage.setItem("alunoObservacaoPedagogica", String(alunoId));
+  localStorage.setItem("matriculaObservacaoPedagogica", String(matriculaId));
+
+  window.location.href =
+    `observacoes-pedagogicas.html?aluno_id=${encodeURIComponent(alunoId)}&matricula_id=${encodeURIComponent(matriculaId)}`;
+}
+
+async function carregarObservacoesPedagogicas() {
+  if (!listaObservacoesPedagogicas) return;
+
+  const alunoId = obterAlunoIdAtual();
+
+  if (!alunoId) {
+    listaObservacoesPedagogicas.innerHTML = `
+      <p style="margin:0; font-size:13px; opacity:0.85;">
+        Não foi possível carregar as observações deste aluno.
+      </p>
+    `;
+    return;
+  }
+
+  listaObservacoesPedagogicas.innerHTML = `
+    <p style="margin:0; font-size:13px; opacity:0.85;">
+      Carregando observações...
+    </p>
+  `;
+
+  const { data, error } = await supabase
+    .from("observacao_pedagogica")
+    .select(`
+      id,
+      observacao,
+      criado_em,
+      professor:professor_id (
+        id,
+        nome
+      )
+    `)
+    .eq("aluno_id", alunoId)
+    .order("criado_em", { ascending: false });
+
+  if (error) {
+    console.error("Erro ao carregar observações pedagógicas:", error);
+    listaObservacoesPedagogicas.innerHTML = `
+      <p style="margin:0; font-size:13px; color:#b71c1c;">
+        Erro ao carregar observações pedagógicas.
+      </p>
+    `;
+    return;
+  }
+
+  const observacoes = data || [];
+
+  if (!observacoes.length) {
+    listaObservacoesPedagogicas.innerHTML = `
+      <p style="margin:0; font-size:13px; opacity:0.85;">
+        Nenhuma observação pedagógica registrada para este aluno.
+      </p>
+    `;
+    return;
+  }
+
+  listaObservacoesPedagogicas.innerHTML = observacoes
+    .map((item) => {
+      const dataFormatada = formatarDataHoraBR(item.criado_em);
+      const professor = item.professor?.nome || "Professor não identificado";
+      const texto = escaparHtml(item.observacao).replaceAll("\n", "<br>");
+
+      return `
+        <div
+          style="
+            padding:10px 12px;
+            border:1px solid #eadb9a;
+            border-radius:10px;
+            background:rgba(255,255,255,0.45);
+            margin-bottom:8px;
+          "
+        >
+          <div style="font-size:12px; opacity:0.8; margin-bottom:6px;">
+            <strong>${escaparHtml(dataFormatada)}</strong> · ${escaparHtml(professor)}
+          </div>
+
+          <div style="font-size:14px; line-height:1.45;">
+            ${texto}
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
 // ===============================
 // BLOCO DINÂMICO DE AVALIAÇÕES ENVIADAS
 // ===============================
@@ -667,7 +775,6 @@ async function carregarAulas() {
 
   return data || [];
 }
-
 function atualizarBotaoExpandirAulas(totalAulas) {
   if (!boxExpandirAulas || !btnExpandirAulas) return;
 
@@ -977,7 +1084,6 @@ function renderEventosAluno() {
     `;
   }).join("");
 }
-
 // ===============================
 // CONTADORES + REPOSIÇÕES
 // ===============================
@@ -1197,6 +1303,14 @@ btnToggleReposicoes?.addEventListener("click", () => {
 });
 
 // ===============================
+// OBSERVAÇÕES PEDAGÓGICAS
+// ===============================
+
+btnAdicionarObservacaoPedagogica?.addEventListener("click", () => {
+  irParaAdicionarObservacaoPedagogica();
+});
+
+// ===============================
 // FILTRO DAS NOTAS
 // ===============================
 
@@ -1235,7 +1349,6 @@ btnExpandirAulas?.addEventListener("click", () => {
   aulasExpandido = !aulasExpandido;
   atualizarRenderAulas();
 });
-
 // ===============================
 // SALVAR NOTA
 // ===============================
@@ -1313,6 +1426,7 @@ async function init() {
   atualizarRenderAulas();
   atualizarCardAulasValidasEAvaliacao();
 
+  await carregarObservacoesPedagogicas();
   await carregarAvaliacoesAluno();
   await carregarEventosAluno();
   await carregarNotas();

@@ -108,11 +108,6 @@ function obterAlunoIdLogado() {
   );
 }
 
-function obterAulaPendenteMaisAntiga() {
-  if (!aulasPendentes.length) return null;
-  return aulasPendentes[0];
-}
-
 // =============================
 // Datas locais
 // =============================
@@ -160,7 +155,7 @@ function formatarPrazoLimite(dataReposicao) {
 // =============================
 // Regra cobrança
 // Ausente + mês diferente = cobra
-// Cancelada = nunca cobra
+// Cancelada e Trancada = nunca cobra
 // =============================
 function extrairAnoMes(dataISO) {
   const [ano, mes] = dataISO.split("-");
@@ -172,18 +167,27 @@ function reposicaoGeraCobranca(statusAula, dataAulaFaltada, dataReposicao) {
 
   const statusNormalizado = statusAula.trim().toLowerCase();
 
-  if (statusNormalizado === "cancelada") {
-    return false;
-  }
+  if (statusNormalizado === "cancelada") return false;
+  if (statusNormalizado === "trancada") return false;
 
-  if (statusNormalizado !== "ausente") {
-    return false;
-  }
+  if (statusNormalizado !== "ausente") return false;
 
   const aula = extrairAnoMes(dataAulaFaltada);
   const reposicao = extrairAnoMes(dataReposicao);
 
   return aula.ano !== reposicao.ano || aula.mes !== reposicao.mes;
+}
+
+function montarMotivoCusto(aulaSelecionada, dataReposicao) {
+  const geraCobranca = reposicaoGeraCobranca(
+    aulaSelecionada.status,
+    aulaSelecionada.data_aula,
+    dataReposicao
+  );
+
+  if (!geraCobranca) return null;
+
+  return "Reposição de aula ausente sem gravação agendada em mês diferente da aula original.";
 }
 
 function atualizarAlertaCobranca() {
@@ -214,8 +218,20 @@ function atualizarAlertaCobranca() {
     alertaCobrancaReposicao.innerHTML = `
       <div style="padding:12px; border-radius:10px; background:#ecfdf3; border:1px solid #12b76a;">
         <p style="margin:0;">
-          <strong>Atenção:</strong> a aula selecionada foi <strong>cancelada</strong> em <strong>${dataDaFalta}</strong>.
-          Reposições de aulas canceladas <strong>não geram cobrança</strong>, mesmo quando agendadas para outro mês.
+          <strong>Aula selecionada:</strong> cancelada em <strong>${dataDaFalta}</strong>.
+          Reposições de aulas canceladas <strong>não geram cobrança</strong>.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  if (statusNormalizado === "trancada") {
+    alertaCobrancaReposicao.innerHTML = `
+      <div style="padding:12px; border-radius:10px; background:#ecfdf3; border:1px solid #12b76a;">
+        <p style="margin:0;">
+          <strong>Aula selecionada:</strong> trancada em <strong>${dataDaFalta}</strong>.
+          Reposições de aulas trancadas <strong>não geram cobrança</strong>.
         </p>
       </div>
     `;
@@ -225,8 +241,9 @@ function atualizarAlertaCobranca() {
   alertaCobrancaReposicao.innerHTML = `
     <div style="padding:12px; border-radius:10px; background:rgba(255,245,204,0.88); border:1px solid #f1bc32;">
       <p style="margin:0;">
-        <strong>Atenção:</strong> se esta reposição for agendada para <strong>mês diferente</strong> da aula ausente de
-        <strong>${dataDaFalta}</strong>, será gerada cobrança de <strong>R$ 25,00</strong>.
+        <strong>Aula selecionada:</strong> ausência sem gravação em <strong>${dataDaFalta}</strong>.
+        Se o horário escolhido for em <strong>mês diferente</strong> da aula faltada,
+        será gerada cobrança de <strong>R$ 25,00</strong>.
       </p>
     </div>
   `;
@@ -486,6 +503,7 @@ async function buscarReposicoesAtivasDaMatricula(matriculaId) {
 
 // =============================
 // Renderizar aulas pendentes
+// Agora o aluno pode escolher qualquer aula pendente.
 // =============================
 function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
   if (!aulasLivres.length) {
@@ -497,12 +515,10 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
     return;
   }
 
-  const aulaMaisAntiga = aulasLivres[0];
-
   let html = `
     <div class="resumo-pendencias">
       <p><strong>Total de reposições pendentes:</strong> ${aulasLivres.length}</p>
-      <p><strong>Regra da escola:</strong> você deve agendar primeiro a aula pendente mais antiga.</p>
+      <p><strong>Escolha abaixo</strong> qual aula deseja repor.</p>
       ${
         reposicoesAtivas.length > 0
           ? `<p><strong>Reposições já agendadas neste curso:</strong> ${reposicoesAtivas.length}</p>`
@@ -518,35 +534,34 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
     const status = textoStatusBonito(aula.status);
     const dataBR = formatarDataBR(aula.data_aula);
     const justificativa = textoJustificativa(aula.justificativa);
-    const ehMaisAntiga = Number(aula.id) === Number(aulaMaisAntiga?.id);
+    const statusNormalizado = String(aula.status || "").trim().toLowerCase();
+
+    let textoRegra = "";
+
+    if (statusNormalizado === "ausente") {
+      textoRegra = "Pode gerar cobrança se o horário escolhido for em mês diferente da falta.";
+    } else if (statusNormalizado === "cancelada") {
+      textoRegra = "Reposição sem cobrança adicional.";
+    } else if (statusNormalizado === "trancada") {
+      textoRegra = "Reposição sem cobrança adicional.";
+    }
 
     html += `
-      <div class="item-pendente ${selecionada ? "item-pendente-selecionado" : ""}" style="${!ehMaisAntiga ? "opacity:0.75;" : ""}">
+      <div class="item-pendente ${selecionada ? "item-pendente-selecionado" : ""}">
         <div class="item-pendente-conteudo">
           <p><strong>${status} em ${dataBR}</strong></p>
           <p class="justificativa-aula">${justificativa}</p>
-          ${
-            ehMaisAntiga
-              ? `<p style="margin-top:8px; color:#1d5e1d; font-size:13px;"><strong>Disponível para agendamento agora.</strong></p>`
-              : `<p style="margin-top:8px; color:#7a1f1f; font-size:13px;">
-                  Esta aula ficará disponível somente após o agendamento da pendência mais antiga
-                  (${formatarDataBR(aulaMaisAntiga.data_aula)}).
-                </p>`
-          }
+          <p style="margin-top:8px; font-size:13px; opacity:0.85;">
+            ${textoRegra}
+          </p>
         </div>
 
         <button
           type="button"
           class="btn btnSelecionarAula"
           data-aula-id="${aula.id}"
-          ${ehMaisAntiga ? "" : "disabled"}
-          style="${!ehMaisAntiga ? "cursor:not-allowed; opacity:0.6;" : ""}"
         >
-          ${
-            ehMaisAntiga
-              ? (selecionada ? "Selecionada" : "Escolher esta aula")
-              : "Bloqueada"
-          }
+          ${selecionada ? "Selecionada" : "Escolher esta aula"}
         </button>
       </div>
     `;
@@ -600,12 +615,6 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
   document.querySelectorAll(".btnSelecionarAula").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const aulaId = Number(btn.dataset.aulaId);
-
-      if (!aulaMaisAntiga || Number(aulaId) !== Number(aulaMaisAntiga.id)) {
-        mostrarMensagem("Você deve agendar primeiro a aula pendente mais antiga.", true);
-        return;
-      }
-
       aulaSelecionadaId = aulaId;
 
       const aulaEscolhida = aulasLivres.find(
@@ -626,6 +635,7 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
 
 // =============================
 // Carregar pendências
+// Não seleciona automaticamente nenhuma aula.
 // =============================
 async function carregarPendencias() {
   const aulas = await buscarAulasPendentes(matriculaSelecionada.id);
@@ -639,14 +649,11 @@ async function carregarPendencias() {
 
   aulasPendentes = aulas.filter((aula) => !aulasJaAgendadasIds.has(Number(aula.id)));
 
+  aulaSelecionadaId = null;
+
   if (aulasPendentes.length > 0) {
-    aulaSelecionadaId = aulasPendentes[0].id;
-    const aulaMaisAntiga = aulasPendentes[0];
-    const status = textoStatusBonito(aulaMaisAntiga.status);
-    const dataBR = formatarDataBR(aulaMaisAntiga.data_aula);
-    textoSelecao.textContent = `Você deve agendar primeiro: ${status} em ${dataBR}.`;
+    textoSelecao.textContent = "Selecione uma aula pendente acima para visualizar os horários disponíveis.";
   } else {
-    aulaSelecionadaId = null;
     textoSelecao.textContent = "Você não possui aulas pendentes para repor neste curso.";
   }
 
@@ -655,8 +662,7 @@ async function carregarPendencias() {
 
 // =============================
 // Buscar horários livres
-// CORREÇÃO PRINCIPAL:
-// busca por curso/matéria, não por professor regular.
+// Busca por curso/matéria, não por professor regular.
 // Assim qualquer professor que dê o mesmo curso pode aparecer.
 // Mantém regra das 21h.
 // =============================
@@ -667,10 +673,6 @@ async function buscarHorariosLivres() {
     console.warn("Matrícula selecionada sem materia_id:", matriculaSelecionada);
     return [];
   }
-
-  console.log("Matrícula selecionada:", matriculaSelecionada);
-  console.log("Buscando horários para materia_id:", matriculaSelecionada.materia_id);
-  console.log("A partir da data:", hoje);
 
   const { data: horarios, error } = await supabase
     .from("horarios_reposicao")
@@ -686,8 +688,6 @@ async function buscarHorariosLivres() {
   }
 
   const listaHorarios = horarios || [];
-
-  console.log("Horários encontrados no banco para este curso:", listaHorarios);
 
   if (!listaHorarios.length) {
     return [];
@@ -755,21 +755,9 @@ async function buscarHorariosLivres() {
 
   const horariosLivres = listaHorarios
     .filter((horario) => {
-      if (horario.disponivel === false) {
-        console.log("Horário escondido porque está com disponivel=false:", horario);
-        return false;
-      }
-
-      if (horariosOcupados.has(Number(horario.id))) {
-        console.log("Horário escondido porque já foi agendado:", horario);
-        return false;
-      }
-
-      if (!podeAgendarHorario(horario.data)) {
-        console.log("Horário escondido porque passou do prazo de 21h do dia anterior:", horario);
-        return false;
-      }
-
+      if (horario.disponivel === false) return false;
+      if (horariosOcupados.has(Number(horario.id))) return false;
+      if (!podeAgendarHorario(horario.data)) return false;
       return true;
     })
     .map((horario) => ({
@@ -777,8 +765,6 @@ async function buscarHorariosLivres() {
       professor_nome: mapaProfessores.get(Number(horario.professor_id)) || "Não informado",
       materia_nome: mapaMaterias.get(Number(horario.materia_id)) || "Não informado"
     }));
-
-  console.log("Horários livres que vão aparecer na tela:", horariosLivres);
 
   return horariosLivres;
 }
@@ -790,15 +776,6 @@ async function carregarHorariosDisponiveis() {
   if (!aulaSelecionadaId) {
     listaReposicoes.innerHTML = `
       <p>Selecione uma aula pendente para visualizar os horários disponíveis.</p>
-    `;
-    return;
-  }
-
-  const aulaMaisAntiga = obterAulaPendenteMaisAntiga();
-
-  if (!aulaMaisAntiga || Number(aulaSelecionadaId) !== Number(aulaMaisAntiga.id)) {
-    listaReposicoes.innerHTML = `
-      <p>Somente a aula pendente mais antiga pode ser agendada neste momento.</p>
     `;
     return;
   }
@@ -852,7 +829,8 @@ async function carregarHorariosDisponiveis() {
           ? `
             <div style="margin:10px 0; padding:10px; border-radius:10px; background:#fff3cd; border:1px solid #f1bc32; font-size:14px;">
               <strong>Atenção:</strong> esta reposição gerará cobrança de <strong>R$ 25,00</strong>,
-              pois está em mês diferente da aula ausente. Aguarde o financeiro entrar em contato.
+              pois o horário escolhido está em mês diferente da aula ausente.
+              Aguarde o financeiro entrar em contato.
             </div>
           `
           : `
@@ -888,14 +866,6 @@ function ativarEscolhaHorario() {
         return;
       }
 
-      const aulaMaisAntiga = obterAulaPendenteMaisAntiga();
-
-      if (!aulaMaisAntiga || Number(aulaSelecionadaId) !== Number(aulaMaisAntiga.id)) {
-        mostrarMensagem("Você deve agendar primeiro a aula pendente mais antiga.", true);
-        await carregarTudo();
-        return;
-      }
-
       const horarioId = Number(btn.dataset.horarioId);
 
       btn.disabled = true;
@@ -908,12 +878,6 @@ function ativarEscolhaHorario() {
 
         if (!aulaEscolhida) {
           mostrarMensagem("A aula selecionada não está mais disponível para reposição.", true);
-          await carregarTudo();
-          return;
-        }
-
-        if (Number(aulaEscolhida.id) !== Number(aulaMaisAntiga.id)) {
-          mostrarMensagem("Você deve agendar primeiro a aula pendente mais antiga.", true);
           await carregarTudo();
           return;
         }
@@ -978,6 +942,8 @@ function ativarEscolhaHorario() {
           horarioAtual.data
         );
 
+        const motivoCusto = montarMotivoCusto(aulaEscolhida, horarioAtual.data);
+
         const textoConfirmacao = geraCobranca
           ? "Esta reposição gerará cobrança de R$ 25,00. Deseja continuar?"
           : "Deseja agendar esta reposição?";
@@ -997,7 +963,9 @@ function ativarEscolhaHorario() {
             aluno_id: alunoAtual.id,
             matricula_id: matriculaSelecionada.id,
             aula_id: aulaSelecionadaId,
-            cancelado: false
+            cancelado: false,
+            tem_custo: geraCobranca,
+            motivo_custo: motivoCusto
           });
 
         if (erroInsert) {
@@ -1037,7 +1005,7 @@ function ativarEscolhaHorario() {
 // =============================
 async function carregarTudo() {
   faltasAluno.innerHTML = "Carregando pendências...";
-  listaReposicoes.innerHTML = "Carregando horários...";
+  listaReposicoes.innerHTML = "Selecione uma aula pendente para visualizar os horários disponíveis.";
 
   if (alertaCobrancaReposicao) {
     alertaCobrancaReposicao.style.display = "none";
