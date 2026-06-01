@@ -180,7 +180,6 @@ async function carregarEmpresas() {
   const { data, error } = await supabase
     .from("empresaparceira")
     .select("cnpj, nome")
-    .neq("cnpj", "00000000000000")
     .order("nome");
 
   if (error) {
