@@ -5,13 +5,110 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Painel Acadêmico | Beehive</title>
   <link rel="stylesheet" href="./css/style.css" />
+
+  <style>
+    .dados-grid-compacto {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .info-item-compacto {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .info-item-compacto span {
+      display: block;
+      font-size: 0.78rem;
+      opacity: 0.75;
+      margin-bottom: 3px;
+    }
+
+    .info-item-compacto strong {
+      font-size: 0.92rem;
+    }
+
+    .resumo-grid-maior {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .lista-simples {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .item-lista-simples {
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.07);
+      font-size: 0.92rem;
+    }
+
+    .item-lista-simples strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .item-lista-simples small {
+      display: block;
+      opacity: 0.75;
+      margin-top: 4px;
+    }
+
+    .acoes-reposicao {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn-agendar-agora,
+    .btn-expandir-historico,
+    .btn-expandir-reposicoes {
+      display: inline-block;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      background: #f2b705;
+      color: #1d1d1d;
+      font-size: 0.9rem;
+    }
+
+    .btn-expandir-historico {
+      margin-top: 12px;
+    }
+
+    .btn-expandir-reposicoes {
+      background: rgba(255, 255, 255, 0.14);
+      color: inherit;
+    }
+
+    .alerta-academico {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(242, 183, 5, 0.15);
+      border: 1px solid rgba(242, 183, 5, 0.35);
+      font-size: 0.92rem;
+    }
+  </style>
 </head>
+
 <body class="pagina-painel-academico">
   <main class="painel-wrap">
     <div class="painel-topo">
       <div>
         <h1>Painel Acadêmico</h1>
-        <p>Acompanhe suas aulas, notas e formas de contato com a escola.</p>
+        <p>Acompanhe suas aulas, frequência, reposições, eventos e dados do curso.</p>
       </div>
 
       <a href="./home-aluno.html" class="btn-voltar">← Voltar</a>
@@ -19,7 +116,6 @@
 
     <div id="msg" class="msg-box"></div>
 
-    <!-- CURSO SELECIONADO -->
     <section id="blocoCursoPainel" class="card-painel" style="margin-bottom:16px; display:none;">
       <h2>Curso selecionado</h2>
 
@@ -35,48 +131,48 @@
       </label>
     </section>
 
+    <section class="card-painel">
+      <h2>Meus dados</h2>
+
+      <div class="dados-grid-compacto">
+        <div class="info-item-compacto">
+          <span>Aluno(a)</span>
+          <strong id="nomeAluno">Carregando...</strong>
+        </div>
+
+        <div class="info-item-compacto">
+          <span>Status da matrícula</span>
+          <strong id="statusMatricula">--</strong>
+        </div>
+
+        <div class="info-item-compacto">
+          <span>Curso</span>
+          <strong id="nomeCurso">--</strong>
+        </div>
+
+        <div class="info-item-compacto">
+          <span>Módulo</span>
+          <strong id="nomeModulo">--</strong>
+        </div>
+
+        <div class="info-item-compacto">
+          <span>Professor(a)</span>
+          <strong id="nomeProfessor">--</strong>
+        </div>
+
+        <div class="info-item-compacto">
+          <span>Data de início</span>
+          <strong id="dataInicio">--</strong>
+        </div>
+      </div>
+    </section>
+
     <section class="painel-grid">
       <div class="coluna">
         <div class="card-painel">
-          <h2>Meus dados</h2>
-
-          <div class="dados-grid">
-            <div class="info-item">
-              <span>Aluno(a)</span>
-              <strong id="nomeAluno">Carregando...</strong>
-            </div>
-
-            <div class="info-item">
-              <span>Status da matrícula</span>
-              <strong id="statusMatricula">--</strong>
-            </div>
-
-            <div class="info-item">
-              <span>Curso</span>
-              <strong id="nomeCurso">--</strong>
-            </div>
-
-            <div class="info-item">
-              <span>Módulo</span>
-              <strong id="nomeModulo">--</strong>
-            </div>
-
-            <div class="info-item">
-              <span>Professor(a)</span>
-              <strong id="nomeProfessor">--</strong>
-            </div>
-
-            <div class="info-item">
-              <span>Data de início</span>
-              <strong id="dataInicio">--</strong>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-painel">
           <h2>Resumo acadêmico</h2>
 
-          <div class="resumo-grid">
+          <div class="resumo-grid-maior">
             <div class="mini-card">
               <div id="totalAulas" class="numero">0</div>
               <div class="rotulo">Total de aulas</div>
@@ -93,6 +189,36 @@
             </div>
 
             <div class="mini-card">
+              <div id="totalReposicoesPendentes" class="numero">0</div>
+              <div class="rotulo">Reposições pendentes</div>
+            </div>
+
+            <div class="mini-card">
+              <div id="totalReposicoesAgendadas" class="numero">0</div>
+              <div class="rotulo">Reposições agendadas</div>
+            </div>
+
+            <div class="mini-card">
+              <div id="totalReposicoesFeitas" class="numero">0</div>
+              <div class="rotulo">Reposições feitas</div>
+            </div>
+
+            <div class="mini-card">
+              <div id="totalPlantoes" class="numero">0</div>
+              <div class="rotulo">Plantões de dúvidas</div>
+            </div>
+
+            <div class="mini-card">
+              <div id="totalInstrumentais" class="numero">0</div>
+              <div class="rotulo">Aulas instrumentais</div>
+            </div>
+
+            <div class="mini-card">
+              <div id="totalEventos" class="numero">0</div>
+              <div class="rotulo">Eventos participados</div>
+            </div>
+
+            <div class="mini-card">
               <div id="totalCanceladas" class="numero">0</div>
               <div class="rotulo">Canceladas / Trancadas</div>
             </div>
@@ -100,7 +226,7 @@
 
           <div class="presenca-barra-wrap">
             <div class="presenca-barra-label">
-              <span>Frequência</span>
+              <span>Frequência considerada</span>
               <strong id="percentualPresenca">0%</strong>
             </div>
 
@@ -108,17 +234,38 @@
               <div id="barraPresenca" class="presenca-barra-fill"></div>
             </div>
           </div>
+
+          <div id="alertaAcademico" class="alerta-academico" style="display:none;"></div>
         </div>
 
         <div class="card-painel">
-          <h2>Histórico recente de aulas</h2>
+          <h2>Reposições pendentes</h2>
+          <div id="listaReposicoesPendentes" class="lista-simples"></div>
+
+          <div class="acoes-reposicao">
+            <a href="./agendar_reposicao.html" class="btn-agendar-agora">
+              Agendar agora
+            </a>
+
+            <button id="btnExpandirReposicoes" class="btn-expandir-reposicoes" type="button" style="display:none;">
+              Ver todas
+            </button>
+          </div>
+        </div>
+
+        <div class="card-painel">
+          <h2>Histórico de aulas</h2>
           <div id="listaHistorico" class="lista-historico"></div>
+
+          <button id="btnExpandirHistorico" class="btn-expandir-historico" type="button" style="display:none;">
+            Ver todas as aulas
+          </button>
         </div>
       </div>
 
       <div class="coluna">
         <div class="card-painel">
-          <h2>Notas e reposições</h2>
+          <h2>Notas</h2>
 
           <div class="extras-grid">
             <div class="mini-card">
@@ -130,17 +277,12 @@
               <div id="ultimaNota" class="numero">--</div>
               <div class="rotulo">Última nota</div>
             </div>
-
-            <div class="mini-card">
-              <div id="totalReposicoes" class="numero">0</div>
-              <div class="rotulo">Reposições agendadas</div>
-            </div>
-
-            <div class="mini-card">
-              <div id="aulasPrecisaReposicao" class="numero">0</div>
-              <div class="rotulo">Aulas com reposição</div>
-            </div>
           </div>
+        </div>
+
+        <div class="card-painel">
+          <h2>Eventos participados</h2>
+          <div id="listaEventosParticipados" class="lista-simples"></div>
         </div>
 
         <div class="card-painel">
