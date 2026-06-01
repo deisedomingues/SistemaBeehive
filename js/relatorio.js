@@ -489,7 +489,8 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
           <img src="images/logo.png" alt="Beehive" class="logo-documento" />
           <div class="dados-escola-documento">
             <h2>Beehive Idiomas – Inglês e Espanhol</h2>
-            <p>INSERIR NOVO ENDEREÇO</p>
+            <p>Rua Felício Geronazzo, 252A - Ponte Grande - Guarulhos
+            <p> CEP: 07033-040</p>
             <p>Tel. (11) 95617-7084 – contato.beehiveidiomas@gmail.com</p>
             <p>CNPJ: 50.715.902/0001-82</p>
           </div>
