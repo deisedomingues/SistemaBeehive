@@ -3,9 +3,6 @@ import { exigirAdmin } from "./guard.js";
 
 await exigirAdmin();
 
-/* =========================================================
-   ELEMENTOS
-========================================================= */
 const btnSair = document.getElementById("btnSair");
 const btnImprimir = document.getElementById("btnImprimir");
 
@@ -29,9 +26,6 @@ const radiosModoEmpresa = document.querySelectorAll(
   'input[name="modoAlunosEmpresa"]'
 );
 
-/* =========================================================
-   LOGOUT
-========================================================= */
 btnSair.addEventListener("click", async () => {
   try {
     await supabase.auth.signOut();
@@ -48,9 +42,6 @@ btnSair.addEventListener("click", async () => {
   }
 });
 
-/* =========================================================
-   UTILITÁRIOS
-========================================================= */
 function mostrarMensagem(texto, ok = true) {
   msg.textContent = texto;
   msg.className = `msg-box show ${ok ? "ok" : "erro"} no-print`;
@@ -74,6 +65,7 @@ function formatarDataBR(dataISO) {
 function formatarDataExtensa(data = new Date()) {
   const cidade = "Guarulhos";
   const dia = String(data.getDate()).padStart(2, "0");
+
   const meses = [
     "janeiro",
     "fevereiro",
@@ -88,6 +80,7 @@ function formatarDataExtensa(data = new Date()) {
     "novembro",
     "dezembro"
   ];
+
   const mes = meses[data.getMonth()];
   const ano = data.getFullYear();
 
@@ -147,20 +140,45 @@ function esconderRelatorio() {
   documentoRelatorio.innerHTML = "";
 }
 
-function traduzirStatus(status) {
-  if (status === "Presente") return "Presente";
-  if (status === "Ausente") return "Faltou";
-  if (status === "Cancelada") return "Cancelada";
-  if (status === "Trancada") return "Trancamento";
-  if (status === "Reposição" || status === "Reposicao") return "Reposição";
-  return status || "-";
+function normalizarStatus(status) {
+  return String(status || "").trim();
 }
 
-function montarLinhaOcorrencia(aula) {
+function statusEhReposicao(status) {
+  const s = normalizarStatus(status);
+  return s === "Reposição" || s === "Reposicao";
+}
+
+function traduzirStatus(status) {
+  const s = normalizarStatus(status);
+
+  if (s === "Presente") return "Presente";
+  if (s === "Ausente") return "Faltou";
+  if (s === "Cancelada") return "Cancelada pela escola";
+  if (s === "Trancada") return "Trancamento";
+  if (statusEhReposicao(s)) return "Reposição";
+
+  return s || "-";
+}
+
+function aulaFoiGravada(aula) {
+  return aula?.aula_gravada === true;
+}
+
+function montarLinhaOcorrencia(aula, mapaAulasPorId) {
   const data = formatarDataBR(aula.data_aula);
   const status = traduzirStatus(aula.status);
 
   let texto = `${data} - ${status}`;
+
+  if (statusEhReposicao(aula.status)) {
+    const aulaOriginalId = aula.aula_original_id;
+    const aulaOriginal = aulaOriginalId ? mapaAulasPorId[aulaOriginalId] : null;
+
+    if (aulaOriginal?.data_aula) {
+      texto += ` da aula de ${formatarDataBR(aulaOriginal.data_aula)}`;
+    }
+  }
 
   if (aula.justificativa && aula.justificativa.trim()) {
     texto += ` (${aula.justificativa.trim()})`;
@@ -169,9 +187,6 @@ function montarLinhaOcorrencia(aula) {
   return texto;
 }
 
-/* =========================================================
-   CARREGAMENTOS
-========================================================= */
 async function carregarEmpresas() {
   limparSelect(selectEmpresa, "Selecione a empresa");
 
@@ -242,9 +257,6 @@ async function carregarAlunosEmpresaNaChecklist(cnpj) {
     .join("");
 }
 
-/* =========================================================
-   EVENTOS
-========================================================= */
 tipoRelatorio.addEventListener("change", () => {
   atualizarTextoModelo();
 
@@ -271,9 +283,6 @@ btnImprimir.addEventListener("click", () => {
   window.print();
 });
 
-/* =========================================================
-   DOCUMENTO OFICIAL - EMPRESA
-========================================================= */
 async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
   const nomeEmpresaSelecionada =
     selectEmpresa.options[selectEmpresa.selectedIndex]?.text || "Empresa";
@@ -285,7 +294,11 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
       status,
       data_aula,
       justificativa,
+      aula_gravada,
+      aula_original_id,
+      matricula_id,
       matricula:matricula_id (
+        id,
         aluno:aluno_id (
           id,
           nome,
@@ -311,6 +324,12 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
     return;
   }
 
+  const mapaAulasPorId = {};
+
+  data.forEach((aula) => {
+    mapaAulasPorId[aula.id] = aula;
+  });
+
   let filtrados = data.filter(
     (aula) => aula?.matricula?.aluno?.empresa_cnpj === empresaCnpj
   );
@@ -333,81 +352,94 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
     return;
   }
 
-  const alunos = {};
+  const grupos = {};
 
   filtrados.forEach((aula) => {
     const alunoId = aula?.matricula?.aluno?.id;
-    if (!alunoId) return;
+    const matriculaId = aula?.matricula?.id || aula?.matricula_id;
 
-    if (!alunos[alunoId]) {
-      alunos[alunoId] = {
+    if (!alunoId || !matriculaId) return;
+
+    const chaveGrupo = `${alunoId}-${matriculaId}`;
+
+    if (!grupos[chaveGrupo]) {
+      grupos[chaveGrupo] = {
+        alunoId,
+        matriculaId,
         nome: aula.matricula.aluno.nome,
         professor: aula.matricula.professor?.nome || "-",
         curso: aula.matricula.materia?.nome || "-",
         modulo: aula.matricula.modulo?.nome || "-",
         aulasPrevistas: 0,
-        totalPresencas: 0,
-        totalFaltas: 0,
-        totalCanceladas: 0,
-        totalReposicoes: 0,
-        aulasGravadas: 0,
-        aulasRepostas: 0,
+        presencasHorarioRegular: 0,
+        faltasAluno: 0,
+        canceladasEscola: 0,
+        reposicoesRealizadas: 0,
+        aulasGravadasTotal: 0,
+        aulasGravadasPorAusencia: 0,
         ocorrencias: []
       };
     }
 
-    alunos[alunoId].aulasPrevistas++;
+    const grupo = grupos[chaveGrupo];
+    const status = normalizarStatus(aula.status);
 
-    if (aula.status === "Presente") {
-      alunos[alunoId].totalPresencas++;
+    grupo.aulasPrevistas++;
+
+    if (status === "Presente") {
+      grupo.presencasHorarioRegular++;
     }
 
-    if (aula.status === "Ausente") {
-      alunos[alunoId].totalFaltas++;
+    if (status === "Ausente") {
+      grupo.faltasAluno++;
     }
 
-    if (aula.status === "Cancelada") {
-      alunos[alunoId].totalCanceladas++;
+    if (status === "Cancelada") {
+      grupo.canceladasEscola++;
     }
 
-    if (aula.status === "Reposição" || aula.status === "Reposicao") {
-      alunos[alunoId].totalReposicoes++;
-      alunos[alunoId].aulasRepostas++;
+    if (statusEhReposicao(status)) {
+      grupo.reposicoesRealizadas++;
     }
 
-    const justificativaLower = (aula.justificativa || "").toLowerCase();
-
-    if (
-      justificativaLower.includes("gravada") ||
-      justificativaLower.includes("aula gravada")
-    ) {
-      alunos[alunoId].aulasGravadas++;
+    if (aulaFoiGravada(aula)) {
+      grupo.aulasGravadasTotal++;
     }
 
-    if (
-      justificativaLower.includes("reposição") ||
-      justificativaLower.includes("reposicao") ||
-      justificativaLower.includes("a repor") ||
-      justificativaLower.includes("agendou reposição") ||
-      justificativaLower.includes("agendou reposicao")
-    ) {
-      alunos[alunoId].aulasRepostas++;
+    if (status === "Ausente" && aulaFoiGravada(aula)) {
+      grupo.aulasGravadasPorAusencia++;
     }
 
-    alunos[alunoId].ocorrencias.push(montarLinhaOcorrencia(aula));
+    grupo.ocorrencias.push(montarLinhaOcorrencia(aula, mapaAulasPorId));
   });
 
-  const lista = Object.values(alunos).sort((a, b) =>
-    a.nome.localeCompare(b.nome, "pt-BR")
-  );
+  const lista = Object.values(grupos).sort((a, b) => {
+    const nomeComparacao = a.nome.localeCompare(b.nome, "pt-BR");
+    if (nomeComparacao !== 0) return nomeComparacao;
 
-  const observacao = observacaoComplementar.value.trim();
+    return a.curso.localeCompare(b.curso, "pt-BR");
+  });
+
+  const observacaoDigitada = observacaoComplementar.value.trim();
+
+  const observacoesFixas = `
+    <p>
+      * Presenças no horário regular são as aulas em que o aluno compareceu no dia e horário programados.
+      Presenças consideradas na frequência incluem as presenças no horário regular, as reposições realizadas e as aulas canceladas pela escola, pois estas não devem prejudicar a frequência do aluno.
+    </p>
+    <p>
+      * Aulas gravadas por ausência do aluno indicam aulas em que o aluno faltou, mas recebeu acesso à gravação disponibilizada pela escola.
+    </p>
+  `;
+
   const dataExtensa = formatarDataExtensa(new Date());
 
   const blocosAlunos = lista
     .map((aluno) => {
       const presencasConsideradasNaFrequencia =
-        aluno.totalPresencas + aluno.totalCanceladas;
+        aluno.presencasHorarioRegular +
+        aluno.reposicoesRealizadas +
+        aluno.canceladasEscola;
 
       const porcentagem =
         aluno.aulasPrevistas > 0
@@ -427,12 +459,15 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
             <p><strong>Professor(a):</strong> ${escapeHtml(aluno.professor)}</p>
             <p><strong>Módulo atual:</strong> ${escapeHtml(aluno.modulo)}</p>
             <p><strong>Total de aulas:</strong> ${aluno.aulasPrevistas}</p>
-            <p><strong>Total de presenças:</strong> ${aluno.totalPresencas}</p>
-            <p><strong>Total de faltas:</strong> ${aluno.totalFaltas}</p>
-            <p><strong>Total de canceladas:</strong> ${aluno.totalCanceladas}</p>
-            <p><strong>Total de reposições:</strong> ${aluno.totalReposicoes}</p>
-            <p><strong>Aulas gravadas:</strong> ${aluno.aulasGravadas}</p>
-            <p><strong>Aulas repostas:</strong> ${aluno.aulasRepostas}</p>
+
+            <p><strong>Presenças no horário regular:</strong> ${aluno.presencasHorarioRegular}</p>
+            <p><strong>Faltas do aluno:</strong> ${aluno.faltasAluno}</p>
+            <p><strong>Aulas canceladas pela escola:</strong> ${aluno.canceladasEscola}</p>
+            <p><strong>Reposições realizadas:</strong> ${aluno.reposicoesRealizadas}</p>
+
+            <p><strong>Total de aulas gravadas:</strong> ${aluno.aulasGravadasTotal}</p>
+            <p><strong>Aulas gravadas por ausência do aluno:</strong> ${aluno.aulasGravadasPorAusencia}</p>
+
             <p><strong>Presenças consideradas na frequência:</strong> ${presencasConsideradasNaFrequencia}</p>
             <p><strong>Porcentagem de frequência:</strong> ${porcentagem}%</p>
           </div>
@@ -454,7 +489,7 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
           <img src="images/logo.png" alt="Beehive" class="logo-documento" />
           <div class="dados-escola-documento">
             <h2>Beehive Idiomas – Inglês e Espanhol</h2>
-            <p>Viela Caray, 76 – Vila Augusta – Guarulhos/SP</p>
+            <p>INSERIR NOVO ENDEREÇO</p>
             <p>Tel. (11) 95617-7084 – contato.beehiveidiomas@gmail.com</p>
             <p>CNPJ: 50.715.902/0001-82</p>
           </div>
@@ -468,15 +503,14 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
           ${escapeHtml(textoDeclaracao.value)}
         </p>
 
-        ${
-          observacao
-            ? `
-              <p class="texto-observacao-documento">
-                <strong>Observação complementar:</strong> ${escapeHtml(observacao)}
-              </p>
-            `
-            : ""
-        }
+        <div class="texto-observacao-documento">
+          ${
+            observacaoDigitada
+              ? `<p><strong>Observação complementar:</strong> ${escapeHtml(observacaoDigitada)}</p>`
+              : ""
+          }
+          ${observacoesFixas}
+        </div>
 
         <div class="resumo-geral-documento">
           <p><strong>Empresa:</strong> ${escapeHtml(nomeEmpresaSelecionada)}</p>
@@ -502,9 +536,6 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
   mostrarMensagem("Documento gerado com sucesso.");
 }
 
-/* =========================================================
-   SUBMIT
-========================================================= */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -545,9 +576,6 @@ form.addEventListener("submit", async (e) => {
   });
 });
 
-/* =========================================================
-   INICIALIZAÇÃO
-========================================================= */
 await carregarEmpresas();
 atualizarTextoModelo();
 atualizarVisibilidadeSelecaoAlunosEmpresa();
