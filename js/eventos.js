@@ -126,6 +126,30 @@ function escaparHtml(texto) {
     .replaceAll("'", "&#39;");
 }
 
+function obterLocalEvento(evento) {
+  return (
+    evento.local ||
+    evento.professor_responsavel?.link_eventos ||
+    ""
+  );
+}
+
+function montarLocalEventoHtml(evento) {
+  const local = obterLocalEvento(evento);
+
+  if (!local) return "-";
+
+  if (local.startsWith("http://") || local.startsWith("https://")) {
+    return `
+      <a href="${escaparHtml(local)}" target="_blank" rel="noopener noreferrer">
+        Abrir link do evento
+      </a>
+    `;
+  }
+
+  return escaparHtml(local);
+}
+
 function obterClasseVisualEvento(situacao) {
   if (situacao === "ativo") return "evento-visual-ativo";
   if (situacao === "cancelado") return "evento-visual-cancelado";
@@ -191,7 +215,8 @@ async function carregarEventos() {
       professor_responsavel_id,
       professor_responsavel:professor_responsavel_id (
         id,
-        nome
+        nome,
+        link_eventos
       )
     `)
     .order("data_evento", { ascending: true })
@@ -322,7 +347,6 @@ async function carregarEventosJaRegistrados() {
 ========================================================= */
 function atualizarResumo() {
   const total = eventos.length;
-
   let ativos = 0;
   let encerrados = 0;
 
@@ -349,7 +373,7 @@ function obterEventosFiltrados() {
     const titulo = normalizarTexto(evento.titulo);
     const tipo = normalizarTexto(evento.tipo_evento);
     const descricao = normalizarTexto(evento.descricao);
-    const local = normalizarTexto(evento.local);
+    const local = normalizarTexto(obterLocalEvento(evento));
     const professor = normalizarTexto(evento.professor_responsavel?.nome);
 
     const passouBusca =
@@ -477,6 +501,11 @@ function montarDetalhesEvento(evento) {
       </div>
 
       <div class="bloco-detalhe-evento">
+        <strong>Link / local do evento</strong>
+        <p>${montarLocalEventoHtml(evento)}</p>
+      </div>
+
+      <div class="bloco-detalhe-evento">
         <strong>Confirma até</strong>
         <p>${formatarDataHoraBR(evento.limite_confirmacao)}</p>
       </div>
@@ -572,7 +601,7 @@ function renderizarEventos() {
             </p>
 
             <p class="meta-evento-compacto">
-              Local: ${escaparHtml(evento.local || "-")}
+              Link/local: ${montarLocalEventoHtml(evento)}
             </p>
 
             <p class="meta-evento-compacto">

@@ -193,7 +193,7 @@ function atualizarResumoDoCursoSelecionado() {
 
   if (textoCardReposicao) {
     textoCardReposicao.textContent =
-      `Veja horários disponíveis para marcar suas reposições de ${nomeCurso}.`;
+      `Agende reposições, plantões de dúvidas ou aulas instrumentais de ${nomeCurso}.`;
   }
 
   if (textoCardPainel) {
@@ -224,7 +224,7 @@ function atualizarCardsLinksBasicos() {
 
     if (textoCardReposicao) {
       textoCardReposicao.textContent =
-        "Selecione um curso para visualizar suas reposições.";
+        "Selecione um curso para visualizar seus agendamentos.";
     }
 
     if (textoCardPainel) {
@@ -643,7 +643,7 @@ async function carregarAluno() {
 
       if (textoCardReposicao) {
         textoCardReposicao.textContent =
-          "Você precisa ter uma matrícula ativa para visualizar suas reposições.";
+          "Você precisa ter uma matrícula ativa para visualizar seus agendamentos.";
       }
 
       if (textoCardPainel) {

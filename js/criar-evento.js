@@ -3,16 +3,13 @@ import { exigirAdmin } from "./guard.js";
 
 await exigirAdmin();
 
-/* =========================================================
-   ELEMENTOS
-========================================================= */
 const form = document.getElementById("form-evento");
 const msg = document.getElementById("msg");
 
 const tituloInput = document.getElementById("titulo");
 const tipoEventoSelect = document.getElementById("tipoEvento");
 const descricaoInput = document.getElementById("descricao");
-const localInput = document.getElementById("local"); // no banco continua "local"
+const localInput = document.getElementById("local");
 const dataEventoInput = document.getElementById("dataEvento");
 const horaEventoInput = document.getElementById("horaEvento");
 
@@ -28,9 +25,8 @@ const textoAjudaModulo = document.getElementById("textoAjudaModulo");
 const limiteConfirmacaoPreview = document.getElementById("limiteConfirmacaoPreview");
 const ativoCheckbox = document.getElementById("ativo");
 
-/* =========================================================
-   INICIALIZAÇÃO
-========================================================= */
+let professoresCache = [];
+
 async function init() {
   try {
     definirDataMinima();
@@ -51,9 +47,6 @@ if (document.readyState === "loading") {
   await init();
 }
 
-/* =========================================================
-   UTILITÁRIOS
-========================================================= */
 function mostrarMensagem(texto, tipo = "sucesso") {
   msg.style.display = "block";
   msg.textContent = texto;
@@ -156,7 +149,7 @@ function configurarCampoLinkParticipacao() {
   if (!localInput) return;
 
   localInput.type = "url";
-  localInput.placeholder = "Ex: https://meet.google.com/abc-defg-hij";
+  localInput.placeholder = "Será preenchido automaticamente se o professor tiver link cadastrado";
   localInput.setAttribute("inputmode", "url");
 }
 
@@ -165,10 +158,7 @@ function normalizarLinkParticipacao(link) {
 
   if (!valor) return null;
 
-  if (
-    valor.startsWith("http://") ||
-    valor.startsWith("https://")
-  ) {
+  if (valor.startsWith("http://") || valor.startsWith("https://")) {
     return valor;
   }
 
@@ -193,15 +183,42 @@ function validarLinkParticipacao(link) {
   }
 }
 
-/* =========================================================
-   CARREGAMENTO DE DADOS
-========================================================= */
+function obterProfessorSelecionado() {
+  const professorId = professorResponsavelSelect.value;
+
+  return professoresCache.find(
+    (professor) => String(professor.id) === String(professorId)
+  ) || null;
+}
+
+function preencherLinkDoProfessorSelecionado() {
+  const professor = obterProfessorSelecionado();
+
+  if (!professor) {
+    localInput.value = "";
+    return;
+  }
+
+  const linkEventos = professor.link_eventos?.trim();
+
+  if (linkEventos) {
+    localInput.value = normalizarLinkParticipacao(linkEventos);
+    mostrarMensagem("Link do professor responsável preenchido automaticamente.");
+  } else {
+    localInput.value = "";
+    mostrarMensagem(
+      "Este professor não tem link recorrente cadastrado. Cole o link manualmente ou cadastre no perfil do professor.",
+      "erro"
+    );
+  }
+}
+
 async function carregarProfessoresAtivos() {
   limparSelect(professorResponsavelSelect, "Selecione o professor responsável");
 
   const { data, error } = await supabase
     .from("professor")
-    .select("id, nome, ativo")
+    .select("id, nome, ativo, link_eventos")
     .eq("ativo", true)
     .order("nome", { ascending: true });
 
@@ -211,15 +228,20 @@ async function carregarProfessoresAtivos() {
     return;
   }
 
-  if (!data || !data.length) {
+  professoresCache = data || [];
+
+  if (!professoresCache.length) {
     mostrarMensagem("Nenhum professor ativo foi encontrado.", "erro");
     return;
   }
 
-  data.forEach((professor) => {
+  professoresCache.forEach((professor) => {
     const option = document.createElement("option");
     option.value = professor.id;
-    option.textContent = professor.nome;
+
+    const possuiLink = professor.link_eventos ? " — com link" : " — sem link";
+    option.textContent = `${professor.nome}${possuiLink}`;
+
     professorResponsavelSelect.appendChild(option);
   });
 }
@@ -272,9 +294,6 @@ async function carregarModulosPorMateria(materiaId) {
   });
 }
 
-/* =========================================================
-   CONTROLE DE EXIBIÇÃO
-========================================================= */
 function controlarCamposPublico() {
   const publico = publicoAlvoSelect.value;
 
@@ -285,9 +304,7 @@ function controlarCamposPublico() {
   materiaSelect.required = false;
   moduloSelect.required = false;
 
-  if (publico === "todos") {
-    return;
-  }
+  if (publico === "todos") return;
 
   if (publico === "materia") {
     blocoMateria.style.display = "block";
@@ -315,9 +332,6 @@ function controlarCamposPublico() {
   }
 }
 
-/* =========================================================
-   REGRAS DE CONVITE
-========================================================= */
 async function buscarMatriculasAtivasRelacionadas() {
   const { data, error } = await supabase
     .from("matricula")
@@ -406,9 +420,7 @@ async function gerarConvitesParaEvento(evento) {
   const matriculasAtivas = await buscarMatriculasAtivasRelacionadas();
   const alunosIds = filtrarAlunosElegiveis(matriculasAtivas, evento);
 
-  if (!alunosIds.length) {
-    return 0;
-  }
+  if (!alunosIds.length) return 0;
 
   const payloadConvites = alunosIds.map((alunoId) => ({
     evento_id: evento.id,
@@ -430,9 +442,8 @@ async function gerarConvitesParaEvento(evento) {
   return payloadConvites.length;
 }
 
-/* =========================================================
-   EVENTOS DA TELA
-========================================================= */
+professorResponsavelSelect.addEventListener("change", preencherLinkDoProfessorSelecionado);
+
 publicoAlvoSelect.addEventListener("change", async () => {
   controlarCamposPublico();
   limparSelect(moduloSelect, "Selecione o módulo");
@@ -465,9 +476,6 @@ localInput?.addEventListener("blur", () => {
   }
 });
 
-/* =========================================================
-   VALIDAÇÕES
-========================================================= */
 function validarFormulario() {
   const titulo = tituloInput.value.trim();
   const tipoEvento = tipoEventoSelect.value;
@@ -504,11 +512,6 @@ function validarFormulario() {
     return false;
   }
 
-  if (!publico) {
-    mostrarMensagem("Selecione o público do evento.", "erro");
-    return false;
-  }
-
   if (!linkParticipacao) {
     mostrarMensagem("Informe o link para participação.", "erro");
     return false;
@@ -517,6 +520,11 @@ function validarFormulario() {
   const erroLink = validarLinkParticipacao(linkParticipacao);
   if (erroLink) {
     mostrarMensagem(erroLink, "erro");
+    return false;
+  }
+
+  if (!publico) {
+    mostrarMensagem("Selecione o público do evento.", "erro");
     return false;
   }
 
@@ -544,9 +552,6 @@ function validarFormulario() {
   return true;
 }
 
-/* =========================================================
-   SALVAR
-========================================================= */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   esconderMensagem();
@@ -584,6 +589,7 @@ form.addEventListener("submit", async (e) => {
         ? moduloId
         : null,
     professor_responsavel_id: professorResponsavelId,
+    professor_id: professorResponsavelId,
     limite_confirmacao: dateToISOString(limiteConfirmacao),
     ativo
   };
@@ -609,6 +615,7 @@ form.addEventListener("submit", async (e) => {
     mostrarMensagem(
       `✅ Evento cadastrado com sucesso! ${totalConvites} convite(s) interno(s) foram gerados para alunos aptos.`
     );
+
     limparFormularioVisual();
   } catch (erroConvite) {
     console.error(erroConvite);

@@ -30,6 +30,7 @@ const formEditarProfessor = document.getElementById("formEditarProfessor");
 
 const nomeInput = document.getElementById("nome");
 const emailInput = document.getElementById("email");
+const linkEventosInput = document.getElementById("linkEventos");
 
 const listaMaterias = document.getElementById("listaMaterias");
 
@@ -114,9 +115,11 @@ function resetEdicao() {
 
   nomeInput.value = "";
   emailInput.value = "";
+  linkEventosInput.value = "";
 
   nomeInput.disabled = true;
   emailInput.disabled = true;
+  linkEventosInput.disabled = true;
   btnSalvar.disabled = true;
 
   btnDesativarProfessor.style.display = "none";
@@ -231,7 +234,6 @@ function preencherListaMaterias(vinculosProfessor = []) {
 
 function obterMateriasSelecionadasComValor() {
   const checkboxes = [...document.querySelectorAll(".checkbox-materia")];
-
   const selecionadas = [];
 
   for (const checkbox of checkboxes) {
@@ -293,6 +295,7 @@ function preencherEdicaoProfessor(professor) {
     infoProfessorInativo.innerHTML = `
       <strong>Nome:</strong> ${professor.nome || "—"}<br>
       <strong>E-mail:</strong> ${valorTextoOuTraco(professor.email)}<br>
+      <strong>Link eventos:</strong> ${valorTextoOuTraco(professor.link_eventos)}<br>
       <strong>Matérias cadastradas:</strong> ${montarTextoMaterias(professor.materias)}<br>
       <strong>Status:</strong> Inativo
     `;
@@ -305,10 +308,12 @@ function preencherEdicaoProfessor(professor) {
 
   nomeInput.disabled = false;
   emailInput.disabled = false;
+  linkEventosInput.disabled = false;
   btnSalvar.disabled = false;
 
   nomeInput.value = professor.nome || "";
   emailInput.value = professor.email || "";
+  linkEventosInput.value = professor.link_eventos || "";
 
   preencherListaMaterias(professor.materias || []);
 
@@ -317,12 +322,13 @@ function preencherEdicaoProfessor(professor) {
 
   textoStatusProfessor.innerHTML = `
     <strong>Status atual:</strong> Professor ativo.<br>
-    Você pode editar os dados abaixo ou ajustar as matérias e o valor/hora de cada uma.
+    Você pode editar os dados abaixo, ajustar o link recorrente de eventos ou alterar as matérias e o valor/hora de cada uma.
   `;
 
   infoProfessor.innerHTML = `
     <strong>ID:</strong> ${professor.id} |
     <strong>E-mail:</strong> ${valorTextoOuTraco(professor.email)}<br>
+    <strong>Link eventos:</strong> ${valorTextoOuTraco(professor.link_eventos)}<br>
     <strong>Matérias atuais:</strong> ${montarTextoMaterias(professor.materias)}
   `;
 }
@@ -348,7 +354,7 @@ async function carregarMaterias() {
 async function carregarProfessores() {
   const { data: professores, error } = await supabase
     .from("professor")
-    .select("id, nome, email, ativo")
+    .select("id, nome, email, ativo, link_eventos")
     .order("nome", { ascending: true });
 
   if (error) {
@@ -421,6 +427,8 @@ formEditarProfessor.addEventListener("submit", async (e) => {
 
   const nome = nomeInput.value.trim();
   const email = emailInput.value.trim();
+  const link_eventos = linkEventosInput.value.trim() || null;
+
   const materiasSelecionadas = obterMateriasSelecionadasComValor();
 
   if (!nome) {
@@ -442,7 +450,8 @@ formEditarProfessor.addEventListener("submit", async (e) => {
 
   const payloadProfessor = {
     nome,
-    email: email || null
+    email: email || null,
+    link_eventos
   };
 
   const { error: errorProfessor } = await supabase

@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Agendar Reposição | Beehive</title>
+  <title>Agendamentos | Beehive</title>
   <link rel="stylesheet" href="css/style.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
@@ -11,9 +11,9 @@
   <div class="overlay"></div>
 
   <main class="container container-resumo">
-    <h1 style="margin-bottom:8px;">Agendar reposição</h1>
+    <h1 style="margin-bottom:8px;">Agendamentos</h1>
     <p style="margin-bottom:18px; opacity:0.9;">
-      Escolha o curso, veja suas aulas pendentes e selecione um horário disponível para reposição.
+      Escolha o curso, selecione o tipo de agendamento e veja os horários disponíveis.
     </p>
 
     <div id="msg" style="display:none; margin-bottom:12px;"></div>
@@ -33,9 +33,9 @@
       </label>
     </section>
 
-    <section class="card" style="margin-bottom:16px;">
-      <h2 style="margin-bottom:8px;">Aulas pendentes de reposição</h2>
-      <p style="margin:0 0 12px 0; opacity:0.85;">
+    <section id="secaoAulasPendentes" class="card" style="margin-bottom:16px;">
+      <h2 id="tituloPendencias" style="margin-bottom:8px;">Aulas pendentes de reposição</h2>
+      <p id="textoPendencias" style="margin:0 0 12px 0; opacity:0.85;">
         Aqui aparecem apenas as aulas do curso selecionado que ainda podem ser repostas.
       </p>
 
@@ -49,7 +49,7 @@
     <section class="card" style="margin-bottom:16px;">
       <h2 style="margin-bottom:8px;">Horários disponíveis</h2>
       <p id="textoSelecao" style="margin:0; opacity:0.85;">
-        Selecione uma aula pendente para visualizar os horários disponíveis.
+        Selecione o tipo de agendamento para visualizar os horários disponíveis.
       </p>
     </section>
 

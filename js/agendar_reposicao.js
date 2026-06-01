@@ -19,15 +19,192 @@ let matriculasAtivas = [];
 let matriculaSelecionada = null;
 let aulasPendentes = [];
 let aulaSelecionadaId = null;
+let tipoAgendamentoSelecionado = "Reposição";
 
 // =============================
 // WhatsApp da escola
 // =============================
 const TELEFONE_ESCOLA = "5511956177084";
-const MENSAGEM_CANCELAMENTO = "Olá! Gostaria de cancelar uma reposição agendada.";
+const MENSAGEM_CANCELAMENTO = "Olá! Gostaria de cancelar um agendamento.";
 
 function gerarLinkWhatsApp() {
   return `https://wa.me/${TELEFONE_ESCOLA}?text=${encodeURIComponent(MENSAGEM_CANCELAMENTO)}`;
+}
+
+// =============================
+// Elementos dinâmicos da tela
+// =============================
+function criarInterfaceTipoAgendamento() {
+  const main = document.querySelector("main");
+  const blocoCurso = document.getElementById("blocoCursoReposicao");
+
+  if (!main || !blocoCurso) return;
+
+  if (!document.getElementById("blocoTipoAgendamento")) {
+    const blocoTipo = document.createElement("section");
+    blocoTipo.id = "blocoTipoAgendamento";
+    blocoTipo.className = "card";
+    blocoTipo.style.marginBottom = "16px";
+
+    blocoTipo.innerHTML = `
+      <h2 style="margin-bottom:8px;">Tipo de agendamento</h2>
+      <p style="margin:0 0 12px 0; opacity:0.85;">
+        Escolha se deseja agendar uma reposição, um plantão de dúvidas ou uma aula instrumental.
+      </p>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="button" id="btnTipoReposicao" class="btn btn-tipo-agendamento" data-tipo="Reposição">
+          Reposição
+        </button>
+
+        <button type="button" id="btnTipoPlantao" class="btn btn-tipo-agendamento" data-tipo="Plantão de dúvidas">
+          Plantão de dúvidas
+        </button>
+
+        <button type="button" id="btnTipoInstrumental" class="btn btn-tipo-agendamento" data-tipo="Aula Instrumental">
+          Aula instrumental
+        </button>
+      </div>
+    `;
+
+    blocoCurso.insertAdjacentElement("afterend", blocoTipo);
+  }
+
+  if (!document.getElementById("blocoObservacaoAgendamento")) {
+    const blocoObservacao = document.createElement("section");
+    blocoObservacao.id = "blocoObservacaoAgendamento";
+    blocoObservacao.className = "card";
+    blocoObservacao.style.marginBottom = "16px";
+    blocoObservacao.style.display = "none";
+
+    blocoObservacao.innerHTML = `
+      <h2 style="margin-bottom:8px;">Informações para o professor</h2>
+      <p id="textoObservacaoAgendamento" style="margin:0 0 10px 0; opacity:0.85;">
+        Escreva uma breve observação sobre o que deseja trabalhar neste agendamento.
+      </p>
+
+      <textarea
+        id="observacaoAluno"
+        rows="4"
+        placeholder="Exemplo: Tenho dúvidas sobre verbos no passado."
+        style="width:100%; resize:vertical;"
+      ></textarea>
+    `;
+
+    
+if (secaoAulasPendentes) {
+  secaoAulasPendentes.insertAdjacentElement("afterend", blocoObservacao);
+} else {
+  const alerta = document.getElementById("alertaCobrancaReposicao");
+  main.insertBefore(blocoObservacao, alerta);
+}
+  }
+
+  document.querySelectorAll(".btn-tipo-agendamento").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      tipoAgendamentoSelecionado = btn.dataset.tipo || "Reposição";
+      aulaSelecionadaId = null;
+
+      atualizarBotoesTipoAgendamento();
+      atualizarTextoDaTelaPorTipo();
+      await carregarTudo();
+    });
+  });
+
+  atualizarBotoesTipoAgendamento();
+  atualizarTextoDaTelaPorTipo();
+}
+
+function atualizarBotoesTipoAgendamento() {
+  document.querySelectorAll(".btn-tipo-agendamento").forEach((btn) => {
+    const ativo = btn.dataset.tipo === tipoAgendamentoSelecionado;
+
+    btn.style.opacity = ativo ? "1" : "0.65";
+    btn.style.transform = ativo ? "translateY(-1px)" : "none";
+    btn.style.border = ativo ? "2px solid #1b5e20" : "";
+  });
+}
+
+function atualizarTextoDaTelaPorTipo() {
+  const titulo = document.querySelector("main h1");
+  const subtitulo = document.querySelector("main > p");
+  const blocoFaltas = faltasAluno?.closest("section");
+  const blocoObservacao = document.getElementById("blocoObservacaoAgendamento");
+  const textoObservacao = document.getElementById("textoObservacaoAgendamento");
+  const observacaoAluno = document.getElementById("observacaoAluno");
+
+  if (titulo) {
+    titulo.textContent = "Agendamentos";
+  }
+
+  if (subtitulo) {
+    subtitulo.textContent =
+      "Escolha o curso, selecione o tipo de agendamento e veja os horários disponíveis.";
+  }
+
+  if (textoCursoReposicao) {
+    const nomeCurso = matriculaSelecionada ? montarNomeCurso(matriculaSelecionada) : "curso selecionado";
+
+    textoCursoReposicao.textContent =
+      `Você está visualizando os agendamentos do curso ${nomeCurso}.`;
+  }
+
+  if (tipoAgendamentoSelecionado === "Reposição") {
+    if (blocoFaltas) blocoFaltas.style.display = "block";
+    if (alertaCobrancaReposicao) alertaCobrancaReposicao.style.display = "none";
+    if (blocoObservacao) blocoObservacao.style.display = "none";
+
+    if (textoSelecao) {
+      textoSelecao.textContent =
+        "Selecione uma aula pendente para visualizar os horários disponíveis.";
+    }
+
+    return;
+  }
+
+  if (blocoFaltas) blocoFaltas.style.display = "none";
+  if (alertaCobrancaReposicao) {
+    alertaCobrancaReposicao.style.display = "none";
+    alertaCobrancaReposicao.innerHTML = "";
+  }
+
+  if (blocoObservacao) blocoObservacao.style.display = "block";
+
+  if (tipoAgendamentoSelecionado === "Plantão de dúvidas") {
+    if (textoSelecao) {
+      textoSelecao.textContent =
+        "Escolha um horário disponível para agendar seu plantão de dúvidas.";
+    }
+
+    if (textoObservacao) {
+      textoObservacao.textContent =
+        "Conte brevemente qual dúvida você deseja tirar no plantão.";
+    }
+
+    if (observacaoAluno) {
+      observacaoAluno.placeholder =
+        "Exemplo: Tenho dúvidas sobre conjugação de verbos";
+    }
+
+    return;
+  }
+
+  if (tipoAgendamentoSelecionado === "Aula Instrumental") {
+    if (textoSelecao) {
+      textoSelecao.textContent =
+        "Escolha um horário disponível para agendar sua aula instrumental.";
+    }
+
+    if (textoObservacao) {
+      textoObservacao.textContent =
+        "Conte brevemente qual habilidade ou conteúdo deseja praticar.";
+    }
+
+    if (observacaoAluno) {
+      observacaoAluno.placeholder =
+        "Exemplo: Quero praticar conversação, pronúncia ou escrita.";
+    }
+  }
 }
 
 // =============================
@@ -151,7 +328,6 @@ function formatarPrazoLimite(dataReposicao) {
 
   return `${dia}/${mes}/${ano} às ${hora}:${minuto}`;
 }
-
 // =============================
 // Regra cobrança
 // Ausente + mês diferente = cobra
@@ -192,6 +368,12 @@ function montarMotivoCusto(aulaSelecionada, dataReposicao) {
 
 function atualizarAlertaCobranca() {
   if (!alertaCobrancaReposicao) return;
+
+  if (tipoAgendamentoSelecionado !== "Reposição") {
+    alertaCobrancaReposicao.style.display = "none";
+    alertaCobrancaReposicao.innerHTML = "";
+    return;
+  }
 
   if (!aulaSelecionadaId) {
     alertaCobrancaReposicao.style.display = "none";
@@ -319,7 +501,7 @@ function preencherSelectMatriculas() {
       : "";
 
     textoCursoReposicao.textContent =
-      `Você está visualizando as reposições do curso ${montarNomeCurso(matriculaSelecionada)}.${nomeProfessor}`;
+      `Você está visualizando os agendamentos do curso ${montarNomeCurso(matriculaSelecionada)}.${nomeProfessor}`;
   } else {
     textoCursoReposicao.textContent = "Nenhum curso ativo encontrado.";
   }
@@ -451,9 +633,9 @@ async function buscarAulasPendentes(matriculaId) {
 }
 
 // =============================
-// Buscar reposições ativas da matrícula
+// Buscar agendamentos ativos da matrícula
 // =============================
-async function buscarReposicoesAtivasDaMatricula(matriculaId) {
+async function buscarAgendamentosAtivosDaMatricula(matriculaId) {
   const { data: agendamentos, error } = await supabase
     .from("reposicao_agendada")
     .select(`
@@ -461,13 +643,17 @@ async function buscarReposicoesAtivasDaMatricula(matriculaId) {
       aula_id,
       horario_reposicao_id,
       cancelado,
-      matricula_id
+      matricula_id,
+      tipo_agendamento,
+      observacao_aluno,
+      tem_custo,
+      motivo_custo
     `)
     .eq("matricula_id", matriculaId)
     .eq("cancelado", false);
 
   if (error) {
-    console.error("Erro ao buscar reposições ativas:", error);
+    console.error("Erro ao buscar agendamentos ativos:", error);
     throw error;
   }
 
@@ -487,7 +673,7 @@ async function buscarReposicoesAtivasDaMatricula(matriculaId) {
     .in("id", horariosIds);
 
   if (errorHorarios) {
-    console.error("Erro ao buscar horários das reposições ativas:", errorHorarios);
+    console.error("Erro ao buscar horários dos agendamentos ativos:", errorHorarios);
     throw errorHorarios;
   }
 
@@ -497,15 +683,20 @@ async function buscarReposicoesAtivasDaMatricula(matriculaId) {
 
   return lista.map((item) => ({
     ...item,
+    tipo_agendamento: item.tipo_agendamento || "Reposição",
     horario: mapaHorarios.get(Number(item.horario_reposicao_id)) || null
   }));
 }
 
 // =============================
-// Renderizar aulas pendentes
-// Agora o aluno pode escolher qualquer aula pendente.
+// Renderizar pendências de reposição
 // =============================
-function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
+function renderizarAulasPendentes(aulasLivres, agendamentosAtivos) {
+  if (tipoAgendamentoSelecionado !== "Reposição") {
+    faltasAluno.innerHTML = "";
+    return;
+  }
+
   if (!aulasLivres.length) {
     faltasAluno.innerHTML = `<p>Você não possui reposições pendentes para este curso.</p>`;
     textoSelecao.textContent = "Você não possui aulas pendentes para repor neste curso.";
@@ -520,8 +711,8 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
       <p><strong>Total de reposições pendentes:</strong> ${aulasLivres.length}</p>
       <p><strong>Escolha abaixo</strong> qual aula deseja repor.</p>
       ${
-        reposicoesAtivas.length > 0
-          ? `<p><strong>Reposições já agendadas neste curso:</strong> ${reposicoesAtivas.length}</p>`
+        agendamentosAtivos.length > 0
+          ? `<p><strong>Agendamentos já marcados neste curso:</strong> ${agendamentosAtivos.length}</p>`
           : ""
       }
     </div>
@@ -569,20 +760,22 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
 
   html += `</div>`;
 
-  if (reposicoesAtivas.length > 0) {
+  if (agendamentosAtivos.length > 0) {
     html += `
       <div class="agendamentos-ativos">
-        <p><strong>Reposições já marcadas neste curso:</strong></p>
+        <p><strong>Agendamentos já marcados neste curso:</strong></p>
         <ul>
     `;
 
-    reposicoesAtivas.forEach((item) => {
+    agendamentosAtivos.forEach((item) => {
       const h = item.horario;
       if (!h) return;
 
       html += `
         <li>
-          ${formatarDataBR(h.data)} - ${formatarHora(h.hora_inicio)} às ${formatarHora(h.hora_fim)}
+          ${item.tipo_agendamento || "Agendamento"} —
+          ${formatarDataBR(h.data)} -
+          ${formatarHora(h.hora_inicio)} às ${formatarHora(h.hora_fim)}
         </li>
       `;
     });
@@ -592,7 +785,7 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
 
         <div class="aviso-cancelamento-reposicao" style="margin-top: 12px; padding: 12px; border-radius: 10px; background: rgba(255, 245, 204, 0.85); border: 1px solid #f1bc32;">
           <p style="margin: 0 0 10px 0;">
-            Para cancelar uma reposição agendada, entre em contato com a escola.
+            Para cancelar um agendamento, entre em contato com a escola.
           </p>
 
           <a
@@ -627,37 +820,44 @@ function renderizarAulasPendentes(aulasLivres, reposicoesAtivas) {
         textoSelecao.textContent = `Você está escolhendo um horário para: ${status} em ${dataBR}.`;
       }
 
-      renderizarAulasPendentes(aulasLivres, reposicoesAtivas);
+      renderizarAulasPendentes(aulasLivres, agendamentosAtivos);
       await carregarHorariosDisponiveis();
     });
   });
 }
-
 // =============================
 // Carregar pendências
-// Não seleciona automaticamente nenhuma aula.
 // =============================
 async function carregarPendencias() {
+  const agendamentosAtivos = await buscarAgendamentosAtivosDaMatricula(matriculaSelecionada.id);
+
+  if (tipoAgendamentoSelecionado !== "Reposição") {
+    aulasPendentes = [];
+    aulaSelecionadaId = null;
+    renderizarAulasPendentes([], agendamentosAtivos);
+    return;
+  }
+
   const aulas = await buscarAulasPendentes(matriculaSelecionada.id);
-  const reposicoesAtivas = await buscarReposicoesAtivasDaMatricula(matriculaSelecionada.id);
 
   const aulasJaAgendadasIds = new Set(
-    reposicoesAtivas
+    agendamentosAtivos
       .filter((item) => item.aula_id !== null)
       .map((item) => Number(item.aula_id))
   );
 
   aulasPendentes = aulas.filter((aula) => !aulasJaAgendadasIds.has(Number(aula.id)));
-
   aulaSelecionadaId = null;
 
   if (aulasPendentes.length > 0) {
-    textoSelecao.textContent = "Selecione uma aula pendente acima para visualizar os horários disponíveis.";
+    textoSelecao.textContent =
+      "Selecione uma aula pendente acima para visualizar os horários disponíveis.";
   } else {
-    textoSelecao.textContent = "Você não possui aulas pendentes para repor neste curso.";
+    textoSelecao.textContent =
+      "Você não possui aulas pendentes para repor neste curso.";
   }
 
-  renderizarAulasPendentes(aulasPendentes, reposicoesAtivas);
+  renderizarAulasPendentes(aulasPendentes, agendamentosAtivos);
 }
 
 // =============================
@@ -773,18 +973,19 @@ async function buscarHorariosLivres() {
 // Renderizar horários disponíveis
 // =============================
 async function carregarHorariosDisponiveis() {
-  if (!aulaSelecionadaId) {
+  if (tipoAgendamentoSelecionado === "Reposição" && !aulaSelecionadaId) {
     listaReposicoes.innerHTML = `
       <p>Selecione uma aula pendente para visualizar os horários disponíveis.</p>
     `;
     return;
   }
 
-  const aulaSelecionada = aulasPendentes.find(
-    (a) => Number(a.id) === Number(aulaSelecionadaId)
-  );
+  const aulaSelecionada =
+    tipoAgendamentoSelecionado === "Reposição"
+      ? aulasPendentes.find((a) => Number(a.id) === Number(aulaSelecionadaId))
+      : null;
 
-  if (!aulaSelecionada) {
+  if (tipoAgendamentoSelecionado === "Reposição" && !aulaSelecionada) {
     listaReposicoes.innerHTML = `<p>Selecione uma aula pendente.</p>`;
     return;
   }
@@ -805,14 +1006,42 @@ async function carregarHorariosDisponiveis() {
   listaReposicoes.innerHTML = "";
 
   horariosLivres.forEach((horario) => {
-    const geraCobranca = reposicaoGeraCobranca(
-      aulaSelecionada.status,
-      aulaSelecionada.data_aula,
-      horario.data
-    );
+    const geraCobranca =
+      tipoAgendamentoSelecionado === "Reposição" && aulaSelecionada
+        ? reposicaoGeraCobranca(
+            aulaSelecionada.status,
+            aulaSelecionada.data_aula,
+            horario.data
+          )
+        : false;
 
     const div = document.createElement("div");
     div.className = "card card-horario";
+
+    let blocoCobranca = "";
+
+    if (tipoAgendamentoSelecionado === "Reposição") {
+      blocoCobranca = geraCobranca
+        ? `
+          <div style="margin:10px 0; padding:10px; border-radius:10px; background:#fff3cd; border:1px solid #f1bc32; font-size:14px;">
+            <strong>Atenção:</strong> esta reposição gerará cobrança de <strong>R$ 25,00</strong>,
+            pois o horário escolhido está em mês diferente da aula ausente.
+            Aguarde o financeiro entrar em contato.
+          </div>
+        `
+        : `
+          <div style="margin:10px 0; padding:10px; border-radius:10px; background:#ecfdf3; border:1px solid #12b76a; font-size:14px;">
+            <strong>Sem cobrança adicional.</strong>
+          </div>
+        `;
+    } else {
+      blocoCobranca = `
+        <div style="margin:10px 0; padding:10px; border-radius:10px; background:#ecfdf3; border:1px solid #12b76a; font-size:14px;">
+          <strong>${tipoAgendamentoSelecionado}.</strong>
+          Este agendamento não está vinculado a uma falta.
+        </div>
+      `;
+    }
 
     div.innerHTML = `
       <p><strong>Data:</strong> ${formatarDataBR(horario.data)}</p>
@@ -824,21 +1053,7 @@ async function carregarHorariosDisponiveis() {
         <strong>Prazo para agendar:</strong> ${formatarPrazoLimite(horario.data)}
       </p>
 
-      ${
-        geraCobranca
-          ? `
-            <div style="margin:10px 0; padding:10px; border-radius:10px; background:#fff3cd; border:1px solid #f1bc32; font-size:14px;">
-              <strong>Atenção:</strong> esta reposição gerará cobrança de <strong>R$ 25,00</strong>,
-              pois o horário escolhido está em mês diferente da aula ausente.
-              Aguarde o financeiro entrar em contato.
-            </div>
-          `
-          : `
-            <div style="margin:10px 0; padding:10px; border-radius:10px; background:#ecfdf3; border:1px solid #12b76a; font-size:14px;">
-              <strong>Sem cobrança adicional.</strong>
-            </div>
-          `
-      }
+      ${blocoCobranca}
 
       <button
         type="button"
@@ -861,7 +1076,7 @@ async function carregarHorariosDisponiveis() {
 function ativarEscolhaHorario() {
   document.querySelectorAll(".btnEscolherHorario").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      if (!aulaSelecionadaId) {
+      if (tipoAgendamentoSelecionado === "Reposição" && !aulaSelecionadaId) {
         mostrarMensagem("Selecione uma aula pendente primeiro.", true);
         return;
       }
@@ -872,11 +1087,12 @@ function ativarEscolhaHorario() {
       btn.textContent = "Agendando...";
 
       try {
-        const aulaEscolhida = aulasPendentes.find(
-          (a) => Number(a.id) === Number(aulaSelecionadaId)
-        );
+        const aulaEscolhida =
+          tipoAgendamentoSelecionado === "Reposição"
+            ? aulasPendentes.find((a) => Number(a.id) === Number(aulaSelecionadaId))
+            : null;
 
-        if (!aulaEscolhida) {
+        if (tipoAgendamentoSelecionado === "Reposição" && !aulaEscolhida) {
           mostrarMensagem("A aula selecionada não está mais disponível para reposição.", true);
           await carregarTudo();
           return;
@@ -899,7 +1115,7 @@ function ativarEscolhaHorario() {
         }
 
         if (!podeAgendarHorario(horarioAtual.data)) {
-          mostrarMensagem("O prazo para agendar esta reposição já foi encerrado.", true);
+          mostrarMensagem("O prazo para agendar este horário já foi encerrado.", true);
           await carregarTudo();
           return;
         }
@@ -920,33 +1136,47 @@ function ativarEscolhaHorario() {
           return;
         }
 
-        const { data: aulaJaAgendada, error: erroAulaJaAgendada } = await supabase
-          .from("reposicao_agendada")
-          .select("id")
-          .eq("aula_id", aulaSelecionadaId)
-          .eq("cancelado", false);
+        if (tipoAgendamentoSelecionado === "Reposição") {
+          const { data: aulaJaAgendada, error: erroAulaJaAgendada } = await supabase
+            .from("reposicao_agendada")
+            .select("id")
+            .eq("aula_id", aulaSelecionadaId)
+            .eq("cancelado", false);
 
-        if (erroAulaJaAgendada) {
-          throw erroAulaJaAgendada;
+          if (erroAulaJaAgendada) {
+            throw erroAulaJaAgendada;
+          }
+
+          if (aulaJaAgendada && aulaJaAgendada.length > 0) {
+            mostrarMensagem("Esta aula já possui uma reposição agendada.", true);
+            await carregarTudo();
+            return;
+          }
         }
 
-        if (aulaJaAgendada && aulaJaAgendada.length > 0) {
-          mostrarMensagem("Esta aula já possui uma reposição agendada.", true);
-          await carregarTudo();
-          return;
+        const geraCobranca =
+          tipoAgendamentoSelecionado === "Reposição" && aulaEscolhida
+            ? reposicaoGeraCobranca(
+                aulaEscolhida.status,
+                aulaEscolhida.data_aula,
+                horarioAtual.data
+              )
+            : false;
+
+        const motivoCusto =
+          tipoAgendamentoSelecionado === "Reposição" && aulaEscolhida
+            ? montarMotivoCusto(aulaEscolhida, horarioAtual.data)
+            : null;
+
+        const observacaoAluno =
+          document.getElementById("observacaoAluno")?.value?.trim() || null;
+
+        let textoConfirmacao = `Deseja confirmar este agendamento de ${tipoAgendamentoSelecionado}?`;
+
+        if (geraCobranca) {
+          textoConfirmacao =
+            "Esta reposição gerará cobrança de R$ 25,00. Deseja continuar?";
         }
-
-        const geraCobranca = reposicaoGeraCobranca(
-          aulaEscolhida.status,
-          aulaEscolhida.data_aula,
-          horarioAtual.data
-        );
-
-        const motivoCusto = montarMotivoCusto(aulaEscolhida, horarioAtual.data);
-
-        const textoConfirmacao = geraCobranca
-          ? "Esta reposição gerará cobrança de R$ 25,00. Deseja continuar?"
-          : "Deseja agendar esta reposição?";
 
         const confirmar = confirm(textoConfirmacao);
 
@@ -956,17 +1186,22 @@ function ativarEscolhaHorario() {
           return;
         }
 
+        const payload = {
+          horario_reposicao_id: horarioId,
+          aluno_id: alunoAtual.id,
+          matricula_id: matriculaSelecionada.id,
+          aula_id: tipoAgendamentoSelecionado === "Reposição" ? aulaSelecionadaId : null,
+          cancelado: false,
+          tem_custo: geraCobranca,
+          motivo_custo: motivoCusto,
+          tipo_agendamento: tipoAgendamentoSelecionado,
+          observacao_aluno: observacaoAluno,
+          status_agendamento: "Agendado"
+        };
+
         const { error: erroInsert } = await supabase
           .from("reposicao_agendada")
-          .insert({
-            horario_reposicao_id: horarioId,
-            aluno_id: alunoAtual.id,
-            matricula_id: matriculaSelecionada.id,
-            aula_id: aulaSelecionadaId,
-            cancelado: false,
-            tem_custo: geraCobranca,
-            motivo_custo: motivoCusto
-          });
+          .insert(payload);
 
         if (erroInsert) {
           throw erroInsert;
@@ -981,17 +1216,21 @@ function ativarEscolhaHorario() {
           throw erroUpdate;
         }
 
-        mostrarMensagem(
-          geraCobranca
-            ? "Reposição agendada com sucesso! Esta reposição gerará cobrança de R$ 25,00."
-            : "Reposição agendada com sucesso!"
-        );
+        if (tipoAgendamentoSelecionado === "Reposição") {
+          mostrarMensagem(
+            geraCobranca
+              ? "Reposição agendada com sucesso! Esta reposição gerará cobrança de R$ 25,00."
+              : "Reposição agendada com sucesso!"
+          );
+        } else {
+          mostrarMensagem(`${tipoAgendamentoSelecionado} agendado com sucesso!`);
+        }
 
         await carregarTudo();
 
       } catch (err) {
-        console.error("Erro ao agendar reposição:", err);
-        mostrarMensagem("Erro ao agendar reposição.", true);
+        console.error("Erro ao agendar:", err);
+        mostrarMensagem("Erro ao realizar agendamento.", true);
       } finally {
         btn.disabled = false;
         btn.textContent = "Agendar este horário";
@@ -1004,8 +1243,17 @@ function ativarEscolhaHorario() {
 // Carregar tudo da matrícula
 // =============================
 async function carregarTudo() {
-  faltasAluno.innerHTML = "Carregando pendências...";
-  listaReposicoes.innerHTML = "Selecione uma aula pendente para visualizar os horários disponíveis.";
+  criarInterfaceTipoAgendamento();
+
+  faltasAluno.innerHTML =
+    tipoAgendamentoSelecionado === "Reposição"
+      ? "Carregando pendências..."
+      : "";
+
+  listaReposicoes.innerHTML =
+    tipoAgendamentoSelecionado === "Reposição"
+      ? "Selecione uma aula pendente para visualizar os horários disponíveis."
+      : "Carregando horários disponíveis...";
 
   if (alertaCobrancaReposicao) {
     alertaCobrancaReposicao.style.display = "none";
@@ -1036,13 +1284,19 @@ async function carregarTudo() {
     }
 
     salvarMatriculaSelecionada(matriculaSelecionada);
+    atualizarTextoDaTelaPorTipo();
 
     await carregarPendencias();
-    await carregarHorariosDisponiveis();
+
+    if (tipoAgendamentoSelecionado !== "Reposição") {
+      await carregarHorariosDisponiveis();
+    } else {
+      await carregarHorariosDisponiveis();
+    }
 
   } catch (error) {
     console.error("Erro geral:", error);
-    faltasAluno.innerHTML = "Erro ao carregar as reposições pendentes.";
+    faltasAluno.innerHTML = "Erro ao carregar as pendências.";
     listaReposicoes.innerHTML = "Erro ao carregar os horários disponíveis.";
     mostrarMensagem("Não foi possível carregar os dados.", true);
   }

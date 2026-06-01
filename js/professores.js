@@ -3,24 +3,17 @@ import { exigirAdmin } from "./guard.js";
 
 await exigirAdmin();
 
-// =====================
-// Elementos da tela
-// =====================
 const form = document.getElementById("form-professor");
 const msg = document.getElementById("msg");
 
 const nomeProfessor = document.getElementById("nomeProfessor");
 const emailProfessor = document.getElementById("emailProfessor");
+const dataNascimentoProfessor = document.getElementById("dataNascimentoProfessor");
+const linkEventosProfessor = document.getElementById("linkEventosProfessor");
 const listaMaterias = document.getElementById("listaMaterias");
 
-// =====================
-// Cache
-// =====================
-let materiasCache = []; // [{ id, nome }]
+let materiasCache = [];
 
-// =====================
-// Helpers UI
-// =====================
 function mostrarMensagem(texto, ok = true) {
   msg.textContent = texto;
   msg.style.display = "block";
@@ -141,8 +134,7 @@ function renderMaterias() {
   }
 
   materiasCache.forEach((materia) => {
-    const linha = criarLinhaMateria(materia);
-    listaMaterias.appendChild(linha);
+    listaMaterias.appendChild(criarLinhaMateria(materia));
   });
 }
 
@@ -170,9 +162,6 @@ function obterMateriasSelecionadasComValor() {
   return selecionadas;
 }
 
-// =====================
-// Base
-// =====================
 async function carregarMaterias() {
   const { data, error } = await supabase
     .from("materia")
@@ -189,14 +178,13 @@ async function carregarMaterias() {
   renderMaterias();
 }
 
-// =====================
-// Salvar professor
-// =====================
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const nome = nomeProfessor.value.trim();
   const email = emailProfessor.value.trim().toLowerCase();
+  const data_nascimento = dataNascimentoProfessor.value || null;
+  const link_eventos = linkEventosProfessor.value.trim() || null;
 
   const materiasSelecionadas = obterMateriasSelecionadasComValor();
 
@@ -217,12 +205,13 @@ form.addEventListener("submit", async (e) => {
     }
   }
 
-  // 1) inserir professor
   const { data: prof, error: errProf } = await supabase
     .from("professor")
     .insert([{
       nome,
       email,
+      data_nascimento,
+      link_eventos,
       ativo: true
     }])
     .select("id")
@@ -245,7 +234,6 @@ form.addEventListener("submit", async (e) => {
 
   const professorId = prof.id;
 
-  // 2) inserir vínculos professor_materia com valor_hora
   const payloadVinculos = materiasSelecionadas.map((item) => ({
     professor_id: professorId,
     materia_id: item.materia_id,
@@ -258,10 +246,7 @@ form.addEventListener("submit", async (e) => {
 
   if (errVinc) {
     console.error(errVinc);
-    mostrarMensagem(
-      "Professor salvo, mas deu erro ao vincular matérias.",
-      false
-    );
+    mostrarMensagem("Professor salvo, mas deu erro ao vincular matérias.", false);
     return;
   }
 
@@ -271,5 +256,4 @@ form.addEventListener("submit", async (e) => {
   limparFormularioMaterias();
 });
 
-// init
 await carregarMaterias();

@@ -19,12 +19,7 @@
 
       <label>
         Título do evento
-        <input
-          type="text"
-          id="titulo"
-          placeholder="Ex: Imersão de Conversação"
-          required
-        />
+        <input type="text" id="titulo" placeholder="Ex: Imersão de Conversação" required />
       </label>
 
       <label>
@@ -47,19 +42,26 @@
         ></textarea>
       </label>
 
-     <label>
-  Link para participação
-  <input
-    type="url"
-    id="local"
-    placeholder="Ex: https://meet.google.com/abc-defg-hij"
-    inputmode="url"
-  >
-</label>
+      <label>
+        Professor responsável pelo evento
+        <select id="professorResponsavelId" required>
+          <option value="">Selecione o professor responsável</option>
+        </select>
+      </label>
 
-<small style="display:block; margin-top:6px; color:#666;">
-  Cole aqui o link que o aluno usará para participar do evento on-line.
-</small>
+      <label>
+        Link para participação
+        <input
+          type="url"
+          id="local"
+          placeholder="Será preenchido automaticamente se o professor tiver link cadastrado"
+          inputmode="url"
+        >
+      </label>
+
+      <small style="display:block; margin-top:6px; color:#666;">
+        Ao escolher o professor responsável, o sistema tentará puxar automaticamente o link recorrente dele. Você ainda pode editar o link manualmente.
+      </small>
 
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
         <label>
@@ -72,13 +74,6 @@
           <input type="time" id="horaEvento" required />
         </label>
       </div>
-
-      <label>
-        Professor responsável pelo evento
-        <select id="professorResponsavelId" required>
-          <option value="">Selecione o professor responsável</option>
-        </select>
-      </label>
 
       <label>
         Público do evento

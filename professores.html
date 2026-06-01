@@ -17,47 +17,32 @@
 
       <label style="margin-bottom:8px;">
         Nome do professor
-        <input
-          type="text"
-          id="nomeProfessor"
-          placeholder="Ex: Gretha"
-          required
-          style="padding:8px;"
-        >
+        <input type="text" id="nomeProfessor" placeholder="Ex: Gretha" required style="padding:8px;">
       </label>
 
       <label style="margin-bottom:10px;">
         E-mail (para login)
-        <input
-          type="email"
-          id="emailProfessor"
-          placeholder="ex: gretha@beehive.com"
-          required
-          style="padding:8px;"
-        >
+        <input type="email" id="emailProfessor" placeholder="ex: gretha@beehive.com" required style="padding:8px;">
       </label>
 
       <label style="margin-bottom:10px;">
         Data de nascimento
+        <input type="date" id="dataNascimentoProfessor" style="padding:8px;">
+      </label>
+
+      <label style="margin-bottom:10px;">
+        Link recorrente para eventos
         <input
-          type="date"
-          id="dataNascimentoProfessor"
+          type="url"
+          id="linkEventosProfessor"
+          placeholder="Ex: https://zoom.us/j/..."
           style="padding:8px;"
         >
       </label>
 
       <hr style="margin: 6px 0 8px 0; border: none; border-top: 1px solid #eee;">
 
-      <div
-        style="
-          margin: 8px 0 10px 0;
-          padding: 10px 12px;
-          border: 1px solid #f1d98a;
-          border-left: 4px solid #F1BC32;
-          border-radius: 10px;
-          background: #fff8e8;
-        "
-      >
+      <div style="margin: 8px 0 10px 0; padding: 10px 12px; border: 1px solid #f1d98a; border-left: 4px solid #F1BC32; border-radius: 10px; background: #fff8e8;">
         <p style="margin:0; font-size:13px; line-height:1.45; color:#6b5200;">
           <strong>Matérias que leciona:</strong> marque abaixo as matérias que este professor pode lecionar e informe o valor/hora base de cada uma.
         </p>
@@ -66,14 +51,7 @@
         </p>
       </div>
 
-      <div
-        id="listaMaterias"
-        style="
-          display:grid;
-          gap:10px;
-          margin-bottom:10px;
-        "
-      >
+      <div id="listaMaterias" style="display:grid; gap:10px; margin-bottom:10px;">
         <div style="opacity:0.8; font-size:13px;">Carregando matérias...</div>
       </div>
 
