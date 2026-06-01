@@ -15,7 +15,6 @@
 
     <div id="msg" style="display:none;"></div>
 
-    <!-- CARD 1 -->
     <section class="card" style="margin-bottom:16px;">
       <h2>1) Escolha o aluno</h2>
 
@@ -29,7 +28,6 @@
       </form>
     </section>
 
-    <!-- CARD 2 -->
     <section class="card">
       <h2>2) Gerenciar matrícula</h2>
 
@@ -51,18 +49,12 @@
         <p id="infoCursosAluno" style="font-size:13px; opacity:0.85; margin-top:8px;"></p>
 
         <div id="areaBotaoAdicionarCurso" style="display:flex; justify-content:flex-end; margin-top:10px;">
-          <button
-            type="button"
-            class="btn"
-            id="btnAddCurso"
-            style="padding:10px 14px; font-size:13px;"
-          >
+          <button type="button" class="btn" id="btnAddCurso" style="padding:10px 14px; font-size:13px;">
             + Adicionar curso
           </button>
         </div>
       </div>
 
-      <!-- BLOCO PARA MATRÍCULA ATIVA / EDIÇÃO -->
       <div id="blocoEdicao" style="display:none; margin-top:20px; padding-top:18px; border-top:1px solid rgba(0,0,0,0.08);">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
           <div>
@@ -101,16 +93,14 @@
             </select>
           </label>
 
-          <div
-            style="
-              margin: 8px 0 6px 0;
-              padding: 10px 12px;
-              border: 1px solid #f1d98a;
-              border-left: 4px solid #F1BC32;
-              border-radius: 10px;
-              background: #fff8e8;
-            "
-          >
+          <label for="empresaCurso">
+            Empresa deste curso
+            <select id="empresaCurso" disabled>
+              <option value="">Aluno particular</option>
+            </select>
+          </label>
+
+          <div style="margin: 8px 0 6px 0; padding: 10px 12px; border: 1px solid #f1d98a; border-left: 4px solid #F1BC32; border-radius: 10px; background: #fff8e8;">
             <p style="margin:0; font-size:13px; line-height:1.45; color:#6b5200;">
               <strong>Links deste curso:</strong> você pode editar abaixo o acesso da <strong>aula ao vivo</strong> e da <strong>playlist gravada</strong>.
             </p>
@@ -118,24 +108,12 @@
 
           <label for="linkZoom">
             Link da aula ao vivo (Zoom)
-            <input
-              type="text"
-              id="linkZoom"
-              placeholder="https://zoom.us/j/..."
-              disabled
-              style="padding:8px;"
-            />
+            <input type="text" id="linkZoom" placeholder="https://zoom.us/j/..." disabled style="padding:8px;" />
           </label>
 
           <label for="linkYoutube">
             Link da playlist (YouTube)
-            <input
-              type="text"
-              id="linkYoutube"
-              placeholder="https://youtube.com/playlist..."
-              disabled
-              style="padding:8px;"
-            />
+            <input type="text" id="linkYoutube" placeholder="https://youtube.com/playlist..." disabled style="padding:8px;" />
           </label>
 
           <div style="font-size:13px; opacity:0.85; margin-top:2px;">
@@ -148,17 +126,8 @@
         </form>
       </div>
 
-      <!-- BLOCO PARA CURSO DESATIVADO -->
       <div id="blocoRematricula" style="display:none; margin-top:20px; padding-top:18px; border-top:1px solid rgba(0,0,0,0.08);">
-        <div
-          id="caixaRematricula"
-          style="
-            background:#fff8e8;
-            border:1px solid #f1d98a;
-            border-radius:12px;
-            padding:16px;
-          "
-        >
+        <div id="caixaRematricula" style="background:#fff8e8; border:1px solid #f1d98a; border-radius:12px; padding:16px;">
           <h3 style="margin:0 0 10px 0; font-size:17px; color:#8b6a00;">
             Curso desativado
           </h3>

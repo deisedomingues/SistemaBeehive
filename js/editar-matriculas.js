@@ -25,6 +25,7 @@ const formEditar = document.getElementById("formEditar");
 const materiaSel = document.getElementById("materia");
 const moduloSel = document.getElementById("modulo");
 const professorSel = document.getElementById("professor");
+const empresaCursoSel = document.getElementById("empresaCurso");
 const linkZoomInput = document.getElementById("linkZoom");
 const linkYoutubeInput = document.getElementById("linkYoutube");
 
@@ -45,6 +46,7 @@ const infoMatriculaInativa = document.getElementById("infoMatriculaInativa");
 let professoresCache = [];
 let modulosCache = [];
 let materiasCache = [];
+let empresasCache = [];
 let alunosCache = [];
 
 let matriculasAluno = [];
@@ -88,6 +90,13 @@ function formatarDataBR(dataISO) {
 
 function valorTextoOuTraco(valor) {
   return valor && String(valor).trim() ? valor : "—";
+}
+
+function nomeEmpresaPorCnpj(cnpj) {
+  if (!cnpj || cnpj === "00000000000000") return "Aluno particular";
+
+  const empresa = empresasCache.find((e) => String(e.cnpj) === String(cnpj));
+  return empresa?.nome || "Empresa não encontrada";
 }
 
 function obterAlunoSelecionado() {
@@ -134,12 +143,26 @@ function preencherResumoDeCursos() {
   const partes = [];
 
   if (ativas.length > 0) {
-    const nomesAtivos = ativas.map((m) => m.materia?.nome).filter(Boolean);
+    const nomesAtivos = ativas
+      .map((m) => {
+        const curso = m.materia?.nome || "Curso";
+        const empresa = nomeEmpresaPorCnpj(m.empresa_cnpj);
+        return `${curso} (${empresa})`;
+      })
+      .filter(Boolean);
+
     partes.push(`Cursos ativos deste aluno: ${nomesAtivos.join(", ")}.`);
   }
 
   if (inativas.length > 0) {
-    const nomesInativos = inativas.map((m) => m.materia?.nome).filter(Boolean);
+    const nomesInativos = inativas
+      .map((m) => {
+        const curso = m.materia?.nome || "Curso";
+        const empresa = nomeEmpresaPorCnpj(m.empresa_cnpj);
+        return `${curso} (${empresa})`;
+      })
+      .filter(Boolean);
+
     partes.push(`Cursos desmatriculados: ${nomesInativos.join(", ")}.`);
   }
 
@@ -189,6 +212,22 @@ function atualizarVisibilidadeBotaoAdicionarCurso() {
   }
 }
 
+function preencherSelectEmpresa(valorAtual = "") {
+  empresaCursoSel.innerHTML = "";
+  empresaCursoSel.appendChild(criarOption("", "Aluno particular"));
+
+  empresasCache.forEach((empresa) => {
+    if (empresa.cnpj === "00000000000000") return;
+    empresaCursoSel.appendChild(criarOption(empresa.cnpj, empresa.nome));
+  });
+
+  if (valorAtual && valorAtual !== "00000000000000") {
+    empresaCursoSel.value = valorAtual;
+  } else {
+    empresaCursoSel.value = "";
+  }
+}
+
 function resetEdicao() {
   modoCriacao = false;
   modoRematriculaEdicao = false;
@@ -208,6 +247,7 @@ function resetEdicao() {
   materiaSel.innerHTML = `<option value="">—</option>`;
   moduloSel.innerHTML = `<option value="">Selecione uma matrícula</option>`;
   professorSel.innerHTML = `<option value="">Selecione uma matrícula</option>`;
+  preencherSelectEmpresa("");
 
   linkZoomInput.value = "";
   linkYoutubeInput.value = "";
@@ -215,6 +255,7 @@ function resetEdicao() {
   materiaSel.disabled = true;
   moduloSel.disabled = true;
   professorSel.disabled = true;
+  empresaCursoSel.disabled = true;
   linkZoomInput.disabled = true;
   linkYoutubeInput.disabled = true;
 
@@ -272,6 +313,18 @@ async function carregarBases() {
     return;
   }
   materiasCache = materias || [];
+
+  const { data: empresas, error: errEmpresas } = await supabase
+    .from("empresaparceira")
+    .select("cnpj, nome")
+    .order("nome", { ascending: true });
+
+  if (errEmpresas) {
+    console.error(errEmpresas);
+    mostrarMensagem("Erro ao carregar empresas.", false);
+    return;
+  }
+  empresasCache = empresas || [];
 
   const { data: modulos, error: errMod } = await supabase
     .from("modulo")
@@ -353,6 +406,7 @@ async function carregarMatriculasDoAluno(alunoId) {
       data_fim,
       link_zoom,
       link_youtube,
+      empresa_cnpj,
       aluno:aluno_id ( id, nome ),
       materia:materia_id ( id, nome ),
       modulo:modulo_id ( id, nome ),
@@ -381,7 +435,8 @@ function preencherSelectMatriculas() {
 
   matriculasAluno.forEach((m) => {
     const status = m.ativa === false ? " (desmatriculado)" : "";
-    const label = `${m.materia?.nome} — ${m.modulo?.nome} — Prof(a). ${m.professor?.nome}${status}`;
+    const empresa = nomeEmpresaPorCnpj(m.empresa_cnpj);
+    const label = `${m.materia?.nome} — ${m.modulo?.nome} — Prof(a). ${m.professor?.nome} — ${empresa}${status}`;
     selectMatricula.appendChild(criarOption(m.id, label));
   });
 
@@ -419,6 +474,7 @@ function preencherEdicaoDaMatricula(m) {
 
   preencherModulosPorMateria(materiaId, m.modulo?.id || "");
   preencherProfessoresPorMateria(materiaId, m.professor?.id || "");
+  preencherSelectEmpresa(m.empresa_cnpj || "");
 
   linkZoomInput.value = m.link_zoom || "";
   linkYoutubeInput.value = m.link_youtube || "";
@@ -426,6 +482,7 @@ function preencherEdicaoDaMatricula(m) {
   materiaSel.disabled = true;
   moduloSel.disabled = false;
   professorSel.disabled = false;
+  empresaCursoSel.disabled = false;
   linkZoomInput.disabled = false;
   linkYoutubeInput.disabled = false;
   btnSalvar.disabled = false;
@@ -433,11 +490,13 @@ function preencherEdicaoDaMatricula(m) {
 
   const inicio = formatarDataBR(m.data_inicio);
   const fim = m.data_fim ? formatarDataBR(m.data_fim) : "—";
+  const empresa = nomeEmpresaPorCnpj(m.empresa_cnpj);
 
   infoMatricula.innerHTML = `
     <strong>Status:</strong> Ativo |
     <strong>Início:</strong> ${inicio} |
-    <strong>Fim:</strong> ${fim}
+    <strong>Fim:</strong> ${fim} |
+    <strong>Empresa:</strong> ${empresa}
   `;
 }
 
@@ -459,10 +518,11 @@ function preencherBlocoRematricula(m) {
 
   const inicio = formatarDataBR(m.data_inicio);
   const fim = m.data_fim ? formatarDataBR(m.data_fim) : "—";
+  const empresa = nomeEmpresaPorCnpj(m.empresa_cnpj);
 
   textoRematricula.innerHTML = `
     Este curso está desmatriculado no momento.<br>
-    <strong>Após rematrícula você poderá editar módulo, professor(a) e links.</strong>
+    <strong>Após rematrícula você poderá editar módulo, professor(a), empresa e links.</strong>
   `;
 
   infoMatriculaInativa.innerHTML = `
@@ -470,6 +530,7 @@ function preencherBlocoRematricula(m) {
     Curso: ${m.materia?.nome || "—"} |
     Módulo anterior: ${m.modulo?.nome || "—"} |
     Professor anterior: ${m.professor?.nome || "—"} |
+    Empresa: ${empresa} |
     Início: ${inicio} |
     Fim: ${fim}<br><br>
     <strong>Link Zoom:</strong> ${valorTextoOuTraco(m.link_zoom)}<br>
@@ -517,6 +578,7 @@ function entrarModoCriacao() {
   materiaSel.disabled = false;
   moduloSel.disabled = true;
   professorSel.disabled = true;
+  empresaCursoSel.disabled = false;
   linkZoomInput.disabled = false;
   linkYoutubeInput.disabled = false;
   btnSalvar.disabled = false;
@@ -528,6 +590,7 @@ function entrarModoCriacao() {
 
   moduloSel.innerHTML = `<option value="">Selecione a matéria primeiro</option>`;
   professorSel.innerHTML = `<option value="">Selecione a matéria primeiro</option>`;
+  preencherSelectEmpresa("");
 
   linkZoomInput.value = "";
   linkYoutubeInput.value = "";
@@ -560,6 +623,7 @@ function entrarModoEdicaoRematricula(m) {
 
   preencherModulosPorMateria(materiaId, m.modulo?.id || "");
   preencherProfessoresPorMateria(materiaId, m.professor?.id || "");
+  preencherSelectEmpresa(m.empresa_cnpj || "");
 
   linkZoomInput.value = m.link_zoom || "";
   linkYoutubeInput.value = m.link_youtube || "";
@@ -567,6 +631,7 @@ function entrarModoEdicaoRematricula(m) {
   materiaSel.disabled = true;
   moduloSel.disabled = false;
   professorSel.disabled = false;
+  empresaCursoSel.disabled = false;
   linkZoomInput.disabled = false;
   linkYoutubeInput.disabled = false;
   btnSalvar.disabled = false;
@@ -574,11 +639,13 @@ function entrarModoEdicaoRematricula(m) {
 
   const inicio = formatarDataBR(m.data_inicio);
   const fim = m.data_fim ? formatarDataBR(m.data_fim) : "—";
+  const empresa = nomeEmpresaPorCnpj(m.empresa_cnpj);
 
   infoMatricula.innerHTML = `
     <strong>Status anterior:</strong> Desmatriculado |
     <strong>Início anterior:</strong> ${inicio} |
-    <strong>Fim anterior:</strong> ${fim}
+    <strong>Fim anterior:</strong> ${fim} |
+    <strong>Empresa anterior:</strong> ${empresa}
   `;
 }
 
@@ -725,6 +792,7 @@ formEditar.addEventListener("submit", async (e) => {
     const materiaId = materiaSel.value;
     const moduloId = moduloSel.value;
     const professorId = professorSel.value;
+    const empresaCnpj = empresaCursoSel.value || null;
     const linkZoom = linkZoomInput.value.trim();
     const linkYoutube = linkYoutubeInput.value.trim();
 
@@ -749,9 +817,10 @@ formEditar.addEventListener("submit", async (e) => {
       .from("matricula")
       .insert([{
         aluno_id: alunoId,
-        materia_id: materiaId,
-        modulo_id: moduloId,
-        professor_id: professorId,
+        materia_id: Number(materiaId),
+        modulo_id: Number(moduloId),
+        professor_id: Number(professorId),
+        empresa_cnpj: empresaCnpj,
         link_zoom: linkZoom || null,
         link_youtube: linkYoutube || null,
         data_inicio: hojeISO,
@@ -782,6 +851,7 @@ formEditar.addEventListener("submit", async (e) => {
 
   const novoModuloId = moduloSel.value;
   const novoProfessorId = professorSel.value;
+  const novaEmpresaCnpj = empresaCursoSel.value || null;
   const novoLinkZoom = linkZoomInput.value.trim();
   const novoLinkYoutube = linkYoutubeInput.value.trim();
 
@@ -797,8 +867,9 @@ formEditar.addEventListener("submit", async (e) => {
         ativa: true,
         data_fim: null,
         data_inicio: hojeISO,
-        modulo_id: novoModuloId,
-        professor_id: novoProfessorId,
+        modulo_id: Number(novoModuloId),
+        professor_id: Number(novoProfessorId),
+        empresa_cnpj: novaEmpresaCnpj,
         link_zoom: novoLinkZoom || null,
         link_youtube: novoLinkYoutube || null
       })
@@ -828,8 +899,9 @@ formEditar.addEventListener("submit", async (e) => {
   const { error } = await supabase
     .from("matricula")
     .update({
-      modulo_id: novoModuloId,
-      professor_id: novoProfessorId,
+      modulo_id: Number(novoModuloId),
+      professor_id: Number(novoProfessorId),
+      empresa_cnpj: novaEmpresaCnpj,
       link_zoom: novoLinkZoom || null,
       link_youtube: novoLinkYoutube || null
     })

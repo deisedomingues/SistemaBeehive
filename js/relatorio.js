@@ -67,24 +67,11 @@ function formatarDataExtensa(data = new Date()) {
   const dia = String(data.getDate()).padStart(2, "0");
 
   const meses = [
-    "janeiro",
-    "fevereiro",
-    "março",
-    "abril",
-    "maio",
-    "junho",
-    "julho",
-    "agosto",
-    "setembro",
-    "outubro",
-    "novembro",
-    "dezembro"
+    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
   ];
 
-  const mes = meses[data.getMonth()];
-  const ano = data.getFullYear();
-
-  return `${cidade}, ${dia} de ${mes} de ${ano}.`;
+  return `${cidade}, ${dia} de ${meses[data.getMonth()]} de ${data.getFullYear()}.`;
 }
 
 function obterModoAlunosEmpresa() {
@@ -193,6 +180,7 @@ async function carregarEmpresas() {
   const { data, error } = await supabase
     .from("empresaparceira")
     .select("cnpj, nome")
+    .neq("cnpj", "00000000000000")
     .order("nome");
 
   if (error) {
@@ -221,10 +209,17 @@ async function carregarAlunosEmpresaNaChecklist(cnpj) {
   }
 
   const { data, error } = await supabase
-    .from("aluno")
-    .select("id, nome")
+    .from("matricula")
+    .select(`
+      id,
+      empresa_cnpj,
+      aluno:aluno_id (
+        id,
+        nome
+      )
+    `)
     .eq("empresa_cnpj", cnpj)
-    .order("nome");
+    .eq("ativa", true);
 
   if (error) {
     console.error(error);
@@ -234,14 +229,27 @@ async function carregarAlunosEmpresaNaChecklist(cnpj) {
     return;
   }
 
-  if (!data || data.length === 0) {
+  const alunosMap = new Map();
+
+  (data || []).forEach((matricula) => {
+    const aluno = matricula.aluno;
+    if (aluno?.id) {
+      alunosMap.set(aluno.id, aluno);
+    }
+  });
+
+  const alunos = Array.from(alunosMap.values()).sort((a, b) =>
+    a.nome.localeCompare(b.nome, "pt-BR")
+  );
+
+  if (alunos.length === 0) {
     listaAlunosEmpresa.innerHTML = `
       <p class="texto-vazio-relatorio">Nenhum aluno encontrado para esta empresa.</p>
     `;
     return;
   }
 
-  listaAlunosEmpresa.innerHTML = data
+  listaAlunosEmpresa.innerHTML = alunos
     .map(
       (aluno) => `
         <label class="item-checkbox-relatorio">
@@ -299,10 +307,10 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
       matricula_id,
       matricula:matricula_id (
         id,
+        empresa_cnpj,
         aluno:aluno_id (
           id,
-          nome,
-          empresa_cnpj
+          nome
         ),
         materia:materia_id ( nome ),
         modulo:modulo_id ( nome ),
@@ -331,7 +339,7 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
   });
 
   let filtrados = data.filter(
-    (aula) => aula?.matricula?.aluno?.empresa_cnpj === empresaCnpj
+    (aula) => aula?.matricula?.empresa_cnpj === empresaCnpj
   );
 
   if (obterModoAlunosEmpresa() === "selecionados") {
@@ -489,8 +497,8 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
           <img src="images/logo.png" alt="Beehive" class="logo-documento" />
           <div class="dados-escola-documento">
             <h2>Beehive Idiomas – Inglês e Espanhol</h2>
-            <p>Rua Felício Geronazzo, 252A - Ponte Grande - Guarulhos
-            <p> CEP: 07033-040</p>
+            <p>Rua Felício Geronazzo, 252A - Ponte Grande - Guarulhos</p>
+            <p>CEP: 07033-040</p>
             <p>Tel. (11) 95617-7084 – contato.beehiveidiomas@gmail.com</p>
             <p>CNPJ: 50.715.902/0001-82</p>
           </div>

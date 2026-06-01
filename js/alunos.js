@@ -7,9 +7,9 @@ const form = document.getElementById("form-aluno");
 const msg = document.getElementById("msg");
 const cursosDiv = document.getElementById("cursos");
 const btnAddCurso = document.getElementById("btnAddCurso");
-const selectEmpresa = document.getElementById("empresa");
 
 let materiasCache = [];
+let empresasCache = [];
 let professoresPorMateria = {};
 let modulosPorMateria = {};
 
@@ -58,15 +58,11 @@ async function carregarEmpresas() {
 
   if (error) {
     console.error("Erro ao carregar empresas:", error);
+    mostrarMensagem("Erro ao carregar empresas parceiras.", false);
     return;
   }
 
-  (data || []).forEach((emp) => {
-    const option = document.createElement("option");
-    option.value = emp.cnpj;
-    option.textContent = emp.nome;
-    selectEmpresa.appendChild(option);
-  });
+  empresasCache = data || [];
 }
 
 // =====================================================
@@ -265,6 +261,18 @@ function preencherSelectProfessor(selectProfessor, materiaId, valorAtual = "") {
 
   selectProfessor.disabled = false;
   selectProfessor.value = valorAtual || "";
+}
+
+function preencherSelectEmpresaCurso(selectEmpresa, valorAtual = "") {
+  selectEmpresa.innerHTML = "";
+  selectEmpresa.appendChild(criarOption("", "Curso particular"));
+
+  empresasCache.forEach((emp) => {
+    if (emp.cnpj === "00000000000000") return;
+    selectEmpresa.appendChild(criarOption(emp.cnpj, emp.nome));
+  });
+
+  selectEmpresa.value = valorAtual || "";
 }
 
 function atualizarOpcoesDeMateriaEmTodasAsCaixas() {
@@ -508,6 +516,11 @@ function adicionarCurso() {
       <select class="professor" required disabled style="padding:8px;"></select>
     </label>
 
+    <label style="margin-bottom:8px;">
+      Empresa deste curso
+      <select class="empresaCurso" style="padding:8px;"></select>
+    </label>
+
     <div style="margin: 10px 0 8px 0; padding: 8px 10px; border-left: 4px solid #F1BC32; background: #fff7dd; border-radius: 8px;">
       <p style="margin:0; font-size:12px; line-height:1.45; color:#5f4b00;">
         <strong>Horários deste curso:</strong> adicione os dias e horários fixos deste aluno. 
@@ -559,12 +572,14 @@ function adicionarCurso() {
   const selMateria = wrapper.querySelector(".materia");
   const selModulo = wrapper.querySelector(".modulo");
   const selProfessor = wrapper.querySelector(".professor");
+  const selEmpresaCurso = wrapper.querySelector(".empresaCurso");
   const btnRemover = wrapper.querySelector(".remover");
   const btnAddHorario = wrapper.querySelector(".btn-add-horario");
 
   preencherSelectMateria(selMateria);
   preencherSelectModulo(selModulo, null);
   preencherSelectProfessor(selProfessor, null);
+  preencherSelectEmpresaCurso(selEmpresaCurso);
 
   adicionarLinhaHorario(wrapper);
 
@@ -653,6 +668,7 @@ function montarCursosDaTela() {
       materia_id: box.querySelector(".materia").value,
       modulo_id: box.querySelector(".modulo").value,
       professor_id: box.querySelector(".professor").value,
+      empresa_cnpj: box.querySelector(".empresaCurso")?.value || null,
       link_zoom: box.querySelector(".linkZoomCurso").value.trim(),
       link_youtube: box.querySelector(".linkYoutubeCurso").value.trim(),
       horarios
@@ -776,7 +792,6 @@ form.addEventListener("submit", async (e) => {
   const email = document.getElementById("email").value.trim().toLowerCase();
   const telefone = document.getElementById("telefone").value.trim();
   const observacao = document.getElementById("observacao").value.trim();
-  const empresaCnpj = selectEmpresa.value || null;
 
   if (!nome) {
     mostrarMensagem("Preencha o nome do aluno.", false);
@@ -811,7 +826,7 @@ form.addEventListener("submit", async (e) => {
         email: email || null,
         telefone: telefone || null,
         observacao: observacao || null,
-        empresa_cnpj: empresaCnpj
+        empresa_cnpj: null
       }])
       .select("id")
       .single();
@@ -832,13 +847,14 @@ form.addEventListener("submit", async (e) => {
           materia_id: Number(curso.materia_id),
           modulo_id: Number(curso.modulo_id),
           professor_id: Number(curso.professor_id),
+          empresa_cnpj: curso.empresa_cnpj || null,
           link_zoom: curso.link_zoom || null,
           link_youtube: curso.link_youtube || null,
           data_inicio: obterDataHojeLocalISO(),
           ativa: true
         }))
       )
-      .select("id, aluno_id, materia_id, modulo_id, professor_id");
+      .select("id, aluno_id, materia_id, modulo_id, professor_id, empresa_cnpj");
 
     if (errMatriculas) {
       console.error("Erro ao salvar matrículas:", errMatriculas);
