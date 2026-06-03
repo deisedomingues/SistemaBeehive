@@ -4307,3 +4307,38 @@ textarea[readonly] {
   font-weight: 700;
   margin-left: 4px;
 }
+.badge-evento-confirmado {
+  background: #ffd000;
+  color: #3b2f00;
+  border: 1px solid #d8aa00;
+}
+
+.badge-evento-disponivel {
+  background: #fff3b0;
+  color: #5c4700;
+  border: 1px solid #ead46b;
+}
+
+.acoes-evento-confirmado {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-google-agenda {
+  background: #fff3b0;
+  color: #4a3a00;
+  border: 1px solid #d8aa00;
+}
+.badge-google-agenda {
+  background: #fff;
+  color: #3b2f00;
+  border: 1px solid #d8aa00;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.badge-google-agenda:hover {
+  background: #fff8d6;
+}

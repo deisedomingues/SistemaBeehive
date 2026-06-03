@@ -1,8 +1,5 @@
 import { supabase } from "./supabase.js";
 
-/* =========================================================
-   ELEMENTOS
-========================================================= */
 const msg = document.getElementById("msg");
 const listaEventos = document.getElementById("listaEventos");
 
@@ -11,9 +8,6 @@ const textoCursoEventos = document.getElementById("textoCursoEventos");
 const labelSelectMatriculaEvento = document.getElementById("labelSelectMatriculaEvento");
 const selectMatriculaEvento = document.getElementById("selectMatriculaEvento");
 
-/* =========================================================
-   ESTADO
-========================================================= */
 let alunoId = null;
 let matriculasAtivas = [];
 let matriculaSelecionada = null;
@@ -21,16 +15,10 @@ let eventosDisponiveis = [];
 let confirmacoesSet = new Set();
 let convitesMap = new Map();
 
-/* =========================================================
-   INICIALIZAÇÃO
-========================================================= */
 document.addEventListener("DOMContentLoaded", async () => {
   await iniciarTela();
 });
 
-/* =========================================================
-   UTILITÁRIOS
-========================================================= */
 function mostrarMensagem(texto, tipo = "sucesso") {
   if (!msg) return;
 
@@ -237,9 +225,38 @@ function obterHtmlLinkParticipacao(link) {
   `;
 }
 
-/* =========================================================
-   MATRÍCULAS
-========================================================= */
+function formatarDataGoogle(data) {
+  return data.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+}
+
+function criarLinkGoogleAgenda(evento) {
+  if (!evento?.data_evento || !evento?.hora_evento) return "#";
+
+  const inicio = new Date(`${evento.data_evento}T${evento.hora_evento}`);
+  const fim = new Date(inicio.getTime() + 60 * 60 * 1000);
+
+  const titulo = encodeURIComponent(evento.titulo || "Evento Beehive");
+  const descricao = encodeURIComponent(evento.descricao || "");
+  const local = encodeURIComponent(evento.local || "");
+
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${formatarDataGoogle(inicio)}/${formatarDataGoogle(fim)}&details=${descricao}&location=${local}`;
+}
+
+function obterBotaoGoogleAgenda(evento) {
+  const linkAgenda = criarLinkGoogleAgenda(evento);
+
+  return `
+    <a
+      href="${escaparHtml(linkAgenda)}"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="badge-evento badge-google-agenda"
+    >
+      + Google Agenda
+    </a>
+  `;
+}
+
 async function carregarMatriculasAtivas() {
   const { data, error } = await supabase
     .from("matricula")
@@ -325,9 +342,6 @@ function preencherSelectMatriculas() {
   }
 }
 
-/* =========================================================
-   EVENTOS / CONVITES / CONFIRMAÇÕES
-========================================================= */
 async function carregarEventosDisponiveis() {
   const { data, error } = await supabase
     .from("evento")
@@ -489,9 +503,6 @@ async function marcarConvitesComoVisualizados() {
   });
 }
 
-/* =========================================================
-   AÇÕES
-========================================================= */
 async function confirmarPresenca(eventoId) {
   esconderMensagem();
 
@@ -573,9 +584,6 @@ function adicionarEventosDeInterface() {
   });
 }
 
-/* =========================================================
-   RENDER
-========================================================= */
 function renderizarEventos() {
   if (!listaEventos) return;
 
@@ -601,7 +609,7 @@ function renderizarEventos() {
     let botaoHtml = "";
 
     if (confirmado) {
-      badgeStatus = `<span class="badge-evento badge-evento-ativo">Confirmado</span>`;
+      badgeStatus = `<span class="badge-evento badge-evento-confirmado">Confirmado</span>`;
       statusInfo = `
         <div class="mini-card-evento">
           <strong>Situação</strong>
@@ -627,7 +635,7 @@ function renderizarEventos() {
         </button>
       `;
     } else {
-      badgeStatus = `<span class="badge-evento badge-evento-ativo">Disponível</span>`;
+      badgeStatus = `<span class="badge-evento badge-evento-disponivel">Disponível</span>`;
       statusInfo = `
         <div class="mini-card-evento">
           <strong>Situação</strong>
@@ -652,8 +660,9 @@ function renderizarEventos() {
             </p>
           </div>
 
-          <div>
+          <div class="topo-evento-acoes">
             ${badgeStatus}
+            ${confirmado ? obterBotaoGoogleAgenda(evento) : ""}
           </div>
         </div>
 
@@ -697,9 +706,6 @@ function renderizarEventos() {
   adicionarEventosDeInterface();
 }
 
-/* =========================================================
-   FLUXO
-========================================================= */
 async function recarregarTelaEventosPorCurso() {
   esconderMensagem();
 
@@ -763,9 +769,6 @@ async function iniciarTela() {
   await recarregarTelaEventosPorCurso();
 }
 
-/* =========================================================
-   EVENTOS DA INTERFACE
-========================================================= */
 if (selectMatriculaEvento) {
   selectMatriculaEvento.addEventListener("change", async () => {
     const idSelecionado = selectMatriculaEvento.value;
