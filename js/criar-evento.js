@@ -90,7 +90,7 @@ function calcularLimiteConfirmacao(dataEventoStr) {
   const dataLimite = new Date(ano, mes - 1, dia);
 
   dataLimite.setDate(dataLimite.getDate() - 1);
-  dataLimite.setHours(23, 59, 59, 0);
+  dataLimite.setHours(21, 0, 0, 0);
 
   return dataLimite;
 }
@@ -114,7 +114,7 @@ function atualizarPreviewLimiteConfirmacao() {
   const mes = String(limite.getMonth() + 1).padStart(2, "0");
   const ano = limite.getFullYear();
 
-  limiteConfirmacaoPreview.value = `${dia}/${mes}/${ano} às 23:59`;
+  limiteConfirmacaoPreview.value = `${dia}/${mes}/${ano} às 21:00`;
 }
 
 function dateToISOString(date) {
