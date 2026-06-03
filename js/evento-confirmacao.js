@@ -144,6 +144,20 @@ function eventoPrazoConfirmacaoVencido(evento) {
   return new Date(evento.limite_confirmacao) < new Date();
 }
 
+function ehUltimoDiaConfirmacao(evento) {
+  if (!evento?.limite_confirmacao) return false;
+
+  const hoje = new Date();
+  const limite = new Date(evento.limite_confirmacao);
+
+  return (
+    hoje.getFullYear() === limite.getFullYear() &&
+    hoje.getMonth() === limite.getMonth() &&
+    hoje.getDate() === limite.getDate() &&
+    limite >= hoje
+  );
+}
+
 function eventoJaAconteceu(evento) {
   if (!evento?.data_evento || !evento?.hora_evento) return false;
   const dataHoraEvento = new Date(`${evento.data_evento}T${evento.hora_evento}`);
@@ -601,6 +615,7 @@ function renderizarEventos() {
   listaEventos.innerHTML = eventosDisponiveis.map((evento) => {
     const confirmado = eventoJaConfirmado(evento.id);
     const prazoVencido = eventoPrazoConfirmacaoVencido(evento);
+    const ultimoDia = ehUltimoDiaConfirmacao(evento);
     const publicoDetalhe = obterPublicoDetalhado(evento);
     const blocoLinkParticipacao = obterHtmlLinkParticipacao(evento.local);
 
@@ -635,7 +650,20 @@ function renderizarEventos() {
         </button>
       `;
     } else {
-      badgeStatus = `<span class="badge-evento badge-evento-disponivel">Disponível</span>`;
+      if (ultimoDia) {
+        badgeStatus = `
+          <span class="badge-evento badge-ultimo-dia">
+            Último dia para se inscrever
+          </span>
+        `;
+      } else {
+        badgeStatus = `
+          <span class="badge-evento badge-evento-disponivel">
+            Disponível
+          </span>
+        `;
+      }
+
       statusInfo = `
         <div class="mini-card-evento">
           <strong>Situação</strong>

@@ -66,10 +66,10 @@ function habilitarCard(linkEl, href) {
   linkEl.classList.remove("link-indisponivel");
 }
 
-function atualizarBadgeEventos(totalNaoVisualizados) {
+function atualizarBadgeEventos(totalAlertas) {
   if (!badgeEventos || !textoEventosHome) return;
 
-  if (!totalNaoVisualizados || totalNaoVisualizados <= 0) {
+  if (!totalAlertas || totalAlertas <= 0) {
     badgeEventos.style.display = "none";
     badgeEventos.textContent = "0";
     textoEventosHome.textContent =
@@ -78,12 +78,14 @@ function atualizarBadgeEventos(totalNaoVisualizados) {
   }
 
   badgeEventos.style.display = "inline-flex";
-  badgeEventos.textContent = totalNaoVisualizados > 99 ? "99+" : String(totalNaoVisualizados);
+  badgeEventos.textContent = totalAlertas > 99 ? "99+" : String(totalAlertas);
 
-  if (totalNaoVisualizados === 1) {
-    textoEventosHome.textContent = "Você tem 1 evento novo aguardando sua visualização.";
+  if (totalAlertas === 1) {
+    textoEventosHome.textContent =
+      "Você tem 1 evento aguardando sua atenção.";
   } else {
-    textoEventosHome.textContent = `Você tem ${totalNaoVisualizados} eventos novos aguardando sua visualização.`;
+    textoEventosHome.textContent =
+      `Você tem ${totalAlertas} eventos aguardando sua atenção.`;
   }
 }
 
@@ -118,6 +120,22 @@ function eventoJaAconteceu(evento) {
   if (!evento?.data_evento || !evento?.hora_evento) return false;
   const dataHoraEvento = new Date(`${evento.data_evento}T${evento.hora_evento}`);
   return dataHoraEvento < new Date();
+}
+
+function ehUltimoDiaConfirmacao(evento) {
+  if (!evento?.limite_confirmacao) return false;
+
+  const agora = new Date();
+  const limite = new Date(evento.limite_confirmacao);
+
+  const mesmoDia =
+    agora.getFullYear() === limite.getFullYear() &&
+    agora.getMonth() === limite.getMonth() &&
+    agora.getDate() === limite.getDate();
+
+  const aindaDentroDoPrazo = limite >= agora;
+
+  return mesmoDia && aindaDentroDoPrazo;
 }
 
 function alunoPodeVerEvento(evento, matriculasDoAluno) {
@@ -525,13 +543,49 @@ async function sincronizarConvitesElegiveis(alunoIdAtual, eventosElegiveis) {
   return convitesAtualizados || [];
 }
 
+async function carregarConfirmacoesEventos(alunoIdAtual, eventosElegiveis) {
+  if (!eventosElegiveis.length) return new Set();
+
+  const idsEventosElegiveis = eventosElegiveis.map((evento) => evento.id);
+
+  const { data, error } = await supabase
+    .from("evento_confirmacao")
+    .select("evento_id")
+    .eq("aluno_id", alunoIdAtual)
+    .in("evento_id", idsEventosElegiveis);
+
+  if (error) {
+    console.error("Erro ao carregar confirmações para badge:", error);
+    return new Set();
+  }
+
+  return new Set((data || []).map((item) => Number(item.evento_id)));
+}
+
 async function carregarBadgeEventos() {
   try {
     const eventosElegiveis = await carregarEventosElegiveisDoAluno(matriculasAtivas);
     const convites = await sincronizarConvitesElegiveis(alunoId, eventosElegiveis);
+    const confirmacoesSet = await carregarConfirmacoesEventos(alunoId, eventosElegiveis);
 
-    const totalNaoVisualizados = convites.filter((convite) => !convite.visualizado).length;
-    atualizarBadgeEventos(totalNaoVisualizados);
+    const idsComAlerta = new Set();
+
+    convites.forEach((convite) => {
+      if (!convite.visualizado) {
+        idsComAlerta.add(Number(convite.evento_id));
+      }
+    });
+
+    eventosElegiveis.forEach((evento) => {
+      const eventoId = Number(evento.id);
+      const confirmado = confirmacoesSet.has(eventoId);
+
+      if (!confirmado && ehUltimoDiaConfirmacao(evento)) {
+        idsComAlerta.add(eventoId);
+      }
+    });
+
+    atualizarBadgeEventos(idsComAlerta.size);
   } catch (erro) {
     console.error("Erro inesperado ao carregar badge de eventos:", erro);
     atualizarBadgeEventos(0);
@@ -712,6 +766,7 @@ if (selectMatricula) {
     matriculaSelecionada = encontrada;
     await atualizarTelaComMatriculaSelecionada();
     await carregarBadgeAvaliacoes();
+    await carregarBadgeEventos();
   });
 }
 

@@ -4342,3 +4342,9 @@ textarea[readonly] {
 .badge-google-agenda:hover {
   background: #fff8d6;
 }
+
+.badge-ultimo-dia {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
+}
