@@ -4,7 +4,6 @@ import { supabase } from "./supabase.js";
    1) Garantir que o usuário está logado
 ================================ */
 export async function exigirLogin() {
-
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
@@ -15,14 +14,12 @@ export async function exigirLogin() {
   return user;
 }
 
-
 /* ===============================
    2) Somente ADMIN
 ================================ */
 export async function exigirAdmin() {
-
   const user = await exigirLogin();
-  if (!user) return;
+  if (!user) return null;
 
   const { data: perfil, error } = await supabase
     .from("perfil")
@@ -32,19 +29,20 @@ export async function exigirAdmin() {
 
   if (error || !perfil || perfil.role !== "admin") {
     window.location.href = "index.html";
-    return;
+    return null;
   }
 
-}
+  localStorage.setItem("role", "admin");
 
+  return perfil;
+}
 
 /* ===============================
    3) Somente PROFESSOR
 ================================ */
 export async function exigirProfessor() {
-
   const user = await exigirLogin();
-  if (!user) return;
+  if (!user) return null;
 
   const { data: perfil, error } = await supabase
     .from("perfil")
@@ -54,22 +52,21 @@ export async function exigirProfessor() {
 
   if (error || !perfil || perfil.role !== "professor") {
     window.location.href = "index.html";
-    return;
+    return null;
   }
 
-  // guarda o id do professor para usar nas páginas
+  localStorage.setItem("role", "professor");
   localStorage.setItem("professorId", perfil.professor_id || "");
-}
 
+  return perfil;
+}
 
 /* ===============================
    4) PROFESSOR OU ADMIN
-   (para páginas compartilhadas)
 ================================ */
 export async function exigirProfessorOuAdmin() {
-
   const user = await exigirLogin();
-  if (!user) return;
+  if (!user) return null;
 
   const { data: perfil, error } = await supabase
     .from("perfil")
@@ -79,29 +76,29 @@ export async function exigirProfessorOuAdmin() {
 
   if (error || !perfil) {
     window.location.href = "index.html";
-    return;
+    return null;
   }
 
-  // se for professor guarda o id
+  if (perfil.role !== "professor" && perfil.role !== "admin") {
+    window.location.href = "index.html";
+    return null;
+  }
+
+  localStorage.setItem("role", perfil.role);
+
   if (perfil.role === "professor") {
     localStorage.setItem("professorId", perfil.professor_id || "");
   }
 
-  // se não for professor nem admin → bloqueia
-  if (perfil.role !== "professor" && perfil.role !== "admin") {
-    window.location.href = "index.html";
-  }
-
+  return perfil;
 }
 
-
 /* ===============================
-   3) Somente ALUNO
+   5) Somente ALUNO
 ================================ */
 export async function exigirAluno() {
-
   const user = await exigirLogin();
-  if (!user) return;
+  if (!user) return null;
 
   const { data: perfil, error } = await supabase
     .from("perfil")
@@ -111,10 +108,76 @@ export async function exigirAluno() {
 
   if (error || !perfil || perfil.role !== "aluno") {
     window.location.href = "index.html";
-    return;
+    return null;
   }
 
-  // guarda id do aluno
+  localStorage.setItem("role", "aluno");
   localStorage.setItem("alunoId", perfil.aluno_id || "");
 
+  // segurança: aluno comum não pode usar visualização de outro aluno
+  localStorage.removeItem("alunoIdVisualizacao");
+
+  return perfil;
+}
+
+/* ===============================
+   6) ALUNO OU PROFESSOR VISUALIZANDO COMO ALUNO
+================================ */
+export async function exigirAlunoOuProfessorFuncionario() {
+  const user = await exigirLogin();
+  if (!user) return null;
+
+  const { data: perfil, error } = await supabase
+    .from("perfil")
+    .select("role, aluno_id, professor_id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (error || !perfil) {
+    window.location.href = "index.html";
+    return null;
+  }
+
+  if (perfil.role === "aluno") {
+    localStorage.setItem("role", "aluno");
+    localStorage.setItem("alunoId", perfil.aluno_id || "");
+    localStorage.removeItem("alunoIdVisualizacao");
+    return perfil;
+  }
+
+  if (perfil.role === "professor") {
+    localStorage.setItem("role", "professor");
+    localStorage.setItem("professorId", perfil.professor_id || "");
+
+    let alunoIdVisualizacao =
+      localStorage.getItem("alunoIdVisualizacao") ||
+      localStorage.getItem("alunoId") ||
+      localStorage.getItem("aluno_id") ||
+      localStorage.getItem("idAluno");
+
+    if (!alunoIdVisualizacao && user.email) {
+      const { data: alunoPorEmail } = await supabase
+        .from("aluno")
+        .select("id")
+        .eq("email", user.email)
+        .maybeSingle();
+
+      if (alunoPorEmail?.id) {
+        alunoIdVisualizacao = alunoPorEmail.id;
+      }
+    }
+
+    if (!alunoIdVisualizacao) {
+      window.location.href = "home-professor.html";
+      return null;
+    }
+
+    localStorage.setItem("alunoIdVisualizacao", String(alunoIdVisualizacao));
+    localStorage.setItem("alunoId", String(alunoIdVisualizacao));
+
+    return perfil;
+  }
+
+  window.location.href = "index.html";
+  return null;
 }

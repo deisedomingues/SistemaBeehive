@@ -1,7 +1,7 @@
 import { supabase } from "./supabase.js";
-import { exigirAdmin } from "./guard.js";
+import { exigirAlunoOuProfessorFuncionario } from "./guard.js";
 
-await exigirAdmin();
+await exigirAlunoOuProfessorFuncionario();
 
 /* =========================================================
    ELEMENTOS

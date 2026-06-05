@@ -1,7 +1,7 @@
 import { supabase } from "./supabase.js";
-import { exigirAluno } from "./guard.js";
+import { exigirAlunoOuProfessorFuncionario } from "./guard.js";
 
-await exigirAluno();
+await exigirAlunoOuProfessorFuncionario();
 
 const listaReposicoes = document.getElementById("listaReposicoes");
 const msg = document.getElementById("msg");
@@ -276,6 +276,7 @@ function salvarMatriculaSelecionada(matricula) {
 
 function obterAlunoIdLogado() {
   return (
+    localStorage.getItem("alunoIdVisualizacao") ||
     localStorage.getItem("alunoId") ||
     localStorage.getItem("aluno_id") ||
     localStorage.getItem("idAluno") ||

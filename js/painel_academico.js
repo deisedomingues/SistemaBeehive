@@ -1,10 +1,10 @@
 import { supabase } from "./supabase.js";
-import { exigirAluno } from "./guard.js";
+import { exigirAlunoOuProfessorFuncionario } from "./guard.js";
 
 try {
-  await exigirAluno();
+  await exigirAlunoOuProfessorFuncionario();
 } catch (erro) {
-  console.error("Erro ao validar acesso do aluno:", erro);
+  console.error("Erro ao validar acesso ao painel acadêmico:", erro);
 }
 
 const CONFIG = {
@@ -224,6 +224,7 @@ function formatarNota(valor) {
 
 function obterAlunoId() {
   return (
+    localStorage.getItem("alunoIdVisualizacao") ||
     localStorage.getItem("alunoId") ||
     localStorage.getItem("aluno_id") ||
     localStorage.getItem("idAluno")

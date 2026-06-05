@@ -1,7 +1,7 @@
 import { supabase } from "./supabase.js";
-import { exigirAluno } from "./guard.js";
+import { exigirAlunoOuProfessorFuncionario } from "./guard.js";
 
-await exigirAluno();
+await exigirAlunoOuProfessorFuncionario();
 
 /* =========================================================
    ELEMENTOS
@@ -18,6 +18,7 @@ const listaAvaliacoesRealizadas = document.getElementById("listaAvaliacoesRealiz
    CONTEXTO DO ALUNO
 ========================================================= */
 const alunoId =
+  localStorage.getItem("alunoIdVisualizacao") ||
   localStorage.getItem("alunoId") ||
   localStorage.getItem("aluno_id") ||
   localStorage.getItem("idAluno");
@@ -267,7 +268,8 @@ function renderCursoSelecionado() {
   blocoCursoSelecionado.style.display = "block";
 
   if (nomeCursoSelecionado) {
-    textoCursoSelecionado.textContent = `Você está visualizando avaliações de: ${nomeCursoSelecionado}.`;
+    textoCursoSelecionado.textContent =
+      `Você está visualizando avaliações de: ${nomeCursoSelecionado}.`;
     return;
   }
 

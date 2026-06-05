@@ -1,4 +1,7 @@
 import { supabase } from "./supabase.js";
+import { exigirAlunoOuProfessorFuncionario } from "./guard.js";
+
+await exigirAlunoOuProfessorFuncionario();
 
 const msg = document.getElementById("msg");
 const listaEventos = document.getElementById("listaEventos");
@@ -15,10 +18,33 @@ let eventosDisponiveis = [];
 let confirmacoesSet = new Set();
 let convitesMap = new Map();
 
-document.addEventListener("DOMContentLoaded", async () => {
-  await iniciarTela();
-});
+/* =========================================================
+   BOTÃO VOLTAR
+========================================================= */
+function configurarBotaoVoltar() {
+  const btnVoltar = document.getElementById("btnVoltarEventos");
+  if (!btnVoltar) return;
 
+  btnVoltar.addEventListener("click", () => {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    const role = localStorage.getItem("role");
+
+    if (role === "professor") {
+      window.location.href = "home-professor.html";
+      return;
+    }
+
+    window.location.href = "home-aluno.html";
+  });
+}
+
+/* =========================================================
+   MENSAGENS
+========================================================= */
 function mostrarMensagem(texto, tipo = "sucesso") {
   if (!msg) return;
 
@@ -45,6 +71,9 @@ function esconderMensagem() {
   msg.textContent = "";
 }
 
+/* =========================================================
+   UTILITÁRIOS
+========================================================= */
 function escaparHtml(texto) {
   return String(texto ?? "")
     .replaceAll("&", "&amp;")
@@ -79,20 +108,6 @@ function formatarDataHoraBR(dataHoraStr) {
   });
 }
 
-function obterAlunoIdLogado() {
-  const possiveisChaves = ["aluno_id", "alunoId", "idAluno"];
-
-  for (const chave of possiveisChaves) {
-    const valorLocal = localStorage.getItem(chave);
-    if (valorLocal) return Number(valorLocal);
-
-    const valorSession = sessionStorage.getItem(chave);
-    if (valorSession) return Number(valorSession);
-  }
-
-  return null;
-}
-
 function montarNomeCurso(matricula) {
   const materia = matricula?.materia?.nome || "Curso";
   const modulo = matricula?.modulo?.nome || "Módulo não informado";
@@ -108,6 +123,86 @@ function salvarMatriculaSelecionada(matricula) {
   localStorage.setItem("nomeCursoSelecionado", montarNomeCurso(matricula));
 }
 
+/* =========================================================
+   IDENTIFICAR ALUNO LOGADO
+   Professor também pode ser aluno sem outro login.
+========================================================= */
+async function obterAlunoIdLogado() {
+  const role = localStorage.getItem("role");
+
+  const {
+    data: { user },
+    error: erroUser
+  } = await supabase.auth.getUser();
+
+  if (erroUser) {
+    console.error("Erro ao obter usuário logado:", erroUser);
+  }
+
+  const emailLogado = user?.email ? String(user.email).trim() : "";
+
+  /*
+    Primeiro tenta achar na tabela aluno pelo e-mail do login.
+    Isso resolve o caso do professor que também é aluno.
+    Não cria novo usuário no Authentication.
+  */
+  if (emailLogado) {
+    const { data: alunoPorEmail, error } = await supabase
+      .from("aluno")
+      .select("id")
+      .ilike("email", emailLogado)
+      .maybeSingle();
+
+    if (!error && alunoPorEmail?.id) {
+      localStorage.setItem("alunoId", String(alunoPorEmail.id));
+      localStorage.setItem("aluno_id", String(alunoPorEmail.id));
+
+      if (role === "professor") {
+        localStorage.setItem("alunoIdVisualizacao", String(alunoPorEmail.id));
+      }
+
+      return Number(alunoPorEmail.id);
+    }
+
+    if (error) {
+      console.warn("Não foi possível buscar aluno pelo e-mail:", error);
+    }
+  }
+
+  /*
+    Depois tenta IDs já salvos no navegador.
+  */
+  const alunoIdLocal =
+    localStorage.getItem("alunoId") ||
+    localStorage.getItem("aluno_id") ||
+    localStorage.getItem("idAluno") ||
+    sessionStorage.getItem("alunoId") ||
+    sessionStorage.getItem("aluno_id") ||
+    sessionStorage.getItem("idAluno");
+
+  if (alunoIdLocal) {
+    return Number(alunoIdLocal);
+  }
+
+  /*
+    Por último, se for professor visualizando como aluno.
+  */
+  if (role === "professor") {
+    const alunoIdVisualizacao = localStorage.getItem("alunoIdVisualizacao");
+
+    if (alunoIdVisualizacao) {
+      localStorage.setItem("alunoId", alunoIdVisualizacao);
+      localStorage.setItem("aluno_id", alunoIdVisualizacao);
+      return Number(alunoIdVisualizacao);
+    }
+  }
+
+  return null;
+}
+
+/* =========================================================
+   EVENTOS - REGRAS
+========================================================= */
 function eventoJaConfirmado(eventoId) {
   return confirmacoesSet.has(Number(eventoId));
 }
@@ -160,13 +255,14 @@ function ehUltimoDiaConfirmacao(evento) {
 
 function eventoJaAconteceu(evento) {
   if (!evento?.data_evento || !evento?.hora_evento) return false;
+
   const dataHoraEvento = new Date(`${evento.data_evento}T${evento.hora_evento}`);
   return dataHoraEvento < new Date();
 }
 
-function eventoCondizComCursoSelecionado(evento) {
+function eventoCondizComMatricula(evento, matricula) {
   if (!evento?.ativo) return false;
-  if (!matriculaSelecionada) return false;
+  if (!matricula) return false;
   if (eventoJaAconteceu(evento)) return false;
 
   if (evento.publico_alvo === "todos") {
@@ -174,19 +270,20 @@ function eventoCondizComCursoSelecionado(evento) {
   }
 
   if (evento.publico_alvo === "materia") {
-    return Number(matriculaSelecionada.materia_id) === Number(evento.materia_id);
+    return Number(matricula.materia_id) === Number(evento.materia_id);
   }
 
   if (evento.publico_alvo === "modulo_exato") {
     return (
-      Number(matriculaSelecionada.materia_id) === Number(evento.materia_id) &&
-      Number(matriculaSelecionada.modulo_id) === Number(evento.modulo_id)
+      Number(matricula.materia_id) === Number(evento.materia_id) &&
+      Number(matricula.modulo_id) === Number(evento.modulo_id)
     );
   }
 
   if (evento.publico_alvo === "modulo_a_partir") {
-    const mesmaMateria = Number(matriculaSelecionada.materia_id) === Number(evento.materia_id);
-    const ordemAluno = matriculaSelecionada.modulo?.ordem ?? null;
+    const mesmaMateria = Number(matricula.materia_id) === Number(evento.materia_id);
+
+    const ordemAluno = matricula.modulo?.ordem ?? null;
     const ordemEvento = evento.modulo?.ordem ?? null;
 
     if (!mesmaMateria || ordemAluno === null || ordemEvento === null) {
@@ -199,6 +296,15 @@ function eventoCondizComCursoSelecionado(evento) {
   return false;
 }
 
+function eventoDisponivelParaAlgumaMatricula(evento) {
+  return matriculasAtivas.some((matricula) =>
+    eventoCondizComMatricula(evento, matricula)
+  );
+}
+
+/* =========================================================
+   LINKS
+========================================================= */
 function normalizarLink(link) {
   const valor = String(link || "").trim();
   if (!valor) return "";
@@ -271,6 +377,9 @@ function obterBotaoGoogleAgenda(evento) {
   `;
 }
 
+/* =========================================================
+   MATRÍCULAS
+========================================================= */
 async function carregarMatriculasAtivas() {
   const { data, error } = await supabase
     .from("matricula")
@@ -305,34 +414,23 @@ async function carregarMatriculasAtivas() {
   matriculasAtivas = data || [];
 }
 
-function definirMatriculaSelecionadaInicial() {
-  if (!matriculasAtivas.length) {
-    matriculaSelecionada = null;
-    return;
-  }
-
-  const idSalvo = localStorage.getItem("matriculaSelecionadaId");
-
-  const encontrada = matriculasAtivas.find(
-    (m) => String(m.id) === String(idSalvo)
-  );
-
-  if (encontrada) {
-    matriculaSelecionada = encontrada;
-    return;
-  }
-
-  matriculaSelecionada = matriculasAtivas[0];
-  salvarMatriculaSelecionada(matriculaSelecionada);
-}
-
 function preencherSelectMatriculas() {
-  if (!blocoCursoEventos || !textoCursoEventos || !labelSelectMatriculaEvento || !selectMatriculaEvento) {
+  if (
+    !blocoCursoEventos ||
+    !textoCursoEventos ||
+    !labelSelectMatriculaEvento ||
+    !selectMatriculaEvento
+  ) {
     return;
   }
 
   blocoCursoEventos.style.display = "block";
   selectMatriculaEvento.innerHTML = "";
+
+  const optionTodos = document.createElement("option");
+  optionTodos.value = "todos";
+  optionTodos.textContent = "Todos os meus cursos";
+  selectMatriculaEvento.appendChild(optionTodos);
 
   matriculasAtivas.forEach((matricula) => {
     const option = document.createElement("option");
@@ -341,21 +439,23 @@ function preencherSelectMatriculas() {
     selectMatriculaEvento.appendChild(option);
   });
 
-  if (matriculasAtivas.length > 1) {
-    labelSelectMatriculaEvento.style.display = "block";
-  } else {
-    labelSelectMatriculaEvento.style.display = "none";
-  }
+  labelSelectMatriculaEvento.style.display =
+    matriculasAtivas.length > 1 ? "block" : "none";
 
   if (matriculaSelecionada?.id) {
     selectMatriculaEvento.value = String(matriculaSelecionada.id);
     textoCursoEventos.textContent =
-      `Você está visualizando os eventos do curso ${montarNomeCurso(matriculaSelecionada)}. Eventos gerais da escola também aparecem aqui.`;
+      `Você está visualizando os eventos do curso ${montarNomeCurso(matriculaSelecionada)}.`;
   } else {
-    textoCursoEventos.textContent = "Nenhum curso ativo encontrado.";
+    selectMatriculaEvento.value = "todos";
+    textoCursoEventos.textContent =
+      "Você está visualizando os eventos disponíveis para todos os seus cursos.";
   }
 }
 
+/* =========================================================
+   BANCO DE DADOS - EVENTOS
+========================================================= */
 async function carregarEventosDisponiveis() {
   const { data, error } = await supabase
     .from("evento")
@@ -394,13 +494,21 @@ async function carregarEventosDisponiveis() {
     return;
   }
 
-  eventosDisponiveis = (data || []).filter(eventoCondizComCursoSelecionado);
+  const lista = data || [];
+
+  if (matriculaSelecionada) {
+    eventosDisponiveis = lista.filter((evento) =>
+      eventoCondizComMatricula(evento, matriculaSelecionada)
+    );
+  } else {
+    eventosDisponiveis = lista.filter(eventoDisponivelParaAlgumaMatricula);
+  }
 }
 
 async function sincronizarConvitesDoAluno() {
   convitesMap = new Map();
 
-  if (!eventosDisponiveis.length) return;
+  if (!eventosDisponiveis.length || !alunoId) return;
 
   const idsEventos = eventosDisponiveis.map((evento) => evento.id);
 
@@ -458,7 +566,7 @@ async function sincronizarConvitesDoAluno() {
 async function carregarConfirmacoesDoAluno() {
   confirmacoesSet = new Set();
 
-  if (!eventosDisponiveis.length) return;
+  if (!eventosDisponiveis.length || !alunoId) return;
 
   const idsEventos = eventosDisponiveis.map((evento) => evento.id);
 
@@ -517,6 +625,9 @@ async function marcarConvitesComoVisualizados() {
   });
 }
 
+/* =========================================================
+   CONFIRMAR PRESENÇA
+========================================================= */
 async function confirmarPresenca(eventoId) {
   esconderMensagem();
 
@@ -568,6 +679,9 @@ async function confirmarPresenca(eventoId) {
   mostrarMensagem("✅ Presença confirmada com sucesso!");
 }
 
+/* =========================================================
+   INTERFACE
+========================================================= */
 function adicionarEventosDeInterface() {
   document.querySelectorAll(".btn-confirmar-evento").forEach((botao) => {
     botao.addEventListener("click", async () => {
@@ -650,19 +764,9 @@ function renderizarEventos() {
         </button>
       `;
     } else {
-      if (ultimoDia) {
-        badgeStatus = `
-          <span class="badge-evento badge-ultimo-dia">
-            Último dia para se inscrever
-          </span>
-        `;
-      } else {
-        badgeStatus = `
-          <span class="badge-evento badge-evento-disponivel">
-            Disponível
-          </span>
-        `;
-      }
+      badgeStatus = ultimoDia
+        ? `<span class="badge-evento badge-ultimo-dia">Último dia para se inscrever</span>`
+        : `<span class="badge-evento badge-evento-disponivel">Disponível</span>`;
 
       statusInfo = `
         <div class="mini-card-evento">
@@ -734,15 +838,12 @@ function renderizarEventos() {
   adicionarEventosDeInterface();
 }
 
+/* =========================================================
+   RECARREGAR
+========================================================= */
 async function recarregarTelaEventosPorCurso() {
   esconderMensagem();
 
-  if (!matriculaSelecionada) {
-    renderizarEventos();
-    return;
-  }
-
-  salvarMatriculaSelecionada(matriculaSelecionada);
   preencherSelectMatriculas();
 
   await carregarEventosDisponiveis();
@@ -756,11 +857,11 @@ async function recarregarTelaEventosPorCurso() {
 async function iniciarTela() {
   esconderMensagem();
 
-  alunoId = obterAlunoIdLogado();
+  alunoId = await obterAlunoIdLogado();
 
   if (!alunoId) {
     mostrarMensagem(
-      "Não foi possível identificar o aluno logado. Verifique se o ID do aluno está salvo no login.",
+      "Não foi possível identificar este usuário como aluno. Se for professor e também aluno, cadastre-o na tabela de alunos usando o mesmo e-mail do login.",
       "erro"
     );
 
@@ -771,6 +872,7 @@ async function iniciarTela() {
         </div>
       `;
     }
+
     return;
   }
 
@@ -778,6 +880,7 @@ async function iniciarTela() {
 
   if (!matriculasAtivas.length) {
     if (blocoCursoEventos) blocoCursoEventos.style.display = "block";
+
     if (textoCursoEventos) {
       textoCursoEventos.textContent = "Você não possui matrícula ativa no momento.";
     }
@@ -789,17 +892,30 @@ async function iniciarTela() {
         </div>
       `;
     }
+
     return;
   }
 
-  definirMatriculaSelecionadaInicial();
+  matriculaSelecionada = null;
+  localStorage.removeItem("matriculaSelecionadaId");
+
   preencherSelectMatriculas();
   await recarregarTelaEventosPorCurso();
 }
 
+/* =========================================================
+   TROCA DE CURSO
+========================================================= */
 if (selectMatriculaEvento) {
   selectMatriculaEvento.addEventListener("change", async () => {
     const idSelecionado = selectMatriculaEvento.value;
+
+    if (idSelecionado === "todos") {
+      matriculaSelecionada = null;
+      localStorage.removeItem("matriculaSelecionadaId");
+      await recarregarTelaEventosPorCurso();
+      return;
+    }
 
     const encontrada = matriculasAtivas.find(
       (m) => String(m.id) === String(idSelecionado)
@@ -808,6 +924,13 @@ if (selectMatriculaEvento) {
     if (!encontrada) return;
 
     matriculaSelecionada = encontrada;
+    salvarMatriculaSelecionada(matriculaSelecionada);
     await recarregarTelaEventosPorCurso();
   });
 }
+
+/* =========================================================
+   EXECUÇÃO
+========================================================= */
+configurarBotaoVoltar();
+await iniciarTela();
