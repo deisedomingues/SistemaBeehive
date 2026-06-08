@@ -1878,21 +1878,33 @@ textarea[readonly] {
 
 .badge-eventos {
   position: absolute;
-  top: -10px;
-  right: -10px;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: #d64545;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
+  top: 10px;
+  right: 10px;
+
+  min-width: 22px;
+  height: 22px;
+
+  padding: 0 6px;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-  z-index: 5;
+
+  border-radius: 999px;
+
+  background: #e53935;
+  color: white;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  z-index: 10;
+}
+
+.card-eventos-aluno,
+.card-comunicados-aluno,
+.card-avaliacoes-aluno {
+  position: relative;
 }
 
 /* =========================================================
@@ -4347,4 +4359,37 @@ textarea[readonly] {
   background: #dbeafe;
   color: #1d4ed8;
   border: 1px solid #93c5fd;
+}
+
+/* =========================================================
+   EVENTOS ADMIN - FUNDO PADRÃO DO SITE
+========================================================= */
+
+.pagina-eventos-admin {
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(255, 245, 204, 0.9), rgba(255, 245, 204, 0.9)),
+    url("../images/FundoColmeiaEscuro.png") center/cover no-repeat fixed;
+  display: block;
+  padding: 28px 16px;
+}
+
+.pagina-eventos-admin .overlay {
+  display: none;
+}
+
+.pagina-eventos-admin .container-eventos-admin {
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #f1df9a;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.pagina-eventos-admin h1 {
+  color: #5c4300;
+}
+
+.pagina-eventos-admin .card {
+  background: #fff5cc;
+  border: 1px solid rgba(253, 204, 12, 0.45);
 }

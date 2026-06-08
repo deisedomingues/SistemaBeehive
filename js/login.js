@@ -148,7 +148,7 @@ form.addEventListener("submit", async (e) => {
     }
 
     // fallback
-    window.location.href = "login.html";
+    window.location.href = "index.html";
 
   }, 500);
 

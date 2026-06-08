@@ -1,7 +1,7 @@
 import { supabase } from "./supabase.js";
 import { exigirLogin } from "./guard.js";
 
-// ✅ garante que está logado (se não estiver, vai para login.html)
+// ✅ garante que está logado (se não estiver, vai para index.html)
 await exigirLogin();
 
 function esconder(id) {
@@ -78,7 +78,7 @@ if (btnSair) {
     localStorage.removeItem("professorNome");
     localStorage.removeItem("professorEmail");
 
-    window.location.href = "login.html";
+    window.location.href = "index.html";
 
   });
 }

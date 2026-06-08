@@ -33,10 +33,15 @@ const btnAvaliacoes = document.getElementById("btnAvaliacoes");
 const badgeAvaliacoes = document.getElementById("badgeAvaliacoes");
 const textoAvaliacoesHome = document.getElementById("textoAvaliacoesHome");
 
+const badgeComunicados = document.getElementById("badgeComunicados");
+const textoComunicadosHome = document.getElementById("textoComunicadosHome");
+
 const blocoCursoAtual = document.getElementById("blocoCursoAtual");
 const textoCursoAtual = document.getElementById("textoCursoAtual");
 const labelSelectMatricula = document.getElementById("labelSelectMatricula");
 const selectMatricula = document.getElementById("selectMatricula");
+
+const linkEventos = document.querySelector('a[href="evento-confirmacao.html"]');
 
 const alunoId =
   localStorage.getItem("alunoIdVisualizacao") ||
@@ -50,6 +55,7 @@ if (!alunoId) {
 
 let matriculasAtivas = [];
 let matriculaSelecionada = null;
+let eventosElegiveisAtuais = [];
 
 function desabilitarCard(linkEl, tituloIndisponivel, descricaoIndisponivel) {
   if (!linkEl) return;
@@ -92,8 +98,8 @@ function atualizarBadgeEventos(totalNaoVisualizados) {
 
   textoEventosHome.textContent =
     totalNaoVisualizados === 1
-      ? "Você tem 1 evento novo aguardando sua visualização."
-      : `Você tem ${totalNaoVisualizados} eventos novos aguardando sua visualização.`;
+      ? "Você tem 1 evento novo para visualizar."
+      : `Você tem ${totalNaoVisualizados} eventos novos para visualizar.`;
 }
 
 function atualizarBadgeAvaliacoes(totalPendentes) {
@@ -121,10 +127,45 @@ function atualizarBadgeAvaliacoes(totalPendentes) {
       : `Você tem ${totalPendentes} avaliações pendentes para realizar.`;
 }
 
+function atualizarBadgeComunicados(totalNaoVistos) {
+  if (!badgeComunicados || !textoComunicadosHome) return;
+
+  if (!totalNaoVistos || totalNaoVistos <= 0) {
+    badgeComunicados.style.display = "none";
+    badgeComunicados.textContent = "0";
+    textoComunicadosHome.textContent =
+      "Veja os comunicados importantes da escola.";
+    return;
+  }
+
+  badgeComunicados.style.display = "inline-flex";
+  badgeComunicados.textContent =
+    totalNaoVistos > 99 ? "99+" : String(totalNaoVistos);
+
+  textoComunicadosHome.textContent =
+    totalNaoVistos === 1
+      ? "Você tem 1 comunicado novo para visualizar."
+      : `Você tem ${totalNaoVistos} comunicados novos para visualizar.`;
+}
+
 function eventoJaAconteceu(evento) {
   if (!evento?.data_evento || !evento?.hora_evento) return false;
+
   const dataHoraEvento = new Date(`${evento.data_evento}T${evento.hora_evento}`);
   return dataHoraEvento < new Date();
+}
+
+function comunicadoEstaExpirado(comunicado) {
+  if (!comunicado.data_expiracao) return false;
+
+  const partes = String(comunicado.data_expiracao).split("-");
+  const ano = Number(partes[0]);
+  const mes = Number(partes[1]) - 1;
+  const dia = Number(partes[2]);
+
+  const fimDoDia = new Date(ano, mes, dia, 23, 59, 59, 999);
+
+  return fimDoDia < new Date();
 }
 
 function alunoPodeVerEvento(evento, matriculasDoAluno) {
@@ -150,11 +191,13 @@ function alunoPodeVerEvento(evento, matriculasDoAluno) {
 
   if (evento.publico_alvo === "modulo_a_partir") {
     const ordemEvento = evento.modulo?.ordem ?? null;
+
     if (ordemEvento === null) return false;
 
     return matriculasDoAluno.some((matricula) => {
       const mesmaMateria =
         Number(matricula.materia_id) === Number(evento.materia_id);
+
       const ordemAluno = matricula.modulo?.ordem ?? null;
 
       return (
@@ -168,9 +211,54 @@ function alunoPodeVerEvento(evento, matriculasDoAluno) {
   return false;
 }
 
+function alunoPodeVerComunicado(comunicado, matriculasDoAluno) {
+  if (!comunicado?.ativo) return false;
+  if (comunicadoEstaExpirado(comunicado)) return false;
+
+  if (comunicado.publico_alvo === "todos") return true;
+
+  if (!matriculasDoAluno.length) return false;
+
+  if (comunicado.publico_alvo === "materia") {
+    return matriculasDoAluno.some(
+      (matricula) => Number(matricula.materia_id) === Number(comunicado.materia_id)
+    );
+  }
+
+  if (comunicado.publico_alvo === "modulo_exato") {
+    return matriculasDoAluno.some(
+      (matricula) =>
+        Number(matricula.materia_id) === Number(comunicado.materia_id) &&
+        Number(matricula.modulo_id) === Number(comunicado.modulo_id)
+    );
+  }
+
+  if (comunicado.publico_alvo === "modulo_a_partir") {
+    const ordemComunicado = comunicado.modulo?.ordem ?? null;
+
+    if (ordemComunicado === null) return false;
+
+    return matriculasDoAluno.some((matricula) => {
+      const mesmaMateria =
+        Number(matricula.materia_id) === Number(comunicado.materia_id);
+
+      const ordemAluno = matricula.modulo?.ordem ?? null;
+
+      return (
+        mesmaMateria &&
+        ordemAluno !== null &&
+        Number(ordemAluno) >= Number(ordemComunicado)
+      );
+    });
+  }
+
+  return false;
+}
+
 function montarNomeCurso(matricula) {
   const nomeMateria = matricula?.materia?.nome || "Curso";
   const nomeModulo = matricula?.modulo?.nome || "Módulo não informado";
+
   return `${nomeMateria} — ${nomeModulo}`;
 }
 
@@ -323,6 +411,7 @@ function definirMatriculaSelecionadaInicial() {
   );
 
   matriculaSelecionada = encontradaSalva || matriculasAtivas[0];
+
   salvarContextoDaMatricula(matriculaSelecionada);
 }
 
@@ -404,6 +493,7 @@ async function atualizarTelaComMatriculaSelecionada() {
 
   await atualizarCardMaterialEstudo();
   await carregarBadgeAvaliacoes();
+  await carregarBadgeComunicados();
 }
 
 async function carregarMatriculasAtivasDoAluno() {
@@ -478,7 +568,9 @@ async function carregarEventosElegiveisDoAluno(matriculasDoAluno) {
 async function sincronizarConvitesElegiveis(alunoIdAtual, eventosElegiveis) {
   if (!eventosElegiveis.length) return [];
 
-  const idsEventosElegiveis = eventosElegiveis.map((evento) => evento.id);
+  const idsEventosElegiveis = eventosElegiveis.map((evento) =>
+    Number(evento.id)
+  );
 
   const { data: convitesExistentes, error: erroConvites } = await supabase
     .from("evento_convite_aluno")
@@ -499,7 +591,8 @@ async function sincronizarConvitesElegiveis(alunoIdAtual, eventosElegiveis) {
     .filter((eventoId) => !eventoIdsComConvite.has(Number(eventoId)))
     .map((eventoId) => ({
       evento_id: Number(eventoId),
-      aluno_id: Number(alunoIdAtual)
+      aluno_id: Number(alunoIdAtual),
+      visualizado: false
     }));
 
   if (convitesFaltantes.length) {
@@ -531,8 +624,12 @@ async function sincronizarConvitesElegiveis(alunoIdAtual, eventosElegiveis) {
 
 async function carregarBadgeEventos() {
   try {
-    const eventosElegiveis = await carregarEventosElegiveisDoAluno(matriculasAtivas);
-    const convites = await sincronizarConvitesElegiveis(alunoId, eventosElegiveis);
+    eventosElegiveisAtuais = await carregarEventosElegiveisDoAluno(matriculasAtivas);
+
+    const convites = await sincronizarConvitesElegiveis(
+      alunoId,
+      eventosElegiveisAtuais
+    );
 
     const totalNaoVisualizados = convites.filter(
       (convite) => !convite.visualizado
@@ -542,6 +639,30 @@ async function carregarBadgeEventos() {
   } catch (erro) {
     console.error("Erro inesperado ao carregar badge de eventos:", erro);
     atualizarBadgeEventos(0);
+  }
+}
+
+async function marcarEventosComoVisualizados() {
+  try {
+    if (!eventosElegiveisAtuais.length) return;
+
+    const registros = eventosElegiveisAtuais.map((evento) => ({
+      evento_id: Number(evento.id),
+      aluno_id: Number(alunoId),
+      visualizado: true
+    }));
+
+    const { error } = await supabase
+      .from("evento_convite_aluno")
+      .upsert(registros, {
+        onConflict: "evento_id,aluno_id"
+      });
+
+    if (error) {
+      console.error("Erro ao marcar eventos como visualizados:", error);
+    }
+  } catch (erro) {
+    console.error("Erro inesperado ao marcar eventos como visualizados:", erro);
   }
 }
 
@@ -574,6 +695,119 @@ async function carregarBadgeAvaliacoes() {
   } catch (erro) {
     console.error("Erro inesperado ao carregar badge de avaliações:", erro);
     atualizarBadgeAvaliacoes(0);
+  }
+}
+
+async function carregarComunicadosElegiveisDoAluno(matriculasDoAluno) {
+  const { data, error } = await supabase
+    .from("comunicado")
+    .select(`
+      id,
+      titulo,
+      texto,
+      publico_alvo,
+      materia_id,
+      modulo_id,
+      data_expiracao,
+      ativo,
+      data_publicacao,
+      criado_em,
+      modulo:modulo_id (
+        id,
+        nome,
+        ordem,
+        materia_id
+      )
+    `)
+    .eq("ativo", true)
+    .order("data_publicacao", { ascending: false });
+
+  if (error) {
+    console.error("Erro ao carregar comunicados para badge:", error);
+    return [];
+  }
+
+  return (data || []).filter((comunicado) =>
+    alunoPodeVerComunicado(comunicado, matriculasDoAluno)
+  );
+}
+
+async function sincronizarVisualizacoesComunicados(alunoIdAtual, comunicadosElegiveis) {
+  if (!comunicadosElegiveis.length) return [];
+
+  const idsComunicadosElegiveis = comunicadosElegiveis.map((comunicado) =>
+    Number(comunicado.id)
+  );
+
+  const { data: visualizacoesExistentes, error: erroVisualizacoes } = await supabase
+    .from("comunicado_visualizacao_aluno")
+    .select("id, comunicado_id, visto")
+    .eq("aluno_id", alunoIdAtual)
+    .in("comunicado_id", idsComunicadosElegiveis);
+
+  if (erroVisualizacoes) {
+    console.error("Erro ao buscar visualizações de comunicados:", erroVisualizacoes);
+    return [];
+  }
+
+  const comunicadoIdsComVisualizacao = new Set(
+    (visualizacoesExistentes || []).map((item) => Number(item.comunicado_id))
+  );
+
+  const visualizacoesFaltantes = idsComunicadosElegiveis
+    .filter((comunicadoId) => !comunicadoIdsComVisualizacao.has(Number(comunicadoId)))
+    .map((comunicadoId) => ({
+      comunicado_id: Number(comunicadoId),
+      aluno_id: Number(alunoIdAtual),
+      visto: false
+    }));
+
+  if (visualizacoesFaltantes.length) {
+    const { error: erroUpsert } = await supabase
+      .from("comunicado_visualizacao_aluno")
+      .upsert(visualizacoesFaltantes, {
+        onConflict: "comunicado_id,aluno_id",
+        ignoreDuplicates: true
+      });
+
+    if (erroUpsert) {
+      console.error("Erro ao criar visualizações faltantes:", erroUpsert);
+    }
+  }
+
+  const { data: visualizacoesAtualizadas, error: erroAtualizadas } = await supabase
+    .from("comunicado_visualizacao_aluno")
+    .select("id, comunicado_id, visto")
+    .eq("aluno_id", alunoIdAtual)
+    .in("comunicado_id", idsComunicadosElegiveis);
+
+  if (erroAtualizadas) {
+    console.error("Erro ao recarregar visualizações de comunicados:", erroAtualizadas);
+    return visualizacoesExistentes || [];
+  }
+
+  return visualizacoesAtualizadas || [];
+}
+
+async function carregarBadgeComunicados() {
+  try {
+    if (!alunoId) {
+      atualizarBadgeComunicados(0);
+      return;
+    }
+
+    const comunicadosElegiveis =
+      await carregarComunicadosElegiveisDoAluno(matriculasAtivas);
+
+    const visualizacoes =
+      await sincronizarVisualizacoesComunicados(alunoId, comunicadosElegiveis);
+
+    const totalNaoVistos = visualizacoes.filter((item) => !item.visto).length;
+
+    atualizarBadgeComunicados(totalNaoVistos);
+  } catch (erro) {
+    console.error("Erro inesperado ao carregar badge de comunicados:", erro);
+    atualizarBadgeComunicados(0);
   }
 }
 
@@ -617,6 +851,7 @@ async function carregarAluno() {
 
       atualizarBadgeAvaliacoes(0);
       await carregarBadgeEventos();
+      await carregarBadgeComunicados();
 
       return;
     }
@@ -665,6 +900,7 @@ async function carregarAluno() {
 
       atualizarBadgeAvaliacoes(0);
       await carregarBadgeEventos();
+      await carregarBadgeComunicados();
 
       return;
     }
@@ -674,6 +910,8 @@ async function carregarAluno() {
 
     await atualizarTelaComMatriculaSelecionada();
     await carregarBadgeEventos();
+    await carregarComunicadosElegiveisDoAluno(matriculasAtivas);
+    await carregarBadgeComunicados();
     await carregarBadgeAvaliacoes();
   } catch (erro) {
     console.error("Erro inesperado na home do aluno funcionário:", erro);
@@ -707,6 +945,7 @@ async function carregarAluno() {
 
     atualizarBadgeAvaliacoes(0);
     await carregarBadgeEventos();
+    await carregarBadgeComunicados();
   }
 }
 
@@ -723,7 +962,19 @@ selectMatricula?.addEventListener("change", async () => {
 
   await atualizarTelaComMatriculaSelecionada();
   await carregarBadgeAvaliacoes();
+  await carregarBadgeEventos();
+  await carregarBadgeComunicados();
 });
+
+if (linkEventos) {
+  linkEventos.addEventListener("click", async (event) => {
+    event.preventDefault();
+
+    await marcarEventosComoVisualizados();
+
+    window.location.href = "evento-confirmacao.html";
+  });
+}
 
 btnSair?.addEventListener("click", async () => {
   try {

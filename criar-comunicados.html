@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Criar Comunicados | Beehive</title>
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body class="pagina-eventos-admin">
+
+  <main class="container container-eventos-admin">
+    <a href="home-pedagogico.html" class="link-voltar-admin" style="margin-bottom:16px;">
+      ← Voltar
+    </a>
+
+    <section class="cabecalho-pagina">
+      <h1>Criar comunicado</h1>
+      <p class="subtitulo">
+        Publique avisos para todos os alunos ou para públicos específicos.
+      </p>
+    </section>
+
+    <form id="form-comunicado" class="form">
+
+      <label>
+        Título do comunicado
+        <input type="text" id="titulo" required placeholder="Ex: Aula especial de música" />
+      </label>
+
+      <label>
+        Texto do comunicado
+        <textarea id="texto" rows="6" required placeholder="Ex: Este mês teremos aula de música. Participem!"></textarea>
+      </label>
+
+      <label>
+        Público-alvo
+        <select id="publicoAlvo" required>
+          <option value="todos">Todos os alunos</option>
+          <option value="materia">Alunos de uma matéria</option>
+          <option value="modulo_exato">Alunos de um módulo específico</option>
+          <option value="modulo_a_partir">Alunos a partir de um módulo</option>
+        </select>
+      </label>
+
+      <div id="blocoMateria" style="display:none;">
+        <label>
+          Matéria
+          <select id="materiaId">
+            <option value="">Selecione a matéria</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="blocoModulo" style="display:none;">
+        <label>
+          Módulo
+          <select id="moduloId">
+            <option value="">Selecione o módulo</option>
+          </select>
+        </label>
+
+        <p id="textoAjudaModulo" class="subtitulo"></p>
+      </div>
+
+      <label>
+        Imagem do comunicado, opcional
+        <input type="file" id="imagem" accept="image/*" />
+      </label>
+
+      <label>
+        Data de expiração, opcional
+        <input type="date" id="dataExpiracao" />
+      </label>
+
+      <label style="display:flex; flex-direction:row; gap:8px; align-items:center;">
+        <input type="checkbox" id="ativo" checked style="width:auto; margin:0;" />
+        Comunicado ativo
+      </label>
+
+      <button type="submit" class="btn">
+        Salvar comunicado
+      </button>
+
+      <div id="msg" style="display:none; margin-top:12px;"></div>
+    </form>
+
+    <section style="margin-top:32px;">
+      <div class="cabecalho-pagina">
+        <h2>Comunicados ativos</h2>
+        <p class="subtitulo">
+          Veja os comunicados publicados e, quando disponível, quem visualizou.
+        </p>
+      </div>
+
+      <div id="listaComunicadosAtivos"></div>
+    </section>
+
+  </main>
+
+  <script type="module" src="js/criar-comunicados.js"></script>
+</body>
+</html>

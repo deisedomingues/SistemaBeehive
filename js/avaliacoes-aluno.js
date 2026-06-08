@@ -31,7 +31,7 @@ const nomeCursoSelecionado =
   localStorage.getItem("nomeCursoSelecionado") || "";
 
 if (!alunoId) {
-  window.location.href = "login.html";
+  window.location.href = "index.html";
 }
 
 /* =========================================================

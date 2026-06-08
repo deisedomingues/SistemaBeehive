@@ -4,10 +4,16 @@ import { supabase } from "./supabase.js";
    1) Garantir que o usuário está logado
 ================================ */
 export async function exigirLogin() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error) {
+    console.error("Erro ao verificar login:", error);
+    window.location.href = "index.html";
+    return null;
+  }
 
   if (!user) {
-    window.location.href = "login.html";
+    window.location.href = "index.html";
     return null;
   }
 
@@ -28,6 +34,7 @@ export async function exigirAdmin() {
     .single();
 
   if (error || !perfil || perfil.role !== "admin") {
+    console.error("Acesso negado para admin:", error);
     window.location.href = "index.html";
     return null;
   }
@@ -51,6 +58,7 @@ export async function exigirProfessor() {
     .single();
 
   if (error || !perfil || perfil.role !== "professor") {
+    console.error("Acesso negado para professor:", error);
     window.location.href = "index.html";
     return null;
   }
@@ -75,6 +83,7 @@ export async function exigirProfessorOuAdmin() {
     .single();
 
   if (error || !perfil) {
+    console.error("Perfil não encontrado:", error);
     window.location.href = "index.html";
     return null;
   }
@@ -107,6 +116,7 @@ export async function exigirAluno() {
     .single();
 
   if (error || !perfil || perfil.role !== "aluno") {
+    console.error("Acesso negado para aluno:", error);
     window.location.href = "index.html";
     return null;
   }
@@ -114,7 +124,6 @@ export async function exigirAluno() {
   localStorage.setItem("role", "aluno");
   localStorage.setItem("alunoId", perfil.aluno_id || "");
 
-  // segurança: aluno comum não pode usar visualização de outro aluno
   localStorage.removeItem("alunoIdVisualizacao");
 
   return perfil;
@@ -134,6 +143,7 @@ export async function exigirAlunoOuProfessorFuncionario() {
     .single();
 
   if (error || !perfil) {
+    console.error("Perfil não encontrado:", error);
     window.location.href = "index.html";
     return null;
   }
@@ -142,6 +152,7 @@ export async function exigirAlunoOuProfessorFuncionario() {
     localStorage.setItem("role", "aluno");
     localStorage.setItem("alunoId", perfil.aluno_id || "");
     localStorage.removeItem("alunoIdVisualizacao");
+
     return perfil;
   }
 
@@ -156,11 +167,15 @@ export async function exigirAlunoOuProfessorFuncionario() {
       localStorage.getItem("idAluno");
 
     if (!alunoIdVisualizacao && user.email) {
-      const { data: alunoPorEmail } = await supabase
+      const { data: alunoPorEmail, error: erroAlunoEmail } = await supabase
         .from("aluno")
         .select("id")
         .eq("email", user.email)
         .maybeSingle();
+
+      if (erroAlunoEmail) {
+        console.error("Erro ao buscar aluno pelo email:", erroAlunoEmail);
+      }
 
       if (alunoPorEmail?.id) {
         alunoIdVisualizacao = alunoPorEmail.id;

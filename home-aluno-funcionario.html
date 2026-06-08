@@ -9,8 +9,6 @@
 
 <body>
 
-  
-
   <div class="overlay"></div>
 
   <main class="container home-aluno-page">
@@ -48,18 +46,16 @@
     </section>
 
     <section class="seletor-perfil-inline">
-  <label for="selectPerfilVisualizacao" class="label-seletor-inline">
-    Visualizar como:
-  </label>
+      <label for="selectPerfilVisualizacao" class="label-seletor-inline">
+        Visualizar como:
+      </label>
 
-  <select id="selectPerfilVisualizacao" class="select-seletor-inline">
-    <option value="professor">Professor</option>
-    <option value="aluno" selected>Aluno</option>
-  </select>
-</section>
-    <!-- =========================
-         CURSO SELECIONADO
-    ========================== -->
+      <select id="selectPerfilVisualizacao" class="select-seletor-inline">
+        <option value="professor">Professor</option>
+        <option value="aluno" selected>Aluno</option>
+      </select>
+    </section>
+
     <section
       id="blocoCursoAtual"
       class="card"
@@ -88,9 +84,6 @@
 
     <section class="painel-aluno-cards">
 
-      <!-- =========================
-           AULA AO VIVO
-      ========================== -->
       <a id="btnZoom" class="card-admin-link" target="_blank" rel="noopener noreferrer">
         <article class="card-admin card-aluno">
           <div class="card-admin-icone">🎓</div>
@@ -103,9 +96,6 @@
         </article>
       </a>
 
-      <!-- =========================
-           AULAS GRAVADAS
-      ========================== -->
       <a id="btnYoutube" class="card-admin-link" target="_blank" rel="noopener noreferrer">
         <article class="card-admin card-aluno">
           <div class="card-admin-icone">🎥</div>
@@ -118,9 +108,6 @@
         </article>
       </a>
 
-      <!-- =========================
-           MATERIAL DE ESTUDO
-      ========================== -->
       <a
         id="btnMaterialEstudo"
         class="card-admin-link"
@@ -138,9 +125,6 @@
         </article>
       </a>
 
-      <!-- =========================
-           AVALIAÇÕES
-      ========================== -->
       <a
         id="btnAvaliacoes"
         href="avaliacoes-aluno.html"
@@ -159,9 +143,6 @@
         </article>
       </a>
 
-      <!-- =========================
-           EVENTOS
-      ========================== -->
       <a href="evento-confirmacao.html" class="card-admin-link card-eventos-link">
         <article class="card-admin card-aluno card-eventos-aluno">
           <span id="badgeEventos" class="badge-eventos" style="display:none;">0</span>
@@ -176,9 +157,6 @@
         </article>
       </a>
 
-      <!-- =========================
-           REPOSIÇÃO
-      ========================== -->
       <a href="agendar_reposicao.html" class="card-admin-link">
         <article class="card-admin card-aluno">
           <div class="card-admin-icone">📅</div>
@@ -191,9 +169,6 @@
         </article>
       </a>
 
-      <!-- =========================
-           PAINEL ACADÊMICO
-      ========================== -->
       <a href="painel_academico.html" class="card-admin-link">
         <article class="card-admin card-aluno">
           <div class="card-admin-icone">📊</div>
@@ -206,9 +181,20 @@
         </article>
       </a>
 
-      <!-- =========================
-           MANUAL DO ALUNO
-      ========================== -->
+      <a href="comunicados.html" class="card-admin-link">
+        <article class="card-admin card-aluno card-comunicados-aluno">
+          <span id="badgeComunicados" class="badge-eventos" style="display:none;">0</span>
+
+          <div class="card-admin-icone">📢</div>
+          <div class="card-admin-conteudo">
+            <h2>Comunicados</h2>
+            <p id="textoComunicadosHome">
+              Veja os comunicados importantes da escola.
+            </p>
+          </div>
+        </article>
+      </a>
+
       <a
         href="docs/Manual%20do%20Aluno%202026.pdf"
         class="card-admin-link"
@@ -226,9 +212,6 @@
         </article>
       </a>
 
-      <!-- =========================
-           SUGESTÕES / FEEDBACK ANÔNIMO
-      ========================== -->
       <a
         href="https://forms.gle/SBdJS3nKmMUnSCz47"
         class="card-admin-link"
