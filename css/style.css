@@ -4394,48 +4394,169 @@ textarea[readonly] {
   border: 1px solid rgba(253, 204, 12, 0.45);
 }
 
-.empresas-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
+/* ===============================
+   EMPRESAS PARCEIRAS - VERSÃO MENOR
+================================ */
+
+.section-empresas {
+  padding-top: 38px;
+  padding-bottom: 38px;
+}
+
+.empresas-faixa {
+  max-width: 620px;
+  margin: 18px auto 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
   align-items: center;
+  gap: 10px;
 }
 
 .empresa-logo-card {
-  background: var(--bee-branco);
-  border: 1px solid rgba(217, 154, 0, 0.18);
-  border-radius: 22px;
-  padding: 24px;
-  min-height: 130px;
+  width: 64px;
+  height: 42px;
+  background: #ffffff;
+  border: 1px solid rgba(217, 154, 0, 0.16);
+  border-radius: 10px;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.035);
+  overflow: hidden;
 }
 
 .empresa-logo-card img {
-  max-width: 150px;
-  max-height: 80px;
+  display: block;
+  max-width: 46px;
+  max-height: 26px;
+  width: auto;
+  height: auto;
   object-fit: contain;
   filter: grayscale(100%);
-  opacity: 0.85;
-  transition: 0.2s;
+  opacity: 0.82;
+  transition: 0.2s ease;
 }
 
 .empresa-logo-card:hover img {
   filter: grayscale(0%);
   opacity: 1;
-  transform: scale(1.04);
-}
-
-@media (max-width: 900px) {
-  .empresas-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  transform: scale(1.05);
 }
 
 @media (max-width: 520px) {
-  .empresas-grid {
-    grid-template-columns: 1fr;
+  .empresas-faixa {
+    max-width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding: 0 8px 8px;
+  }
+
+  .empresa-logo-card {
+    flex: 0 0 auto;
+    width: 58px;
+    height: 38px;
+  }
+
+  .empresa-logo-card img {
+    max-width: 40px;
+    max-height: 22px;
+  }
+}
+/* ==================================================
+   CORREÇÃO DEFINITIVA - LOGOS DAS EMPRESAS PARCEIRAS
+   ================================================== */
+
+.section-empresas {
+  padding-top: 40px !important;
+  padding-bottom: 40px !important;
+}
+
+.section-empresas .empresas-faixa {
+  width: 100% !important;
+  max-width: 520px !important;
+  margin: 22px auto 0 !important;
+
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  align-items: center !important;
+
+  gap: 10px !important;
+}
+
+.section-empresas .empresa-logo-card {
+  width: 66px !important;
+  min-width: 66px !important;
+  max-width: 66px !important;
+
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+
+  padding: 6px !important;
+  margin: 0 !important;
+
+  background: #ffffff !important;
+  border: 1px solid rgba(217, 154, 0, 0.18) !important;
+  border-radius: 10px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  overflow: hidden !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+}
+
+.section-empresas .empresa-logo-card img {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 42px !important;
+
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 24px !important;
+
+  display: block !important;
+  object-fit: contain !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  filter: grayscale(100%);
+  opacity: 0.82;
+}
+
+.section-empresas .empresa-logo-card:hover img {
+  filter: grayscale(0%);
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+@media (max-width: 520px) {
+  .section-empresas .empresas-faixa {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    justify-content: flex-start !important;
+    padding: 0 10px 8px !important;
+  }
+
+  .section-empresas .empresa-logo-card {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+  }
+
+  .section-empresas .empresa-logo-card img {
+    max-width: 38px !important;
+    max-height: 22px !important;
   }
 }
