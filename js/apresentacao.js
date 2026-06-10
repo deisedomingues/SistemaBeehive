@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const telefoneWhatsapp = "5511999999999";
+  const telefoneWhatsapp = "5511956177084";
 
   const mensagemWhatsapp = encodeURIComponent(
     "Olá, vim pelo site e gostaria de mais informações sobre os cursos."
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const linkWhatsapp = `https://wa.me/${telefoneWhatsapp}?text=${mensagemWhatsapp}`;
 
-  const linkGoogleForms = "#";
+  const linkGoogleForms = "https://forms.gle/BNqj2hDHZezSVJYc8";
 
   const idsWhatsapp = [
     "btnWhatsappTopo",

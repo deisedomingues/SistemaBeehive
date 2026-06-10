@@ -4393,3 +4393,49 @@ textarea[readonly] {
   background: #fff5cc;
   border: 1px solid rgba(253, 204, 12, 0.45);
 }
+
+.empresas-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.empresa-logo-card {
+  background: var(--bee-branco);
+  border: 1px solid rgba(217, 154, 0, 0.18);
+  border-radius: 22px;
+  padding: 24px;
+  min-height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+.empresa-logo-card img {
+  max-width: 150px;
+  max-height: 80px;
+  object-fit: contain;
+  filter: grayscale(100%);
+  opacity: 0.85;
+  transition: 0.2s;
+}
+
+.empresa-logo-card:hover img {
+  filter: grayscale(0%);
+  opacity: 1;
+  transform: scale(1.04);
+}
+
+@media (max-width: 900px) {
+  .empresas-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .empresas-grid {
+    grid-template-columns: 1fr;
+  }
+}
