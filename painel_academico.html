@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Painel Acadêmico | Beehive</title>
+
   <link rel="stylesheet" href="./css/style.css" />
 
   <style>
@@ -34,6 +36,11 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 10px;
+    }
+
+    .mini-card-alerta {
+      border: 1px solid rgba(242, 183, 5, 0.45);
+      background: rgba(242, 183, 5, 0.12);
     }
 
     .lista-simples {
@@ -105,6 +112,7 @@
 
 <body class="pagina-painel-academico">
   <main class="painel-wrap">
+
     <div class="painel-topo">
       <div>
         <h1>Painel Acadêmico</h1>
@@ -125,6 +133,7 @@
 
       <label id="labelSelectMatriculaPainel" for="selectMatriculaPainel" style="display:none;">
         Escolha o curso que deseja visualizar
+
         <select id="selectMatriculaPainel" style="margin-top:6px;">
           <option value="">Selecione</option>
         </select>
@@ -169,6 +178,7 @@
 
     <section class="painel-grid">
       <div class="coluna">
+
         <div class="card-painel">
           <h2>Resumo acadêmico</h2>
 
@@ -218,6 +228,11 @@
               <div class="rotulo">Eventos participados</div>
             </div>
 
+            <div class="mini-card mini-card-alerta">
+              <div id="totalConvitesAceitosSemComparecimento" class="numero">0</div>
+              <div class="rotulo">Convites aceitos sem comparecimento</div>
+            </div>
+
             <div class="mini-card">
               <div id="totalCanceladas" class="numero">0</div>
               <div class="rotulo">Canceladas / Trancadas</div>
@@ -240,6 +255,7 @@
 
         <div class="card-painel">
           <h2>Reposições pendentes</h2>
+
           <div id="listaReposicoesPendentes" class="lista-simples"></div>
 
           <div class="acoes-reposicao">
@@ -255,6 +271,7 @@
 
         <div class="card-painel">
           <h2>Histórico de aulas</h2>
+
           <div id="listaHistorico" class="lista-historico"></div>
 
           <button id="btnExpandirHistorico" class="btn-expandir-historico" type="button" style="display:none;">
@@ -264,6 +281,7 @@
       </div>
 
       <div class="coluna">
+
         <div class="card-painel">
           <h2>Notas</h2>
 
@@ -282,6 +300,7 @@
 
         <div class="card-painel">
           <h2>Eventos participados</h2>
+
           <div id="listaEventosParticipados" class="lista-simples"></div>
         </div>
 
@@ -291,12 +310,16 @@
           <div class="contato-grid">
             <div class="contato-item">
               <span>E-mail</span>
-              <a id="emailEscola" href="mailto:contato@beehive.com.br">contato.beehiveidiomas@gmail.com</a>
+              <a id="emailEscola" href="mailto:contato.beehiveidiomas@gmail.com">
+                contato.beehiveidiomas@gmail.com
+              </a>
             </div>
 
             <div class="contato-item">
               <span>Telefone</span>
-              <a id="telefoneEscola" href="tel:+5511956177084">(11) 95617-7084</a>
+              <a id="telefoneEscola" href="tel:+5511956177084">
+                (11) 95617-7084
+              </a>
             </div>
           </div>
 
@@ -313,10 +336,12 @@
 
         <div class="card-painel">
           <h2>Financeiro</h2>
+
           <div class="vazio-box">
             Em breve você poderá acompanhar informações financeiras aqui.
           </div>
         </div>
+
       </div>
     </section>
   </main>

@@ -1,5 +1,5 @@
 import { supabase } from "./supabase.js";
-import { exigirAdmin} from "./guard.js";
+import { exigirAdmin } from "./guard.js";
 
 await exigirAdmin();
 
@@ -13,6 +13,9 @@ const listaHistoricoEventos = document.getElementById("listaHistoricoEventos");
 const totalEventosEl = document.getElementById("totalEventos");
 const eventosAtivosEl = document.getElementById("eventosAtivos");
 const eventosEncerradosEl = document.getElementById("eventosEncerrados");
+const eventosConfirmadosSemParticipacaoEl = document.getElementById(
+  "eventosConfirmadosSemParticipacao"
+);
 
 const filtroBusca = document.getElementById("filtroBusca");
 const filtroSituacao = document.getElementById("filtroSituacao");
@@ -24,6 +27,7 @@ let eventos = [];
 let confirmacoesPorEvento = {};
 let convitesPorEvento = {};
 let eventosComParticipacaoRegistrada = new Set();
+let participacoesPorEvento = {};
 
 /* =========================================================
    INICIALIZAÇÃO
@@ -47,6 +51,8 @@ if (document.readyState === "loading") {
    UTILITÁRIOS
 ========================================================= */
 function mostrarMensagem(texto, tipo = "sucesso") {
+  if (!msg) return;
+
   msg.style.display = "block";
   msg.textContent = texto;
   msg.style.padding = "10px";
@@ -64,25 +70,36 @@ function mostrarMensagem(texto, tipo = "sucesso") {
 }
 
 function esconderMensagem() {
+  if (!msg) return;
+
   msg.style.display = "none";
   msg.textContent = "";
 }
 
 function formatarData(dataStr) {
   if (!dataStr) return "-";
-  const [ano, mes, dia] = dataStr.split("-");
+
+  const partes = String(dataStr).split("-");
+  if (partes.length !== 3) return dataStr;
+
+  const [ano, mes, dia] = partes;
   return `${dia}/${mes}/${ano}`;
 }
 
 function formatarHora(horaStr) {
   if (!horaStr) return "-";
-  return horaStr.slice(0, 5);
+
+  return String(horaStr).slice(0, 5);
 }
 
 function formatarDataHoraBR(dataHoraStr) {
   if (!dataHoraStr) return "-";
 
   const data = new Date(dataHoraStr);
+
+  if (Number.isNaN(data.getTime())) {
+    return "-";
+  }
 
   return data.toLocaleString("pt-BR", {
     day: "2-digit",
@@ -94,11 +111,27 @@ function formatarDataHoraBR(dataHoraStr) {
 }
 
 function obterSituacaoEvento(evento) {
+  /*
+    Importante:
+    Antes estava usando !evento.ativo.
+    Isso fazia null/undefined aparecer como cancelado.
+    Agora só aparece cancelado quando ativo === false.
+  */
+  if (evento?.ativo === false) {
+    return "cancelado";
+  }
+
+  if (!evento?.data_evento || !evento?.hora_evento) {
+    return "ativo";
+  }
+
   const agora = new Date();
   const dataHoraEvento = new Date(`${evento.data_evento}T${evento.hora_evento}`);
 
-  if (!evento.ativo) return "cancelado";
-  if (dataHoraEvento < agora) return "encerrado";
+  if (!Number.isNaN(dataHoraEvento.getTime()) && dataHoraEvento < agora) {
+    return "encerrado";
+  }
+
   return "ativo";
 }
 
@@ -170,15 +203,51 @@ function obterBadgeSituacao(situacao) {
 
 function fecharDetalhesPorEventoId(eventoId) {
   const details = document.querySelector(`details[data-evento-id="${eventoId}"]`);
+
   if (details) {
     details.open = false;
   }
 }
 
 function eventoJaFoiRegistrado(evento) {
+  /*
+    registrado = evento foi registrado, mesmo sem alunos.
+    participacao_registrada = evento teve participação registrada.
+    eventosComParticipacaoRegistrada = existe aula com status Evento vinculada.
+  */
   return Boolean(
+    evento?.registrado ||
     evento?.participacao_registrada ||
     eventosComParticipacaoRegistrada.has(Number(evento.id))
+  );
+}
+
+function obterParticipacoesDoEvento(eventoId) {
+  return participacoesPorEvento[Number(eventoId)] || {
+    total: 0,
+    alunosIds: new Set()
+  };
+}
+
+function obterConfirmacoesDoEvento(eventoId) {
+  return confirmacoesPorEvento[eventoId] || {
+    total: 0,
+    alunos: []
+  };
+}
+
+function obterAlunosConfirmadosSemParticipacao(evento) {
+  const jaRegistrado = eventoJaFoiRegistrado(evento);
+
+  if (!jaRegistrado) {
+    return [];
+  }
+
+  const confirmacoes = obterConfirmacoesDoEvento(evento.id);
+  const participacoes = obterParticipacoesDoEvento(evento.id);
+
+  return confirmacoes.alunos.filter(
+    (aluno) => !participacoes.alunosIds.has(Number(aluno.id))
   );
 }
 
@@ -187,10 +256,12 @@ function eventoJaFoiRegistrado(evento) {
 ========================================================= */
 async function carregarTudo() {
   esconderMensagem();
+
   await carregarEventos();
   await carregarConfirmacoes();
   await carregarConvites();
   await carregarEventosJaRegistrados();
+
   atualizarResumo();
   renderizarEventos();
 }
@@ -211,6 +282,8 @@ async function carregarEventos() {
       modulo_id,
       limite_confirmacao,
       ativo,
+      registrado,
+      registrado_em,
       participacao_registrada,
       professor_responsavel_id,
       professor_responsavel:professor_responsavel_id (
@@ -236,13 +309,17 @@ async function carregarConfirmacoes() {
   confirmacoesPorEvento = {};
 
   const idsEventos = eventos.map((evento) => evento.id);
-  if (!idsEventos.length) return;
+
+  if (!idsEventos.length) {
+    return;
+  }
 
   const { data, error } = await supabase
     .from("evento_confirmacao")
     .select(`
       evento_id,
       aluno_id,
+      created_at,
       aluno:aluno_id (
         id,
         nome
@@ -253,7 +330,10 @@ async function carregarConfirmacoes() {
 
   if (error) {
     console.error("Erro ao carregar confirmações:", error);
-    mostrarMensagem("Os eventos foram carregados, mas houve erro ao buscar as confirmações.", "erro");
+    mostrarMensagem(
+      "Os eventos foram carregados, mas houve erro ao buscar as confirmações.",
+      "erro"
+    );
     return;
   }
 
@@ -267,12 +347,10 @@ async function carregarConfirmacoes() {
 
     confirmacoesPorEvento[item.evento_id].total += 1;
 
-    if (item.aluno?.nome) {
-      confirmacoesPorEvento[item.evento_id].alunos.push({
-        id: item.aluno.id,
-        nome: item.aluno.nome
-      });
-    }
+    confirmacoesPorEvento[item.evento_id].alunos.push({
+      id: item.aluno?.id || item.aluno_id,
+      nome: item.aluno?.nome || `Aluno ID ${item.aluno_id}`
+    });
   }
 
   Object.values(confirmacoesPorEvento).forEach((grupo) => {
@@ -284,7 +362,10 @@ async function carregarConvites() {
   convitesPorEvento = {};
 
   const idsEventos = eventos.map((evento) => evento.id);
-  if (!idsEventos.length) return;
+
+  if (!idsEventos.length) {
+    return;
+  }
 
   const { data, error } = await supabase
     .from("evento_convite_aluno")
@@ -297,7 +378,10 @@ async function carregarConvites() {
 
   if (error) {
     console.error("Erro ao carregar convites:", error);
-    mostrarMensagem("Os eventos foram carregados, mas houve erro ao buscar os convites dos alunos.", "erro");
+    mostrarMensagem(
+      "Os eventos foram carregados, mas houve erro ao buscar os convites dos alunos.",
+      "erro"
+    );
     return;
   }
 
@@ -322,22 +406,60 @@ async function carregarConvites() {
 
 async function carregarEventosJaRegistrados() {
   eventosComParticipacaoRegistrada = new Set();
+  participacoesPorEvento = {};
 
+  /*
+    A tabela aula registra o evento pela matrícula.
+    Por isso buscamos matricula:matricula_id para descobrir o aluno_id.
+    Assim não dependemos de existir aluno_id diretamente na tabela aula.
+  */
   const { data, error } = await supabase
     .from("aula")
-    .select("evento_id")
+    .select(`
+      id,
+      evento_id,
+      matricula_id,
+      status,
+      matricula:matricula_id (
+        id,
+        aluno_id
+      )
+    `)
     .eq("status", "Evento")
     .not("evento_id", "is", null);
 
   if (error) {
     console.error("Erro ao buscar eventos já registrados:", error);
-    mostrarMensagem("Os eventos foram carregados, mas houve erro ao verificar participações já registradas.", "erro");
+    mostrarMensagem(
+      "Os eventos foram carregados, mas houve erro ao verificar participações já registradas.",
+      "erro"
+    );
     return;
   }
 
   for (const item of data || []) {
-    if (item.evento_id != null) {
-      eventosComParticipacaoRegistrada.add(Number(item.evento_id));
+    if (item.evento_id == null) {
+      continue;
+    }
+
+    const eventoIdAtual = Number(item.evento_id);
+    const alunoIdAtual = Number(item.matricula?.aluno_id);
+
+    eventosComParticipacaoRegistrada.add(eventoIdAtual);
+
+    if (!participacoesPorEvento[eventoIdAtual]) {
+      participacoesPorEvento[eventoIdAtual] = {
+        total: 0,
+        alunosIds: new Set()
+      };
+    }
+
+    if (
+      Number.isFinite(alunoIdAtual) &&
+      !participacoesPorEvento[eventoIdAtual].alunosIds.has(alunoIdAtual)
+    ) {
+      participacoesPorEvento[eventoIdAtual].alunosIds.add(alunoIdAtual);
+      participacoesPorEvento[eventoIdAtual].total += 1;
     }
   }
 }
@@ -349,25 +471,41 @@ function atualizarResumo() {
   const total = eventos.length;
   let ativos = 0;
   let encerrados = 0;
+  let confirmadosSemParticipacao = 0;
 
   eventos.forEach((evento) => {
     const situacao = obterSituacaoEvento(evento);
 
-    if (situacao === "ativo") ativos += 1;
-    if (situacao === "encerrado" || situacao === "cancelado") encerrados += 1;
+    if (situacao === "ativo") {
+      ativos += 1;
+    }
+
+    if (situacao === "encerrado" || situacao === "cancelado") {
+      encerrados += 1;
+    }
+
+    /*
+      Aqui conta alunos confirmados em eventos registrados,
+      mas que não tiveram participação real registrada em aula.
+    */
+    confirmadosSemParticipacao += obterAlunosConfirmadosSemParticipacao(evento).length;
   });
 
-  totalEventosEl.textContent = total;
-  eventosAtivosEl.textContent = ativos;
-  eventosEncerradosEl.textContent = encerrados;
+  if (totalEventosEl) totalEventosEl.textContent = total;
+  if (eventosAtivosEl) eventosAtivosEl.textContent = ativos;
+  if (eventosEncerradosEl) eventosEncerradosEl.textContent = encerrados;
+
+  if (eventosConfirmadosSemParticipacaoEl) {
+    eventosConfirmadosSemParticipacaoEl.textContent = confirmadosSemParticipacao;
+  }
 }
 
 /* =========================================================
    FILTROS
 ========================================================= */
 function obterEventosFiltrados() {
-  const busca = normalizarTexto(filtroBusca.value);
-  const situacaoFiltro = filtroSituacao.value;
+  const busca = normalizarTexto(filtroBusca?.value || "");
+  const situacaoFiltro = filtroSituacao?.value || "todos";
 
   return eventos.filter((evento) => {
     const titulo = normalizarTexto(evento.titulo);
@@ -384,7 +522,9 @@ function obterEventosFiltrados() {
       local.includes(busca) ||
       professor.includes(busca);
 
-    if (!passouBusca) return false;
+    if (!passouBusca) {
+      return false;
+    }
 
     const situacao = obterSituacaoEvento(evento);
 
@@ -405,7 +545,10 @@ function obterEventosFiltrados() {
 ========================================================= */
 async function cancelarEvento(eventoId) {
   const confirmar = window.confirm("Deseja realmente cancelar este evento?");
-  if (!confirmar) return;
+
+  if (!confirmar) {
+    return;
+  }
 
   esconderMensagem();
 
@@ -431,16 +574,16 @@ function montarDetalhesEvento(evento) {
   const situacao = obterSituacaoEvento(evento);
   const jaRegistrado = eventoJaFoiRegistrado(evento);
 
-  const confirmacoes = confirmacoesPorEvento[evento.id] || {
-    total: 0,
-    alunos: []
-  };
+  const confirmacoes = obterConfirmacoesDoEvento(evento.id);
 
   const convites = convitesPorEvento[evento.id] || {
     total: 0,
     visualizados: 0,
     naoVisualizados: 0
   };
+
+  const participacoes = obterParticipacoesDoEvento(evento.id);
+  const alunosSemParticipacao = obterAlunosConfirmadosSemParticipacao(evento);
 
   const totalPendentes = Math.max(convites.total - confirmacoes.total, 0);
   const professorResponsavel = evento.professor_responsavel?.nome || "Não informado";
@@ -467,21 +610,54 @@ function montarDetalhesEvento(evento) {
       </div>
     `;
 
-  const podeRegistrarParticipacao =
-    situacao !== "cancelado" &&
-    confirmacoes.total > 0 &&
-    !jaRegistrado;
-
-  const participacaoJaRegistradaHtml = jaRegistrado
+  const alunosSemParticipacaoHtml = alunosSemParticipacao.length
     ? `
       <div class="bloco-detalhe-evento">
-        <strong>Participação</strong>
-        <p style="margin:0; color:#1d5e1d; font-weight:600;">
-          ✅ Participação já registrada para este evento.
+        <strong>Confirmados, porém sem participação</strong>
+        <div class="chips-confirmados-evento">
+          ${alunosSemParticipacao
+            .map((aluno) => `
+              <span class="chip-confirmado-evento">
+                ${escaparHtml(aluno.nome)}
+              </span>
+            `)
+            .join("")}
+        </div>
+      </div>
+    `
+    : "";
+
+  let textoRegistroEvento = "";
+  let corRegistroEvento = "#1d5e1d";
+
+  if (jaRegistrado && participacoes.total > 0) {
+    textoRegistroEvento =
+      participacoes.total === 1
+        ? "✅ Participação registrada para 1 aluno."
+        : `✅ Participação registrada para ${participacoes.total} alunos.`;
+  } else if (jaRegistrado) {
+    textoRegistroEvento = "Evento registrado sem a participação de alunos.";
+    corRegistroEvento = "#7a4b00";
+  }
+
+  const registroEventoHtml = jaRegistrado
+    ? `
+      <div class="bloco-detalhe-evento">
+        <strong>Registro do evento</strong>
+        <p style="margin:0; color:${corRegistroEvento}; font-weight:600;">
+          ${escaparHtml(textoRegistroEvento)}
         </p>
       </div>
     `
     : "";
+
+  /*
+    Pode registrar evento encerrado.
+    Só não pode registrar evento cancelado ou já registrado.
+  */
+  const podeRegistrarEvento =
+    situacao !== "cancelado" &&
+    !jaRegistrado;
 
   return `
     <div class="detalhes-evento-grid">
@@ -521,24 +697,30 @@ function montarDetalhesEvento(evento) {
       </div>
 
       <div class="bloco-detalhe-evento">
+        <strong>Participações registradas</strong>
+        <p>${participacoes.total}</p>
+      </div>
+
+      <div class="bloco-detalhe-evento">
         <strong>Pendentes</strong>
         <p>${totalPendentes}</p>
       </div>
     </div>
 
     ${nomesConfirmadosHtml}
-    ${participacaoJaRegistradaHtml}
+    ${registroEventoHtml}
+    ${alunosSemParticipacaoHtml}
 
     <div class="acoes-evento-detalhe">
       ${
-        podeRegistrarParticipacao
+        podeRegistrarEvento
           ? `
             <a
               href="registrar-evento.html?evento=${evento.id}"
               class="btn"
               style="text-decoration:none; display:inline-block;"
             >
-              Registrar participação
+              Registrar evento / participação
             </a>
           `
           : ""
@@ -575,6 +757,10 @@ function renderizarEventos() {
   const futuros = lista.filter((evento) => obterSituacaoEvento(evento) === "ativo");
   const historico = lista.filter((evento) => obterSituacaoEvento(evento) !== "ativo");
 
+  if (!gridEventosFuturos || !listaHistoricoEventos) {
+    return;
+  }
+
   if (!futuros.length) {
     gridEventosFuturos.innerHTML = `
       <div class="card">
@@ -582,42 +768,45 @@ function renderizarEventos() {
       </div>
     `;
   } else {
-    gridEventosFuturos.innerHTML = futuros.map((evento) => {
-      const situacao = obterSituacaoEvento(evento);
-      const professorResponsavel = evento.professor_responsavel?.nome || "Não informado";
+    gridEventosFuturos.innerHTML = futuros
+      .map((evento) => {
+        const situacao = obterSituacaoEvento(evento);
+        const professorResponsavel =
+          evento.professor_responsavel?.nome || "Não informado";
 
-      return `
-        <article class="card-admin card-evento-compacto ${obterClasseVisualEvento(situacao)}">
-          <div class="card-admin-icone">🎈</div>
+        return `
+          <article class="card-admin card-evento-compacto ${obterClasseVisualEvento(situacao)}">
+            <div class="card-admin-icone">🎈</div>
 
-          <div class="card-admin-conteudo">
-            <div class="topo-card-evento-compacto">
-              <h2>${escaparHtml(evento.titulo || "-")}</h2>
-              ${obterBadgeSituacao(situacao)}
+            <div class="card-admin-conteudo">
+              <div class="topo-card-evento-compacto">
+                <h2>${escaparHtml(evento.titulo || "-")}</h2>
+                ${obterBadgeSituacao(situacao)}
+              </div>
+
+              <p class="meta-evento-compacto">
+                ${escaparHtml(evento.tipo_evento || "Evento")} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
+              </p>
+
+              <p class="meta-evento-compacto">
+                Link/local: ${montarLocalEventoHtml(evento)}
+              </p>
+
+              <p class="meta-evento-compacto">
+                Responsável: ${escaparHtml(professorResponsavel)}
+              </p>
             </div>
 
-            <p class="meta-evento-compacto">
-              ${escaparHtml(evento.tipo_evento || "Evento")} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
-            </p>
-
-            <p class="meta-evento-compacto">
-              Link/local: ${montarLocalEventoHtml(evento)}
-            </p>
-
-            <p class="meta-evento-compacto">
-              Responsável: ${escaparHtml(professorResponsavel)}
-            </p>
-          </div>
-
-          <details class="detalhes-evento-box" data-evento-id="${evento.id}">
-            <summary>Ver mais</summary>
-            <div class="conteudo-detalhes-evento">
-              ${montarDetalhesEvento(evento)}
-            </div>
-          </details>
-        </article>
-      `;
-    }).join("");
+            <details class="detalhes-evento-box" data-evento-id="${evento.id}">
+              <summary>Ver mais</summary>
+              <div class="conteudo-detalhes-evento">
+                ${montarDetalhesEvento(evento)}
+              </div>
+            </details>
+          </article>
+        `;
+      })
+      .join("");
   }
 
   if (!historico.length) {
@@ -627,39 +816,42 @@ function renderizarEventos() {
       </div>
     `;
   } else {
-    listaHistoricoEventos.innerHTML = historico.map((evento) => {
-      const situacao = obterSituacaoEvento(evento);
-      const professorResponsavel = evento.professor_responsavel?.nome || "Não informado";
+    listaHistoricoEventos.innerHTML = historico
+      .map((evento) => {
+        const situacao = obterSituacaoEvento(evento);
+        const professorResponsavel =
+          evento.professor_responsavel?.nome || "Não informado";
 
-      return `
-        <article class="item-historico-evento-compacto ${obterClasseVisualEvento(situacao)}">
-          <div class="item-historico-evento-topo">
-            <div class="item-historico-evento-icone">🎈</div>
+        return `
+          <article class="item-historico-evento-compacto ${obterClasseVisualEvento(situacao)}">
+            <div class="item-historico-evento-topo">
+              <div class="item-historico-evento-icone">🎈</div>
 
-            <div class="item-historico-evento-texto">
-              <h3>${escaparHtml(evento.titulo || "-")}</h3>
-              <p>
-                ${escaparHtml(evento.tipo_evento || "Evento")} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
-              </p>
-              <p style="margin-top:4px;">
-                Responsável: ${escaparHtml(professorResponsavel)}
-              </p>
+              <div class="item-historico-evento-texto">
+                <h3>${escaparHtml(evento.titulo || "-")}</h3>
+                <p>
+                  ${escaparHtml(evento.tipo_evento || "Evento")} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
+                </p>
+                <p style="margin-top:4px;">
+                  Responsável: ${escaparHtml(professorResponsavel)}
+                </p>
+              </div>
+
+              <div class="item-historico-evento-lado">
+                ${obterBadgeSituacao(situacao)}
+              </div>
             </div>
 
-            <div class="item-historico-evento-lado">
-              ${obterBadgeSituacao(situacao)}
-            </div>
-          </div>
-
-          <details class="detalhes-evento-box detalhes-evento-historico" data-evento-id="${evento.id}">
-            <summary>Ver mais</summary>
-            <div class="conteudo-detalhes-evento">
-              ${montarDetalhesEvento(evento)}
-            </div>
-          </details>
-        </article>
-      `;
-    }).join("");
+            <details class="detalhes-evento-box detalhes-evento-historico" data-evento-id="${evento.id}">
+              <summary>Ver mais</summary>
+              <div class="conteudo-detalhes-evento">
+                ${montarDetalhesEvento(evento)}
+              </div>
+            </details>
+          </article>
+        `;
+      })
+      .join("");
   }
 
   document.querySelectorAll(".btn-cancelar-evento").forEach((botao) => {
@@ -680,5 +872,10 @@ function renderizarEventos() {
 /* =========================================================
    EVENTOS DOS FILTROS
 ========================================================= */
-filtroBusca.addEventListener("input", renderizarEventos);
-filtroSituacao.addEventListener("change", renderizarEventos);
+if (filtroBusca) {
+  filtroBusca.addEventListener("input", renderizarEventos);
+}
+
+if (filtroSituacao) {
+  filtroSituacao.addEventListener("change", renderizarEventos);
+}

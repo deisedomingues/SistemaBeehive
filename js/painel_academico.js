@@ -7,6 +7,9 @@ try {
   console.error("Erro ao validar acesso ao painel acadêmico:", erro);
 }
 
+/* =========================================================
+   CONFIGURAÇÕES FIXAS
+========================================================= */
 const CONFIG = {
   WHATSAPP_NUMERO: "5511956177084",
   WHATSAPP_MENSAGEM: "Olá! Preciso de ajuda no painel acadêmico.",
@@ -15,6 +18,9 @@ const CONFIG = {
   TELEFONE_LINK: "+5511956177084"
 };
 
+/* =========================================================
+   ELEMENTOS
+========================================================= */
 const msg = document.getElementById("msg");
 
 const blocoCursoPainel = document.getElementById("blocoCursoPainel");
@@ -41,6 +47,10 @@ const totalPlantoes = document.getElementById("totalPlantoes");
 const totalInstrumentais = document.getElementById("totalInstrumentais");
 const totalEventos = document.getElementById("totalEventos");
 
+const totalConvitesAceitosSemComparecimento = document.getElementById(
+  "totalConvitesAceitosSemComparecimento"
+);
+
 const percentualPresenca = document.getElementById("percentualPresenca");
 const barraPresenca = document.getElementById("barraPresenca");
 const alertaAcademico = document.getElementById("alertaAcademico");
@@ -60,6 +70,9 @@ const emailEscola = document.getElementById("emailEscola");
 const telefoneEscola = document.getElementById("telefoneEscola");
 const btnWhatsapp = document.getElementById("btnWhatsapp");
 
+/* =========================================================
+   ESTADO
+========================================================= */
 let alunoId = null;
 let alunoAtual = null;
 let matriculasAtivas = [];
@@ -71,6 +84,9 @@ let historicoExpandido = false;
 let reposicoesPendentesCompletas = [];
 let reposicoesExpandido = false;
 
+/* =========================================================
+   CONTATO
+========================================================= */
 function configurarContatoEscola() {
   if (emailEscola) {
     emailEscola.textContent = CONFIG.EMAIL;
@@ -88,18 +104,26 @@ function configurarContatoEscola() {
   }
 }
 
+/* =========================================================
+   MENSAGENS
+========================================================= */
 function mostrarMensagem(texto, tipo = "erro") {
   if (!msg) return;
+
   msg.textContent = texto;
   msg.className = `msg-box show ${tipo}`;
 }
 
 function limparMensagem() {
   if (!msg) return;
+
   msg.textContent = "";
   msg.className = "msg-box";
 }
 
+/* =========================================================
+   UTILITÁRIOS
+========================================================= */
 function setTexto(el, valor) {
   if (!el) return;
   el.textContent = valor ?? "--";
@@ -120,7 +144,10 @@ function formatarData(data) {
   if (!data) return "--";
 
   const d = new Date(`${data}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return "--";
+
+  if (Number.isNaN(d.getTime())) {
+    return "--";
+  }
 
   return d.toLocaleDateString("pt-BR");
 }
@@ -213,11 +240,15 @@ function classeStatus(status) {
 }
 
 function formatarNota(valor) {
-  if (valor === null || valor === undefined || valor === "") return "--";
+  if (valor === null || valor === undefined || valor === "") {
+    return "--";
+  }
 
   const numero = Number(valor);
 
-  if (Number.isNaN(numero)) return "--";
+  if (Number.isNaN(numero)) {
+    return "--";
+  }
 
   return numero.toFixed(1).replace(".", ",");
 }
@@ -234,6 +265,7 @@ function obterAlunoId() {
 function montarNomeCurso(matricula) {
   const materia = matricula?.materia?.nome || "Curso";
   const modulo = matricula?.modulo?.nome || "Módulo não informado";
+
   return `${materia} — ${modulo}`;
 }
 
@@ -246,6 +278,54 @@ function salvarMatriculaSelecionada(matricula) {
   localStorage.setItem("nomeCursoSelecionado", montarNomeCurso(matricula));
 }
 
+/* =========================================================
+   REGRAS DE EVENTO PARA O CURSO
+========================================================= */
+function eventoCondizComMatricula(evento, matricula) {
+  if (!evento || !matricula) return false;
+
+  if (evento.publico_alvo === "todos") {
+    return true;
+  }
+
+  if (evento.publico_alvo === "materia") {
+    return Number(matricula.materia_id) === Number(evento.materia_id);
+  }
+
+  if (evento.publico_alvo === "modulo_exato") {
+    return (
+      Number(matricula.materia_id) === Number(evento.materia_id) &&
+      Number(matricula.modulo_id) === Number(evento.modulo_id)
+    );
+  }
+
+  if (evento.publico_alvo === "modulo_a_partir") {
+    const mesmaMateria =
+      Number(matricula.materia_id) === Number(evento.materia_id);
+
+    const ordemAluno = matricula.modulo?.ordem ?? null;
+    const ordemEvento = evento.modulo?.ordem ?? null;
+
+    if (!mesmaMateria || ordemAluno === null || ordemEvento === null) {
+      return false;
+    }
+
+    return Number(ordemAluno) >= Number(ordemEvento);
+  }
+
+  return false;
+}
+
+function eventoJaFoiProcessadoPeloAdmin(evento) {
+  return Boolean(
+    evento?.registrado === true ||
+    evento?.participacao_registrada === true
+  );
+}
+
+/* =========================================================
+   LIMPAR TELA
+========================================================= */
 function limparCardsResumo() {
   setTexto(statusMatricula, "--");
   setTexto(nomeCurso, "--");
@@ -264,6 +344,7 @@ function limparCardsResumo() {
   setTexto(totalPlantoes, "0");
   setTexto(totalInstrumentais, "0");
   setTexto(totalEventos, "0");
+  setTexto(totalConvitesAceitosSemComparecimento, "0");
 
   setTexto(percentualPresenca, "0%");
 
@@ -306,6 +387,9 @@ function limparCardsResumo() {
   }
 }
 
+/* =========================================================
+   BUSCAS NO BANCO
+========================================================= */
 async function carregarAluno(alunoIdParam) {
   const { data, error } = await supabase
     .from("aluno")
@@ -319,6 +403,7 @@ async function carregarAluno(alunoIdParam) {
   }
 
   setTexto(nomeAluno, data.nome || "Aluno(a)");
+
   return data;
 }
 
@@ -363,62 +448,6 @@ async function carregarMatriculasAtivas(alunoIdParam) {
   return data || [];
 }
 
-function definirMatriculaSelecionadaInicial() {
-  if (!matriculasAtivas.length) {
-    matriculaSelecionada = null;
-    return;
-  }
-
-  const matriculaSalvaId = localStorage.getItem("matriculaSelecionadaId");
-
-  const encontrada = matriculasAtivas.find(
-    (m) => String(m.id) === String(matriculaSalvaId)
-  );
-
-  if (encontrada) {
-    matriculaSelecionada = encontrada;
-    return;
-  }
-
-  matriculaSelecionada = matriculasAtivas[0];
-  salvarMatriculaSelecionada(matriculaSelecionada);
-}
-
-function preencherSelectMatriculas() {
-  if (
-    !blocoCursoPainel ||
-    !textoCursoPainel ||
-    !labelSelectMatriculaPainel ||
-    !selectMatriculaPainel
-  ) {
-    return;
-  }
-
-  blocoCursoPainel.style.display = "block";
-  selectMatriculaPainel.innerHTML = "";
-
-  matriculasAtivas.forEach((matricula) => {
-    const option = document.createElement("option");
-    option.value = String(matricula.id);
-    option.textContent = montarNomeCurso(matricula);
-    selectMatriculaPainel.appendChild(option);
-  });
-
-  if (matriculasAtivas.length > 1) {
-    labelSelectMatriculaPainel.style.display = "block";
-  } else {
-    labelSelectMatriculaPainel.style.display = "none";
-  }
-
-  if (matriculaSelecionada?.id) {
-    selectMatriculaPainel.value = String(matriculaSelecionada.id);
-    textoCursoPainel.textContent =
-      `Você está visualizando o painel do curso ${montarNomeCurso(matriculaSelecionada)}.`;
-  } else {
-    textoCursoPainel.textContent = "Nenhum curso ativo encontrado.";
-  }
-}
-
 async function carregarAulasDaMatricula(matriculaId) {
   const { data, error } = await supabase
     .from("aula")
@@ -431,7 +460,8 @@ async function carregarAulasDaMatricula(matriculaId) {
       licao_casa,
       parte,
       precisa_reposicao,
-      aula_original_id
+      aula_original_id,
+      evento_id
     `)
     .eq("matricula_id", matriculaId)
     .order("data_aula", { ascending: false })
@@ -476,6 +506,194 @@ async function carregarReposicoesDaMatricula(matriculaId) {
   return data || [];
 }
 
+/* =========================================================
+   NOVA REGRA:
+   CONVITES ACEITOS SEM COMPARECIMENTO
+========================================================= */
+async function carregarConvitesAceitosSemComparecimento(
+  alunoIdParam,
+  matriculaAtual
+) {
+  if (!alunoIdParam || !matriculaAtual) {
+    return 0;
+  }
+
+  /*
+    evento_confirmacao = aluno aceitou o convite.
+    Isso NÃO significa que participou.
+  */
+  const { data: confirmacoes, error: erroConfirmacoes } = await supabase
+    .from("evento_confirmacao")
+    .select(`
+      evento_id,
+      aluno_id,
+      evento:evento_id (
+        id,
+        titulo,
+        publico_alvo,
+        materia_id,
+        modulo_id,
+        ativo,
+        registrado,
+        participacao_registrada,
+        data_evento,
+        hora_evento,
+        materia:materia_id (
+          id,
+          nome
+        ),
+        modulo:modulo_id (
+          id,
+          nome,
+          ordem,
+          materia_id
+        )
+      )
+    `)
+    .eq("aluno_id", alunoIdParam);
+
+  if (erroConfirmacoes) {
+    console.error(
+      "Erro ao buscar confirmações de eventos do aluno:",
+      erroConfirmacoes
+    );
+    return 0;
+  }
+
+  const confirmacoesValidas = (confirmacoes || []).filter((confirmacao) => {
+    const evento = confirmacao.evento;
+
+    if (!evento) return false;
+
+    /*
+      Evento cancelado não entra na conta.
+    */
+    if (evento.ativo === false) return false;
+
+    /*
+      Só entra depois que o admin registrou/processou o evento.
+      Assim não conta evento futuro nem evento ainda pendente.
+    */
+    if (!eventoJaFoiProcessadoPeloAdmin(evento)) return false;
+
+    /*
+      Só entra se o evento realmente era compatível com o curso
+      que o aluno está visualizando no painel.
+    */
+    if (!eventoCondizComMatricula(evento, matriculaAtual)) return false;
+
+    return true;
+  });
+
+  if (!confirmacoesValidas.length) {
+    return 0;
+  }
+
+  const idsEventosConfirmados = confirmacoesValidas.map((item) =>
+    Number(item.evento_id)
+  );
+
+  const idsMatriculasDoAluno = matriculasAtivas.map((matricula) =>
+    Number(matricula.id)
+  );
+
+  if (!idsMatriculasDoAluno.length) {
+    return confirmacoesValidas.length;
+  }
+
+  /*
+    Participação real = aula com status "Evento".
+    Aqui buscamos em TODAS as matrículas do aluno, não só na matrícula atual,
+    porque evento "todos" pode ter sido registrado em uma matrícula específica.
+  */
+  const { data: aulasEvento, error: erroAulasEvento } = await supabase
+    .from("aula")
+    .select("id, evento_id, matricula_id, status")
+    .eq("status", "Evento")
+    .in("evento_id", idsEventosConfirmados)
+    .in("matricula_id", idsMatriculasDoAluno);
+
+  if (erroAulasEvento) {
+    console.error(
+      "Erro ao buscar participações reais em eventos:",
+      erroAulasEvento
+    );
+    return 0;
+  }
+
+  const eventosComParticipacaoReal = new Set(
+    (aulasEvento || [])
+      .filter((aula) => aula.evento_id !== null && aula.evento_id !== undefined)
+      .map((aula) => Number(aula.evento_id))
+  );
+
+  const totalSemComparecimento = confirmacoesValidas.filter((confirmacao) => {
+    const eventoId = Number(confirmacao.evento_id);
+    return !eventosComParticipacaoReal.has(eventoId);
+  }).length;
+
+  return totalSemComparecimento;
+}
+
+/* =========================================================
+   MATRÍCULA SELECIONADA
+========================================================= */
+function definirMatriculaSelecionadaInicial() {
+  if (!matriculasAtivas.length) {
+    matriculaSelecionada = null;
+    return;
+  }
+
+  const matriculaSalvaId = localStorage.getItem("matriculaSelecionadaId");
+
+  const encontrada = matriculasAtivas.find(
+    (m) => String(m.id) === String(matriculaSalvaId)
+  );
+
+  if (encontrada) {
+    matriculaSelecionada = encontrada;
+    return;
+  }
+
+  matriculaSelecionada = matriculasAtivas[0];
+  salvarMatriculaSelecionada(matriculaSelecionada);
+}
+
+function preencherSelectMatriculas() {
+  if (
+    !blocoCursoPainel ||
+    !textoCursoPainel ||
+    !labelSelectMatriculaPainel ||
+    !selectMatriculaPainel
+  ) {
+    return;
+  }
+
+  blocoCursoPainel.style.display = "block";
+  selectMatriculaPainel.innerHTML = "";
+
+  matriculasAtivas.forEach((matricula) => {
+    const option = document.createElement("option");
+    option.value = String(matricula.id);
+    option.textContent = montarNomeCurso(matricula);
+    selectMatriculaPainel.appendChild(option);
+  });
+
+  labelSelectMatriculaPainel.style.display =
+    matriculasAtivas.length > 1 ? "block" : "none";
+
+  if (matriculaSelecionada?.id) {
+    selectMatriculaPainel.value = String(matriculaSelecionada.id);
+    textoCursoPainel.textContent =
+      `Você está visualizando o painel do curso ${montarNomeCurso(matriculaSelecionada)}.`;
+  } else {
+    textoCursoPainel.textContent = "Nenhum curso ativo encontrado.";
+  }
+}
+
+/* =========================================================
+   PREENCHIMENTO DOS CARDS
+========================================================= */
 function preencherCabecalhoMatricula(matricula) {
   setTexto(statusMatricula, matricula.ativa ? "Ativa" : "Inativa");
   setTexto(dataInicio, formatarData(matricula.data_inicio));
@@ -484,7 +702,11 @@ function preencherCabecalhoMatricula(matricula) {
   setTexto(nomeProfessor, matricula?.professor?.nome || "--");
 }
 
-function preencherResumoAcademico(aulas, reposicoes) {
+function preencherResumoAcademico(
+  aulas,
+  reposicoes,
+  convitesAceitosSemComparecimento = 0
+) {
   const total = aulas.length;
 
   const presentes = aulas.filter((aula) => ehPresenca(aula.status)).length;
@@ -502,6 +724,11 @@ function preencherResumoAcademico(aulas, reposicoes) {
   const reposicoesFeitas = aulas.filter((aula) => ehReposicao(aula.status)).length;
   const plantoes = aulas.filter((aula) => ehPlantao(aula.status)).length;
   const instrumentais = aulas.filter((aula) => ehInstrumental(aula.status)).length;
+
+  /*
+    Eventos participados = participação real.
+    Isso vem da tabela aula com status "Evento".
+  */
   const eventos = aulas.filter((aula) => ehEvento(aula.status)).length;
 
   setTexto(totalAulas, String(total));
@@ -514,6 +741,11 @@ function preencherResumoAcademico(aulas, reposicoes) {
   setTexto(totalPlantoes, String(plantoes));
   setTexto(totalInstrumentais, String(instrumentais));
   setTexto(totalEventos, String(eventos));
+
+  setTexto(
+    totalConvitesAceitosSemComparecimento,
+    String(convitesAceitosSemComparecimento)
+  );
 
   const presencasConsideradas = presentes + reposicoesFeitas;
 
@@ -538,16 +770,31 @@ function preencherResumoAcademico(aulas, reposicoes) {
     barraPresenca.style.width = `${percentual}%`;
   }
 
-  preencherAlertaAcademico(reposicoesPendentes, reposicoesAgendadas);
+  preencherAlertaAcademico(
+    reposicoesPendentes,
+    reposicoesAgendadas,
+    convitesAceitosSemComparecimento
+  );
 }
 
-function preencherAlertaAcademico(qtdReposicoesPendentes, qtdReposicoesAgendadas) {
+function preencherAlertaAcademico(
+  qtdReposicoesPendentes,
+  qtdReposicoesAgendadas,
+  qtdConvitesAceitosSemComparecimento
+) {
   if (!alertaAcademico) return;
 
   if (qtdReposicoesPendentes > 0) {
     alertaAcademico.style.display = "block";
     alertaAcademico.textContent =
       `Você possui ${qtdReposicoesPendentes} reposição(ões) pendente(s). Clique em “Agendar agora” para escolher um horário disponível.`;
+    return;
+  }
+
+  if (qtdConvitesAceitosSemComparecimento > 0) {
+    alertaAcademico.style.display = "block";
+    alertaAcademico.textContent =
+      `Você possui ${qtdConvitesAceitosSemComparecimento} convite(s) aceito(s) sem comparecimento registrado.`;
     return;
   }
 
@@ -587,6 +834,9 @@ function preencherNotas(notas) {
   setTexto(ultimaNota, formatarNota(notasValidas[0]));
 }
 
+/* =========================================================
+   REPOSIÇÕES
+========================================================= */
 function renderizarReposicoesPendentes(aulas) {
   if (!listaReposicoesPendentes) return;
 
@@ -642,6 +892,9 @@ function renderizarReposicoesPendentes(aulas) {
   }
 }
 
+/* =========================================================
+   EVENTOS PARTICIPADOS
+========================================================= */
 function renderizarEventosParticipados(aulas) {
   if (!listaEventosParticipados) return;
 
@@ -674,6 +927,9 @@ function renderizarEventosParticipados(aulas) {
   });
 }
 
+/* =========================================================
+   HISTÓRICO
+========================================================= */
 function renderizarHistorico(aulas) {
   if (!listaHistorico) return;
 
@@ -719,6 +975,7 @@ function renderizarHistorico(aulas) {
       <div><strong>Conteúdo:</strong> ${escaparHTML(conteudo)}</div>
       <div style="margin-top:6px;"><strong>Lição de casa:</strong> ${escaparHTML(licao)}</div>
       <div style="margin-top:6px;"><strong>Precisa de reposição:</strong> ${precisaReposicao}</div>
+
       ${
         justificativa
           ? `<div style="margin-top:6px;"><strong>Justificativa:</strong> ${escaparHTML(justificativa)}</div>`
@@ -741,6 +998,9 @@ function renderizarHistorico(aulas) {
   }
 }
 
+/* =========================================================
+   CARREGAR DADOS DO CURSO SELECIONADO
+========================================================= */
 async function carregarDadosDaMatriculaSelecionada() {
   limparMensagem();
 
@@ -757,19 +1017,33 @@ async function carregarDadosDaMatriculaSelecionada() {
   preencherSelectMatriculas();
   preencherCabecalhoMatricula(matriculaSelecionada);
 
-  const [aulas, notas, reposicoes] = await Promise.all([
+  const [
+    aulas,
+    notas,
+    reposicoes,
+    convitesAceitosSemComparecimento
+  ] = await Promise.all([
     carregarAulasDaMatricula(matriculaSelecionada.id),
     carregarNotasDaMatricula(matriculaSelecionada.id),
-    carregarReposicoesDaMatricula(matriculaSelecionada.id)
+    carregarReposicoesDaMatricula(matriculaSelecionada.id),
+    carregarConvitesAceitosSemComparecimento(alunoId, matriculaSelecionada)
   ]);
 
-  preencherResumoAcademico(aulas, reposicoes);
+  preencherResumoAcademico(
+    aulas,
+    reposicoes,
+    convitesAceitosSemComparecimento
+  );
+
   preencherNotas(notas);
   renderizarReposicoesPendentes(aulas);
   renderizarEventosParticipados(aulas);
   renderizarHistorico(aulas);
 }
 
+/* =========================================================
+   EVENTOS DE INTERFACE
+========================================================= */
 if (selectMatriculaPainel) {
   selectMatriculaPainel.addEventListener("change", async () => {
     const idSelecionado = selectMatriculaPainel.value;
@@ -799,6 +1073,9 @@ if (btnExpandirReposicoes) {
   });
 }
 
+/* =========================================================
+   INICIALIZAÇÃO
+========================================================= */
 async function init() {
   limparMensagem();
   configurarContatoEscola();
@@ -821,10 +1098,13 @@ async function init() {
     matriculasAtivas = await carregarMatriculasAtivas(alunoId);
 
     if (!matriculasAtivas.length) {
-      if (blocoCursoPainel) blocoCursoPainel.style.display = "block";
+      if (blocoCursoPainel) {
+        blocoCursoPainel.style.display = "block";
+      }
 
       if (textoCursoPainel) {
-        textoCursoPainel.textContent = "Você não possui curso ativo no momento.";
+        textoCursoPainel.textContent =
+          "Você não possui curso ativo no momento.";
       }
 
       limparCardsResumo();
@@ -834,6 +1114,7 @@ async function init() {
 
     definirMatriculaSelecionadaInicial();
     preencherSelectMatriculas();
+
     await carregarDadosDaMatriculaSelecionada();
   } catch (erro) {
     console.error("Erro no painel acadêmico:", erro);

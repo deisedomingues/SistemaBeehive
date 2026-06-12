@@ -17,6 +17,8 @@ const textoCardPainel = document.getElementById("textoCardPainel");
 
 const badgeEventos = document.getElementById("badgeEventos");
 const textoEventosHome = document.getElementById("textoEventosHome");
+const badgeEventosSemParticipacao = document.getElementById("badgeEventosSemParticipacao");
+const textoEventosSemParticipacaoHome = document.getElementById("textoEventosSemParticipacaoHome");
 
 const btnAvaliacoes = document.getElementById("btnAvaliacoes");
 const badgeAvaliacoes = document.getElementById("badgeAvaliacoes");
@@ -44,6 +46,7 @@ if (!alunoId) {
 let matriculasAtivas = [];
 let matriculaSelecionada = null;
 let eventosElegiveisAtuais = [];
+let totalParticipacoesEventos = 0;
 
 function desabilitarCard(linkEl, tituloIndisponivel, descricaoIndisponivel) {
   if (!linkEl) return;
@@ -69,14 +72,30 @@ function habilitarCard(linkEl, href) {
   linkEl.classList.remove("link-indisponivel");
 }
 
-function atualizarBadgeEventos(totalAlertas) {
+function montarTextoParticipacoesEventos(totalParticipacoes) {
+  const total = Number(totalParticipacoes || 0);
+
+  if (total === 0) {
+    return "Nenhuma participação em evento registrada ainda.";
+  }
+
+  if (total === 1) {
+    return "Você tem 1 participação em evento registrada.";
+  }
+
+  return `Você tem ${total} participações em eventos registradas.`;
+}
+
+function atualizarBadgeEventos(totalAlertas, totalParticipacoes = totalParticipacoesEventos) {
   if (!badgeEventos || !textoEventosHome) return;
+
+  const textoParticipacoes = montarTextoParticipacoesEventos(totalParticipacoes);
 
   if (!totalAlertas || totalAlertas <= 0) {
     badgeEventos.style.display = "none";
     badgeEventos.textContent = "0";
     textoEventosHome.textContent =
-      "Consulte os eventos da escola e confirme sua participação.";
+      `Consulte os eventos da escola e confirme sua participação. ${textoParticipacoes}`;
     return;
   }
 
@@ -85,8 +104,29 @@ function atualizarBadgeEventos(totalAlertas) {
 
   textoEventosHome.textContent =
     totalAlertas === 1
-      ? "Você tem 1 evento novo para visualizar."
-      : `Você tem ${totalAlertas} eventos novos para visualizar.`;
+      ? `Você tem 1 evento novo para visualizar. ${textoParticipacoes}`
+      : `Você tem ${totalAlertas} eventos novos para visualizar. ${textoParticipacoes}`;
+}
+
+function atualizarCardEventosSemParticipacao(totalPendentes) {
+  if (!badgeEventosSemParticipacao || !textoEventosSemParticipacaoHome) return;
+
+  if (!totalPendentes || totalPendentes <= 0) {
+    badgeEventosSemParticipacao.style.display = "none";
+    badgeEventosSemParticipacao.textContent = "0";
+    textoEventosSemParticipacaoHome.textContent =
+      "Nenhum evento confirmado sem participação registrado no momento.";
+    return;
+  }
+
+  badgeEventosSemParticipacao.style.display = "inline-flex";
+  badgeEventosSemParticipacao.textContent =
+    totalPendentes > 99 ? "99+" : String(totalPendentes);
+
+  textoEventosSemParticipacaoHome.textContent =
+    totalPendentes === 1
+      ? "Você confirmou 1 evento, mas sua participação não foi registrada."
+      : `Você confirmou ${totalPendentes} eventos, mas sua participação não foi registrada.`;
 }
 
 function atualizarBadgeAvaliacoes(totalPendentes) {
@@ -592,8 +632,97 @@ async function sincronizarConvitesElegiveis(alunoIdAtual, eventosElegiveis) {
   return convitesAtualizados || [];
 }
 
+async function carregarTotalParticipacoesEventos() {
+  if (!alunoId) return 0;
+
+  const { count, error } = await supabase
+    .from("aula")
+    .select("id", { count: "exact", head: true })
+    .eq("aluno_id", alunoId)
+    .eq("status", "Evento")
+    .not("evento_id", "is", null);
+
+  if (error) {
+    console.error("Erro ao carregar participações em eventos:", error);
+    return 0;
+  }
+
+  return count || 0;
+}
+
+async function carregarCardEventosSemParticipacao() {
+  try {
+    if (!alunoId) {
+      atualizarCardEventosSemParticipacao(0);
+      return;
+    }
+
+    const { data: confirmacoes, error: erroConfirmacoes } = await supabase
+      .from("evento_confirmacao")
+      .select(`
+        evento_id,
+        evento:evento_id (
+          id,
+          titulo,
+          data_evento,
+          hora_evento,
+          ativo,
+          registrado,
+          participacao_registrada
+        )
+      `)
+      .eq("aluno_id", alunoId);
+
+    if (erroConfirmacoes) {
+      console.error("Erro ao carregar confirmações de eventos do aluno:", erroConfirmacoes);
+      atualizarCardEventosSemParticipacao(0);
+      return;
+    }
+
+    const confirmacoesDeEventosRegistrados = (confirmacoes || []).filter((item) =>
+      Boolean(item.evento?.registrado || item.evento?.participacao_registrada)
+    );
+
+    if (!confirmacoesDeEventosRegistrados.length) {
+      atualizarCardEventosSemParticipacao(0);
+      return;
+    }
+
+    const idsEventosRegistrados = confirmacoesDeEventosRegistrados.map((item) =>
+      Number(item.evento_id)
+    );
+
+    const { data: aulasEvento, error: erroAulas } = await supabase
+      .from("aula")
+      .select("id, evento_id")
+      .eq("aluno_id", alunoId)
+      .eq("status", "Evento")
+      .in("evento_id", idsEventosRegistrados);
+
+    if (erroAulas) {
+      console.error("Erro ao verificar participação real em eventos:", erroAulas);
+      atualizarCardEventosSemParticipacao(0);
+      return;
+    }
+
+    const eventosComParticipacao = new Set(
+      (aulasEvento || []).map((aula) => Number(aula.evento_id))
+    );
+
+    const totalSemParticipacao = confirmacoesDeEventosRegistrados.filter(
+      (item) => !eventosComParticipacao.has(Number(item.evento_id))
+    ).length;
+
+    atualizarCardEventosSemParticipacao(totalSemParticipacao);
+  } catch (erro) {
+    console.error("Erro inesperado ao carregar eventos confirmados sem participação:", erro);
+    atualizarCardEventosSemParticipacao(0);
+  }
+}
+
 async function carregarBadgeEventos() {
   try {
+    totalParticipacoesEventos = await carregarTotalParticipacoesEventos();
     eventosElegiveisAtuais = await carregarEventosElegiveisDoAluno(matriculasAtivas);
     const convites = await sincronizarConvitesElegiveis(alunoId, eventosElegiveisAtuais);
 
@@ -601,10 +730,10 @@ async function carregarBadgeEventos() {
       (convite) => !convite.visualizado
     ).length;
 
-    atualizarBadgeEventos(totalNaoVisualizados);
+    atualizarBadgeEventos(totalNaoVisualizados, totalParticipacoesEventos);
   } catch (erro) {
     console.error("Erro inesperado ao carregar badge de eventos:", erro);
-    atualizarBadgeEventos(0);
+    atualizarBadgeEventos(0, totalParticipacoesEventos);
   }
 }
 
@@ -817,6 +946,7 @@ async function carregarAluno() {
 
       atualizarBadgeAvaliacoes(0);
       await carregarBadgeEventos();
+      await carregarCardEventosSemParticipacao();
       await carregarBadgeComunicados();
       return;
     }
@@ -863,6 +993,7 @@ async function carregarAluno() {
 
       atualizarBadgeAvaliacoes(0);
       await carregarBadgeEventos();
+      await carregarCardEventosSemParticipacao();
       await carregarBadgeComunicados();
       return;
     }
@@ -872,6 +1003,7 @@ async function carregarAluno() {
 
     await atualizarTelaComMatriculaSelecionada();
     await carregarBadgeEventos();
+    await carregarCardEventosSemParticipacao();
     await carregarBadgeAvaliacoes();
     await carregarBadgeComunicados();
   } catch (erro) {
@@ -906,6 +1038,7 @@ async function carregarAluno() {
 
     atualizarBadgeAvaliacoes(0);
     await carregarBadgeEventos();
+    await carregarCardEventosSemParticipacao();
     await carregarBadgeComunicados();
   }
 }
@@ -925,6 +1058,7 @@ if (selectMatricula) {
     await atualizarTelaComMatriculaSelecionada();
     await carregarBadgeAvaliacoes();
     await carregarBadgeEventos();
+    await carregarCardEventosSemParticipacao();
     await carregarBadgeComunicados();
   });
 }

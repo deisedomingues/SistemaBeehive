@@ -1,10 +1,13 @@
 import { supabase } from "./supabase.js";
 import { exigirAdmin } from "./guard.js";
 
+await exigirAdmin();
+
 /* =========================================================
    ELEMENTOS
 ========================================================= */
 const msg = document.getElementById("msg");
+
 const tituloEventoEl = document.getElementById("tituloEvento");
 const subtituloEventoEl = document.getElementById("subtituloEvento");
 const listaParticipantesEl = document.getElementById("listaParticipantes");
@@ -15,7 +18,12 @@ const btnRegistrarEvento = document.getElementById("btnRegistrarEvento");
    ESTADO
 ========================================================= */
 const params = new URLSearchParams(window.location.search);
-const eventoId = Number(params.get("evento"));
+
+const eventoId = Number(
+  params.get("evento") ||
+  params.get("evento_id") ||
+  params.get("id")
+);
 
 let evento = null;
 let participantes = [];
@@ -24,12 +32,8 @@ let registrando = false;
 /* =========================================================
    INICIALIZAÇÃO
 ========================================================= */
-await inicializar();
-
 async function inicializar() {
   try {
-    await exigirAdmin();
-
     if (!Number.isFinite(eventoId) || eventoId <= 0) {
       mostrarMensagem("Evento não informado ou inválido na URL.", "erro");
 
@@ -40,7 +44,9 @@ async function inicializar() {
       return;
     }
 
-    btnRegistrarEvento?.addEventListener("click", registrarParticipacao);
+    if (btnRegistrarEvento) {
+      btnRegistrarEvento.addEventListener("click", registrarParticipacao);
+    }
 
     await carregarTela();
   } catch (erro) {
@@ -54,8 +60,14 @@ async function inicializar() {
   }
 }
 
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", inicializar);
+} else {
+  await inicializar();
+}
+
 /* =========================================================
-   UTILITÁRIOS
+   MENSAGENS
 ========================================================= */
 function mostrarMensagem(texto, tipo = "sucesso") {
   if (!msg) return;
@@ -84,12 +96,19 @@ function esconderMensagem() {
   msg.textContent = "";
 }
 
+/* =========================================================
+   UTILITÁRIOS
+========================================================= */
 function formatarData(dataStr) {
   if (!dataStr) return "-";
 
-  const [ano, mes, dia] = String(dataStr).split("-");
+  const partes = String(dataStr).split("-");
 
-  if (!ano || !mes || !dia) return dataStr;
+  if (partes.length !== 3) {
+    return dataStr;
+  }
+
+  const [ano, mes, dia] = partes;
 
   return `${dia}/${mes}/${ano}`;
 }
@@ -142,16 +161,18 @@ function obterNomeProfessorResponsavel(eventoAtual) {
   );
 }
 
+function eventoJaFoiRegistrado(eventoAtual, registrosExistentes = []) {
+  return Boolean(
+    eventoAtual?.registrado === true ||
+    eventoAtual?.participacao_registrada === true ||
+    registrosExistentes.length > 0
+  );
+}
+
 /* =========================================================
-   BUSCAS
+   BUSCAS NO BANCO
 ========================================================= */
 async function buscarEvento() {
-  /*
-    Esta busca usa professor_responsavel_id.
-
-    Se no seu banco a coluna do professor responsável estiver com outro nome,
-    por exemplo professor_id, me avise para eu ajustar.
-  */
   const { data, error } = await supabase
     .from("evento")
     .select(`
@@ -166,8 +187,15 @@ async function buscarEvento() {
       materia_id,
       modulo_id,
       ativo,
+      registrado,
+      registrado_em,
       participacao_registrada,
+      professor_id,
       professor_responsavel_id,
+      professor:professor_id (
+        id,
+        nome
+      ),
       professor_responsavel:professor_responsavel_id (
         id,
         nome
@@ -191,6 +219,7 @@ async function buscarConfirmadosDoEvento() {
       id,
       evento_id,
       aluno_id,
+      created_at,
       aluno:aluno_id (
         id,
         nome
@@ -242,8 +271,14 @@ async function buscarMatriculasAtivasDosAlunos(alunosIds) {
 async function buscarRegistrosJaExistentesPorEvento() {
   const { data, error } = await supabase
     .from("aula")
-    .select("id, matricula_id, evento_id, status")
-    .eq("evento_id", eventoId);
+    .select(`
+      id,
+      matricula_id,
+      evento_id,
+      status
+    `)
+    .eq("evento_id", eventoId)
+    .eq("status", "Evento");
 
   if (error) {
     console.error("Erro ao buscar registros existentes:", error);
@@ -254,7 +289,7 @@ async function buscarRegistrosJaExistentesPorEvento() {
 }
 
 /* =========================================================
-   REGRAS DE ESCOLHA DA MATRÍCULA
+   REGRAS DE MATRÍCULA
 ========================================================= */
 function escolherMatriculaParaEvento(matriculasDoAluno, eventoAtual) {
   if (!matriculasDoAluno.length) return null;
@@ -262,29 +297,35 @@ function escolherMatriculaParaEvento(matriculasDoAluno, eventoAtual) {
   const professorResponsavelId = obterProfessorResponsavelId(eventoAtual);
 
   /*
-    1. Se o evento tem matéria/curso, prioriza a matrícula dessa matéria.
+    1. Se o evento tem matéria/curso, usa a matrícula dessa matéria.
   */
   if (eventoAtual.materia_id) {
-    const daMateria = matriculasDoAluno.find(
-      (matricula) => Number(matricula.materia_id) === Number(eventoAtual.materia_id)
+    const matriculaDaMateria = matriculasDoAluno.find(
+      (matricula) =>
+        Number(matricula.materia_id) === Number(eventoAtual.materia_id)
     );
 
-    if (daMateria) return daMateria;
+    if (matriculaDaMateria) {
+      return matriculaDaMateria;
+    }
   }
 
   /*
-    2. Se não encontrou pela matéria, tenta pela matrícula vinculada ao professor responsável.
+    2. Se não encontrou pela matéria, tenta pelo professor responsável.
   */
   if (professorResponsavelId) {
-    const doProfessor = matriculasDoAluno.find(
-      (matricula) => Number(matricula.professor_id) === Number(professorResponsavelId)
+    const matriculaDoProfessor = matriculasDoAluno.find(
+      (matricula) =>
+        Number(matricula.professor_id) === Number(professorResponsavelId)
     );
 
-    if (doProfessor) return doProfessor;
+    if (matriculaDoProfessor) {
+      return matriculaDoProfessor;
+    }
   }
 
   /*
-    3. Se não tiver critério melhor, usa a matrícula ativa mais recente.
+    3. Última opção: matrícula ativa mais recente.
   */
   return matriculasDoAluno[0];
 }
@@ -304,7 +345,9 @@ function renderizarCabecalhoEvento() {
 
   if (subtituloEventoEl) {
     subtituloEventoEl.textContent =
-      `${evento.tipo_evento || "Evento"} • ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)} • Responsável: ${responsavel}${local}`;
+      `${evento.tipo_evento || "Evento"} • ` +
+      `${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)} • ` +
+      `Responsável: ${responsavel}${local}`;
   }
 }
 
@@ -313,7 +356,16 @@ function renderizarParticipantes() {
 
   if (!participantes.length) {
     listaParticipantesEl.innerHTML = `
-      <p style="margin:0;">Nenhum participante restante na lista.</p>
+      <div class="card" style="margin-top:10px;">
+        <p style="margin:0;">
+          Nenhum participante selecionado para registrar.
+        </p>
+
+        <p style="margin:6px 0 0 0; opacity:0.85;">
+          Se o evento aconteceu sem participantes, clique em
+          <strong>Registrar participação</strong> para marcar o evento como realizado sem alunos.
+        </p>
+      </div>
     `;
 
     atualizarTotal();
@@ -322,31 +374,14 @@ function renderizarParticipantes() {
 
   listaParticipantesEl.innerHTML = participantes
     .map((participante, index) => `
-      <div
-        class="card"
-        style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px; margin-bottom:10px;"
-      >
-        <div style="min-width:0;">
-          <strong>${escaparHtml(participante.nome)}</strong>
-        </div>
+      <div class="item-participante-evento">
+        <span>${escaparHtml(participante.nome)}</span>
 
         <button
           type="button"
           class="btn-remover-participante"
           data-index="${index}"
-          style="
-            background:#ff6b6b;
-            color:white;
-            border:none;
-            border-radius:8px;
-            cursor:pointer;
-            width:34px;
-            height:34px;
-            font-size:18px;
-            flex-shrink:0;
-          "
-          aria-label="Remover participante"
-          title="Remover participante"
+          title="Remover da participação"
         >
           ✕
         </button>
@@ -358,7 +393,13 @@ function renderizarParticipantes() {
     botao.addEventListener("click", () => {
       const index = Number(botao.dataset.index);
 
-      if (!Number.isInteger(index) || index < 0 || index >= participantes.length) return;
+      if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index >= participantes.length
+      ) {
+        return;
+      }
 
       participantes.splice(index, 1);
       renderizarParticipantes();
@@ -369,26 +410,70 @@ function renderizarParticipantes() {
 }
 
 /* =========================================================
-   FLUXO
+   ATUALIZAR TABELA EVENTO
+========================================================= */
+async function marcarEventoComoRegistrado(teveParticipacaoReal) {
+  const { error } = await supabase
+    .from("evento")
+    .update({
+      registrado: true,
+      registrado_em: new Date().toISOString(),
+      participacao_registrada: teveParticipacaoReal === true
+    })
+    .eq("id", eventoId);
+
+  if (error) {
+    console.error("Erro ao marcar evento como registrado:", error);
+
+    throw new Error(
+      "A participação foi salva, mas não foi possível marcar o evento como registrado."
+    );
+  }
+
+  if (evento) {
+    evento.registrado = true;
+    evento.registrado_em = new Date().toISOString();
+    evento.participacao_registrada = teveParticipacaoReal === true;
+  }
+}
+
+/* =========================================================
+   FLUXO DA TELA
 ========================================================= */
 async function carregarTela() {
   esconderMensagem();
 
   try {
     evento = await buscarEvento();
-
     renderizarCabecalhoEvento();
 
-    if (!evento.ativo) {
-      mostrarMensagem("Este evento está inativo/cancelado e não pode ser registrado.", "erro");
+    const registrosExistentes = await buscarRegistrosJaExistentesPorEvento();
+
+    if (evento.ativo === false) {
+      mostrarMensagem(
+        "Este evento está inativo/cancelado e não pode ser registrado.",
+        "erro"
+      );
 
       if (btnRegistrarEvento) btnRegistrarEvento.disabled = true;
 
       return;
     }
 
-    if (evento.participacao_registrada) {
-      mostrarMensagem("A participação deste evento já foi registrada anteriormente.", "erro");
+    if (eventoJaFoiRegistrado(evento, registrosExistentes)) {
+      const totalRegistros = registrosExistentes.length;
+
+      if (totalRegistros > 0) {
+        mostrarMensagem(
+          `Este evento já foi registrado anteriormente com ${totalRegistros} participação(ões).`,
+          "erro"
+        );
+      } else {
+        mostrarMensagem(
+          "Este evento já foi registrado anteriormente sem participantes.",
+          "erro"
+        );
+      }
 
       if (btnRegistrarEvento) btnRegistrarEvento.disabled = true;
 
@@ -398,15 +483,21 @@ async function carregarTela() {
     participantes = await buscarConfirmadosDoEvento();
     renderizarParticipantes();
 
-    if (!participantes.length) {
-      mostrarMensagem("Este evento ainda não possui alunos confirmados.", "erro");
-
-      if (btnRegistrarEvento) btnRegistrarEvento.disabled = true;
-
-      return;
+    /*
+      Mesmo sem participantes, o botão fica ativo.
+      Assim o admin pode registrar que o evento aconteceu sem alunos.
+    */
+    if (btnRegistrarEvento) {
+      btnRegistrarEvento.disabled = false;
+      btnRegistrarEvento.textContent = "Registrar participação";
     }
 
-    if (btnRegistrarEvento) btnRegistrarEvento.disabled = false;
+    if (!participantes.length) {
+      mostrarMensagem(
+        "Este evento não possui alunos confirmados. Você ainda pode registrá-lo como realizado sem participantes.",
+        "sucesso"
+      );
+    }
   } catch (erro) {
     console.error(erro);
 
@@ -418,6 +509,177 @@ async function carregarTela() {
   }
 }
 
+/* =========================================================
+   REGISTRO SEM PARTICIPANTES
+========================================================= */
+async function registrarEventoSemParticipantes() {
+  /*
+    Evento realizado sem alunos:
+    - Não cria aula.
+    - Marca o evento como registrado.
+    - participacao_registrada fica false.
+  */
+  await marcarEventoComoRegistrado(false);
+}
+
+/* =========================================================
+   REGISTRO COM PARTICIPANTES
+========================================================= */
+async function registrarEventoComParticipantes() {
+  const professorResponsavelId = obterProfessorResponsavelId(evento);
+
+  if (!professorResponsavelId) {
+    throw new Error(
+      "Este evento não possui professor responsável/anfitrião cadastrado. Cadastre o professor responsável antes de registrar a participação."
+    );
+  }
+
+  const alunosIds = participantes.map((item) => Number(item.aluno_id));
+
+  const [matriculasAtivas, registrosExistentes] = await Promise.all([
+    buscarMatriculasAtivasDosAlunos(alunosIds),
+    buscarRegistrosJaExistentesPorEvento()
+  ]);
+
+  const matriculasPorAluno = new Map();
+
+  for (const matricula of matriculasAtivas) {
+    const alunoIdAtual = Number(matricula.aluno_id);
+
+    if (!matriculasPorAluno.has(alunoIdAtual)) {
+      matriculasPorAluno.set(alunoIdAtual, []);
+    }
+
+    matriculasPorAluno.get(alunoIdAtual).push(matricula);
+  }
+
+  const matriculasJaRegistradas = new Set(
+    registrosExistentes.map((item) => Number(item.matricula_id))
+  );
+
+  const registrosParaInserir = [];
+  const nomesSemMatricula = [];
+  const nomesJaRegistrados = [];
+
+  const quantidadeAlunosEvento = participantes.length;
+  const grupoAulaId = `evento-${evento.id}`;
+
+  for (const participante of participantes) {
+    const matriculasDoAluno =
+      matriculasPorAluno.get(Number(participante.aluno_id)) || [];
+
+    const matriculaEscolhida = escolherMatriculaParaEvento(
+      matriculasDoAluno,
+      evento
+    );
+
+    if (!matriculaEscolhida) {
+      nomesSemMatricula.push(participante.nome);
+      continue;
+    }
+
+    if (matriculasJaRegistradas.has(Number(matriculaEscolhida.id))) {
+      nomesJaRegistrados.push(participante.nome);
+      continue;
+    }
+
+    registrosParaInserir.push({
+      data_aula: evento.data_evento,
+      status: "Evento",
+      justificativa: null,
+      conteudo: `Participação em evento: ${evento.titulo}`,
+      licao_casa: null,
+      matricula_id: Number(matriculaEscolhida.id),
+
+      /*
+        Sua tabela aula usa duração em segundos.
+        Para evento, deixamos null porque a duração pode ser ajustada depois no financeiro.
+      */
+      duracao_segundos: null,
+
+      professor_id: Number(professorResponsavelId),
+      parte: 1,
+
+      modulo_id: matriculaEscolhida.modulo_id
+        ? Number(matriculaEscolhida.modulo_id)
+        : null,
+
+      aula_gravada: false,
+      precisa_reposicao: false,
+      aula_original_id: null,
+      reposicao_com_custo: false,
+
+      evento_id: Number(evento.id),
+
+      /*
+        Evento entra como aula coletiva.
+      */
+      aula_coletiva: true,
+      grupo_aula_id: grupoAulaId,
+      quantidade_alunos: quantidadeAlunosEvento
+    });
+
+    matriculasJaRegistradas.add(Number(matriculaEscolhida.id));
+  }
+
+  /*
+    Se ninguém pôde ser inserido, o evento ainda fica registrado.
+    Mas só fica com participacao_registrada = true se já existia aula Evento antes.
+  */
+  if (!registrosParaInserir.length) {
+    const jaTinhaParticipacaoReal = registrosExistentes.length > 0;
+
+    await marcarEventoComoRegistrado(jaTinhaParticipacaoReal);
+
+    let mensagem = jaTinhaParticipacaoReal
+      ? "Evento marcado como registrado. As participações já estavam salvas anteriormente."
+      : "Evento registrado como realizado sem participantes.";
+
+    if (nomesJaRegistrados.length) {
+      mensagem += ` ${nomesJaRegistrados.length} aluno(s) já tinham registro anterior.`;
+    }
+
+    if (nomesSemMatricula.length) {
+      mensagem += ` ${nomesSemMatricula.length} aluno(s) não tinham matrícula ativa compatível.`;
+    }
+
+    return {
+      quantidadeInserida: 0,
+      nomesSemMatricula,
+      nomesJaRegistrados,
+      mensagem
+    };
+  }
+
+  const { error: erroInsert } = await supabase
+    .from("aula")
+    .insert(registrosParaInserir);
+
+  if (erroInsert) {
+    console.error("Erro ao registrar participação:", erroInsert);
+
+    throw new Error(
+      "Não foi possível registrar a participação dos alunos na tabela aula."
+    );
+  }
+
+  /*
+    Este era o ponto que estava causando inconsistência:
+    agora o evento também fica oficialmente registrado.
+  */
+  await marcarEventoComoRegistrado(true);
+
+  return {
+    quantidadeInserida: registrosParaInserir.length,
+    nomesSemMatricula,
+    nomesJaRegistrados,
+    mensagem: `Participação registrada com sucesso para ${registrosParaInserir.length} aluno(s).`
+  };
+}
+
+/* =========================================================
+   AÇÃO PRINCIPAL
+========================================================= */
 async function registrarParticipacao() {
   esconderMensagem();
 
@@ -428,166 +690,66 @@ async function registrarParticipacao() {
     return;
   }
 
-  if (!evento.ativo) {
+  if (evento.ativo === false) {
     mostrarMensagem("Evento cancelado não pode ser registrado.", "erro");
     return;
   }
 
-  if (evento.participacao_registrada) {
-    mostrarMensagem("A participação deste evento já foi registrada.", "erro");
-    return;
-  }
+  const registrosExistentes = await buscarRegistrosJaExistentesPorEvento();
 
-  if (!participantes.length) {
-    mostrarMensagem("Não há participantes para registrar.", "erro");
-    return;
-  }
+  if (eventoJaFoiRegistrado(evento, registrosExistentes)) {
+    mostrarMensagem("Este evento já foi registrado.", "erro");
 
-  const professorResponsavelId = obterProfessorResponsavelId(evento);
+    if (btnRegistrarEvento) {
+      btnRegistrarEvento.disabled = true;
+    }
 
-  if (!professorResponsavelId) {
-    mostrarMensagem(
-      "Este evento não possui professor responsável/anfitrião cadastrado. Cadastre o professor responsável antes de registrar a participação.",
-      "erro"
-    );
     return;
   }
 
   definirBotaoRegistrando(true);
 
   try {
-    const alunosIds = participantes.map((item) => Number(item.aluno_id));
+    /*
+      CASO 1:
+      Evento aconteceu, mas ninguém participou.
+      Não cria aula.
+      Apenas marca o evento como registrado.
+    */
+    if (!participantes.length) {
+      await registrarEventoSemParticipantes();
 
-    const [matriculasAtivas, registrosExistentes] = await Promise.all([
-      buscarMatriculasAtivasDosAlunos(alunosIds),
-      buscarRegistrosJaExistentesPorEvento()
-    ]);
+      mostrarMensagem(
+        "✅ Evento registrado como realizado sem participantes.",
+        "sucesso"
+      );
 
-    const matriculasPorAluno = new Map();
-
-    for (const matricula of matriculasAtivas) {
-      const alunoId = Number(matricula.aluno_id);
-
-      if (!matriculasPorAluno.has(alunoId)) {
-        matriculasPorAluno.set(alunoId, []);
+      if (btnRegistrarEvento) {
+        btnRegistrarEvento.disabled = true;
       }
 
-      matriculasPorAluno.get(alunoId).push(matricula);
-    }
+      setTimeout(() => {
+        window.location.href = "eventos.html";
+      }, 1500);
 
-    const matriculasJaRegistradas = new Set(
-      registrosExistentes.map((item) => Number(item.matricula_id))
-    );
-
-    const registrosParaInserir = [];
-    const nomesSemMatricula = [];
-    const nomesJaRegistrados = [];
-
-    const quantidadeAlunosEvento = participantes.length;
-    const grupoAulaId = `evento-${evento.id}`;
-
-    for (const participante of participantes) {
-      const matriculasDoAluno =
-        matriculasPorAluno.get(Number(participante.aluno_id)) || [];
-
-      const matriculaEscolhida = escolherMatriculaParaEvento(matriculasDoAluno, evento);
-
-      if (!matriculaEscolhida) {
-        nomesSemMatricula.push(participante.nome);
-        continue;
-      }
-
-      if (matriculasJaRegistradas.has(Number(matriculaEscolhida.id))) {
-        nomesJaRegistrados.push(participante.nome);
-        continue;
-      }
-
-      registrosParaInserir.push({
-        data_aula: evento.data_evento,
-        status: "Evento",
-        justificativa: null,
-        conteudo: `Participação em evento: ${evento.titulo}`,
-        licao_casa: null,
-
-        matricula_id: Number(matriculaEscolhida.id),
-
-        /*
-          Sua tabela aula usa duracao_segundos.
-          Não use duracao_minutos.
-        */
-        duracao_segundos: null,
-
-        professor_id: Number(professorResponsavelId),
-        parte: 1,
-
-        modulo_id: matriculaEscolhida.modulo_id
-          ? Number(matriculaEscolhida.modulo_id)
-          : null,
-
-        aula_gravada: false,
-        precisa_reposicao: false,
-        aula_original_id: null,
-        reposicao_com_custo: false,
-
-        evento_id: Number(evento.id),
-
-        /*
-          Evento sempre entra como aula coletiva.
-        */
-        aula_coletiva: true,
-        grupo_aula_id: grupoAulaId,
-        quantidade_alunos: quantidadeAlunosEvento
-      });
-
-      matriculasJaRegistradas.add(Number(matriculaEscolhida.id));
-    }
-
-    if (!registrosParaInserir.length) {
-      let mensagem = "Nenhum novo registro foi criado.";
-
-      if (nomesJaRegistrados.length) {
-        mensagem += " Os participantes já haviam sido registrados anteriormente.";
-      } else if (nomesSemMatricula.length) {
-        mensagem += " Nenhum participante restante possui matrícula ativa compatível.";
-      }
-
-      mostrarMensagem(mensagem, "erro");
       return;
     }
 
-    const { error: erroInsert } = await supabase
-      .from("aula")
-      .insert(registrosParaInserir);
+    /*
+      CASO 2:
+      Evento aconteceu com participantes.
+      Cria aula com status Evento para os alunos selecionados.
+    */
+    const resultado = await registrarEventoComParticipantes();
 
-    if (erroInsert) {
-      console.error("Erro ao registrar participação:", erroInsert);
-      throw new Error("Não foi possível registrar a participação dos alunos na tabela aula.");
+    let mensagem = `✅ ${resultado.mensagem}`;
+
+    if (resultado.nomesJaRegistrados.length) {
+      mensagem += ` ${resultado.nomesJaRegistrados.length} aluno(s) já estavam registrados.`;
     }
 
-    const { error: erroEvento } = await supabase
-      .from("evento")
-      .update({ participacao_registrada: true })
-      .eq("id", eventoId);
-
-    if (erroEvento) {
-      console.error("Erro ao marcar evento como registrado:", erroEvento);
-
-      throw new Error(
-        "A participação foi salva nas aulas, mas não foi possível marcar o evento como registrado."
-      );
-    }
-
-    evento.participacao_registrada = true;
-
-    let mensagem =
-      `✅ Participação registrada com sucesso para ${registrosParaInserir.length} aluno(s).`;
-
-    if (nomesJaRegistrados.length) {
-      mensagem += ` ${nomesJaRegistrados.length} já estavam registrados.`;
-    }
-
-    if (nomesSemMatricula.length) {
-      mensagem += ` ${nomesSemMatricula.length} ficaram de fora por não terem matrícula ativa compatível.`;
+    if (resultado.nomesSemMatricula.length) {
+      mensagem += ` ${resultado.nomesSemMatricula.length} aluno(s) ficaram de fora por não terem matrícula ativa compatível.`;
     }
 
     mostrarMensagem(mensagem, "sucesso");
@@ -595,7 +757,9 @@ async function registrarParticipacao() {
     participantes = [];
     renderizarParticipantes();
 
-    if (btnRegistrarEvento) btnRegistrarEvento.disabled = true;
+    if (btnRegistrarEvento) {
+      btnRegistrarEvento.disabled = true;
+    }
 
     setTimeout(() => {
       window.location.href = "eventos.html";
@@ -606,7 +770,10 @@ async function registrarParticipacao() {
   } finally {
     definirBotaoRegistrando(false);
 
-    if (evento?.participacao_registrada && btnRegistrarEvento) {
+    if (
+      (evento?.registrado === true || evento?.participacao_registrada === true) &&
+      btnRegistrarEvento
+    ) {
       btnRegistrarEvento.disabled = true;
     }
   }
