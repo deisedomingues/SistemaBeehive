@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Beehive | Notificações do Professor</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    .topo-notificacoes-professor {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .acoes-notificacoes-professor {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .lista-notificacoes-professor {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .notificacao-professor-card {
+      align-items: flex-start;
+    }
+
+    @media (max-width: 600px) {
+      .topo-notificacoes-professor {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .topo-notificacoes-professor a,
+      .topo-notificacoes-professor button {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container home-professor-page">
+
+    <div class="topo-notificacoes-professor">
+      <a
+        href="home-professor.html"
+        class="btn-secundario"
+        style="text-decoration:none;"
+      >
+        ← Voltar
+      </a>
+
+      <button id="btnSair" class="btn-sair-admin" type="button">
+        Sair
+      </button>
+    </div>
+
+    <img
+      src="images/logo.png"
+      alt="Beehive Escola de Idiomas"
+      class="logo logo-professor-centralizada"
+    >
+
+    <section class="cabecalho-professor-central">
+      <h1>Notificações</h1>
+
+      <div class="saudacao-card saudacao-card-professor">
+        <div class="saudacao-card-texto">
+          <p id="saudacaoProfessor" class="saudacao saudacao-professor">
+            Carregando...
+          </p>
+
+          <p class="subtitulo-admin subtitulo-professor">
+            Veja novos agendamentos de reposições, plantões de dúvidas e aulas instrumentais.
+          </p>
+        </div>
+
+        <img
+          src="images/AbelhinhaBranca.png"
+          alt="Abelhinha"
+          class="icone-saudacao-professor"
+        >
+      </div>
+    </section>
+
+    <section class="card-admin card-professor" style="margin-bottom:16px;">
+      <div class="card-admin-icone">🔔</div>
+
+      <div class="card-admin-conteudo">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <h2 style="margin:0;">Agendamentos recebidos</h2>
+
+          <span
+            id="badgeNotificacoesProfessor"
+            style="
+              display:none;
+              min-width:22px;
+              height:22px;
+              padding:0 7px;
+              border-radius:999px;
+              background:#c62828;
+              color:white;
+              font-size:12px;
+              font-weight:bold;
+              align-items:center;
+              justify-content:center;
+            "
+          >
+            0
+          </span>
+        </div>
+
+        <p id="textoNotificacoesProfessor">
+          Carregando notificações...
+        </p>
+
+        <div class="acoes-notificacoes-professor">
+          <button
+            id="btnAtualizarNotificacoesProfessor"
+            type="button"
+            class="btn-secundario"
+          >
+            Atualizar
+          </button>
+
+          <button
+            id="btnMarcarTodasVistas"
+            type="button"
+            class="btn-secundario"
+          >
+            Marcar todas como vistas
+          </button>
+
+          <button
+            id="btnAtivarPushProfessorAtalho"
+            type="button"
+            class="btn-principal"
+          >
+            Ativar notificações push
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section
+      id="listaNotificacoesProfessor"
+      class="lista-notificacoes-professor"
+    >
+      <article class="card-admin card-professor notificacao-professor-card">
+        <div class="card-admin-icone">⏳</div>
+
+        <div class="card-admin-conteudo">
+          <h2>Carregando...</h2>
+          <p>Aguarde enquanto buscamos suas notificações.</p>
+        </div>
+      </article>
+    </section>
+
+  </main>
+
+  <script type="module" src="js/push-professor-notificacoes.js"></script>
+  <script type="module" src="js/notificacao-professor.js"></script>
+</body>
+</html>

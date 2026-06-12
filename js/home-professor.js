@@ -13,6 +13,9 @@ const painelProfessorCards = document.getElementById("painelProfessorCards");
 const optionAluno = document.getElementById("optionAluno");
 const infoPerfilAluno = document.getElementById("infoPerfilAluno");
 
+const badgeNotificacoesProfessor = document.getElementById("badgeNotificacoesProfessor");
+const textoCardNotificacoesProfessor = document.getElementById("textoCardNotificacoesProfessor");
+
 const professorId = localStorage.getItem("professorId");
 
 let professorLogado = null;
@@ -40,6 +43,59 @@ function mostrarInfoPerfilAluno(texto, tipo = "neutro") {
 }
 
 /* ======================
+   Badge de notificações
+====================== */
+function atualizarBadgeNotificacoes(total) {
+  if (!badgeNotificacoesProfessor) return;
+
+  if (total > 0) {
+    badgeNotificacoesProfessor.textContent = total > 99 ? "99+" : String(total);
+    badgeNotificacoesProfessor.style.display = "inline-flex";
+  } else {
+    badgeNotificacoesProfessor.textContent = "0";
+    badgeNotificacoesProfessor.style.display = "none";
+  }
+}
+
+async function carregarResumoNotificacoesProfessor() {
+  if (!textoCardNotificacoesProfessor) return;
+
+  const { data, error } = await supabase.rpc(
+    "contar_notificacoes_professor_reposicao"
+  );
+
+  if (error) {
+    console.error("Erro ao contar notificações do professor:", error);
+
+    atualizarBadgeNotificacoes(0);
+
+    textoCardNotificacoesProfessor.textContent =
+      "Veja novos agendamentos de reposições, plantões e aulas instrumentais.";
+
+    return;
+  }
+
+  const total = Number(data || 0);
+
+  atualizarBadgeNotificacoes(total);
+
+  if (total === 0) {
+    textoCardNotificacoesProfessor.textContent =
+      "Nenhum novo agendamento de reposição, plantão ou aula instrumental.";
+    return;
+  }
+
+  if (total === 1) {
+    textoCardNotificacoesProfessor.textContent =
+      "Você tem 1 novo agendamento para verificar.";
+    return;
+  }
+
+  textoCardNotificacoesProfessor.textContent =
+    `Você tem ${total} novos agendamentos para verificar.`;
+}
+
+/* ======================
    Carregar professor logado
 ====================== */
 async function carregarProfessor() {
@@ -55,7 +111,11 @@ async function carregarProfessor() {
     if (saudacao) saudacao.textContent = "Olá!";
     if (tituloProfessor) tituloProfessor.textContent = "Bem-vindo(a)";
 
-    mostrarInfoPerfilAluno("Não foi possível carregar os dados do professor.", "erro");
+    mostrarInfoPerfilAluno(
+      "Não foi possível carregar os dados do professor.",
+      "erro"
+    );
+
     return;
   }
 
@@ -73,6 +133,7 @@ async function carregarProfessor() {
   }
 
   await verificarVinculoAluno();
+  await carregarResumoNotificacoesProfessor();
 }
 
 /* ======================
@@ -81,6 +142,7 @@ async function carregarProfessor() {
 async function verificarVinculoAluno() {
   if (!professorLogado?.email) {
     if (optionAluno) optionAluno.disabled = true;
+
     mostrarInfoPerfilAluno("Perfil de aluno indisponível.", "erro");
     return;
   }
@@ -95,7 +157,12 @@ async function verificarVinculoAluno() {
     console.error("Erro ao verificar vínculo como aluno:", error);
 
     if (optionAluno) optionAluno.disabled = true;
-    mostrarInfoPerfilAluno("Não foi possível verificar o perfil de aluno.", "erro");
+
+    mostrarInfoPerfilAluno(
+      "Não foi possível verificar o perfil de aluno.",
+      "erro"
+    );
+
     return;
   }
 
@@ -157,7 +224,6 @@ selectPerfilVisualizacao?.addEventListener("change", () => {
 
 /* ======================
    Compatibilidade com botão antigo "Ir"
-   Pode apagar o botão do HTML depois.
 ====================== */
 btnAbrirPerfil?.addEventListener("click", () => {
   const perfilSelecionado = selectPerfilVisualizacao?.value;

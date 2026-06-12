@@ -30,6 +30,7 @@
       <div class="saudacao-card saudacao-card-professor">
         <div class="saudacao-card-texto">
           <p id="saudacao" class="saudacao saudacao-professor"></p>
+
           <p class="subtitulo-admin subtitulo-professor">
             Escolha uma opção para continuar no sistema.
           </p>
@@ -52,18 +53,51 @@
         <option value="professor" selected>Professor</option>
         <option value="aluno" id="optionAluno">Aluno</option>
       </select>
-
-    
-      </button>
     </section>
 
     <p id="infoPerfilAluno" class="info-perfil-aluno-inline"></p>
 
     <section id="painelProfessorCards" class="painel-professor-cards">
 
+      <a href="notificacao-professor.html" class="card-admin-link">
+        <article class="card-admin card-professor">
+          <div class="card-admin-icone">🔔</div>
+
+          <div class="card-admin-conteudo">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <h2 style="margin:0;">Notificações</h2>
+
+              <span
+                id="badgeNotificacoesProfessor"
+                style="
+                  display:none;
+                  min-width:22px;
+                  height:22px;
+                  padding:0 7px;
+                  border-radius:999px;
+                  background:#c62828;
+                  color:white;
+                  font-size:12px;
+                  font-weight:bold;
+                  align-items:center;
+                  justify-content:center;
+                "
+              >
+                0
+              </span>
+            </div>
+
+            <p id="textoCardNotificacoesProfessor">
+              Veja novos agendamentos de reposições, plantões e aulas instrumentais.
+            </p>
+          </div>
+        </article>
+      </a>
+
       <a href="registrar-aula.html" class="card-admin-link">
         <article class="card-admin card-professor">
           <div class="card-admin-icone">📝</div>
+
           <div class="card-admin-conteudo">
             <h2>Registrar aula</h2>
             <p>
@@ -74,20 +108,22 @@
       </a>
 
       <a href="agenda-professor.html" class="card-admin-link">
-  <article class="card-admin">
-    <div class="card-admin-icone">📅</div>
-    <div class="card-admin-conteudo">
-      <h2>Minha agenda</h2>
-      <p>
-        Veja seus alunos de hoje e os próximos horários da semana.
-      </p>
-    </div>
-  </article>
-</a>
+        <article class="card-admin card-professor">
+          <div class="card-admin-icone">📅</div>
+
+          <div class="card-admin-conteudo">
+            <h2>Minha agenda</h2>
+            <p>
+              Veja seus alunos de hoje e os próximos horários da semana.
+            </p>
+          </div>
+        </article>
+      </a>
 
       <a href="resumo-professor.html" class="card-admin-link">
         <article class="card-admin card-professor">
           <div class="card-admin-icone">📊</div>
+
           <div class="card-admin-conteudo">
             <h2>Resumo</h2>
             <p>
@@ -98,39 +134,39 @@
       </a>
 
       <a href="eventos-professor.html" class="card-admin-link">
-  <article class="card-admin">
-    <div class="card-admin-icone">🎉</div>
+        <article class="card-admin card-professor">
+          <div class="card-admin-icone">🎉</div>
 
-    <div class="card-admin-conteudo">
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-        <h2 style="margin:0;">Eventos</h2>
+          <div class="card-admin-conteudo">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <h2 style="margin:0;">Eventos</h2>
 
-        <span
-          id="badgeEventosProfessor"
-          style="
-            display:none;
-            min-width:22px;
-            height:22px;
-            padding:0 7px;
-            border-radius:999px;
-            background:#c62828;
-            color:white;
-            font-size:12px;
-            font-weight:bold;
-            align-items:center;
-            justify-content:center;
-          "
-        >
-          0
-        </span>
-      </div>
+              <span
+                id="badgeEventosProfessor"
+                style="
+                  display:none;
+                  min-width:22px;
+                  height:22px;
+                  padding:0 7px;
+                  border-radius:999px;
+                  background:#c62828;
+                  color:white;
+                  font-size:12px;
+                  font-weight:bold;
+                  align-items:center;
+                  justify-content:center;
+                "
+              >
+                0
+              </span>
+            </div>
 
-      <p id="textoCardEventosProfessor">
-        Veja os eventos em que você está como professor responsável ou professor de apoio.
-      </p>
-    </div>
-  </article>
-</a>
+            <p id="textoCardEventosProfessor">
+              Veja os eventos em que você está como professor responsável ou professor de apoio.
+            </p>
+          </div>
+        </article>
+      </a>
 
       <a
         href="docs/Manual do Professor 2026.pdf"
@@ -140,6 +176,7 @@
       >
         <article class="card-admin card-professor">
           <div class="card-admin-icone">📘</div>
+
           <div class="card-admin-conteudo">
             <h2>Manual do professor</h2>
             <p>
