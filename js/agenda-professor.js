@@ -52,6 +52,18 @@ function mostrarMensagem(texto, ok = true) {
 }
 
 /* =====================================================
+   TEXTO SEGURO
+===================================================== */
+function escaparHtml(texto) {
+  return String(texto ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+/* =====================================================
    DATAS
 ===================================================== */
 function obterDataHojeLocalISO() {
@@ -145,6 +157,19 @@ function montarLinkGoogleAgenda(item, dataISO) {
   });
 
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+/* =====================================================
+   DETALHES DO ALUNO
+===================================================== */
+function abrirDetalhesAluno(matriculaId) {
+  if (!matriculaId) {
+    mostrarMensagem("Não foi possível identificar a matrícula deste aluno.", false);
+    return;
+  }
+
+  localStorage.setItem("matriculaSelecionada", String(matriculaId));
+  window.location.href = "detalhes-aluno.html";
 }
 
 /* =====================================================
@@ -348,6 +373,8 @@ function criarCardHorario(item, dataISO, opcoes = {}) {
 
   const linkGoogleAgenda = montarLinkGoogleAgenda(item, dataISO);
 
+  const matriculaId = item.matricula_id;
+
   let htmlStatus = "";
 
   if (mostrarStatus) {
@@ -363,6 +390,25 @@ function criarCardHorario(item, dataISO, opcoes = {}) {
     `;
   }
 
+  const htmlLinkDetalhes = matriculaId
+    ? `
+      <a
+        href="detalhes-aluno.html"
+        class="link-detalhes-aluno"
+        data-matricula-id="${escaparHtml(matriculaId)}"
+        style="
+          font-size:12px;
+          font-weight:700;
+          color:#5f4b00;
+          text-decoration:underline;
+          white-space:nowrap;
+        "
+      >
+        Ver detalhes do aluno
+      </a>
+    `
+    : "";
+
   const card = document.createElement("div");
   card.style.border = "1px solid #f1e4a7";
   card.style.background = "#fffdf4";
@@ -373,17 +419,22 @@ function criarCardHorario(item, dataISO, opcoes = {}) {
   card.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
       <div style="min-width:220px; flex:1;">
-        <strong style="font-size:14px; color:#3a2c00;">
-          ${alunoNome}
-        </strong>
+
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <strong style="font-size:14px; color:#3a2c00;">
+            ${escaparHtml(alunoNome)}
+          </strong>
+
+          ${htmlLinkDetalhes}
+        </div>
 
         <p style="margin:4px 0 0 0; font-size:12.5px; color:#555; line-height:1.4;">
-          ${materiaNome} | ${moduloNome}
+          ${escaparHtml(materiaNome)} | ${escaparHtml(moduloNome)}
         </p>
 
         <p style="margin:5px 0 0 0; font-size:13px; color:#000;">
-          <strong>${horaInicio}</strong> às <strong>${horaFim}</strong>
-          ${mostrarDia ? ` · ${obterNomeDiaPorDataISO(dataISO)} · ${formatarDataBR(dataISO)}` : ""}
+          <strong>${escaparHtml(horaInicio)}</strong> às <strong>${escaparHtml(horaFim)}</strong>
+          ${mostrarDia ? ` · ${escaparHtml(obterNomeDiaPorDataISO(dataISO))} · ${escaparHtml(formatarDataBR(dataISO))}` : ""}
         </p>
       </div>
 
@@ -391,7 +442,7 @@ function criarCardHorario(item, dataISO, opcoes = {}) {
         ${htmlStatus}
 
         <a
-          href="${linkGoogleAgenda}"
+          href="${escaparHtml(linkGoogleAgenda)}"
           target="_blank"
           rel="noopener noreferrer"
           style="background:#fff; border:1px solid #d8d8d8; color:#333; padding:6px 9px; border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap;"
@@ -401,6 +452,15 @@ function criarCardHorario(item, dataISO, opcoes = {}) {
       </div>
     </div>
   `;
+
+  const linkDetalhes = card.querySelector(".link-detalhes-aluno");
+
+  linkDetalhes?.addEventListener("click", (e) => {
+    e.preventDefault();
+
+    const idMatricula = linkDetalhes.dataset.matriculaId;
+    abrirDetalhesAluno(idMatricula);
+  });
 
   return card;
 }
@@ -453,11 +513,11 @@ function renderizarProximosDias(listaPorDia) {
     bloco.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
         <h3 style="font-size:14px; margin:0; color:#5f4b00;">
-          ${obterNomeDiaPorDataISO(dia.dataISO)}
+          ${escaparHtml(obterNomeDiaPorDataISO(dia.dataISO))}
         </h3>
 
         <span style="font-size:12px; color:#666;">
-          ${formatarDataBR(dia.dataISO)} · ${dia.horarios.length} horário(s)
+          ${escaparHtml(formatarDataBR(dia.dataISO))} · ${dia.horarios.length} horário(s)
         </span>
       </div>
     `;
@@ -558,7 +618,7 @@ try {
 
   listaHoje.innerHTML = `
     <div style="padding:12px; border:1px solid #ef9a9a; background:#ffebee; border-radius:10px; font-size:13px; color:#b71c1c;">
-      ${erro.message || "Erro ao carregar a agenda."}
+      ${escaparHtml(erro.message || "Erro ao carregar a agenda.")}
     </div>
   `;
 
