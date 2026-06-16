@@ -230,11 +230,25 @@ function aulaContaComoValida(aula) {
   return false;
 }
 
+function ordenarAulasDecrescente(aulas) {
+  return [...(aulas || [])].sort((a, b) => {
+    const dataA = String(a.data_aula || "");
+    const dataB = String(b.data_aula || "");
+
+    if (dataA !== dataB) {
+      return dataB.localeCompare(dataA);
+    }
+
+    return Number(b.id || 0) - Number(a.id || 0);
+  });
+}
+
 function irParaEditarAula(aulaId) {
   localStorage.setItem("aulaSelecionadaEdicao", String(aulaId));
   localStorage.setItem("matriculaSelecionadaEdicao", String(matriculaId));
   window.location.href = `editar-aula.html?id=${encodeURIComponent(aulaId)}`;
 }
+
 function obterAulasValidasModuloAtual() {
   const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
 
@@ -496,6 +510,7 @@ async function carregarObservacoesPedagogicas() {
     })
     .join("");
 }
+
 // ===============================
 // BLOCO DINÂMICO DE AVALIAÇÕES ENVIADAS
 // ===============================
@@ -773,8 +788,9 @@ async function carregarAulas() {
     return [];
   }
 
-  return data || [];
+  return ordenarAulasDecrescente(data || []);
 }
+
 function atualizarBotaoExpandirAulas(totalAulas) {
   if (!boxExpandirAulas || !btnExpandirAulas) return;
 
@@ -791,7 +807,7 @@ function obterAulasFiltradas() {
   const moduloId = Number(filtroModuloAula?.value || "");
   const statusFiltro = filtroStatusAula?.value || "";
 
-  let filtradas = [...todasAulas];
+  let filtradas = ordenarAulasDecrescente(todasAulas);
 
   if (moduloId) {
     filtradas = filtradas.filter(
@@ -801,7 +817,7 @@ function obterAulasFiltradas() {
 
   if (statusFiltro === "__VALIDAS__") {
     filtradas = filtradas.filter((aula) => aulaContaComoValida(aula));
-    return filtradas;
+    return ordenarAulasDecrescente(filtradas);
   }
 
   if (statusFiltro) {
@@ -810,7 +826,7 @@ function obterAulasFiltradas() {
     );
   }
 
-  return filtradas;
+  return ordenarAulasDecrescente(filtradas);
 }
 
 function renderAulas(aulasOriginais) {
@@ -822,9 +838,10 @@ function renderAulas(aulasOriginais) {
     return;
   }
 
+  const aulasOrdenadas = ordenarAulasDecrescente(aulasOriginais);
   const mapaAulas = obterMapaAulasPorId(todasAulas);
-  const aulasParaMostrar = aulasExpandido ? aulasOriginais : aulasOriginais.slice(0, 3);
-  const totalAulasFiltradas = aulasOriginais.length;
+  const aulasParaMostrar = aulasExpandido ? aulasOrdenadas : aulasOrdenadas.slice(0, 3);
+  const totalAulasFiltradas = aulasOrdenadas.length;
 
   aulasParaMostrar.forEach((aula, index) => {
     const li = document.createElement("li");
@@ -883,7 +900,7 @@ function renderAulas(aulasOriginais) {
     listaAulas.appendChild(li);
   });
 
-  atualizarBotaoExpandirAulas(aulasOriginais.length);
+  atualizarBotaoExpandirAulas(totalAulasFiltradas);
 }
 
 function atualizarRenderAulas() {
@@ -1084,6 +1101,7 @@ function renderEventosAluno() {
     `;
   }).join("");
 }
+
 // ===============================
 // CONTADORES + REPOSIÇÕES
 // ===============================
@@ -1349,6 +1367,7 @@ btnExpandirAulas?.addEventListener("click", () => {
   aulasExpandido = !aulasExpandido;
   atualizarRenderAulas();
 });
+
 // ===============================
 // SALVAR NOTA
 // ===============================

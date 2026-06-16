@@ -74,6 +74,47 @@
       </div>
     </section>
 
+    <!-- HISTÓRICO DE AULAS AGORA VEM PRIMEIRO -->
+    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
+      <h2 style="margin-bottom:6px;">📚 Histórico de aulas</h2>
+      <p style="font-size:12px; opacity:0.85; margin-top:0;">
+        As aulas mais recentes aparecem primeiro para facilitar a continuidade da aula.
+      </p>
+
+      <div class="filtros-historico-aluno">
+        <label>
+          Filtrar módulo
+          <select id="filtroModuloAula">
+            <option value="">Todos</option>
+          </select>
+        </label>
+
+        <label>
+          Filtrar status
+          <select id="filtroStatusAula">
+            <option value="">Todos</option>
+            <option value="__VALIDAS__">Aulas válidas</option>
+            <option value="Presente">Presente</option>
+            <option value="Ausente">Ausente</option>
+            <option value="Cancelada">Cancelada</option>
+            <option value="Reposição">Reposição</option>
+            <option value="Aula Instrumental">Aula Instrumental</option>
+            <option value="Plantão de dúvidas">Plantão de dúvidas</option>
+            <option value="Trancada">Trancada</option>
+            <option value="Aula Experimental">Aula Experimental</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="listaAulas" class="lista-historico" style="margin-top:14px;"></div>
+
+      <div id="boxExpandirAulas" style="display:none; margin-top:12px; text-align:center;">
+        <button type="button" id="btnExpandirAulas" class="btn">
+          Ver mais aulas
+        </button>
+      </div>
+    </section>
+
     <!-- CARDS COMPACTOS -->
     <section
       style="
@@ -260,47 +301,6 @@
 
       <p class="texto-lista-notas">Lista de notas:</p>
       <div id="listaNotas" class="notas-grid"></div>
-    </section>
-
-    <!-- HISTÓRICO -->
-    <section class="card" style="margin-bottom:12px; padding:12px 14px;">
-      <h2 style="margin-bottom:6px;">📚 Histórico de aulas</h2>
-      <p style="font-size:12px; opacity:0.85; margin-top:0;">
-        Filtre por módulo e por status para localizar rapidamente o que procura.
-      </p>
-
-      <div class="filtros-historico-aluno">
-        <label>
-          Filtrar módulo
-          <select id="filtroModuloAula">
-            <option value="">Todos</option>
-          </select>
-        </label>
-
-        <label>
-          Filtrar status
-          <select id="filtroStatusAula">
-            <option value="">Todos</option>
-            <option value="__VALIDAS__">Aulas válidas</option>
-            <option value="Presente">Presente</option>
-            <option value="Ausente">Ausente</option>
-            <option value="Cancelada">Cancelada</option>
-            <option value="Reposição">Reposição</option>
-            <option value="Aula Instrumental">Aula Instrumental</option>
-            <option value="Plantão de dúvidas">Plantão de dúvidas</option>
-            <option value="Trancada">Trancada</option>
-            <option value="Aula Experimental">Aula Experimental</option>
-          </select>
-        </label>
-      </div>
-
-      <div id="listaAulas" class="lista-historico" style="margin-top:14px;"></div>
-
-      <div id="boxExpandirAulas" style="display:none; margin-top:12px; text-align:center;">
-        <button type="button" id="btnExpandirAulas" class="btn">
-          Ver mais aulas
-        </button>
-      </div>
     </section>
 
     <div style="display:flex; justify-content:center; margin:16px 0 4px;">
