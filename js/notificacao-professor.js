@@ -132,6 +132,7 @@ function criarLinkGoogleAgenda(item) {
 
 /* ======================
    Visto local
+
    Importante:
    "Visto" NÃO remove o card.
    Só tira o badge vermelho.
@@ -323,7 +324,7 @@ function renderizarErro(mensagem = "Não foi possível carregar as notificaçõe
    Consultas
 ====================== */
 async function buscarHorariosDoProfessor() {
-  const dataInicial = dataMenosDiasISO(60);
+  const dataInicial = dataMenosDiasISO(120);
 
   const { data, error } = await supabase
     .from("horarios_reposicao")
@@ -402,40 +403,42 @@ async function buscarAulasOriginaisPorIds(aulasIds) {
   return new Map((data || []).map((aula) => [Number(aula.id), aula]));
 }
 
-async function buscarReposicoesRegistradas(aulasOriginaisIds) {
+async function buscarReposicoesRegistradasPorAulaOriginal(aulasOriginaisIds) {
   if (!aulasOriginaisIds.length) return new Set();
 
   const { data, error } = await supabase
     .from("aula")
     .select("aula_original_id")
+    .eq("professor_id", professorId)
     .eq("status", STATUS.REPOSICAO)
     .not("aula_original_id", "is", null)
     .in("aula_original_id", aulasOriginaisIds);
 
   if (error) {
-    console.error("Erro ao buscar reposições já registradas:", error);
+    console.error("Erro ao buscar reposições já registradas pela aula original:", error);
     return new Set();
   }
 
-  return new Set((data || []).map((item) => Number(item.aula_original_id)));
+  return new Set(
+    (data || []).map((item) => Number(item.aula_original_id))
+  );
 }
 
-async function buscarAgendamentosEspeciaisRegistrados(agendamentosComHorario) {
-  const especiais = agendamentosComHorario.filter((item) => {
-    return (
-      item.tipo_agendamento === STATUS.AULA_INSTRUMENTAL ||
-      item.tipo_agendamento === STATUS.PLANTAO_DUVIDAS
-    );
-  });
-
-  if (!especiais.length) return new Set();
-
+async function buscarAulasRegistradasPorData(agendamentosComHorario) {
   const matriculasIds = [
-    ...new Set(especiais.map((item) => Number(item.matricula_id)).filter(Boolean))
+    ...new Set(
+      agendamentosComHorario
+        .map((item) => Number(item.matricula_id))
+        .filter(Boolean)
+    )
   ];
 
   const datas = [
-    ...new Set(especiais.map((item) => item.data_reposicao).filter(Boolean))
+    ...new Set(
+      agendamentosComHorario
+        .map((item) => item.data_reposicao)
+        .filter(Boolean)
+    )
   ];
 
   if (!matriculasIds.length || !datas.length) return new Set();
@@ -446,17 +449,23 @@ async function buscarAgendamentosEspeciaisRegistrados(agendamentosComHorario) {
     .eq("professor_id", professorId)
     .in("matricula_id", matriculasIds)
     .in("data_aula", datas)
-    .in("status", [STATUS.AULA_INSTRUMENTAL, STATUS.PLANTAO_DUVIDAS]);
+    .in("status", [
+      STATUS.REPOSICAO,
+      STATUS.AULA_INSTRUMENTAL,
+      STATUS.PLANTAO_DUVIDAS
+    ]);
 
   if (error) {
-    console.error("Erro ao buscar aulas especiais registradas:", error);
+    console.error("Erro ao buscar aulas já registradas pela data:", error);
     return new Set();
   }
 
   const chaves = new Set();
 
   (data || []).forEach((aula) => {
-    chaves.add(`${Number(aula.matricula_id)}|${aula.data_aula}|${aula.status}`);
+    chaves.add(
+      `${Number(aula.matricula_id)}|${aula.data_aula}|${aula.status}`
+    );
   });
 
   return chaves;
@@ -465,10 +474,10 @@ async function buscarAgendamentosEspeciaisRegistrados(agendamentosComHorario) {
 /* ======================
    Buscar agendamentos ativos
 
-   Regra principal:
-   - Reposição fica na tela até a aula original ser vinculada
-     em um registro com status "Reposição".
-   - Plantão e Aula Instrumental ficam até serem registrados.
+   Agora a reposição some em duas situações:
+   1. se foi registrada vinculada à aula original;
+   2. se foi registrada na mesma data, para a mesma matrícula,
+      com status "Reposição".
 ====================== */
 async function buscarAgendamentosAtivosProfessor() {
   const horarios = await buscarHorariosDoProfessor();
@@ -485,16 +494,23 @@ async function buscarAgendamentosAtivosProfessor() {
   if (!agendamentos.length) return [];
 
   const alunosIds = [
-    ...new Set(agendamentos.map((item) => Number(item.aluno_id)).filter(Boolean))
+    ...new Set(
+      agendamentos
+        .map((item) => Number(item.aluno_id))
+        .filter(Boolean)
+    )
   ];
 
   const aulasOriginaisIds = [
-    ...new Set(agendamentos.map((item) => Number(item.aula_id)).filter(Boolean))
+    ...new Set(
+      agendamentos
+        .map((item) => Number(item.aula_id))
+        .filter(Boolean)
+    )
   ];
 
   const mapaAlunos = await buscarAlunosPorIds(alunosIds);
   const mapaAulasOriginais = await buscarAulasOriginaisPorIds(aulasOriginaisIds);
-  const aulasOriginaisJaRepostas = await buscarReposicoesRegistradas(aulasOriginaisIds);
 
   const listaComHorario = agendamentos
     .map((item) => {
@@ -526,26 +542,42 @@ async function buscarAgendamentosAtivosProfessor() {
     })
     .filter((item) => item.data_reposicao);
 
-  const especiaisRegistrados = await buscarAgendamentosEspeciaisRegistrados(listaComHorario);
+  const aulasOriginaisJaRepostas =
+    await buscarReposicoesRegistradasPorAulaOriginal(aulasOriginaisIds);
+
+  const aulasJaRegistradasPorData =
+    await buscarAulasRegistradasPorData(listaComHorario);
+
   const hoje = hojeISO();
 
   return listaComHorario
     .filter((item) => {
       const tipo = item.tipo_agendamento || STATUS.REPOSICAO;
 
-      if (tipo === STATUS.REPOSICAO) {
-        if (!item.aula_original_id) {
-          return item.data_reposicao >= hoje;
-        }
+      const chavePorData = `${Number(item.matricula_id)}|${item.data_reposicao}|${tipo}`;
 
-        return !aulasOriginaisJaRepostas.has(Number(item.aula_original_id));
+      const jaRegistrouPorData = aulasJaRegistradasPorData.has(chavePorData);
+
+      if (jaRegistrouPorData) {
+        return false;
       }
 
-      if (tipo === STATUS.AULA_INSTRUMENTAL || tipo === STATUS.PLANTAO_DUVIDAS) {
-        const chave = `${Number(item.matricula_id)}|${item.data_reposicao}|${tipo}`;
+      if (tipo === STATUS.REPOSICAO) {
+        const jaRegistrouPelaAulaOriginal =
+          item.aula_original_id &&
+          aulasOriginaisJaRepostas.has(Number(item.aula_original_id));
 
-        if (especiaisRegistrados.has(chave)) return false;
+        if (jaRegistrouPelaAulaOriginal) {
+          return false;
+        }
 
+        return true;
+      }
+
+      if (
+        tipo === STATUS.AULA_INSTRUMENTAL ||
+        tipo === STATUS.PLANTAO_DUVIDAS
+      ) {
         return true;
       }
 
