@@ -14,11 +14,21 @@ const btnAtualizarNotificacoesProfessor = document.getElementById("btnAtualizarN
 const btnMarcarTodasVistas = document.getElementById("btnMarcarTodasVistas");
 const btnAtivarPushProfessorAtalho = document.getElementById("btnAtivarPushProfessorAtalho");
 
-const professorId = localStorage.getItem("professorId");
+const professorId = Number(localStorage.getItem("professorId"));
 
 if (!professorId) {
   window.location.href = "index.html";
 }
+
+const STATUS = {
+  REPOSICAO: "Reposição",
+  AULA_INSTRUMENTAL: "Aula Instrumental",
+  PLANTAO_DUVIDAS: "Plantão de dúvidas"
+};
+
+const CHAVE_VISTOS = `beehive_agendamentos_professor_vistos_${professorId}`;
+
+let notificacoesAtuais = [];
 
 /* ======================
    Segurança para textos
@@ -35,6 +45,26 @@ function escaparHTML(valor) {
 /* ======================
    Datas e horários
 ====================== */
+function hojeISO() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+function dataMenosDiasISO(dias) {
+  const data = new Date();
+  data.setDate(data.getDate() - dias);
+
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
 function formatarDataBR(dataISO) {
   if (!dataISO) return "";
 
@@ -77,6 +107,9 @@ function criarLinkGoogleAgenda(item) {
 
   const detalhes = [
     `${item.aluno_nome || "Um aluno"} agendou ${(item.tipo_agendamento || "um horário").toLowerCase()} na Beehive.`,
+    item.aula_original_data
+      ? `Aula original: ${formatarDataBR(item.aula_original_data)} — ${item.aula_original_status || "status não informado"}.`
+      : "",
     item.observacao_aluno ? `Observação do aluno: ${item.observacao_aluno}` : "",
     item.tem_custo
       ? `Atenção: este agendamento possui custo. ${item.motivo_custo || ""}`
@@ -98,10 +131,52 @@ function criarLinkGoogleAgenda(item) {
 }
 
 /* ======================
-   Texto do agendamento
+   Visto local
+   Importante:
+   "Visto" NÃO remove o card.
+   Só tira o badge vermelho.
+====================== */
+function carregarIdsVistos() {
+  try {
+    const salvo = JSON.parse(localStorage.getItem(CHAVE_VISTOS) || "[]");
+    return new Set((salvo || []).map((id) => Number(id)));
+  } catch (error) {
+    console.warn("Não foi possível ler agendamentos vistos:", error);
+    return new Set();
+  }
+}
+
+function salvarIdsVistos(ids) {
+  localStorage.setItem(CHAVE_VISTOS, JSON.stringify([...ids].map(Number)));
+}
+
+function estaVisto(reposicaoId) {
+  return carregarIdsVistos().has(Number(reposicaoId));
+}
+
+function marcarVistoLocal(reposicaoId) {
+  const ids = carregarIdsVistos();
+  ids.add(Number(reposicaoId));
+  salvarIdsVistos(ids);
+}
+
+function marcarTodosVistosLocal(notificacoes) {
+  const ids = carregarIdsVistos();
+
+  notificacoes.forEach((item) => {
+    if (item.reposicao_id) {
+      ids.add(Number(item.reposicao_id));
+    }
+  });
+
+  salvarIdsVistos(ids);
+}
+
+/* ======================
+   Textos
 ====================== */
 function montarTextoAgendamento(item) {
-  const tipo = item.tipo_agendamento || "Agendamento";
+  const tipo = item.tipo_agendamento || STATUS.REPOSICAO;
   const aluno = item.aluno_nome || "Um aluno";
   const data = formatarDataBR(item.data_reposicao);
   const horaInicio = formatarHora(item.hora_inicio_reposicao);
@@ -111,15 +186,50 @@ function montarTextoAgendamento(item) {
     ? `${horaInicio} às ${horaFim}`
     : horaInicio;
 
-  if (tipo === "Plantão de dúvidas") {
+  if (tipo === STATUS.PLANTAO_DUVIDAS) {
     return `${aluno} agendou um plantão de dúvidas para ${data}, das ${horario}.`;
   }
 
-  if (tipo === "Aula Instrumental") {
+  if (tipo === STATUS.AULA_INSTRUMENTAL) {
     return `${aluno} agendou uma aula instrumental para ${data}, das ${horario}.`;
   }
 
   return `${aluno} agendou uma reposição para ${data}, das ${horario}.`;
+}
+
+function montarStatusAulaOriginal(item) {
+  if (!item.aula_original_id) return "";
+
+  const dataOriginal = item.aula_original_data
+    ? formatarDataBR(item.aula_original_data)
+    : "data não informada";
+
+  const statusOriginal = item.aula_original_status || "status não informado";
+
+  let regra = "";
+
+  if (String(statusOriginal).toLowerCase() === "cancelada") {
+    regra = "Reposição sem custo, responsabilidade da escola.";
+  } else if (String(statusOriginal).toLowerCase() === "trancada") {
+    regra = "Reposição sem custo.";
+  } else if (String(statusOriginal).toLowerCase() === "ausente") {
+    regra = item.tem_custo
+      ? "Ausência sem gravação com cobrança de R$ 25,00 por estar em outro mês."
+      : "Ausência sem gravação, sem custo por estar no mesmo mês.";
+  }
+
+  return `
+    <div style="margin-top:10px; padding:10px 12px; border-radius:10px; background:#fff8dc; border:1px solid #f1bc32; color:#5f4700;">
+      <strong>Aula original:</strong>
+      ${escaparHTML(statusOriginal)} em ${escaparHTML(dataOriginal)}.<br>
+      ${regra ? escaparHTML(regra) : ""}
+      ${
+        item.aula_original_justificativa
+          ? `<br><strong>Justificativa:</strong> ${escaparHTML(item.aula_original_justificativa)}`
+          : ""
+      }
+    </div>
+  `;
 }
 
 /* ======================
@@ -169,7 +279,7 @@ function renderizarEstadoVazio() {
   if (!listaNotificacoesProfessor || !textoNotificacoesProfessor) return;
 
   textoNotificacoesProfessor.textContent =
-    "Nenhuma nova notificação no momento.";
+    "Nenhum agendamento pendente de registro no momento.";
 
   atualizarBadge(0);
 
@@ -181,7 +291,7 @@ function renderizarEstadoVazio() {
         <h2>Tudo certo por aqui</h2>
         <p>
           Quando um aluno agendar uma reposição, plantão de dúvidas ou aula instrumental,
-          o aviso aparecerá nesta tela.
+          o aviso aparecerá nesta tela e ficará disponível até ser registrado/concluído.
         </p>
       </div>
     </article>
@@ -210,33 +320,286 @@ function renderizarErro(mensagem = "Não foi possível carregar as notificaçõe
 }
 
 /* ======================
+   Consultas
+====================== */
+async function buscarHorariosDoProfessor() {
+  const dataInicial = dataMenosDiasISO(60);
+
+  const { data, error } = await supabase
+    .from("horarios_reposicao")
+    .select("id, data, hora_inicio, hora_fim, professor_id, materia_id")
+    .eq("professor_id", professorId)
+    .gte("data", dataInicial)
+    .order("data", { ascending: true })
+    .order("hora_inicio", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao buscar horários do professor:", error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+async function buscarAgendamentosDosHorarios(horariosIds) {
+  if (!horariosIds.length) return [];
+
+  const { data, error } = await supabase
+    .from("reposicao_agendada")
+    .select(`
+      id,
+      aula_id,
+      horario_reposicao_id,
+      aluno_id,
+      matricula_id,
+      cancelado,
+      tipo_agendamento,
+      observacao_aluno,
+      tem_custo,
+      motivo_custo,
+      status_agendamento
+    `)
+    .in("horario_reposicao_id", horariosIds)
+    .eq("cancelado", false);
+
+  if (error) {
+    console.error("Erro ao buscar agendamentos:", error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+async function buscarAlunosPorIds(alunosIds) {
+  if (!alunosIds.length) return new Map();
+
+  const { data, error } = await supabase
+    .from("aluno")
+    .select("id, nome")
+    .in("id", alunosIds);
+
+  if (error) {
+    console.error("Erro ao buscar alunos:", error);
+    return new Map();
+  }
+
+  return new Map((data || []).map((aluno) => [Number(aluno.id), aluno]));
+}
+
+async function buscarAulasOriginaisPorIds(aulasIds) {
+  if (!aulasIds.length) return new Map();
+
+  const { data, error } = await supabase
+    .from("aula")
+    .select("id, data_aula, status, justificativa, aula_gravada, precisa_reposicao")
+    .in("id", aulasIds);
+
+  if (error) {
+    console.error("Erro ao buscar aulas originais:", error);
+    return new Map();
+  }
+
+  return new Map((data || []).map((aula) => [Number(aula.id), aula]));
+}
+
+async function buscarReposicoesRegistradas(aulasOriginaisIds) {
+  if (!aulasOriginaisIds.length) return new Set();
+
+  const { data, error } = await supabase
+    .from("aula")
+    .select("aula_original_id")
+    .eq("status", STATUS.REPOSICAO)
+    .not("aula_original_id", "is", null)
+    .in("aula_original_id", aulasOriginaisIds);
+
+  if (error) {
+    console.error("Erro ao buscar reposições já registradas:", error);
+    return new Set();
+  }
+
+  return new Set((data || []).map((item) => Number(item.aula_original_id)));
+}
+
+async function buscarAgendamentosEspeciaisRegistrados(agendamentosComHorario) {
+  const especiais = agendamentosComHorario.filter((item) => {
+    return (
+      item.tipo_agendamento === STATUS.AULA_INSTRUMENTAL ||
+      item.tipo_agendamento === STATUS.PLANTAO_DUVIDAS
+    );
+  });
+
+  if (!especiais.length) return new Set();
+
+  const matriculasIds = [
+    ...new Set(especiais.map((item) => Number(item.matricula_id)).filter(Boolean))
+  ];
+
+  const datas = [
+    ...new Set(especiais.map((item) => item.data_reposicao).filter(Boolean))
+  ];
+
+  if (!matriculasIds.length || !datas.length) return new Set();
+
+  const { data, error } = await supabase
+    .from("aula")
+    .select("matricula_id, data_aula, status")
+    .eq("professor_id", professorId)
+    .in("matricula_id", matriculasIds)
+    .in("data_aula", datas)
+    .in("status", [STATUS.AULA_INSTRUMENTAL, STATUS.PLANTAO_DUVIDAS]);
+
+  if (error) {
+    console.error("Erro ao buscar aulas especiais registradas:", error);
+    return new Set();
+  }
+
+  const chaves = new Set();
+
+  (data || []).forEach((aula) => {
+    chaves.add(`${Number(aula.matricula_id)}|${aula.data_aula}|${aula.status}`);
+  });
+
+  return chaves;
+}
+
+/* ======================
+   Buscar agendamentos ativos
+
+   Regra principal:
+   - Reposição fica na tela até a aula original ser vinculada
+     em um registro com status "Reposição".
+   - Plantão e Aula Instrumental ficam até serem registrados.
+====================== */
+async function buscarAgendamentosAtivosProfessor() {
+  const horarios = await buscarHorariosDoProfessor();
+
+  if (!horarios.length) return [];
+
+  const mapaHorarios = new Map(
+    horarios.map((horario) => [Number(horario.id), horario])
+  );
+
+  const horariosIds = horarios.map((h) => Number(h.id));
+  const agendamentos = await buscarAgendamentosDosHorarios(horariosIds);
+
+  if (!agendamentos.length) return [];
+
+  const alunosIds = [
+    ...new Set(agendamentos.map((item) => Number(item.aluno_id)).filter(Boolean))
+  ];
+
+  const aulasOriginaisIds = [
+    ...new Set(agendamentos.map((item) => Number(item.aula_id)).filter(Boolean))
+  ];
+
+  const mapaAlunos = await buscarAlunosPorIds(alunosIds);
+  const mapaAulasOriginais = await buscarAulasOriginaisPorIds(aulasOriginaisIds);
+  const aulasOriginaisJaRepostas = await buscarReposicoesRegistradas(aulasOriginaisIds);
+
+  const listaComHorario = agendamentos
+    .map((item) => {
+      const horario = mapaHorarios.get(Number(item.horario_reposicao_id));
+      const aluno = mapaAlunos.get(Number(item.aluno_id));
+      const aulaOriginal = item.aula_id
+        ? mapaAulasOriginais.get(Number(item.aula_id))
+        : null;
+
+      return {
+        reposicao_id: item.id,
+        aula_original_id: item.aula_id || null,
+        matricula_id: item.matricula_id || null,
+        aluno_id: item.aluno_id || null,
+        aluno_nome: aluno?.nome || "Aluno não informado",
+        tipo_agendamento: item.tipo_agendamento || STATUS.REPOSICAO,
+        observacao_aluno: item.observacao_aluno || null,
+        tem_custo: !!item.tem_custo,
+        motivo_custo: item.motivo_custo || null,
+        status_agendamento: item.status_agendamento || "Agendado",
+        data_reposicao: horario?.data || null,
+        hora_inicio_reposicao: horario?.hora_inicio || null,
+        hora_fim_reposicao: horario?.hora_fim || null,
+        materia_id: horario?.materia_id || null,
+        aula_original_data: aulaOriginal?.data_aula || null,
+        aula_original_status: aulaOriginal?.status || null,
+        aula_original_justificativa: aulaOriginal?.justificativa || null
+      };
+    })
+    .filter((item) => item.data_reposicao);
+
+  const especiaisRegistrados = await buscarAgendamentosEspeciaisRegistrados(listaComHorario);
+  const hoje = hojeISO();
+
+  return listaComHorario
+    .filter((item) => {
+      const tipo = item.tipo_agendamento || STATUS.REPOSICAO;
+
+      if (tipo === STATUS.REPOSICAO) {
+        if (!item.aula_original_id) {
+          return item.data_reposicao >= hoje;
+        }
+
+        return !aulasOriginaisJaRepostas.has(Number(item.aula_original_id));
+      }
+
+      if (tipo === STATUS.AULA_INSTRUMENTAL || tipo === STATUS.PLANTAO_DUVIDAS) {
+        const chave = `${Number(item.matricula_id)}|${item.data_reposicao}|${tipo}`;
+
+        if (especiaisRegistrados.has(chave)) return false;
+
+        return true;
+      }
+
+      return item.data_reposicao >= hoje;
+    })
+    .sort((a, b) => {
+      const dataA = `${a.data_reposicao} ${a.hora_inicio_reposicao || "00:00"}`;
+      const dataB = `${b.data_reposicao} ${b.hora_inicio_reposicao || "00:00"}`;
+      return dataA.localeCompare(dataB);
+    });
+}
+
+/* ======================
    Renderizar notificações
 ====================== */
 function renderizarNotificacoes(notificacoes) {
   if (!textoNotificacoesProfessor || !listaNotificacoesProfessor) return;
 
+  notificacoesAtuais = notificacoes || [];
   listaNotificacoesProfessor.innerHTML = "";
 
-  const total = notificacoes.length;
-
-  atualizarBadge(total);
-
-  if (!total) {
+  if (!notificacoesAtuais.length) {
     renderizarEstadoVazio();
     return;
   }
 
-  textoNotificacoesProfessor.textContent =
-    total === 1
-      ? "Você tem 1 novo agendamento:"
-      : `Você tem ${total} novos agendamentos:`;
+  const totalNovas = notificacoesAtuais.filter(
+    (item) => !estaVisto(item.reposicao_id)
+  ).length;
 
-  notificacoes.forEach((item) => {
+  atualizarBadge(totalNovas);
+
+  const total = notificacoesAtuais.length;
+
+  if (totalNovas > 0) {
+    textoNotificacoesProfessor.textContent =
+      totalNovas === 1
+        ? `Você tem 1 novo agendamento e ${total} agendamento(s) ativo(s) no total.`
+        : `Você tem ${totalNovas} novos agendamentos e ${total} agendamento(s) ativo(s) no total.`;
+  } else {
+    textoNotificacoesProfessor.textContent =
+      total === 1
+        ? "Você tem 1 agendamento ativo aguardando registro/conclusão."
+        : `Você tem ${total} agendamentos ativos aguardando registro/conclusão.`;
+  }
+
+  notificacoesAtuais.forEach((item) => {
     const card = document.createElement("article");
     card.className = "card-admin card-professor notificacao-professor-card";
 
+    const visto = estaVisto(item.reposicao_id);
     const mensagem = montarTextoAgendamento(item);
     const linkAgenda = criarLinkGoogleAgenda(item);
+    const estaAtrasado = item.data_reposicao < hojeISO();
 
     const observacaoHTML = item.observacao_aluno
       ? `
@@ -261,15 +624,34 @@ function renderizarNotificacoes(notificacoes) {
       `
       : "";
 
+    const statusVisualHTML = visto
+      ? `<span style="display:inline-flex; padding:4px 9px; border-radius:999px; background:#e8f5e9; color:#1b5e20; font-size:12px; font-weight:bold;">Visto</span>`
+      : `<span style="display:inline-flex; padding:4px 9px; border-radius:999px; background:#c62828; color:white; font-size:12px; font-weight:bold;">Novo</span>`;
+
+    const atrasoHTML = estaAtrasado
+      ? `
+        <p style="color:#b71c1c; font-weight:bold;">
+          ⚠️ A data deste agendamento já passou, mas ele ainda aparece porque não foi encontrado registro de conclusão.
+        </p>
+      `
+      : "";
+
     card.innerHTML = `
-      <div class="card-admin-icone">📌</div>
+      <div class="card-admin-icone">${visto ? "🗓️" : "📌"}</div>
 
       <div class="card-admin-conteudo">
-        <h2>${escaparHTML(item.tipo_agendamento || "Agendamento")}</h2>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+          <h2 style="margin:0;">${escaparHTML(item.tipo_agendamento || "Agendamento")}</h2>
+          ${statusVisualHTML}
+        </div>
 
         <p>
           <strong>${escaparHTML(mensagem)}</strong>
         </p>
+
+        ${atrasoHTML}
+
+        ${montarStatusAulaOriginal(item)}
 
         ${observacaoHTML}
 
@@ -290,8 +672,9 @@ function renderizarNotificacoes(notificacoes) {
             type="button"
             class="btn-principal btn-marcar-visto"
             data-reposicao-id="${item.reposicao_id}"
+            ${visto ? "disabled" : ""}
           >
-            Marcar como visto
+            ${visto ? "Já visto" : "Marcar como visto"}
           </button>
         </div>
       </div>
@@ -325,64 +708,66 @@ async function carregarNotificacoes() {
 
       <div class="card-admin-conteudo">
         <h2>Carregando...</h2>
-        <p>Aguarde enquanto buscamos suas notificações.</p>
+        <p>Aguarde enquanto buscamos seus agendamentos.</p>
       </div>
     </article>
   `;
 
   atualizarBadge(0);
 
-  const { data, error } = await supabase.rpc(
-    "listar_notificacoes_professor_reposicao"
-  );
-
-  if (error) {
+  try {
+    const agendamentos = await buscarAgendamentosAtivosProfessor();
+    renderizarNotificacoes(agendamentos);
+  } catch (error) {
     console.error("Erro ao carregar notificações:", error);
     renderizarErro("Não foi possível carregar as notificações.");
-    return;
   }
-
-  renderizarNotificacoes(data || []);
 }
 
 /* ======================
    Marcar como visto
 ====================== */
 async function marcarComoVista(reposicaoId) {
-  const { error } = await supabase.rpc(
-    "marcar_notificacao_professor_visualizada",
-    {
-      p_reposicao_id: reposicaoId
-    }
-  );
+  marcarVistoLocal(reposicaoId);
 
-  if (error) {
-    console.error("Erro ao marcar como vista:", error);
-    alert("Não foi possível marcar esta notificação como vista.");
-    return;
+  try {
+    await supabase.rpc("marcar_notificacao_professor_visualizada", {
+      p_reposicao_id: reposicaoId
+    });
+  } catch (error) {
+    console.warn(
+      "O visto foi salvo neste navegador, mas a função do Supabase não respondeu:",
+      error
+    );
   }
 
-  await carregarNotificacoes();
+  renderizarNotificacoes(notificacoesAtuais);
 }
 
 async function marcarTodasComoVistas() {
+  if (!notificacoesAtuais.length) {
+    alert("Não há notificações para marcar como vistas.");
+    return;
+  }
+
   const confirmar = confirm(
-    "Deseja marcar todas as notificações como vistas?"
+    "Deseja marcar todas como vistas? Elas continuarão aparecendo até serem registradas/concluídas."
   );
 
   if (!confirmar) return;
 
-  const { error } = await supabase.rpc(
-    "marcar_todas_notificacoes_professor_visualizadas"
-  );
+  marcarTodosVistosLocal(notificacoesAtuais);
 
-  if (error) {
-    console.error("Erro ao marcar todas como vistas:", error);
-    alert("Não foi possível marcar todas como vistas.");
-    return;
+  try {
+    await supabase.rpc("marcar_todas_notificacoes_professor_visualizadas");
+  } catch (error) {
+    console.warn(
+      "Os vistos foram salvos neste navegador, mas a função do Supabase não respondeu:",
+      error
+    );
   }
 
-  await carregarNotificacoes();
+  renderizarNotificacoes(notificacoesAtuais);
 }
 
 /* ======================
