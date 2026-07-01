@@ -30,6 +30,8 @@ const cAulasValidas = document.getElementById("cAulasValidas");
 
 const statusAvaliacaoPendente = document.getElementById("statusAvaliacaoPendente");
 const textoAvaliacaoPendente = document.getElementById("textoAvaliacaoPendente");
+const btnEnviarAvaliacaoAluno = document.getElementById("btnEnviarAvaliacaoAluno");
+const textoEnvioAvaliacaoAluno = document.getElementById("textoEnvioAvaliacaoAluno");
 
 const listaAulas = document.getElementById("listaAulas");
 const listaReposicoes = document.getElementById("listaReposicoes");
@@ -223,7 +225,10 @@ function aulaContaComoValida(aula) {
   const status = normalizarTexto(aula?.status);
   const gravada = aula?.aula_gravada === true;
 
-  if (status === "presente" && gravada) return true;
+  // Mesma regra do resumo-professor:
+  // Presente conta mesmo sem aula gravada.
+  // Ausente e reposição só contam quando têm aula gravada.
+  if (status === "presente") return true;
   if (status === "ausente" && gravada) return true;
   if ((status === "reposicao" || status === "reposição") && gravada) return true;
 
@@ -299,6 +304,247 @@ function contarAulasValidasDesdeUltimaAvaliacao() {
   }).length;
 }
 
+function chaveAvaliacao({ matriculaId, moduloId, numeroAvaliacao }) {
+  return `${Number(matriculaId)}-${Number(moduloId)}-${Number(numeroAvaliacao)}`;
+}
+
+function obterDadosAvaliacaoPendenteAtual() {
+  const totalAulasValidas = contarAulasValidasModuloAtual();
+  const avaliacoes = obterNotasDeAvaliacaoModuloAtual();
+  const totalAvaliacoesLancadas = avaliacoes.length;
+  const aulasDesdeUltimaAvaliacao = contarAulasValidasDesdeUltimaAvaliacao();
+  const numeroAvaliacao = totalAvaliacoesLancadas + 1;
+
+  if (aulasDesdeUltimaAvaliacao < 14) {
+    return null;
+  }
+
+  return {
+    alunoId: Number(dadosCabecalho?.aluno?.id || 0),
+    matriculaId: Number(matriculaId || 0),
+    materiaId: Number(dadosCabecalho?.materia_id || 0),
+    moduloId: Number(dadosCabecalho?.modulo_id || 0),
+    numeroAvaliacao,
+    totalAulasValidas,
+    totalAvaliacoesLancadas,
+    aulasDesdeUltimaAvaliacao
+  };
+}
+
+function obterEnvioAvaliacaoAtual(numeroAvaliacao) {
+  const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
+  const chaveAtual = chaveAvaliacao({
+    matriculaId,
+    moduloId: moduloAtual,
+    numeroAvaliacao
+  });
+
+  return (avaliacoesAluno || []).find((avaliacao) => {
+    const chaveEnvio = chaveAvaliacao({
+      matriculaId: avaliacao.matricula_id,
+      moduloId: avaliacao.modulo_id,
+      numeroAvaliacao: avaliacao.numero_avaliacao
+    });
+
+    return chaveEnvio === chaveAtual;
+  }) || null;
+}
+
+function textoStatusEnvioAvaliacao(envio) {
+  if (!envio) return "";
+
+  if (envio.status === "Pendente") {
+    return `Avaliação enviada em ${formatarDataHoraBR(envio.enviado_em)}. Aguardando realização pelo aluno.`;
+  }
+
+  if (envio.status === "Realizada pelo aluno") {
+    return `O aluno informou que realizou em ${formatarDataHoraBR(envio.aluno_confirmou_realizacao_em)}. Aguardando correção/lançamento de nota.`;
+  }
+
+  if (envio.status === "Concluída") {
+    return "Avaliação concluída.";
+  }
+
+  if (envio.status === "Cancelada") {
+    return "Avaliação cancelada. Você pode reenviar, se necessário.";
+  }
+
+  return `Status: ${envio.status}`;
+}
+
+function atualizarBotaoEnviarAvaliacaoAluno() {
+  if (!btnEnviarAvaliacaoAluno || !textoEnvioAvaliacaoAluno) return;
+
+  const dadosAvaliacao = obterDadosAvaliacaoPendenteAtual();
+
+  if (!dadosAvaliacao) {
+    btnEnviarAvaliacaoAluno.style.display = "none";
+    textoEnvioAvaliacaoAluno.style.display = "none";
+    textoEnvioAvaliacaoAluno.textContent = "";
+    return;
+  }
+
+  const envio = obterEnvioAvaliacaoAtual(dadosAvaliacao.numeroAvaliacao);
+  const jaEnviada = envio && envio.status !== "Cancelada";
+
+  btnEnviarAvaliacaoAluno.dataset.alunoId = String(dadosAvaliacao.alunoId);
+  btnEnviarAvaliacaoAluno.dataset.matriculaId = String(dadosAvaliacao.matriculaId);
+  btnEnviarAvaliacaoAluno.dataset.materiaId = String(dadosAvaliacao.materiaId);
+  btnEnviarAvaliacaoAluno.dataset.moduloId = String(dadosAvaliacao.moduloId);
+  btnEnviarAvaliacaoAluno.dataset.numeroAvaliacao = String(dadosAvaliacao.numeroAvaliacao);
+
+  btnEnviarAvaliacaoAluno.style.display = "inline-flex";
+
+  if (jaEnviada) {
+    btnEnviarAvaliacaoAluno.disabled = true;
+
+    if (envio.status === "Pendente") {
+      btnEnviarAvaliacaoAluno.textContent = "Já enviada";
+    } else if (envio.status === "Realizada pelo aluno") {
+      btnEnviarAvaliacaoAluno.textContent = "Aluno informou realização";
+    } else if (envio.status === "Concluída") {
+      btnEnviarAvaliacaoAluno.textContent = "Concluída";
+    } else {
+      btnEnviarAvaliacaoAluno.textContent = "Já enviada";
+    }
+  } else {
+    btnEnviarAvaliacaoAluno.disabled = false;
+    btnEnviarAvaliacaoAluno.textContent = `Enviar Progress Check ${dadosAvaliacao.numeroAvaliacao}`;
+  }
+
+  const textoStatus = textoStatusEnvioAvaliacao(envio);
+
+  if (textoStatus) {
+    textoEnvioAvaliacaoAluno.textContent = textoStatus;
+    textoEnvioAvaliacaoAluno.style.display = "block";
+  } else {
+    textoEnvioAvaliacaoAluno.textContent = "";
+    textoEnvioAvaliacaoAluno.style.display = "none";
+  }
+}
+
+async function buscarFormularioAvaliacao({ materiaId, moduloId, numeroAvaliacao }) {
+  if (!materiaId || !moduloId || !numeroAvaliacao) {
+    throw new Error("Dados insuficientes para localizar o formulário.");
+  }
+
+  const { data, error } = await supabase
+    .from("avaliacao_formulario")
+    .select("id, titulo, link_formulario")
+    .eq("materia_id", materiaId)
+    .eq("modulo_id", moduloId)
+    .eq("numero_avaliacao", numeroAvaliacao)
+    .eq("ativo", true)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data?.id) {
+    throw new Error("Nenhum formulário ativo encontrado para esta avaliação.");
+  }
+
+  return data;
+}
+
+async function enviarAvaliacaoParaAluno({
+  alunoId,
+  matriculaId,
+  materiaId,
+  moduloId,
+  numeroAvaliacao
+}) {
+  if (!alunoId || !matriculaId || !materiaId || !moduloId || !numeroAvaliacao) {
+    throw new Error("Dados insuficientes para enviar a avaliação.");
+  }
+
+  const formulario = await buscarFormularioAvaliacao({
+    materiaId,
+    moduloId,
+    numeroAvaliacao
+  });
+
+  const { data: existente, error: erroExistente } = await supabase
+    .from("avaliacao_aluno")
+    .select("id, status, enviado_em")
+    .eq("matricula_id", matriculaId)
+    .eq("modulo_id", moduloId)
+    .eq("numero_avaliacao", numeroAvaliacao)
+    .maybeSingle();
+
+  if (erroExistente) {
+    throw erroExistente;
+  }
+
+  if (existente && existente.status !== "Cancelada") {
+    return {
+      jaExistia: true,
+      formulario,
+      envio: existente
+    };
+  }
+
+  const professorResponsavelId = Number(
+    localStorage.getItem("professorId") || dadosCabecalho?.professor_id || 0
+  );
+
+  if (existente && existente.status === "Cancelada") {
+    const { data, error } = await supabase
+      .from("avaliacao_aluno")
+      .update({
+        aluno_id: alunoId,
+        matricula_id: matriculaId,
+        materia_id: materiaId,
+        modulo_id: moduloId,
+        avaliacao_formulario_id: formulario.id,
+        numero_avaliacao: numeroAvaliacao,
+        status: "Pendente",
+        enviado_por_professor_id: professorResponsavelId || null,
+        enviado_em: new Date().toISOString(),
+        visualizado: false,
+        aluno_confirmou_realizacao_em: null,
+        concluida_em: null
+      })
+      .eq("id", existente.id)
+      .select("id, status, enviado_em")
+      .single();
+
+    if (error) throw error;
+
+    return {
+      jaExistia: false,
+      formulario,
+      envio: data
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("avaliacao_aluno")
+    .insert({
+      aluno_id: alunoId,
+      matricula_id: matriculaId,
+      materia_id: materiaId,
+      modulo_id: moduloId,
+      avaliacao_formulario_id: formulario.id,
+      numero_avaliacao: numeroAvaliacao,
+      status: "Pendente",
+      enviado_por_professor_id: professorResponsavelId || null,
+      enviado_em: new Date().toISOString(),
+      visualizado: false
+    })
+    .select("id, status, enviado_em")
+    .single();
+
+  if (error) throw error;
+
+  return {
+    jaExistia: false,
+    formulario,
+    envio: data
+  };
+}
+
 function atualizarCardAulasValidasEAvaliacao() {
   const totalAulasValidas = contarAulasValidasModuloAtual();
   const avaliacoes = obterNotasDeAvaliacaoModuloAtual();
@@ -329,6 +575,8 @@ function atualizarCardAulasValidasEAvaliacao() {
       `${totalAvaliacoesLancadas} avaliação(ões) lançada(s). ` +
       `Faltam ${faltam} aula(s) válida(s) para a próxima previsão.`;
   }
+
+  atualizarBotaoEnviarAvaliacaoAluno();
 }
 
 function montarLinhaConteudo(aula) {
@@ -956,6 +1204,7 @@ async function carregarAvaliacoesAluno() {
 
   avaliacoesAluno = data || [];
   renderAvaliacoesEnviadasAluno();
+  atualizarCardAulasValidasEAvaliacao();
 }
 
 async function marcarAvaliacaoComoConcluidaAposNota(moduloId, tipoNota) {
@@ -1366,6 +1615,47 @@ filtroStatusAula?.addEventListener("change", () => {
 btnExpandirAulas?.addEventListener("click", () => {
   aulasExpandido = !aulasExpandido;
   atualizarRenderAulas();
+});
+
+// ===============================
+// ENVIAR AVALIAÇÃO AO ALUNO
+// ===============================
+
+btnEnviarAvaliacaoAluno?.addEventListener("click", async () => {
+  const dadosAvaliacao = obterDadosAvaliacaoPendenteAtual();
+
+  if (!dadosAvaliacao) {
+    mostrarMensagem("Este aluno ainda não tem avaliação pendente.", false);
+    atualizarBotaoEnviarAvaliacaoAluno();
+    return;
+  }
+
+  const textoOriginal = btnEnviarAvaliacaoAluno.textContent;
+
+  btnEnviarAvaliacaoAluno.disabled = true;
+  btnEnviarAvaliacaoAluno.textContent = "Enviando...";
+
+  try {
+    const resultado = await enviarAvaliacaoParaAluno(dadosAvaliacao);
+
+    if (resultado.jaExistia) {
+      mostrarMensagem("Esta avaliação já tinha sido enviada para o aluno.");
+    } else {
+      mostrarMensagem("Avaliação enviada!");
+    }
+
+    await carregarAvaliacoesAluno();
+  } catch (error) {
+    console.error("Erro ao enviar avaliação:", error);
+
+    btnEnviarAvaliacaoAluno.disabled = false;
+    btnEnviarAvaliacaoAluno.textContent = textoOriginal;
+
+    mostrarMensagem(
+      "Não foi possível enviar a avaliação. Confira se o formulário está cadastrado e ativo no Supabase.",
+      false
+    );
+  }
 });
 
 // ===============================
