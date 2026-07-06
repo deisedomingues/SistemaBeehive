@@ -8,6 +8,8 @@ const msg = document.getElementById("msg");
 const cursosDiv = document.getElementById("cursos");
 const btnAddCurso = document.getElementById("btnAddCurso");
 
+const CNPJ_ALUNO_PARTICULAR = "00000000000000";
+
 let materiasCache = [];
 let empresasCache = [];
 let professoresPorMateria = {};
@@ -178,6 +180,7 @@ function atualizarTextoTitulosCursos() {
 
   boxes.forEach((box, index) => {
     const titulo = box.querySelector(".curso-titulo");
+
     if (titulo) {
       titulo.textContent = `Curso ${index + 1}`;
     }
@@ -203,7 +206,8 @@ function atualizarEstadoBotaoAdicionar() {
 
 function preencherSelectMateria(selectMateria, valorAtual = "") {
   const boxAtual = selectMateria.closest(".curso-box");
-  const materiasJaEscolhidasNasOutrasCaixas = obterMateriasSelecionadas(boxAtual);
+  const materiasJaEscolhidasNasOutrasCaixas =
+    obterMateriasSelecionadas(boxAtual);
 
   selectMateria.innerHTML = "";
   selectMateria.appendChild(criarOption("", "Selecione o curso"));
@@ -263,16 +267,31 @@ function preencherSelectProfessor(selectProfessor, materiaId, valorAtual = "") {
   selectProfessor.value = valorAtual || "";
 }
 
-function preencherSelectEmpresaCurso(selectEmpresa, valorAtual = "") {
+function preencherSelectEmpresaCurso(
+  selectEmpresa,
+  valorAtual = CNPJ_ALUNO_PARTICULAR
+) {
   selectEmpresa.innerHTML = "";
-  selectEmpresa.appendChild(criarOption("", "Curso particular"));
+
+  /*
+    Regra:
+    A empresa pertence ao curso/matrícula.
+    Curso particular salva 00000000000000.
+    Não usamos mais NULL para curso particular.
+  */
+  selectEmpresa.appendChild(
+    criarOption(CNPJ_ALUNO_PARTICULAR, "Curso particular")
+  );
 
   empresasCache.forEach((emp) => {
-    if (emp.cnpj === "00000000000000") return;
-    selectEmpresa.appendChild(criarOption(emp.cnpj, emp.nome));
+    const cnpj = String(emp.cnpj || "");
+
+    if (cnpj === CNPJ_ALUNO_PARTICULAR) return;
+
+    selectEmpresa.appendChild(criarOption(cnpj, emp.nome));
   });
 
-  selectEmpresa.value = valorAtual || "";
+  selectEmpresa.value = valorAtual || CNPJ_ALUNO_PARTICULAR;
 }
 
 function atualizarOpcoesDeMateriaEmTodasAsCaixas() {
@@ -370,9 +389,17 @@ function adicionarLinhaHorario(boxCurso, horario = {}) {
   const inputFim = linha.querySelector(".horario-fim");
   const btnRemover = linha.querySelector(".btn-remover-horario");
 
-  if (horario.dia_semana) selectDia.value = String(horario.dia_semana);
-  if (horario.hora_inicio) inputInicio.value = String(horario.hora_inicio).slice(0, 5);
-  if (horario.hora_fim) inputFim.value = String(horario.hora_fim).slice(0, 5);
+  if (horario.dia_semana) {
+    selectDia.value = String(horario.dia_semana);
+  }
+
+  if (horario.hora_inicio) {
+    inputInicio.value = String(horario.hora_inicio).slice(0, 5);
+  }
+
+  if (horario.hora_fim) {
+    inputFim.value = String(horario.hora_fim).slice(0, 5);
+  }
 
   inputInicio.addEventListener("change", () => {
     if (!inputInicio.value) return;
@@ -403,7 +430,9 @@ function coletarHorariosDoCurso(boxCurso) {
     }
 
     if (!diaSemana || !horaInicio || !horaFim) {
-      throw new Error("Preencha dia, início e fim em todos os horários adicionados.");
+      throw new Error(
+        "Preencha dia, início e fim em todos os horários adicionados."
+      );
     }
 
     if (horaFim <= horaInicio) {
@@ -518,12 +547,12 @@ function adicionarCurso() {
 
     <label style="margin-bottom:8px;">
       Empresa deste curso
-      <select class="empresaCurso" style="padding:8px;"></select>
+      <select class="empresaCurso" required style="padding:8px;"></select>
     </label>
 
     <div style="margin: 10px 0 8px 0; padding: 8px 10px; border-left: 4px solid #F1BC32; background: #fff7dd; border-radius: 8px;">
       <p style="margin:0; font-size:12px; line-height:1.45; color:#5f4b00;">
-        <strong>Horários deste curso:</strong> adicione os dias e horários fixos deste aluno. 
+        <strong>Horários deste curso:</strong> adicione os dias e horários fixos deste aluno.
         Se tiver duas aulas no mesmo dia, adicione duas linhas.
       </p>
     </div>
@@ -623,7 +652,15 @@ function validarCursosAntesDeSalvar(cursos) {
 
   for (const curso of cursos) {
     if (!curso.materia_id || !curso.modulo_id || !curso.professor_id) {
-      mostrarMensagem("Preencha corretamente os campos de curso, módulo e professor(a).", false);
+      mostrarMensagem(
+        "Preencha corretamente os campos de curso, módulo e professor(a).",
+        false
+      );
+      return false;
+    }
+
+    if (!curso.empresa_cnpj) {
+      mostrarMensagem("Selecione a empresa de cada curso.", false);
       return false;
     }
 
@@ -668,7 +705,14 @@ function montarCursosDaTela() {
       materia_id: box.querySelector(".materia").value,
       modulo_id: box.querySelector(".modulo").value,
       professor_id: box.querySelector(".professor").value,
-      empresa_cnpj: box.querySelector(".empresaCurso")?.value || null,
+
+      /*
+        Se o curso for particular, salva 00000000000000.
+        Nunca salva NULL para particular.
+      */
+      empresa_cnpj:
+        box.querySelector(".empresaCurso")?.value || CNPJ_ALUNO_PARTICULAR,
+
       link_zoom: box.querySelector(".linkZoomCurso").value.trim(),
       link_youtube: box.querySelector(".linkYoutubeCurso").value.trim(),
       horarios
@@ -692,7 +736,9 @@ async function salvarHorariosDosCursos({
     });
 
     if (!matricula) {
-      throw new Error("Não foi possível localizar a matrícula para salvar os horários.");
+      throw new Error(
+        "Não foi possível localizar a matrícula para salvar os horários."
+      );
     }
 
     (curso.horarios || []).forEach((horario) => {
@@ -736,10 +782,14 @@ async function salvarHorariosDosCursos({
       mensagemBanco.includes("duplicate key") ||
       mensagemBanco.includes("aluno_horario_aula_unico_por_aluno")
     ) {
-      throw new Error("Cadastro cancelado. Existe horário duplicado para este aluno.");
+      throw new Error(
+        "Cadastro cancelado. Existe horário duplicado para este aluno."
+      );
     }
 
-    throw new Error("Cadastro cancelado. Houve erro ao cadastrar os horários.");
+    throw new Error(
+      "Cadastro cancelado. Houve erro ao cadastrar os horários."
+    );
   }
 }
 
@@ -818,16 +868,21 @@ form.addEventListener("submit", async (e) => {
   let alunoId = null;
 
   try {
+    /*
+      A tabela aluno guarda apenas dados pessoais.
+      A empresa fica somente na matrícula.
+    */
     const { data: alunoInserido, error: errAluno } = await supabase
       .from("aluno")
-      .insert([{
-        nome,
-        data_nascimento: dataNascimento || null,
-        email: email || null,
-        telefone: telefone || null,
-        observacao: observacao || null,
-        empresa_cnpj: null
-      }])
+      .insert([
+        {
+          nome,
+          data_nascimento: dataNascimento || null,
+          email: email || null,
+          telefone: telefone || null,
+          observacao: observacao || null
+        }
+      ])
       .select("id")
       .single();
 
@@ -839,6 +894,10 @@ form.addEventListener("submit", async (e) => {
 
     alunoId = alunoInserido.id;
 
+    /*
+      A empresa é salva na matrícula.
+      Se for particular, salva 00000000000000.
+    */
     const { data: matriculasInseridas, error: errMatriculas } = await supabase
       .from("matricula")
       .insert(
@@ -847,7 +906,7 @@ form.addEventListener("submit", async (e) => {
           materia_id: Number(curso.materia_id),
           modulo_id: Number(curso.modulo_id),
           professor_id: Number(curso.professor_id),
-          empresa_cnpj: curso.empresa_cnpj || null,
+          empresa_cnpj: curso.empresa_cnpj || CNPJ_ALUNO_PARTICULAR,
           link_zoom: curso.link_zoom || null,
           link_youtube: curso.link_youtube || null,
           data_inicio: obterDataHojeLocalISO(),
@@ -878,7 +937,6 @@ form.addEventListener("submit", async (e) => {
     form.reset();
     cursosDiv.innerHTML = "";
     adicionarCurso();
-
   } catch (erro) {
     console.error("Erro no cadastro:", erro);
 
@@ -895,7 +953,7 @@ form.addEventListener("submit", async (e) => {
 
         mostrarMensagem(
           erroDesfazer.message ||
-          "Houve erro no cadastro e não foi possível desfazer automaticamente. Verifique este aluno no sistema.",
+            "Houve erro no cadastro e não foi possível desfazer automaticamente. Verifique este aluno no sistema.",
           false
         );
       }
