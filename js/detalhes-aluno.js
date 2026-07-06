@@ -214,20 +214,113 @@ function textoParte(parte) {
 }
 
 function ehNotaDeAvaliacao(nota) {
-  const tipo = normalizarTexto(
-    nota?.tipo ?? nota?.tipo_avaliacao ?? nota?.avaliacao ?? ""
-  );
+  const texto = [
+    nota?.tipo,
+    nota?.tipo_avaliacao,
+    nota?.avaliacao,
+    nota?.observacao,
+    nota?.obs
+  ]
+    .filter(Boolean)
+    .map(normalizarTexto)
+    .join(" ");
 
-  return tipo.includes("avalia");
+  /*
+    Algumas notas são salvas como "Avaliação".
+    Outras podem ser salvas como "Progress Check 1", "PC 1" etc.
+    Todas devem contar como avaliação para o card e para a lista de pendências.
+  */
+  return (
+    texto.includes("avalia") ||
+    texto.includes("progress check") ||
+    texto.includes("progress") ||
+    texto.includes("check") ||
+    /\bpc\s*\d+\b/.test(texto)
+  );
+}
+
+function extrairNumeroAvaliacaoDeTexto(texto) {
+  const normalizado = normalizarTexto(texto);
+
+  if (!normalizado) return null;
+
+  const padroes = [
+    /progress\s*check\s*(\d+)/i,
+    /avaliacao\s*(\d+)/i,
+    /avalia\w*\s*(\d+)/i,
+    /pc\s*(\d+)/i,
+    /check\s*(\d+)/i
+  ];
+
+  for (const padrao of padroes) {
+    const encontrado = normalizado.match(padrao);
+
+    if (encontrado?.[1]) {
+      const numero = Number(encontrado[1]);
+
+      if (!Number.isNaN(numero) && numero > 0) {
+        return numero;
+      }
+    }
+  }
+
+  return null;
+}
+
+function extrairNumeroAvaliacaoDaNota(nota) {
+  const campos = [
+    nota?.tipo,
+    nota?.tipo_avaliacao,
+    nota?.avaliacao,
+    nota?.observacao,
+    nota?.obs
+  ];
+
+  for (const campo of campos) {
+    const numero = extrairNumeroAvaliacaoDeTexto(campo);
+
+    if (numero) return numero;
+  }
+
+  return null;
+}
+
+function statusAvaliacaoConcluida(status) {
+  const normalizado = normalizarTexto(status);
+  return normalizado === "concluida" || normalizado === "concluido";
+}
+
+function statusAvaliacaoCancelada(status) {
+  return normalizarTexto(status) === "cancelada";
+}
+
+function notaPertenceAoModuloAtual(nota, moduloAtual) {
+  const moduloDaNota = Number(nota?.modulo_id || 0);
+
+  if (moduloDaNota > 0) {
+    return moduloDaNota === Number(moduloAtual || 0);
+  }
+
+  /*
+    Se alguma nota antiga estiver sem módulo, não descartamos automaticamente.
+    Isso evita que uma avaliação já lançada continue aparecendo como pendente.
+  */
+  return true;
+}
+
+function obterMateriaIdCabecalho() {
+  return Number(
+    dadosCabecalho?.materia_id ||
+      dadosCabecalho?.modulo?.materia_id ||
+      dadosCabecalho?.materia?.id ||
+      0
+  );
 }
 
 function aulaContaComoValida(aula) {
   const status = normalizarTexto(aula?.status);
   const gravada = aula?.aula_gravada === true;
 
-  // Mesma regra do resumo-professor:
-  // Presente conta mesmo sem aula gravada.
-  // Ausente e reposição só contam quando têm aula gravada.
   if (status === "presente") return true;
   if (status === "ausente" && gravada) return true;
   if ((status === "reposicao" || status === "reposição") && gravada) return true;
@@ -268,10 +361,16 @@ function obterNotasDeAvaliacaoModuloAtual() {
 
   return todasNotas
     .filter((nota) => {
-      if (Number(nota.modulo_id || 0) !== moduloAtual) return false;
+      if (!moduloAtual) return false;
+      if (!notaPertenceAoModuloAtual(nota, moduloAtual)) return false;
       return ehNotaDeAvaliacao(nota);
     })
     .sort((a, b) => {
+      const numeroA = extrairNumeroAvaliacaoDaNota(a) || 9999;
+      const numeroB = extrairNumeroAvaliacaoDaNota(b) || 9999;
+
+      if (numeroA !== numeroB) return numeroA - numeroB;
+
       const dataA = String(a.data || "");
       const dataB = String(b.data || "");
 
@@ -287,85 +386,129 @@ function contarAulasValidasModuloAtual() {
   return obterAulasValidasModuloAtual().length;
 }
 
-function contarAulasValidasDesdeUltimaAvaliacao() {
-  const aulasValidas = obterAulasValidasModuloAtual();
-  const avaliacoes = obterNotasDeAvaliacaoModuloAtual();
-
-  if (!avaliacoes.length) {
-    return aulasValidas.length;
-  }
-
-  const ultimaAvaliacao = avaliacoes[avaliacoes.length - 1];
-  const dataUltimaAvaliacao = String(ultimaAvaliacao.data || "");
-
-  return aulasValidas.filter((aula) => {
-    const dataAula = String(aula.data_aula || "");
-    return dataAula > dataUltimaAvaliacao;
-  }).length;
-}
-
 function chaveAvaliacao({ matriculaId, moduloId, numeroAvaliacao }) {
   return `${Number(matriculaId)}-${Number(moduloId)}-${Number(numeroAvaliacao)}`;
 }
 
-function obterDadosAvaliacaoPendenteAtual() {
-  const totalAulasValidas = contarAulasValidasModuloAtual();
-  const avaliacoes = obterNotasDeAvaliacaoModuloAtual();
-  const totalAvaliacoesLancadas = avaliacoes.length;
-  const aulasDesdeUltimaAvaliacao = contarAulasValidasDesdeUltimaAvaliacao();
-  const numeroAvaliacao = totalAvaliacoesLancadas + 1;
-
-  if (aulasDesdeUltimaAvaliacao < 14) {
-    return null;
-  }
-
-  return {
-    alunoId: Number(dadosCabecalho?.aluno?.id || 0),
-    matriculaId: Number(matriculaId || 0),
-    materiaId: Number(dadosCabecalho?.materia_id || 0),
-    moduloId: Number(dadosCabecalho?.modulo_id || 0),
-    numeroAvaliacao,
-    totalAulasValidas,
-    totalAvaliacoesLancadas,
-    aulasDesdeUltimaAvaliacao
-  };
-}
-
 function obterEnvioAvaliacaoAtual(numeroAvaliacao) {
   const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
+
   const chaveAtual = chaveAvaliacao({
     matriculaId,
     moduloId: moduloAtual,
     numeroAvaliacao
   });
 
-  return (avaliacoesAluno || []).find((avaliacao) => {
-    const chaveEnvio = chaveAvaliacao({
-      matriculaId: avaliacao.matricula_id,
-      moduloId: avaliacao.modulo_id,
-      numeroAvaliacao: avaliacao.numero_avaliacao
-    });
+  return (
+    (avaliacoesAluno || []).find((avaliacao) => {
+      const chaveEnvio = chaveAvaliacao({
+        matriculaId: avaliacao.matricula_id,
+        moduloId: avaliacao.modulo_id,
+        numeroAvaliacao: avaliacao.numero_avaliacao
+      });
 
-    return chaveEnvio === chaveAtual;
-  }) || null;
+      return chaveEnvio === chaveAtual;
+    }) || null
+  );
+}
+
+function obterResumoAvaliacoesModuloAtual() {
+  const totalAulasValidas = contarAulasValidasModuloAtual();
+  const avaliacoesEsperadas = Math.floor(totalAulasValidas / 14);
+  const notasAvaliacao = obterNotasDeAvaliacaoModuloAtual();
+
+  const numerosComNota = new Set();
+  let notasSemNumeroDisponiveis = 0;
+
+  notasAvaliacao.forEach((nota) => {
+    const numero = extrairNumeroAvaliacaoDaNota(nota);
+
+    if (numero) {
+      numerosComNota.add(numero);
+    } else {
+      notasSemNumeroDisponiveis++;
+    }
+  });
+
+  const numerosPendentes = [];
+  let totalResolvidas = 0;
+
+  for (let numeroAvaliacao = 1; numeroAvaliacao <= avaliacoesEsperadas; numeroAvaliacao++) {
+    const envio = obterEnvioAvaliacaoAtual(numeroAvaliacao);
+    const temNotaComEsseNumero = numerosComNota.has(numeroAvaliacao);
+    const envioJaConcluido = statusAvaliacaoConcluida(envio?.status);
+
+    if (temNotaComEsseNumero || envioJaConcluido) {
+      totalResolvidas++;
+      continue;
+    }
+
+    /*
+      Fallback para notas antigas salvas apenas como "Avaliação".
+      Se existe uma nota de avaliação sem número, usamos essa nota para resolver
+      a primeira avaliação pendente da sequência.
+    */
+    if (notasSemNumeroDisponiveis > 0) {
+      notasSemNumeroDisponiveis--;
+      totalResolvidas++;
+      continue;
+    }
+
+    numerosPendentes.push(numeroAvaliacao);
+  }
+
+  const proximoMarco = (avaliacoesEsperadas + 1) * 14;
+  const faltamParaProximaPrevisao = Math.max(0, proximoMarco - totalAulasValidas);
+
+  return {
+    totalAulasValidas,
+    avaliacoesEsperadas,
+    totalResolvidas,
+    totalNotasAvaliacao: notasAvaliacao.length,
+    numerosPendentes,
+    primeiraPendente: numerosPendentes[0] || null,
+    faltamParaProximaPrevisao
+  };
+}
+
+function obterDadosAvaliacaoPendenteAtual() {
+  const resumo = obterResumoAvaliacoesModuloAtual();
+
+  if (!resumo.primeiraPendente) {
+    return null;
+  }
+
+  return {
+    alunoId: Number(dadosCabecalho?.aluno?.id || 0),
+    matriculaId: Number(matriculaId || 0),
+    materiaId: obterMateriaIdCabecalho(),
+    moduloId: Number(dadosCabecalho?.modulo_id || 0),
+    numeroAvaliacao: resumo.primeiraPendente,
+    totalAulasValidas: resumo.totalAulasValidas,
+    totalAvaliacoesLancadas: resumo.totalResolvidas,
+    avaliacoesEsperadas: resumo.avaliacoesEsperadas,
+    avaliacoesPendentes: resumo.numerosPendentes.length
+  };
 }
 
 function textoStatusEnvioAvaliacao(envio) {
   if (!envio) return "";
 
-  if (envio.status === "Pendente") {
+  const status = normalizarTexto(envio.status);
+
+  if (status === "pendente") {
     return `Avaliação enviada em ${formatarDataHoraBR(envio.enviado_em)}. Aguardando realização pelo aluno.`;
   }
 
-  if (envio.status === "Realizada pelo aluno") {
+  if (status === "realizada pelo aluno") {
     return `O aluno informou que realizou em ${formatarDataHoraBR(envio.aluno_confirmou_realizacao_em)}. Aguardando correção/lançamento de nota.`;
   }
 
-  if (envio.status === "Concluída") {
+  if (statusAvaliacaoConcluida(envio.status)) {
     return "Avaliação concluída.";
   }
 
-  if (envio.status === "Cancelada") {
+  if (statusAvaliacaoCancelada(envio.status)) {
     return "Avaliação cancelada. Você pode reenviar, se necessário.";
   }
 
@@ -385,7 +528,7 @@ function atualizarBotaoEnviarAvaliacaoAluno() {
   }
 
   const envio = obterEnvioAvaliacaoAtual(dadosAvaliacao.numeroAvaliacao);
-  const jaEnviada = envio && envio.status !== "Cancelada";
+  const jaEnviada = envio && !statusAvaliacaoCancelada(envio.status);
 
   btnEnviarAvaliacaoAluno.dataset.alunoId = String(dadosAvaliacao.alunoId);
   btnEnviarAvaliacaoAluno.dataset.matriculaId = String(dadosAvaliacao.matriculaId);
@@ -398,11 +541,11 @@ function atualizarBotaoEnviarAvaliacaoAluno() {
   if (jaEnviada) {
     btnEnviarAvaliacaoAluno.disabled = true;
 
-    if (envio.status === "Pendente") {
+    if (normalizarTexto(envio.status) === "pendente") {
       btnEnviarAvaliacaoAluno.textContent = "Já enviada";
-    } else if (envio.status === "Realizada pelo aluno") {
+    } else if (normalizarTexto(envio.status) === "realizada pelo aluno") {
       btnEnviarAvaliacaoAluno.textContent = "Aluno informou realização";
-    } else if (envio.status === "Concluída") {
+    } else if (statusAvaliacaoConcluida(envio.status)) {
       btnEnviarAvaliacaoAluno.textContent = "Concluída";
     } else {
       btnEnviarAvaliacaoAluno.textContent = "Já enviada";
@@ -546,34 +689,30 @@ async function enviarAvaliacaoParaAluno({
 }
 
 function atualizarCardAulasValidasEAvaliacao() {
-  const totalAulasValidas = contarAulasValidasModuloAtual();
-  const avaliacoes = obterNotasDeAvaliacaoModuloAtual();
-  const totalAvaliacoesLancadas = avaliacoes.length;
-  const aulasDesdeUltimaAvaliacao = contarAulasValidasDesdeUltimaAvaliacao();
-  const proximaAvaliacao = totalAvaliacoesLancadas + 1;
+  if (!cAulasValidas || !statusAvaliacaoPendente || !textoAvaliacaoPendente) return;
 
-  cAulasValidas.textContent = String(totalAulasValidas);
+  const resumo = obterResumoAvaliacoesModuloAtual();
 
-  if (aulasDesdeUltimaAvaliacao >= 14) {
-    statusAvaliacaoPendente.textContent = `Pendente: Avaliação ${proximaAvaliacao}`;
+  cAulasValidas.textContent = String(resumo.totalAulasValidas);
+
+  if (resumo.primeiraPendente) {
+    statusAvaliacaoPendente.textContent = `Pendente: Progress Check ${resumo.primeiraPendente}`;
     statusAvaliacaoPendente.style.color = "#b71c1c";
 
     textoAvaliacaoPendente.textContent =
-      `${totalAulasValidas} aula(s) válida(s) no módulo atual • ` +
-      `${aulasDesdeUltimaAvaliacao} aula(s) válida(s) desde a última avaliação • ` +
-      `${totalAvaliacoesLancadas} avaliação(ões) lançada(s). ` +
-      `Ao lançar a próxima avaliação, o contador recomeça.`;
+      `${resumo.totalAulasValidas} aula(s) válida(s) no módulo atual • ` +
+      `${resumo.avaliacoesEsperadas} avaliação(ões) prevista(s) pelo sistema • ` +
+      `${resumo.totalResolvidas} avaliação(ões) já resolvida(s). ` +
+      `Depois que a nota for lançada, esta pendência some automaticamente.`;
   } else {
-    const faltam = 14 - aulasDesdeUltimaAvaliacao;
-
     statusAvaliacaoPendente.textContent = "Nenhuma avaliação pendente";
     statusAvaliacaoPendente.style.color = "#1b5e20";
 
     textoAvaliacaoPendente.textContent =
-      `${totalAulasValidas} aula(s) válida(s) no módulo atual • ` +
-      `${aulasDesdeUltimaAvaliacao} aula(s) válida(s) desde a última avaliação • ` +
-      `${totalAvaliacoesLancadas} avaliação(ões) lançada(s). ` +
-      `Faltam ${faltam} aula(s) válida(s) para a próxima previsão.`;
+      `${resumo.totalAulasValidas} aula(s) válida(s) no módulo atual • ` +
+      `${resumo.avaliacoesEsperadas} avaliação(ões) prevista(s) pelo sistema • ` +
+      `${resumo.totalResolvidas} avaliação(ões) já resolvida(s). ` +
+      `Faltam ${resumo.faltamParaProximaPrevisao} aula(s) válida(s) para a próxima previsão.`;
   }
 
   atualizarBotaoEnviarAvaliacaoAluno();
@@ -591,6 +730,7 @@ function montarLinhaLicao(aula) {
 
 function obterTextoRodapeHistorico(aula, mapaAulas) {
   const professor = aula.professor?.nome || "-";
+
   const partes = [
     `Professor: ${professor}`,
     `Status: ${aula.status || "-"}`,
@@ -608,6 +748,7 @@ function obterTextoRodapeHistorico(aula, mapaAulas) {
     } else if (aula.precisa_reposicao) {
       partes.push("Reposição pendente");
     }
+
     return partes.join(" | ");
   }
 
@@ -615,6 +756,7 @@ function obterTextoRodapeHistorico(aula, mapaAulas) {
     if (aula.precisa_reposicao) {
       partes.push("Reposição pendente");
     }
+
     return partes.join(" | ");
   }
 
@@ -641,6 +783,7 @@ function obterTextoRodapeHistorico(aula, mapaAulas) {
     if (aula.aula_gravada) {
       partes.push("Aula gravada");
     }
+
     return partes.join(" | ");
   }
 
@@ -711,11 +854,13 @@ async function carregarObservacoesPedagogicas() {
 
   if (error) {
     console.error("Erro ao carregar observações pedagógicas:", error);
+
     listaObservacoesPedagogicas.innerHTML = `
       <p style="margin:0; font-size:13px; color:#b71c1c;">
         Erro ao carregar observações pedagógicas.
       </p>
     `;
+
     return;
   }
 
@@ -760,7 +905,7 @@ async function carregarObservacoesPedagogicas() {
 }
 
 // ===============================
-// BLOCO DINÂMICO DE AVALIAÇÕES ENVIADAS
+// BLOCO DE AVALIAÇÕES ENVIADAS
 // ===============================
 
 function obterOuCriarBlocoAvaliacoesEnviadas() {
@@ -799,23 +944,25 @@ function obterOuCriarBlocoAvaliacoesEnviadas() {
 }
 
 function textoStatusAvaliacaoAluno(avaliacao) {
-  if (avaliacao.status === "Pendente") {
+  const status = normalizarTexto(avaliacao?.status);
+
+  if (status === "pendente") {
     return "Pendente — enviada ao aluno, aguardando realização.";
   }
 
-  if (avaliacao.status === "Realizada pelo aluno") {
+  if (status === "realizada pelo aluno") {
     return "Realizada pelo aluno — aguardando conferência/correção e lançamento de nota.";
   }
 
-  if (avaliacao.status === "Concluída") {
+  if (statusAvaliacaoConcluida(avaliacao?.status)) {
     return "Concluída — nota lançada no sistema.";
   }
 
-  if (avaliacao.status === "Cancelada") {
+  if (statusAvaliacaoCancelada(avaliacao?.status)) {
     return "Cancelada.";
   }
 
-  return avaliacao.status || "Status não informado.";
+  return avaliacao?.status || "Status não informado.";
 }
 
 function tituloAvaliacaoAluno(avaliacao) {
@@ -858,10 +1005,13 @@ function renderAvaliacoesEnviadasAluno() {
       const titulo = tituloAvaliacaoAluno(avaliacao);
       const materia = avaliacao?.materia?.nome || dadosCabecalho?.materia?.nome || "Matéria";
       const modulo = avaliacao?.modulo?.nome || dadosCabecalho?.modulo?.nome || "Módulo";
+
       const enviadaEm = formatarDataHoraBR(avaliacao.enviado_em);
+
       const realizadaEm = avaliacao.aluno_confirmou_realizacao_em
         ? formatarDataHoraBR(avaliacao.aluno_confirmou_realizacao_em)
         : "-";
+
       const concluidaEm = avaliacao.concluida_em
         ? formatarDataHoraBR(avaliacao.concluida_em)
         : "-";
@@ -913,10 +1063,13 @@ async function carregarCabecalho() {
         data_nascimento
       ),
       materia:materia_id (
+        id,
         nome
       ),
       modulo:modulo_id (
-        nome
+        id,
+        nome,
+        materia_id
       ),
       professor:professor_id (
         nome
@@ -934,7 +1087,7 @@ async function carregarCabecalho() {
   dadosCabecalho = data;
 
   const nomeAluno = data.aluno?.nome || "Aluno";
-  const nomeMateria = data.materia?.nome || "-";
+  const nomeMateria = data.materia?.nome || data.modulo?.materia?.nome || "-";
   const nomeModulo = data.modulo?.nome || "-";
   const nomeProfessor = data.professor?.nome || "-";
   const nascimento = data.aluno?.data_nascimento || null;
@@ -1058,9 +1211,7 @@ function obterAulasFiltradas() {
   let filtradas = ordenarAulasDecrescente(todasAulas);
 
   if (moduloId) {
-    filtradas = filtradas.filter(
-      (aula) => Number(aula.modulo_id) === moduloId
-    );
+    filtradas = filtradas.filter((aula) => Number(aula.modulo_id) === moduloId);
   }
 
   if (statusFiltro === "__VALIDAS__") {
@@ -1081,7 +1232,12 @@ function renderAulas(aulasOriginais) {
   limparLista(listaAulas);
 
   if (!aulasOriginais.length) {
-    listaAulas.innerHTML = `<div class="vazio-box">Nenhuma aula encontrada com os filtros selecionados.</div>`;
+    listaAulas.innerHTML = `
+      <div class="vazio-box">
+        Nenhuma aula encontrada com os filtros selecionados.
+      </div>
+    `;
+
     atualizarBotaoExpandirAulas(0);
     return;
   }
@@ -1093,6 +1249,7 @@ function renderAulas(aulasOriginais) {
 
   aulasParaMostrar.forEach((aula, index) => {
     const li = document.createElement("li");
+
     li.style.listStyle = "none";
     li.style.marginBottom = "0";
     li.style.padding = "12px 0";
@@ -1127,9 +1284,11 @@ function renderAulas(aulasOriginais) {
 
         ${
           linhaLicao
-            ? `<div style="font-size:13px; line-height:1.45;">
+            ? `
+              <div style="font-size:13px; line-height:1.45;">
                 ${escaparHtml(linhaLicao)}
-              </div>`
+              </div>
+            `
             : ""
         }
 
@@ -1197,20 +1356,62 @@ async function carregarAvaliacoesAluno() {
 
   if (error) {
     console.error("Erro ao carregar avaliações enviadas:", error);
+
     avaliacoesAluno = [];
     renderAvaliacoesEnviadasAluno();
+
     return;
   }
 
   avaliacoesAluno = data || [];
+
   renderAvaliacoesEnviadasAluno();
   atualizarCardAulasValidasEAvaliacao();
 }
 
-async function marcarAvaliacaoComoConcluidaAposNota(moduloId, tipoNota) {
-  const tipo = normalizarTexto(tipoNota);
+async function concluirAvaliacaoNoBanco(avaliacao) {
+  if (!avaliacao?.id) return false;
 
-  if (!tipo.includes("avalia")) {
+  const concluidaEm = avaliacao.concluida_em || new Date().toISOString();
+
+  const { error } = await supabase
+    .from("avaliacao_aluno")
+    .update({
+      status: "Concluída",
+      concluida_em: concluidaEm
+    })
+    .eq("id", avaliacao.id);
+
+  if (error) {
+    console.warn(
+      "Não foi possível marcar avaliação como concluída:",
+      avaliacao.id,
+      error.message
+    );
+
+    return false;
+  }
+
+  avaliacao.status = "Concluída";
+  avaliacao.concluida_em = concluidaEm;
+
+  return true;
+}
+
+function avaliacaoEstaAberta(avaliacao) {
+  const status = normalizarTexto(avaliacao?.status);
+
+  return status === "pendente" || status === "realizada pelo aluno";
+}
+
+async function marcarAvaliacaoComoConcluidaAposNota(moduloId, tipoNota, obsNota = "") {
+  const notaFake = {
+    tipo: tipoNota,
+    observacao: obsNota,
+    modulo_id: moduloId
+  };
+
+  if (!ehNotaDeAvaliacao(notaFake)) {
     return;
   }
 
@@ -1218,14 +1419,12 @@ async function marcarAvaliacaoComoConcluidaAposNota(moduloId, tipoNota) {
 
   if (!modulo) return;
 
+  const numeroNota = extrairNumeroAvaliacaoDaNota(notaFake);
+
   const avaliacoesAbertas = avaliacoesAluno
     .filter((avaliacao) => {
       const mesmoModulo = Number(avaliacao.modulo_id || 0) === modulo;
-      const aberta =
-        avaliacao.status === "Pendente" ||
-        avaliacao.status === "Realizada pelo aluno";
-
-      return mesmoModulo && aberta;
+      return mesmoModulo && avaliacaoEstaAberta(avaliacao);
     })
     .sort((a, b) => {
       const numeroA = Number(a.numero_avaliacao || 0);
@@ -1236,26 +1435,83 @@ async function marcarAvaliacaoComoConcluidaAposNota(moduloId, tipoNota) {
       return Number(a.id || 0) - Number(b.id || 0);
     });
 
-  const avaliacaoParaConcluir = avaliacoesAbertas[0];
+  const avaliacaoParaConcluir = numeroNota
+    ? avaliacoesAbertas.find(
+        (avaliacao) => Number(avaliacao.numero_avaliacao || 0) === numeroNota
+      ) || avaliacoesAbertas[0]
+    : avaliacoesAbertas[0];
 
   if (!avaliacaoParaConcluir) {
     return;
   }
 
-  const { error } = await supabase
-    .from("avaliacao_aluno")
-    .update({
-      status: "Concluída",
-      concluida_em: new Date().toISOString()
-    })
-    .eq("id", avaliacaoParaConcluir.id);
+  const concluiu = await concluirAvaliacaoNoBanco(avaliacaoParaConcluir);
 
-  if (error) {
-    console.warn("Nota salva, mas não foi possível marcar avaliação como concluída:", error.message);
-    return;
+  if (concluiu) {
+    await carregarAvaliacoesAluno();
+  }
+}
+
+async function sincronizarAvaliacoesConcluidasComNotas() {
+  if (!avaliacoesAluno.length || !todasNotas.length) return;
+
+  const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
+
+  if (!moduloAtual) return;
+
+  const notasAvaliacao = obterNotasDeAvaliacaoModuloAtual();
+
+  if (!notasAvaliacao.length) return;
+
+  const numerosComNota = new Set();
+  let notasSemNumeroDisponiveis = 0;
+
+  notasAvaliacao.forEach((nota) => {
+    const numero = extrairNumeroAvaliacaoDaNota(nota);
+
+    if (numero) {
+      numerosComNota.add(numero);
+    } else {
+      notasSemNumeroDisponiveis++;
+    }
+  });
+
+  const abertas = avaliacoesAluno
+    .filter((avaliacao) => {
+      const mesmoModulo = Number(avaliacao.modulo_id || 0) === moduloAtual;
+      return mesmoModulo && avaliacaoEstaAberta(avaliacao);
+    })
+    .sort((a, b) => {
+      const numeroA = Number(a.numero_avaliacao || 0);
+      const numeroB = Number(b.numero_avaliacao || 0);
+
+      if (numeroA !== numeroB) return numeroA - numeroB;
+
+      return Number(a.id || 0) - Number(b.id || 0);
+    });
+
+  let alterou = false;
+
+  for (const avaliacao of abertas) {
+    const numero = Number(avaliacao.numero_avaliacao || 0);
+
+    if (numero && numerosComNota.has(numero)) {
+      const concluiu = await concluirAvaliacaoNoBanco(avaliacao);
+      alterou = alterou || concluiu;
+      continue;
+    }
+
+    if (notasSemNumeroDisponiveis > 0) {
+      notasSemNumeroDisponiveis--;
+      const concluiu = await concluirAvaliacaoNoBanco(avaliacao);
+      alterou = alterou || concluiu;
+    }
   }
 
-  await carregarAvaliacoesAluno();
+  if (alterou) {
+    renderAvaliacoesEnviadasAluno();
+    atualizarCardAulasValidasEAvaliacao();
+  }
 }
 
 // ===============================
@@ -1290,8 +1546,10 @@ async function carregarEventosAluno() {
 
   if (error) {
     console.error("Erro ao carregar eventos do aluno:", error);
+
     eventosAluno = [];
     atualizarCardEventos();
+
     return;
   }
 
@@ -1301,6 +1559,7 @@ async function carregarEventosAluno() {
     .sort((a, b) => {
       const dataA = `${a.data_evento || ""} ${a.hora_evento || "00:00"}`;
       const dataB = `${b.data_evento || ""} ${b.hora_evento || "00:00"}`;
+
       return dataB.localeCompare(dataA);
     });
 
@@ -1313,7 +1572,13 @@ function atualizarCardEventos() {
   if (!eventosAluno.length) {
     btnToggleEventos.style.display = "none";
     boxEventosAluno.style.display = "none";
-    listaEventosAluno.innerHTML = `<p style="font-size:13px; color:#666; margin-top:10px;">Nenhum evento participado até agora.</p>`;
+
+    listaEventosAluno.innerHTML = `
+      <p style="font-size:13px; color:#666; margin-top:10px;">
+        Nenhum evento participado até agora.
+      </p>
+    `;
+
     return;
   }
 
@@ -1323,32 +1588,39 @@ function atualizarCardEventos() {
 
 function renderEventosAluno() {
   if (!eventosAluno.length) {
-    listaEventosAluno.innerHTML = `<p style="font-size:13px; color:#666;">Nenhum evento encontrado.</p>`;
+    listaEventosAluno.innerHTML = `
+      <p style="font-size:13px; color:#666;">
+        Nenhum evento encontrado.
+      </p>
+    `;
+
     return;
   }
 
-  listaEventosAluno.innerHTML = eventosAluno.map((evento) => {
-    const situacao = evento.ativo ? "Ativo" : "Encerrado/Cancelado";
+  listaEventosAluno.innerHTML = eventosAluno
+    .map((evento) => {
+      const situacao = evento.ativo ? "Ativo" : "Encerrado/Cancelado";
 
-    return `
-      <div class="item-evento-aluno" style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
-        <div class="item-evento-aluno-topo" style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <strong>${escaparHtml(evento.titulo || "Evento")}</strong>
-          <span class="badge-evento-aluno">${escaparHtml(situacao)}</span>
+      return `
+        <div class="item-evento-aluno" style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
+          <div class="item-evento-aluno-topo" style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <strong>${escaparHtml(evento.titulo || "Evento")}</strong>
+            <span class="badge-evento-aluno">${escaparHtml(situacao)}</span>
+          </div>
+
+          <p style="margin:6px 0 4px 0; font-size:13px;">
+            ${escaparHtml(evento.tipo_evento || "Evento")} •
+            ${formatarDataBR(evento.data_evento)}
+            ${evento.hora_evento ? ` às ${escaparHtml(evento.hora_evento.slice(0, 5))}` : ""}
+          </p>
+
+          <p style="margin:0; font-size:13px;">
+            Link/local: ${escaparHtml(evento.local || "Não informado")}
+          </p>
         </div>
-
-        <p style="margin:6px 0 4px 0; font-size:13px;">
-          ${escaparHtml(evento.tipo_evento || "Evento")} •
-          ${formatarDataBR(evento.data_evento)}
-          ${evento.hora_evento ? ` às ${escaparHtml(evento.hora_evento.slice(0, 5))}` : ""}
-        </p>
-
-        <p style="margin:0; font-size:13px;">
-          Link/local: ${escaparHtml(evento.local || "Não informado")}
-        </p>
-      </div>
-    `;
-  }).join("");
+      `;
+    })
+    .join("");
 }
 
 // ===============================
@@ -1365,6 +1637,7 @@ function obterReposicoesPendentes(aulas) {
   return (aulas || [])
     .filter((x) => {
       const status = normalizarTexto(x.status);
+
       const statusGeraReposicao =
         status === normalizarTexto(STATUS.AUSENTE) ||
         status === normalizarTexto(STATUS.CANCELADA) ||
@@ -1410,6 +1683,7 @@ function renderReposicoesPendentes() {
     li.style.marginBottom = "6px";
 
     const status = normalizarTexto(x.status);
+
     const textoPadrao =
       status === normalizarTexto(STATUS.CANCELADA)
         ? "Aula cancelada"
@@ -1417,8 +1691,7 @@ function renderReposicoesPendentes() {
           ? "Aula trancada"
           : "Reposição solicitada";
 
-    li.textContent =
-      `${formatarDataBR(x.data_aula)} — ${x.justificativa || textoPadrao}`;
+    li.textContent = `${formatarDataBR(x.data_aula)} — ${x.justificativa || textoPadrao}`;
 
     listaReposicoes.appendChild(li);
   });
@@ -1466,7 +1739,6 @@ function preencherContadores(aulas) {
 
     if (x.status === STATUS.PLANTAO_DUVIDAS) {
       plantao++;
-      return;
     }
   });
 
@@ -1507,6 +1779,8 @@ async function carregarNotas() {
   }
 
   todasNotas = data || [];
+
+  await sincronizarAvaliacoesConcluidasComNotas();
 
   calcularMediaGeral(todasNotas);
   renderNotas(todasNotas);
@@ -1590,9 +1864,7 @@ filtroModulo.addEventListener("change", () => {
     return;
   }
 
-  const filtradas = todasNotas.filter(
-    (n) => Number(n.modulo_id) === moduloId
-  );
+  const filtradas = todasNotas.filter((n) => Number(n.modulo_id) === moduloId);
 
   renderNotas(filtradas);
   calcularMediaGeral(filtradas);
@@ -1700,7 +1972,7 @@ formNota.addEventListener("submit", async (e) => {
     return;
   }
 
-  await marcarAvaliacaoComoConcluidaAposNota(moduloId, tipo);
+  await marcarAvaliacaoComoConcluidaAposNota(moduloId, tipo, obs);
 
   mostrarMensagem("Nota salva!");
 
@@ -1731,6 +2003,7 @@ async function init() {
   if (!cab) return;
 
   todasAulas = await carregarAulas();
+
   preencherContadores(todasAulas);
   atualizarRenderAulas();
   atualizarCardAulasValidasEAvaliacao();

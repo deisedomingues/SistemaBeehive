@@ -33,6 +33,7 @@ const btnExpandirAulasPeriodo = document.getElementById("btnExpandirAulasPeriodo
 
 const selectMatricula = document.getElementById("selectMatricula");
 const btnDetalhes = document.getElementById("btnDetalhes");
+const btnAtualizarResumo = document.getElementById("btnAtualizarResumo");
 
 const cardVisaoGeralProfessor = document.getElementById("cardVisaoGeralProfessor");
 
@@ -217,11 +218,99 @@ function ehAniversarianteHoje(dataNascimentoISO) {
 }
 
 function ehNotaDeAvaliacao(nota) {
-  const tipo = normalizarTexto(
-    nota?.tipo ?? nota?.tipo_avaliacao ?? nota?.avaliacao ?? ""
-  );
+  const textos = [
+    nota?.tipo,
+    nota?.tipo_avaliacao,
+    nota?.avaliacao,
+    nota?.observacao,
+    nota?.obs
+  ]
+    .filter(Boolean)
+    .map(normalizarTexto)
+    .join(" ");
 
-  return tipo.includes("avalia");
+  /*
+    Antes o resumo só contava nota cujo tipo tivesse "Avaliação".
+    Mas, na tela de detalhes, a nota pode aparecer como "Progress Check 1".
+    Por isso a regra abaixo considera os dois jeitos.
+  */
+  return (
+    textos.includes("avalia") ||
+    textos.includes("progress check") ||
+    textos.includes("progress") ||
+    textos.includes("check") ||
+    /\bpc\s*\d+\b/.test(textos)
+  );
+}
+
+function extrairNumeroAvaliacaoDeTexto(texto) {
+  const normalizado = normalizarTexto(texto);
+
+  if (!normalizado) return null;
+
+  const padroes = [
+    /progress\s*check\s*(\d+)/i,
+    /avaliacao\s*(\d+)/i,
+    /avalia\w*\s*(\d+)/i,
+    /pc\s*(\d+)/i,
+    /check\s*(\d+)/i
+  ];
+
+  for (const padrao of padroes) {
+    const encontrado = normalizado.match(padrao);
+
+    if (encontrado?.[1]) {
+      const numero = Number(encontrado[1]);
+
+      if (!Number.isNaN(numero) && numero > 0) {
+        return numero;
+      }
+    }
+  }
+
+  return null;
+}
+
+function extrairNumeroAvaliacaoDaNota(nota) {
+  const campos = [
+    nota?.tipo,
+    nota?.tipo_avaliacao,
+    nota?.avaliacao,
+    nota?.observacao,
+    nota?.obs
+  ];
+
+  for (const campo of campos) {
+    const numero = extrairNumeroAvaliacaoDeTexto(campo);
+
+    if (numero) return numero;
+  }
+
+  return null;
+}
+
+function statusAvaliacaoConcluida(status) {
+  const normalizado = normalizarTexto(status);
+  return normalizado === "concluida" || normalizado === "concluido";
+}
+
+function statusAvaliacaoCancelada(status) {
+  return normalizarTexto(status) === "cancelada";
+}
+
+function notaPertenceAoModuloAtual(nota, moduloAtual) {
+  const moduloDaNota = Number(nota?.modulo_id || 0);
+
+  /*
+    Se a nota tem modulo_id, exigimos que seja o módulo atual.
+    Se não tem modulo_id, não descartamos automaticamente, porque algumas
+    telas antigas podem ter salvo a nota sem esse campo.
+  */
+  if (moduloDaNota > 0) {
+    return moduloDaNota === Number(moduloAtual || 0);
+  }
+
+  return true;
 }
 
 /* =========================================================
@@ -1025,23 +1114,39 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
     aulasValidasPorMatricula[mid] = (aulasValidasPorMatricula[mid] || 0) + 1;
   });
 
-  const avaliacoesPorMatricula = {};
+  const notasAvaliacaoPorMatricula = {};
+  const numerosNotasPorMatricula = {};
 
   notasDoSistema.forEach((nota) => {
     const mid = String(Number(nota.matricula_id));
     const moduloAtual = Number(moduloAtualPorMatricula[mid] || 0);
-    const moduloDaNota = Number(nota.modulo_id || 0);
 
     if (!moduloAtual) return;
-    if (moduloDaNota !== moduloAtual) return;
+    if (!notaPertenceAoModuloAtual(nota, moduloAtual)) return;
     if (!ehNotaDeAvaliacao(nota)) return;
 
-    avaliacoesPorMatricula[mid] = (avaliacoesPorMatricula[mid] || 0) + 1;
+    if (!notasAvaliacaoPorMatricula[mid]) {
+      notasAvaliacaoPorMatricula[mid] = [];
+    }
+
+    if (!numerosNotasPorMatricula[mid]) {
+      numerosNotasPorMatricula[mid] = new Set();
+    }
+
+    notasAvaliacaoPorMatricula[mid].push(nota);
+
+    const numeroAvaliacaoDaNota = extrairNumeroAvaliacaoDaNota(nota);
+
+    if (numeroAvaliacaoDaNota) {
+      numerosNotasPorMatricula[mid].add(numeroAvaliacaoDaNota);
+    }
   });
 
   const mapaEnvios = {};
 
   avaliacoesEnviadasDoSistema.forEach((envio) => {
+    if (statusAvaliacaoCancelada(envio.status)) return;
+
     const chave = chaveAvaliacao({
       matriculaId: envio.matricula_id,
       moduloId: envio.modulo_id,
@@ -1056,65 +1161,172 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
 
   idsMatriculas.forEach((matriculaId) => {
     const mid = String(Number(matriculaId));
+    const meta = metaPorMatricula[mid];
+
+    if (!meta) return;
 
     const totalAulasValidas = aulasValidasPorMatricula[mid] || 0;
-    const totalAvaliacoesLancadas = avaliacoesPorMatricula[mid] || 0;
-
     const avaliacoesEsperadas = Math.floor(totalAulasValidas / 14);
-    const avaliacoesPendentes = Math.max(
-      0,
-      avaliacoesEsperadas - totalAvaliacoesLancadas
-    );
+
+    const notasAvaliacao = notasAvaliacaoPorMatricula[mid] || [];
+    const numerosComNota = numerosNotasPorMatricula[mid] || new Set();
+
+    /*
+      Algumas notas antigas podem ter sido salvas como "Avaliação",
+      sem o número do Progress Check. Nesses casos, usamos a quantidade
+      como fallback para não manter pendência falsa no card.
+    */
+    let notasSemNumeroDisponiveis = notasAvaliacao.filter(
+      (nota) => !extrairNumeroAvaliacaoDaNota(nota)
+    ).length;
+
+    let totalResolvidas = 0;
+    const numerosPendentes = [];
+
+    for (let numeroAvaliacao = 1; numeroAvaliacao <= avaliacoesEsperadas; numeroAvaliacao++) {
+      const chave = chaveAvaliacao({
+        matriculaId: meta.matriculaId,
+        moduloId: meta.moduloId,
+        numeroAvaliacao
+      });
+
+      const envio = mapaEnvios[chave] || null;
+
+      const temNotaComEsseNumero = numerosComNota.has(numeroAvaliacao);
+      const envioJaConcluido = statusAvaliacaoConcluida(envio?.status);
+
+      if (temNotaComEsseNumero || envioJaConcluido) {
+        totalResolvidas++;
+        continue;
+      }
+
+      if (notasSemNumeroDisponiveis > 0) {
+        notasSemNumeroDisponiveis--;
+        totalResolvidas++;
+        continue;
+      }
+
+      numerosPendentes.push(numeroAvaliacao);
+    }
 
     auditoria.push({
       matriculaId,
-      aluno: metaPorMatricula[mid]?.aluno || "Aluno",
-      materia: metaPorMatricula[mid]?.materia || "Matéria",
-      materiaId: metaPorMatricula[mid]?.materiaId || 0,
-      moduloAtual: metaPorMatricula[mid]?.modulo || "Módulo",
-      moduloId: metaPorMatricula[mid]?.moduloId || 0,
+      aluno: meta.aluno || "Aluno",
+      materia: meta.materia || "Matéria",
+      materiaId: meta.materiaId || 0,
+      moduloAtual: meta.modulo || "Módulo",
+      moduloId: meta.moduloId || 0,
       aulasValidasModuloAtual: totalAulasValidas,
-      avaliacoesLancadasModuloAtual: totalAvaliacoesLancadas,
+      avaliacoesResolvidasModuloAtual: totalResolvidas,
       avaliacoesEsperadas,
-      avaliacoesPendentes,
-      apareceNoCard: avaliacoesPendentes > 0 ? "SIM" : "NÃO"
+      avaliacoesPendentes: numerosPendentes.length,
+      apareceNoCard: numerosPendentes.length > 0 ? "SIM" : "NÃO"
     });
 
-    if (avaliacoesPendentes <= 0) return;
-
-    for (let i = 1; i <= avaliacoesPendentes; i++) {
-      const numeroAvaliacao = totalAvaliacoesLancadas + i;
-      const meta = metaPorMatricula[mid];
-
+    numerosPendentes.forEach((numeroAvaliacao) => {
       const chave = chaveAvaliacao({
-        matriculaId: meta?.matriculaId,
-        moduloId: meta?.moduloId,
+        matriculaId: meta.matriculaId,
+        moduloId: meta.moduloId,
         numeroAvaliacao
       });
 
       const envio = mapaEnvios[chave] || null;
 
       pendencias.push({
-        matriculaId: meta?.matriculaId || null,
-        alunoId: meta?.alunoId || null,
-        aluno: meta?.aluno || "Aluno",
-        materia: meta?.materia || "Matéria",
-        materiaId: meta?.materiaId || 0,
-        modulo: meta?.modulo || "Módulo",
-        moduloId: meta?.moduloId || 0,
+        matriculaId: meta.matriculaId || null,
+        alunoId: meta.alunoId || null,
+        aluno: meta.aluno || "Aluno",
+        materia: meta.materia || "Matéria",
+        materiaId: meta.materiaId || 0,
+        modulo: meta.modulo || "Módulo",
+        moduloId: meta.moduloId || 0,
         numeroAvaliacao,
         avaliacao: `Progress Check ${numeroAvaliacao}`,
         aulasValidas: totalAulasValidas,
-        avaliacoesLancadas: totalAvaliacoesLancadas,
+        avaliacoesLancadas: totalResolvidas,
         envio
       });
-    }
+    });
   });
 
   console.table(auditoria);
   console.log("Auditoria de avaliações do professor:", auditoria);
 
   return pendencias;
+}
+
+async function sincronizarAvaliacoesConcluidasComNotas() {
+  /*
+    Melhoria importante:
+    se o professor já lançou a nota do Progress Check, o envio da avaliação
+    também pode ser marcado como "Concluída". Assim o card do resumo e a tela
+    de detalhes deixam de mostrar "aguardando correção" para algo que já foi corrigido.
+  */
+  if (!avaliacoesEnviadasDoSistema.length || !notasDoSistema.length) return;
+
+  const chavesComNota = new Set();
+
+  notasDoSistema.forEach((nota) => {
+    if (!ehNotaDeAvaliacao(nota)) return;
+
+    const numeroAvaliacao = extrairNumeroAvaliacaoDaNota(nota);
+
+    if (!numeroAvaliacao) return;
+
+    const matriculaId = Number(nota.matricula_id || 0);
+    const moduloId = Number(nota.modulo_id || 0);
+
+    if (!matriculaId || !moduloId) return;
+
+    chavesComNota.add(
+      chaveAvaliacao({
+        matriculaId,
+        moduloId,
+        numeroAvaliacao
+      })
+    );
+  });
+
+  const enviosParaConcluir = avaliacoesEnviadasDoSistema.filter((envio) => {
+    if (!envio?.id) return false;
+    if (statusAvaliacaoConcluida(envio.status)) return false;
+    if (statusAvaliacaoCancelada(envio.status)) return false;
+
+    const chave = chaveAvaliacao({
+      matriculaId: envio.matricula_id,
+      moduloId: envio.modulo_id,
+      numeroAvaliacao: envio.numero_avaliacao
+    });
+
+    return chavesComNota.has(chave);
+  });
+
+  if (!enviosParaConcluir.length) return;
+
+  const agora = new Date().toISOString();
+
+  for (const envio of enviosParaConcluir) {
+    const { error } = await supabase
+      .from("avaliacao_aluno")
+      .update({
+        status: "Concluída",
+        concluida_em: envio.concluida_em || agora
+      })
+      .eq("id", envio.id);
+
+    if (error) {
+      console.warn(
+        "Não foi possível marcar avaliação como concluída:",
+        envio.id,
+        error.message
+      );
+
+      continue;
+    }
+
+    envio.status = "Concluída";
+    envio.concluida_em = envio.concluida_em || agora;
+  }
 }
 
 async function buscarFormularioAvaliacao({ materiaId, moduloId, numeroAvaliacao }) {
@@ -1423,42 +1635,47 @@ function renderVisaoGeralUnificada() {
 }
 
 function textoStatusEnvioAvaliacao(envio) {
-  if (!envio) return "";
+  if (!envio) {
+    return "Avaliação ainda não enviada para o aluno.";
+  }
 
-  if (envio.status === "Pendente") {
+  const status = normalizarTexto(envio.status);
+
+  if (status === "pendente") {
     return `Avaliação enviada em ${formatarDataHoraBR(envio.enviado_em)}. Aguardando realização pelo aluno.`;
   }
 
-  if (envio.status === "Realizada pelo aluno") {
+  if (status === "realizada pelo aluno") {
     return `O aluno informou que realizou em ${formatarDataHoraBR(envio.aluno_confirmou_realizacao_em)}. Aguardando correção/lançamento de nota.`;
   }
 
-  if (envio.status === "Concluída") {
+  if (statusAvaliacaoConcluida(envio.status)) {
     return "Avaliação concluída.";
   }
 
-  if (envio.status === "Cancelada") {
+  if (statusAvaliacaoCancelada(envio.status)) {
     return "Avaliação cancelada.";
   }
 
-  return `Status: ${envio.status}`;
+  return `Status: ${envio.status || "não informado"}`;
 }
 
 function htmlItemAvaliacao(item) {
   const envio = item.envio || null;
-  const jaEnviada = envio && envio.status !== "Cancelada";
+  const status = normalizarTexto(envio?.status);
+  const jaEnviada = envio && !statusAvaliacaoCancelada(envio.status);
 
   let textoBotao = "Enviar avaliação";
 
-  if (envio?.status === "Pendente") {
+  if (status === "pendente") {
     textoBotao = "Já enviada";
   }
 
-  if (envio?.status === "Realizada pelo aluno") {
+  if (status === "realizada pelo aluno") {
     textoBotao = "Aluno informou realização";
   }
 
-  if (envio?.status === "Concluída") {
+  if (statusAvaliacaoConcluida(envio?.status)) {
     textoBotao = "Concluída";
   }
 
@@ -1472,7 +1689,7 @@ function htmlItemAvaliacao(item) {
           <p>${escapeHtml(item.materia)} • ${escapeHtml(item.modulo)}</p>
           <p>
             ${item.aulasValidas} aula(s) válidas no módulo atual •
-            ${item.avaliacoesLancadas} avaliação(ões) lançada(s) neste módulo
+            ${item.avaliacoesLancadas} avaliação(ões) já resolvida(s) neste módulo
           </p>
           ${
             textoStatus
@@ -1784,6 +2001,7 @@ async function montarResumo() {
     await carregarAulasProfessorPorPeriodo();
     await carregarNotasSistema();
     await carregarAvaliacoesEnviadasSistema();
+    await sincronizarAvaliacoesConcluidasComNotas();
 
     renderAulasPeriodo();
     renderSelectMatriculas();
@@ -1827,6 +2045,24 @@ btnDetalhes?.addEventListener("click", () => {
 
   localStorage.setItem("matriculaSelecionada", matriculaIdSelecionada);
   window.location.href = "detalhes-aluno.html";
+});
+
+btnAtualizarResumo?.addEventListener("click", async () => {
+  const textoOriginal = btnAtualizarResumo.textContent;
+
+  btnAtualizarResumo.disabled = true;
+  btnAtualizarResumo.textContent = "Atualizando...";
+
+  try {
+    await montarResumo();
+    mostrarMensagem("Resumo atualizado!");
+  } catch (error) {
+    console.error("Erro ao atualizar resumo:", error);
+    mostrarMensagem("Não foi possível atualizar o resumo.", false);
+  } finally {
+    btnAtualizarResumo.disabled = false;
+    btnAtualizarResumo.textContent = textoOriginal;
+  }
 });
 
 btnToggleAvaliacoes?.addEventListener("click", () => {

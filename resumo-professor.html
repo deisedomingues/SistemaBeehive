@@ -20,7 +20,18 @@
         </p>
       </div>
 
-      <a href="home-professor.html" class="link-voltar link-voltar-topo">← Voltar</a>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button
+          id="btnAtualizarResumo"
+          type="button"
+          class="btn btn-neutro btn-pequeno-resumo"
+          style="width:auto; padding:10px 14px;"
+        >
+          Atualizar resumo
+        </button>
+
+        <a href="home-professor.html" class="link-voltar link-voltar-topo">← Voltar</a>
+      </div>
     </header>
 
     <div id="msg" class="msg-resumo-professor" style="display:none;"></div>
@@ -69,9 +80,10 @@
 
       <!-- AVALIAÇÕES -->
       <div class="card card-professor-amarelo">
-        <h2>📝 Avaliações previstas</h2>
+        <h2>📝 Avaliações a acompanhar</h2>
         <p class="texto-ajuda-resumo">
-          A cada 14 aulas válidas no módulo atual, uma avaliação pode ficar pendente.
+          A cada 14 aulas válidas no módulo atual, o sistema verifica se existe um Progress Check.
+          Depois que a nota é lançada, a avaliação sai desta lista.
         </p>
 
         <div id="listaAvaliacoesContainer" class="lista-interna-resumo">
