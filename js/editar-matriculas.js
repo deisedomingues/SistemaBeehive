@@ -4,6 +4,11 @@ import { exigirAdmin } from "./guard.js";
 await exigirAdmin();
 
 // =====================
+// Constantes
+// =====================
+const CNPJ_ALUNO_PARTICULAR = "00000000000000";
+
+// =====================
 // Elementos da tela
 // =====================
 const msg = document.getElementById("msg");
@@ -84,6 +89,7 @@ function criarOption(value, label) {
 
 function formatarDataBR(dataISO) {
   if (!dataISO) return "—";
+
   const [ano, mes, dia] = dataISO.split("-");
   return `${dia}/${mes}/${ano}`;
 }
@@ -92,10 +98,21 @@ function valorTextoOuTraco(valor) {
   return valor && String(valor).trim() ? valor : "—";
 }
 
-function nomeEmpresaPorCnpj(cnpj) {
-  if (!cnpj || cnpj === "00000000000000") return "Aluno particular";
+function normalizarEmpresaCnpj(cnpj) {
+  return cnpj ? String(cnpj) : CNPJ_ALUNO_PARTICULAR;
+}
 
-  const empresa = empresasCache.find((e) => String(e.cnpj) === String(cnpj));
+function nomeEmpresaPorCnpj(cnpj) {
+  const cnpjNormalizado = normalizarEmpresaCnpj(cnpj);
+
+  if (cnpjNormalizado === CNPJ_ALUNO_PARTICULAR) {
+    return "Aluno particular";
+  }
+
+  const empresa = empresasCache.find(
+    (e) => String(e.cnpj) === String(cnpjNormalizado)
+  );
+
   return empresa?.nome || "Empresa não encontrada";
 }
 
@@ -212,20 +229,24 @@ function atualizarVisibilidadeBotaoAdicionarCurso() {
   }
 }
 
-function preencherSelectEmpresa(valorAtual = "") {
+function preencherSelectEmpresa(valorAtual = CNPJ_ALUNO_PARTICULAR) {
+  const valorNormalizado = normalizarEmpresaCnpj(valorAtual);
+
   empresaCursoSel.innerHTML = "";
-  empresaCursoSel.appendChild(criarOption("", "Aluno particular"));
+
+  empresaCursoSel.appendChild(
+    criarOption(CNPJ_ALUNO_PARTICULAR, "Aluno particular")
+  );
 
   empresasCache.forEach((empresa) => {
-    if (empresa.cnpj === "00000000000000") return;
-    empresaCursoSel.appendChild(criarOption(empresa.cnpj, empresa.nome));
+    const cnpj = String(empresa.cnpj || "");
+
+    if (cnpj === CNPJ_ALUNO_PARTICULAR) return;
+
+    empresaCursoSel.appendChild(criarOption(cnpj, empresa.nome));
   });
 
-  if (valorAtual && valorAtual !== "00000000000000") {
-    empresaCursoSel.value = valorAtual;
-  } else {
-    empresaCursoSel.value = "";
-  }
+  empresaCursoSel.value = valorNormalizado;
 }
 
 function resetEdicao() {
@@ -247,7 +268,8 @@ function resetEdicao() {
   materiaSel.innerHTML = `<option value="">—</option>`;
   moduloSel.innerHTML = `<option value="">Selecione uma matrícula</option>`;
   professorSel.innerHTML = `<option value="">Selecione uma matrícula</option>`;
-  preencherSelectEmpresa("");
+
+  preencherSelectEmpresa(CNPJ_ALUNO_PARTICULAR);
 
   linkZoomInput.value = "";
   linkYoutubeInput.value = "";
@@ -290,7 +312,9 @@ function preencherProfessoresPorMateria(materiaId, professorAtual = "") {
     .filter((p) => String(p.materia_id) === String(materiaId))
     .forEach((p) => {
       const chave = String(p.id);
+
       if (vistos.has(chave)) return;
+
       vistos.add(chave);
       professorSel.appendChild(criarOption(p.id, p.nome));
     });
@@ -312,6 +336,7 @@ async function carregarBases() {
     mostrarMensagem("Erro ao carregar matérias.", false);
     return;
   }
+
   materiasCache = materias || [];
 
   const { data: empresas, error: errEmpresas } = await supabase
@@ -324,6 +349,7 @@ async function carregarBases() {
     mostrarMensagem("Erro ao carregar empresas.", false);
     return;
   }
+
   empresasCache = empresas || [];
 
   const { data: modulos, error: errMod } = await supabase
@@ -336,6 +362,7 @@ async function carregarBases() {
     mostrarMensagem("Erro ao carregar módulos.", false);
     return;
   }
+
   modulosCache = modulos || [];
 
   const { data: pm, error: errPM } = await supabase
@@ -374,11 +401,13 @@ async function carregarBases() {
   alunosCache = alunos || [];
 
   selectAluno.innerHTML = `<option value="">Selecione o aluno</option>`;
+
   alunosCache.forEach((a) => {
     selectAluno.appendChild(criarOption(a.id, a.nome));
   });
 
   const alunoPreSelecionado = localStorage.getItem("alunoSelecionadoAdmin");
+
   if (alunoPreSelecionado) {
     const existe = alunosCache.some(
       (a) => String(a.id) === String(alunoPreSelecionado)
@@ -436,7 +465,9 @@ function preencherSelectMatriculas() {
   matriculasAluno.forEach((m) => {
     const status = m.ativa === false ? " (desmatriculado)" : "";
     const empresa = nomeEmpresaPorCnpj(m.empresa_cnpj);
+
     const label = `${m.materia?.nome} — ${m.modulo?.nome} — Prof(a). ${m.professor?.nome} — ${empresa}${status}`;
+
     selectMatricula.appendChild(criarOption(m.id, label));
   });
 
@@ -468,13 +499,15 @@ function preencherEdicaoDaMatricula(m) {
   subtituloEdicao.textContent = `Curso selecionado: ${m.materia?.nome || "—"}`;
 
   materiaSel.innerHTML = "";
-  materiaSel.appendChild(criarOption(m.materia?.id || "", m.materia?.nome || "—"));
+  materiaSel.appendChild(
+    criarOption(m.materia?.id || "", m.materia?.nome || "—")
+  );
 
   const materiaId = m.materia?.id;
 
   preencherModulosPorMateria(materiaId, m.modulo?.id || "");
   preencherProfessoresPorMateria(materiaId, m.professor?.id || "");
-  preencherSelectEmpresa(m.empresa_cnpj || "");
+  preencherSelectEmpresa(m.empresa_cnpj || CNPJ_ALUNO_PARTICULAR);
 
   linkZoomInput.value = m.link_zoom || "";
   linkYoutubeInput.value = m.link_youtube || "";
@@ -486,6 +519,7 @@ function preencherEdicaoDaMatricula(m) {
   linkZoomInput.disabled = false;
   linkYoutubeInput.disabled = false;
   btnSalvar.disabled = false;
+
   atualizarTextoBotaoSalvar();
 
   const inicio = formatarDataBR(m.data_inicio);
@@ -573,7 +607,8 @@ function entrarModoCriacao() {
   atualizarVisibilidadeBotaoAdicionarCurso();
 
   tituloEdicao.textContent = "Adicionar novo curso";
-  subtituloEdicao.textContent = "Use esta opção apenas para um curso que o aluno nunca teve antes.";
+  subtituloEdicao.textContent =
+    "Use esta opção apenas para um curso que o aluno nunca teve antes.";
 
   materiaSel.disabled = false;
   moduloSel.disabled = true;
@@ -584,19 +619,22 @@ function entrarModoCriacao() {
   btnSalvar.disabled = false;
 
   materiaSel.innerHTML = `<option value="">Selecione a matéria</option>`;
+
   materiasDisponiveis.forEach((m) => {
     materiaSel.appendChild(criarOption(m.id, m.nome));
   });
 
   moduloSel.innerHTML = `<option value="">Selecione a matéria primeiro</option>`;
   professorSel.innerHTML = `<option value="">Selecione a matéria primeiro</option>`;
-  preencherSelectEmpresa("");
+
+  preencherSelectEmpresa(CNPJ_ALUNO_PARTICULAR);
 
   linkZoomInput.value = "";
   linkYoutubeInput.value = "";
 
   infoMatricula.textContent = "Novo curso ainda não salvo.";
   selectMatricula.value = "";
+
   atualizarTextoBotaoSalvar();
 }
 
@@ -617,13 +655,15 @@ function entrarModoEdicaoRematricula(m) {
   subtituloEdicao.textContent = `Curso selecionado: ${m.materia?.nome || "—"}`;
 
   materiaSel.innerHTML = "";
-  materiaSel.appendChild(criarOption(m.materia?.id || "", m.materia?.nome || "—"));
+  materiaSel.appendChild(
+    criarOption(m.materia?.id || "", m.materia?.nome || "—")
+  );
 
   const materiaId = m.materia?.id;
 
   preencherModulosPorMateria(materiaId, m.modulo?.id || "");
   preencherProfessoresPorMateria(materiaId, m.professor?.id || "");
-  preencherSelectEmpresa(m.empresa_cnpj || "");
+  preencherSelectEmpresa(m.empresa_cnpj || CNPJ_ALUNO_PARTICULAR);
 
   linkZoomInput.value = m.link_zoom || "";
   linkYoutubeInput.value = m.link_youtube || "";
@@ -635,6 +675,7 @@ function entrarModoEdicaoRematricula(m) {
   linkZoomInput.disabled = false;
   linkYoutubeInput.disabled = false;
   btnSalvar.disabled = false;
+
   atualizarTextoBotaoSalvar();
 
   const inicio = formatarDataBR(m.data_inicio);
@@ -690,6 +731,7 @@ selectAluno.addEventListener("change", async () => {
   }
 
   matriculasAluno = await carregarMatriculasDoAluno(alunoId);
+
   preencherSelectMatriculas();
   preencherResumoDeCursos();
   atualizarVisibilidadeBotaoAdicionarCurso();
@@ -697,11 +739,13 @@ selectAluno.addEventListener("change", async () => {
 
 selectMatricula.addEventListener("change", () => {
   const mid = selectMatricula.value;
+
   resetEdicao();
 
   if (!mid) return;
 
   const m = matriculasAluno.find((x) => String(x.id) === String(mid));
+
   if (!m) return;
 
   if (m.ativa === false) {
@@ -744,13 +788,20 @@ btnDesmatricular.addEventListener("click", async () => {
   const idAtual = matriculaAtual.id;
 
   matriculasAluno = await carregarMatriculasDoAluno(alunoId);
+
   preencherSelectMatriculas();
   preencherResumoDeCursos();
   atualizarVisibilidadeBotaoAdicionarCurso();
+
   selectMatricula.value = idAtual;
 
-  const atualizada = matriculasAluno.find((x) => String(x.id) === String(idAtual));
-  if (atualizada) preencherBlocoRematricula(atualizada);
+  const atualizada = matriculasAluno.find(
+    (x) => String(x.id) === String(idAtual)
+  );
+
+  if (atualizada) {
+    preencherBlocoRematricula(atualizada);
+  }
 });
 
 // =====================
@@ -781,6 +832,7 @@ formEditar.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const alunoId = selectAluno.value;
+
   if (!alunoId) {
     mostrarMensagem("Selecione um aluno.", false);
     return;
@@ -792,7 +844,8 @@ formEditar.addEventListener("submit", async (e) => {
     const materiaId = materiaSel.value;
     const moduloId = moduloSel.value;
     const professorId = professorSel.value;
-    const empresaCnpj = empresaCursoSel.value || null;
+    const empresaCnpj =
+      empresaCursoSel.value || CNPJ_ALUNO_PARTICULAR;
     const linkZoom = linkZoomInput.value.trim();
     const linkYoutube = linkYoutubeInput.value.trim();
 
@@ -815,18 +868,20 @@ formEditar.addEventListener("submit", async (e) => {
 
     const { error } = await supabase
       .from("matricula")
-      .insert([{
-        aluno_id: alunoId,
-        materia_id: Number(materiaId),
-        modulo_id: Number(moduloId),
-        professor_id: Number(professorId),
-        empresa_cnpj: empresaCnpj,
-        link_zoom: linkZoom || null,
-        link_youtube: linkYoutube || null,
-        data_inicio: hojeISO,
-        data_fim: null,
-        ativa: true
-      }]);
+      .insert([
+        {
+          aluno_id: alunoId,
+          materia_id: Number(materiaId),
+          modulo_id: Number(moduloId),
+          professor_id: Number(professorId),
+          empresa_cnpj: empresaCnpj,
+          link_zoom: linkZoom || null,
+          link_youtube: linkYoutube || null,
+          data_inicio: hojeISO,
+          data_fim: null,
+          ativa: true
+        }
+      ]);
 
     if (error) {
       console.error(error);
@@ -837,10 +892,12 @@ formEditar.addEventListener("submit", async (e) => {
     mostrarMensagem("Novo curso adicionado com sucesso.");
 
     matriculasAluno = await carregarMatriculasDoAluno(alunoId);
+
     preencherSelectMatriculas();
     preencherResumoDeCursos();
     atualizarVisibilidadeBotaoAdicionarCurso();
     resetEdicao();
+
     return;
   }
 
@@ -851,7 +908,8 @@ formEditar.addEventListener("submit", async (e) => {
 
   const novoModuloId = moduloSel.value;
   const novoProfessorId = professorSel.value;
-  const novaEmpresaCnpj = empresaCursoSel.value || null;
+  const novaEmpresaCnpj =
+    empresaCursoSel.value || CNPJ_ALUNO_PARTICULAR;
   const novoLinkZoom = linkZoomInput.value.trim();
   const novoLinkYoutube = linkYoutubeInput.value.trim();
 
@@ -886,13 +944,21 @@ formEditar.addEventListener("submit", async (e) => {
     const midAtual = matriculaAtual.id;
 
     matriculasAluno = await carregarMatriculasDoAluno(alunoId);
+
     preencherSelectMatriculas();
     preencherResumoDeCursos();
     atualizarVisibilidadeBotaoAdicionarCurso();
+
     selectMatricula.value = midAtual;
 
-    const atualizada = matriculasAluno.find((x) => String(x.id) === String(midAtual));
-    if (atualizada) preencherEdicaoDaMatricula(atualizada);
+    const atualizada = matriculasAluno.find(
+      (x) => String(x.id) === String(midAtual)
+    );
+
+    if (atualizada) {
+      preencherEdicaoDaMatricula(atualizada);
+    }
+
     return;
   }
 
@@ -918,13 +984,20 @@ formEditar.addEventListener("submit", async (e) => {
   const midAtual = matriculaAtual.id;
 
   matriculasAluno = await carregarMatriculasDoAluno(alunoId);
+
   preencherSelectMatriculas();
   preencherResumoDeCursos();
   atualizarVisibilidadeBotaoAdicionarCurso();
+
   selectMatricula.value = midAtual;
 
-  const atualizada = matriculasAluno.find((x) => String(x.id) === String(midAtual));
-  if (atualizada) preencherEdicaoDaMatricula(atualizada);
+  const atualizada = matriculasAluno.find(
+    (x) => String(x.id) === String(midAtual)
+  );
+
+  if (atualizada) {
+    preencherEdicaoDaMatricula(atualizada);
+  }
 });
 
 // init
