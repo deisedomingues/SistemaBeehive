@@ -15,14 +15,12 @@ const inputNome = document.getElementById("nome");
 const inputData = document.getElementById("dataNascimento");
 const inputEmail = document.getElementById("email");
 const inputTelefone = document.getElementById("telefone");
-const inputEmpresa = document.getElementById("empresa");
 
 const btnSalvar = document.getElementById("btnSalvar");
 const secaoHorarios = document.getElementById("secaoHorarios");
 const horariosCursosDiv = document.getElementById("horariosCursos");
 
 let alunosCache = [];
-let empresasCache = [];
 let alunoAtualId = null;
 let matriculasAlunoAtual = [];
 
@@ -96,7 +94,6 @@ function limparFormulario() {
   inputData.value = "";
   inputEmail.value = "";
   inputTelefone.value = "";
-  inputEmpresa.value = "";
 
   btnSalvar.disabled = true;
   btnSalvar.textContent = "Salvar alterações";
@@ -110,38 +107,6 @@ function limparFormulario() {
   if (horariosCursosDiv) {
     horariosCursosDiv.innerHTML = "";
   }
-}
-
-/* =========================
-   CARREGAR EMPRESAS
-========================= */
-async function carregarEmpresas() {
-  const { data, error } = await supabase
-    .from("empresaparceira")
-    .select("cnpj, nome")
-    .order("nome", { ascending: true });
-
-  if (error) {
-    console.error("Erro ao carregar empresas:", error);
-    mostrarMensagem("Erro ao carregar empresas.", false);
-    return;
-  }
-
-  empresasCache = data || [];
-
-  inputEmpresa.innerHTML = "";
-
-  const optionSemEmpresa = document.createElement("option");
-  optionSemEmpresa.value = "";
-  optionSemEmpresa.textContent = "Sem empresa vinculada";
-  inputEmpresa.appendChild(optionSemEmpresa);
-
-  empresasCache.forEach((emp) => {
-    const option = document.createElement("option");
-    option.value = emp.cnpj;
-    option.textContent = emp.nome;
-    inputEmpresa.appendChild(option);
-  });
 }
 
 /* =========================
@@ -216,7 +181,7 @@ function mostrarSugestoes(lista) {
 async function carregarAlunoPorId(id) {
   const { data, error } = await supabase
     .from("aluno")
-    .select("id, nome, data_nascimento, email, telefone, empresa_cnpj")
+    .select("id, nome, data_nascimento, email, telefone")
     .eq("id", id)
     .single();
 
@@ -444,7 +409,8 @@ function renderizarHorariosDoAluno(matriculas, horarios) {
 
     const nomeMateria = matricula.materia?.nome || "Curso sem nome";
     const nomeModulo = matricula.modulo?.nome || "Módulo não informado";
-    const nomeProfessor = matricula.professor?.nome || "Professor(a) não informado";
+    const nomeProfessor =
+      matricula.professor?.nome || "Professor(a) não informado";
 
     card.innerHTML = `
       <div style="margin-bottom:10px;">
@@ -472,7 +438,10 @@ function renderizarHorariosDoAluno(matriculas, horarios) {
 
     horariosCursosDiv.appendChild(card);
 
-    const horariosDessaMatricula = encontrarHorariosDaMatricula(horarios, matricula);
+    const horariosDessaMatricula = encontrarHorariosDaMatricula(
+      horarios,
+      matricula
+    );
 
     if (horariosDessaMatricula.length) {
       horariosDessaMatricula.forEach((horario) => {
@@ -498,7 +467,9 @@ function coletarHorariosDaTela() {
   cards.forEach((card) => {
     const matriculaId = Number(card.dataset.matriculaId);
     const materiaId = Number(card.dataset.materiaId);
-    const moduloId = card.dataset.moduloId ? Number(card.dataset.moduloId) : null;
+    const moduloId = card.dataset.moduloId
+      ? Number(card.dataset.moduloId)
+      : null;
     const professorId = Number(card.dataset.professorId);
 
     const linhas = [...card.querySelectorAll(".linha-horario-aula")];
@@ -515,7 +486,9 @@ function coletarHorariosDaTela() {
       }
 
       if (!diaSemana || !horaInicio || !horaFim) {
-        throw new Error("Preencha dia, início e fim em todos os horários adicionados.");
+        throw new Error(
+          "Preencha dia, início e fim em todos os horários adicionados."
+        );
       }
 
       if (horaFim <= horaInicio) {
@@ -575,7 +548,8 @@ async function validarConflitoProfessorAntesDeSalvar(horarios) {
     }
 
     const conflitos = (data || []).filter((existente) => {
-      const ehDoMesmoAluno = Number(existente.aluno_id) === Number(alunoAtualId);
+      const ehDoMesmoAluno =
+        Number(existente.aluno_id) === Number(alunoAtualId);
 
       if (ehDoMesmoAluno) {
         return false;
@@ -660,7 +634,6 @@ async function selecionarAluno(aluno) {
   inputData.value = dados.data_nascimento || "";
   inputEmail.value = dados.email || "";
   inputTelefone.value = dados.telefone || "";
-  inputEmpresa.value = dados.empresa_cnpj || "";
 
   matriculasAlunoAtual = await carregarMatriculasDoAluno(aluno.id);
   const horarios = await carregarHorariosDoAluno(aluno.id);
@@ -720,7 +693,6 @@ form.addEventListener("submit", async (e) => {
   const dataNascimento = inputData.value || null;
   const email = inputEmail.value.trim().toLowerCase();
   const telefone = inputTelefone.value.trim();
-  const empresa = inputEmpresa.value || null;
 
   if (!nome) {
     mostrarMsgSalvar("Preencha o nome do aluno.", false);
@@ -740,12 +712,17 @@ form.addEventListener("submit", async (e) => {
   btnSalvar.disabled = true;
   btnSalvar.textContent = "Salvando...";
 
+  /*
+    Regra nova:
+    Aqui salvamos apenas dados pessoais do aluno.
+    A empresa não pertence mais ao aluno.
+    A empresa deve ser editada na matrícula/curso.
+  */
   const patch = {
     nome,
     data_nascimento: dataNascimento,
     email: email || null,
-    telefone: telefone || null,
-    empresa_cnpj: empresa
+    telefone: telefone || null
   };
 
   try {
@@ -756,7 +733,10 @@ form.addEventListener("submit", async (e) => {
 
     if (error) {
       console.error("Erro ao salvar alterações:", error);
-      mostrarMsgSalvar("Erro ao salvar dados do aluno. Verifique os dados e tente novamente.", false);
+      mostrarMsgSalvar(
+        "Erro ao salvar dados do aluno. Verifique os dados e tente novamente.",
+        false
+      );
       return;
     }
 
@@ -767,7 +747,9 @@ form.addEventListener("submit", async (e) => {
 
     await carregarAlunosComQtdCursos();
 
-    const alunoAtualizado = alunosCache.find((a) => Number(a.id) === Number(alunoAtualId));
+    const alunoAtualizado = alunosCache.find(
+      (a) => Number(a.id) === Number(alunoAtualId)
+    );
 
     if (alunoAtualizado) {
       inputAluno.value = alunoAtualizado.nome;
@@ -808,5 +790,4 @@ document.addEventListener("click", (e) => {
 ========================= */
 limparFormulario();
 
-await carregarEmpresas();
 await carregarAlunosComQtdCursos();
