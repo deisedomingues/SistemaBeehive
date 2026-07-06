@@ -67,8 +67,18 @@ function formatarDataExtensa(data = new Date()) {
   const dia = String(data.getDate()).padStart(2, "0");
 
   const meses = [
-    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+    "janeiro",
+    "fevereiro",
+    "março",
+    "abril",
+    "maio",
+    "junho",
+    "julho",
+    "agosto",
+    "setembro",
+    "outubro",
+    "novembro",
+    "dezembro"
   ];
 
   return `${cidade}, ${dia} de ${meses[data.getMonth()]} de ${data.getFullYear()}.`;
@@ -78,6 +88,7 @@ function obterModoAlunosEmpresa() {
   const radioMarcado = document.querySelector(
     'input[name="modoAlunosEmpresa"]:checked'
   );
+
   return radioMarcado ? radioMarcado.value : "todos";
 }
 
@@ -85,6 +96,7 @@ function obterIdsAlunosSelecionadosEmpresa() {
   const checkboxes = document.querySelectorAll(
     ".checkbox-aluno-empresa:checked"
   );
+
   return Array.from(checkboxes).map((item) => Number(item.value));
 }
 
@@ -152,6 +164,23 @@ function aulaFoiGravada(aula) {
   return aula?.aula_gravada === true;
 }
 
+/*
+  Esta função pega o CNPJ da empresa em dois lugares:
+
+  1. matricula.empresa_cnpj
+  2. aluno.empresa_cnpj
+
+  Isso resolve o caso de "Aluno particular", porque no seu exemplo
+  o CNPJ 00000000000000 está na tabela aluno.
+*/
+function obterCnpjEmpresaDaAula(aula) {
+  return (
+    aula?.matricula?.empresa_cnpj ||
+    aula?.matricula?.aluno?.empresa_cnpj ||
+    ""
+  );
+}
+
 function montarLinhaOcorrencia(aula, mapaAulasPorId) {
   const data = formatarDataBR(aula.data_aula);
   const status = traduzirStatus(aula.status);
@@ -197,8 +226,9 @@ async function carregarEmpresas() {
 }
 
 async function carregarAlunosEmpresaNaChecklist(cnpj) {
-  listaAlunosEmpresa.innerHTML =
-    `<p class="texto-vazio-relatorio">Carregando alunos...</p>`;
+  listaAlunosEmpresa.innerHTML = `
+    <p class="texto-vazio-relatorio">Carregando alunos...</p>
+  `;
 
   if (!cnpj) {
     listaAlunosEmpresa.innerHTML = `
@@ -207,35 +237,73 @@ async function carregarAlunosEmpresaNaChecklist(cnpj) {
     return;
   }
 
-  const { data, error } = await supabase
+  const alunosMap = new Map();
+
+  /*
+    Busca 1:
+    Alunos encontrados por matrícula ativa.
+    Isso mantém o funcionamento antigo para empresas parceiras.
+  */
+  const { data: matriculas, error: erroMatriculas } = await supabase
     .from("matricula")
     .select(`
       id,
       empresa_cnpj,
+      ativa,
       aluno:aluno_id (
         id,
-        nome
+        nome,
+        empresa_cnpj
       )
     `)
     .eq("empresa_cnpj", cnpj)
     .eq("ativa", true);
 
-  if (error) {
-    console.error(error);
+  if (erroMatriculas) {
+    console.error("Erro ao buscar alunos pela matrícula:", erroMatriculas);
+  }
+
+  (matriculas || []).forEach((matricula) => {
+    const aluno = matricula.aluno;
+
+    if (aluno?.id) {
+      alunosMap.set(aluno.id, {
+        id: aluno.id,
+        nome: aluno.nome
+      });
+    }
+  });
+
+  /*
+    Busca 2:
+    Alunos encontrados diretamente na tabela aluno.
+    Isso resolve o caso de "Aluno particular".
+  */
+  const { data: alunosDiretos, error: erroAlunosDiretos } = await supabase
+    .from("aluno")
+    .select("id, nome, empresa_cnpj")
+    .eq("empresa_cnpj", cnpj)
+    .order("nome");
+
+  if (erroAlunosDiretos) {
+    console.error("Erro ao buscar alunos pela tabela aluno:", erroAlunosDiretos);
+  }
+
+  (alunosDiretos || []).forEach((aluno) => {
+    if (aluno?.id) {
+      alunosMap.set(aluno.id, {
+        id: aluno.id,
+        nome: aluno.nome
+      });
+    }
+  });
+
+  if (erroMatriculas && erroAlunosDiretos) {
     listaAlunosEmpresa.innerHTML = `
       <p class="texto-vazio-relatorio">Erro ao carregar alunos da empresa.</p>
     `;
     return;
   }
-
-  const alunosMap = new Map();
-
-  (data || []).forEach((matricula) => {
-    const aluno = matricula.aluno;
-    if (aluno?.id) {
-      alunosMap.set(aluno.id, aluno);
-    }
-  });
 
   const alunos = Array.from(alunosMap.values()).sort((a, b) =>
     a.nome.localeCompare(b.nome, "pt-BR")
@@ -309,7 +377,8 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
         empresa_cnpj,
         aluno:aluno_id (
           id,
-          nome
+          nome,
+          empresa_cnpj
         ),
         materia:materia_id ( nome ),
         modulo:modulo_id ( nome ),
@@ -337,9 +406,19 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
     mapaAulasPorId[aula.id] = aula;
   });
 
-  let filtrados = data.filter(
-    (aula) => aula?.matricula?.empresa_cnpj === empresaCnpj
-  );
+  /*
+    Aqui estava o problema principal.
+
+    Antes:
+    aula.matricula.empresa_cnpj === empresaCnpj
+
+    Agora:
+    verifica matrícula OU aluno.
+  */
+  let filtrados = data.filter((aula) => {
+    const cnpjDaAula = obterCnpjEmpresaDaAula(aula);
+    return cnpjDaAula === empresaCnpj;
+  });
 
   if (obterModoAlunosEmpresa() === "selecionados") {
     const idsSelecionados = obterIdsAlunosSelecionadosEmpresa();
@@ -403,6 +482,13 @@ async function gerarDocumentoEmpresa({ empresaCnpj, inicio, fim }) {
 
     if (status === "Cancelada") {
       grupo.canceladasEscola++;
+    }
+
+    if (status === "Trancada") {
+      /*
+        Mantive separado visualmente apenas nos registros/ocorrências.
+        Se quiser, depois podemos criar um contador próprio para trancamentos.
+      */
     }
 
     if (statusEhReposicao(status)) {
