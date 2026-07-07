@@ -16,7 +16,7 @@ const infoPerfilAluno = document.getElementById("infoPerfilAluno");
 const badgeNotificacoesProfessor = document.getElementById("badgeNotificacoesProfessor");
 const textoCardNotificacoesProfessor = document.getElementById("textoCardNotificacoesProfessor");
 
-const professorId = localStorage.getItem("professorId");
+const professorId = Number(localStorage.getItem("professorId"));
 
 let professorLogado = null;
 let alunoVinculado = null;
@@ -57,42 +57,355 @@ function atualizarBadgeNotificacoes(total) {
   }
 }
 
+/* ======================
+   Configurações das notificações
+
+   Importante:
+   Esta chave precisa ser igual à usada em notificacao-professor.js.
+====================== */
+const STATUS_NOTIFICACAO_HOME = {
+  REPOSICAO: "Reposição",
+  AULA_INSTRUMENTAL: "Aula Instrumental",
+  PLANTAO_DUVIDAS: "Plantão de dúvidas"
+};
+
+const CHAVE_NOTIFICACOES_VISTAS_HOME =
+  `beehive_notificacoes_professor_vistas_${professorId}`;
+
+/* ======================
+   Vistos locais da home
+====================== */
+function carregarNotificacoesVistasHome() {
+  try {
+    const salvas = JSON.parse(
+      localStorage.getItem(CHAVE_NOTIFICACOES_VISTAS_HOME) || "[]"
+    );
+
+    return new Set((salvas || []).map((id) => String(id)));
+  } catch (error) {
+    console.warn("Não foi possível ler notificações vistas da home:", error);
+    return new Set();
+  }
+}
+
+function notificacaoJaVistaHome(notificacaoId) {
+  return carregarNotificacoesVistasHome().has(String(notificacaoId));
+}
+
+/* ======================
+   Datas
+====================== */
+function hojeISOHome() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+function dataMenosDiasISOHome(dias) {
+  const data = new Date();
+  data.setDate(data.getDate() - dias);
+
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+/* ======================
+   Agendamentos novos
+
+   Conta:
+   - reposição;
+   - plantão de dúvidas;
+   - aula instrumental.
+
+   Só conta se ainda não foi marcado como visto.
+====================== */
+async function buscarTotalAgendamentosNovosProfessorHome() {
+  const dataInicial = dataMenosDiasISOHome(120);
+  const hoje = hojeISOHome();
+
+  const { data: horarios, error: errorHorarios } = await supabase
+    .from("horarios_reposicao")
+    .select("id, data, hora_inicio, professor_id")
+    .eq("professor_id", professorId)
+    .gte("data", dataInicial);
+
+  if (errorHorarios) {
+    console.error("Erro ao buscar horários do professor:", errorHorarios);
+    throw errorHorarios;
+  }
+
+  const listaHorarios = horarios || [];
+
+  if (!listaHorarios.length) {
+    return 0;
+  }
+
+  const mapaHorarios = new Map(
+    listaHorarios.map((horario) => [Number(horario.id), horario])
+  );
+
+  const horariosIds = listaHorarios.map((horario) => Number(horario.id));
+
+  const { data: agendamentos, error: errorAgendamentos } = await supabase
+    .from("reposicao_agendada")
+    .select(`
+      id,
+      aula_id,
+      horario_reposicao_id,
+      matricula_id,
+      cancelado,
+      tipo_agendamento
+    `)
+    .in("horario_reposicao_id", horariosIds)
+    .eq("cancelado", false);
+
+  if (errorAgendamentos) {
+    console.error("Erro ao buscar agendamentos do professor:", errorAgendamentos);
+    throw errorAgendamentos;
+  }
+
+  const listaAgendamentos = agendamentos || [];
+
+  if (!listaAgendamentos.length) {
+    return 0;
+  }
+
+  const agendamentosComHorario = listaAgendamentos
+    .map((item) => {
+      const horario = mapaHorarios.get(Number(item.horario_reposicao_id));
+
+      return {
+        id: item.id,
+        aula_id: item.aula_id || null,
+        matricula_id: item.matricula_id || null,
+        tipo_agendamento:
+          item.tipo_agendamento || STATUS_NOTIFICACAO_HOME.REPOSICAO,
+        data_reposicao: horario?.data || null
+      };
+    })
+    .filter((item) => item.data_reposicao);
+
+  const aulasOriginaisIds = [
+    ...new Set(
+      agendamentosComHorario
+        .map((item) => Number(item.aula_id))
+        .filter(Boolean)
+    )
+  ];
+
+  const matriculasIds = [
+    ...new Set(
+      agendamentosComHorario
+        .map((item) => Number(item.matricula_id))
+        .filter(Boolean)
+    )
+  ];
+
+  const datasReposicao = [
+    ...new Set(
+      agendamentosComHorario
+        .map((item) => item.data_reposicao)
+        .filter(Boolean)
+    )
+  ];
+
+  let aulasOriginaisJaRepostas = new Set();
+
+  if (aulasOriginaisIds.length) {
+    const { data: aulasRepostas, error: errorAulasRepostas } = await supabase
+      .from("aula")
+      .select("aula_original_id")
+      .eq("professor_id", professorId)
+      .eq("status", STATUS_NOTIFICACAO_HOME.REPOSICAO)
+      .not("aula_original_id", "is", null)
+      .in("aula_original_id", aulasOriginaisIds);
+
+    if (errorAulasRepostas) {
+      console.warn(
+        "Não foi possível verificar reposições já registradas:",
+        errorAulasRepostas
+      );
+    } else {
+      aulasOriginaisJaRepostas = new Set(
+        (aulasRepostas || []).map((item) => Number(item.aula_original_id))
+      );
+    }
+  }
+
+  let aulasJaRegistradasPorData = new Set();
+
+  if (matriculasIds.length && datasReposicao.length) {
+    const { data: aulasRegistradas, error: errorAulasRegistradas } =
+      await supabase
+        .from("aula")
+        .select("matricula_id, data_aula, status")
+        .eq("professor_id", professorId)
+        .in("matricula_id", matriculasIds)
+        .in("data_aula", datasReposicao)
+        .in("status", [
+          STATUS_NOTIFICACAO_HOME.REPOSICAO,
+          STATUS_NOTIFICACAO_HOME.AULA_INSTRUMENTAL,
+          STATUS_NOTIFICACAO_HOME.PLANTAO_DUVIDAS
+        ]);
+
+    if (errorAulasRegistradas) {
+      console.warn(
+        "Não foi possível verificar aulas já registradas:",
+        errorAulasRegistradas
+      );
+    } else {
+      aulasJaRegistradasPorData = new Set();
+
+      (aulasRegistradas || []).forEach((aula) => {
+        aulasJaRegistradasPorData.add(
+          `${Number(aula.matricula_id)}|${aula.data_aula}|${aula.status}`
+        );
+      });
+    }
+  }
+
+  const agendamentosAtivos = agendamentosComHorario.filter((item) => {
+    const tipo = item.tipo_agendamento || STATUS_NOTIFICACAO_HOME.REPOSICAO;
+
+    const chavePorData =
+      `${Number(item.matricula_id)}|${item.data_reposicao}|${tipo}`;
+
+    const jaRegistrouPorData = aulasJaRegistradasPorData.has(chavePorData);
+
+    if (jaRegistrouPorData) {
+      return false;
+    }
+
+    if (tipo === STATUS_NOTIFICACAO_HOME.REPOSICAO) {
+      const jaRegistrouPelaAulaOriginal =
+        item.aula_id &&
+        aulasOriginaisJaRepostas.has(Number(item.aula_id));
+
+      if (jaRegistrouPelaAulaOriginal) {
+        return false;
+      }
+
+      return true;
+    }
+
+    if (
+      tipo === STATUS_NOTIFICACAO_HOME.AULA_INSTRUMENTAL ||
+      tipo === STATUS_NOTIFICACAO_HOME.PLANTAO_DUVIDAS
+    ) {
+      return true;
+    }
+
+    return item.data_reposicao >= hoje;
+  });
+
+  const agendamentosNovos = agendamentosAtivos.filter((item) => {
+    const notificacaoId = `agendamento_${item.id}`;
+    return !notificacaoJaVistaHome(notificacaoId);
+  });
+
+  return agendamentosNovos.length;
+}
+
+/* ======================
+   Avaliações novas
+
+   Conta avaliações com status:
+   "Realizada pelo aluno"
+
+   Só conta se ainda não foi marcada como vista.
+====================== */
+async function buscarTotalAvaliacoesNovasProfessorHome() {
+  const { data: matriculas, error: errorMatriculas } = await supabase
+    .from("matricula")
+    .select("id")
+    .eq("professor_id", professorId)
+    .eq("ativa", true);
+
+  if (errorMatriculas) {
+    console.error("Erro ao buscar matrículas do professor:", errorMatriculas);
+    throw errorMatriculas;
+  }
+
+  const matriculasIds = (matriculas || []).map((matricula) =>
+    Number(matricula.id)
+  );
+
+  if (!matriculasIds.length) {
+    return 0;
+  }
+
+  const { data: avaliacoes, error: errorAvaliacoes } = await supabase
+    .from("avaliacao_aluno")
+    .select("id, matricula_id, status")
+    .in("matricula_id", matriculasIds)
+    .eq("status", "Realizada pelo aluno");
+
+  if (errorAvaliacoes) {
+    console.error("Erro ao buscar avaliações realizadas:", errorAvaliacoes);
+    throw errorAvaliacoes;
+  }
+
+  const avaliacoesNovas = (avaliacoes || []).filter((avaliacao) => {
+    const notificacaoId = `avaliacao_${avaliacao.id}`;
+    return !notificacaoJaVistaHome(notificacaoId);
+  });
+
+  return avaliacoesNovas.length;
+}
+
+/* ======================
+   Resumo de notificações da home
+
+   Substitui a RPC antiga:
+   contar_notificacoes_professor_reposicao
+====================== */
 async function carregarResumoNotificacoesProfessor() {
   if (!textoCardNotificacoesProfessor) return;
 
-  const { data, error } = await supabase.rpc(
-    "contar_notificacoes_professor_reposicao"
-  );
+  try {
+    const [
+      totalAgendamentosNovos,
+      totalAvaliacoesNovas
+    ] = await Promise.all([
+      buscarTotalAgendamentosNovosProfessorHome(),
+      buscarTotalAvaliacoesNovasProfessorHome()
+    ]);
 
-  if (error) {
-    console.error("Erro ao contar notificações do professor:", error);
+    const total =
+      Number(totalAgendamentosNovos || 0) +
+      Number(totalAvaliacoesNovas || 0);
+
+    atualizarBadgeNotificacoes(total);
+
+    if (total === 0) {
+      textoCardNotificacoesProfessor.textContent =
+        "Nenhuma nova notificação. Agendamentos e avaliações realizadas aparecerão aqui.";
+      return;
+    }
+
+    if (total === 1) {
+      textoCardNotificacoesProfessor.textContent =
+        "Você tem 1 nova notificação para verificar.";
+      return;
+    }
+
+    textoCardNotificacoesProfessor.textContent =
+      `Você tem ${total} novas notificações para verificar.`;
+
+  } catch (error) {
+    console.error("Erro ao carregar resumo de notificações:", error);
 
     atualizarBadgeNotificacoes(0);
 
     textoCardNotificacoesProfessor.textContent =
-      "Veja novos agendamentos de reposições, plantões e aulas instrumentais.";
-
-    return;
+      "Veja novos agendamentos e avaliações informadas como realizadas pelos alunos.";
   }
-
-  const total = Number(data || 0);
-
-  atualizarBadgeNotificacoes(total);
-
-  if (total === 0) {
-    textoCardNotificacoesProfessor.textContent =
-      "Nenhum novo agendamento de reposição, plantão ou aula instrumental.";
-    return;
-  }
-
-  if (total === 1) {
-    textoCardNotificacoesProfessor.textContent =
-      "Você tem 1 novo agendamento para verificar.";
-    return;
-  }
-
-  textoCardNotificacoesProfessor.textContent =
-    `Você tem ${total} novos agendamentos para verificar.`;
 }
 
 /* ======================

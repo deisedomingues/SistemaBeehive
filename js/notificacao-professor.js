@@ -23,10 +23,14 @@ if (!professorId) {
 const STATUS = {
   REPOSICAO: "Reposição",
   AULA_INSTRUMENTAL: "Aula Instrumental",
-  PLANTAO_DUVIDAS: "Plantão de dúvidas"
+  PLANTAO_DUVIDAS: "Plantão de dúvidas",
+  AVALIACAO_REALIZADA: "Avaliação realizada"
 };
 
-const CHAVE_VISTOS = `beehive_agendamentos_professor_vistos_${professorId}`;
+/*
+  Esta chave precisa ser igual à usada na home-professor.js.
+*/
+const CHAVE_VISTOS = `beehive_notificacoes_professor_vistas_${professorId}`;
 
 let notificacoesAtuais = [];
 
@@ -67,6 +71,12 @@ function dataMenosDiasISO(dias) {
 
 function formatarDataBR(dataISO) {
   if (!dataISO) return "";
+
+  const data = new Date(dataISO);
+
+  if (!Number.isNaN(data.getTime())) {
+    return data.toLocaleDateString("pt-BR");
+  }
 
   const [ano, mes, dia] = String(dataISO).split("-");
 
@@ -140,24 +150,24 @@ function criarLinkGoogleAgenda(item) {
 function carregarIdsVistos() {
   try {
     const salvo = JSON.parse(localStorage.getItem(CHAVE_VISTOS) || "[]");
-    return new Set((salvo || []).map((id) => Number(id)));
+    return new Set((salvo || []).map((id) => String(id)));
   } catch (error) {
-    console.warn("Não foi possível ler agendamentos vistos:", error);
+    console.warn("Não foi possível ler notificações vistas:", error);
     return new Set();
   }
 }
 
 function salvarIdsVistos(ids) {
-  localStorage.setItem(CHAVE_VISTOS, JSON.stringify([...ids].map(Number)));
+  localStorage.setItem(CHAVE_VISTOS, JSON.stringify([...ids].map(String)));
 }
 
-function estaVisto(reposicaoId) {
-  return carregarIdsVistos().has(Number(reposicaoId));
+function estaVisto(notificacaoId) {
+  return carregarIdsVistos().has(String(notificacaoId));
 }
 
-function marcarVistoLocal(reposicaoId) {
+function marcarVistoLocal(notificacaoId) {
   const ids = carregarIdsVistos();
-  ids.add(Number(reposicaoId));
+  ids.add(String(notificacaoId));
   salvarIdsVistos(ids);
 }
 
@@ -165,8 +175,8 @@ function marcarTodosVistosLocal(notificacoes) {
   const ids = carregarIdsVistos();
 
   notificacoes.forEach((item) => {
-    if (item.reposicao_id) {
-      ids.add(Number(item.reposicao_id));
+    if (item.notificacao_id) {
+      ids.add(String(item.notificacao_id));
     }
   });
 
@@ -174,7 +184,7 @@ function marcarTodosVistosLocal(notificacoes) {
 }
 
 /* ======================
-   Textos
+   Textos de agendamento
 ====================== */
 function montarTextoAgendamento(item) {
   const tipo = item.tipo_agendamento || STATUS.REPOSICAO;
@@ -234,6 +244,30 @@ function montarStatusAulaOriginal(item) {
 }
 
 /* ======================
+   Textos de avaliação
+====================== */
+function tituloAvaliacao(item) {
+  if (item.avaliacao_titulo) return item.avaliacao_titulo;
+  if (item.numero_avaliacao) return `Progress Check ${item.numero_avaliacao}`;
+
+  return "Avaliação";
+}
+
+function montarTextoAvaliacao(item) {
+  const aluno = item.aluno_nome || "Um aluno";
+  const titulo = tituloAvaliacao(item);
+
+  return `${aluno} informou que realizou a avaliação ${titulo}.`;
+}
+
+function montarMateriaModuloAvaliacao(item) {
+  const materia = item.materia_nome || "Matéria não informada";
+  const modulo = item.modulo_nome || "Módulo não informado";
+
+  return `${materia} • ${modulo}`;
+}
+
+/* ======================
    Badge
 ====================== */
 function atualizarBadge(total) {
@@ -280,7 +314,7 @@ function renderizarEstadoVazio() {
   if (!listaNotificacoesProfessor || !textoNotificacoesProfessor) return;
 
   textoNotificacoesProfessor.textContent =
-    "Nenhum agendamento pendente de registro no momento.";
+    "Nenhuma notificação pendente no momento.";
 
   atualizarBadge(0);
 
@@ -291,8 +325,8 @@ function renderizarEstadoVazio() {
       <div class="card-admin-conteudo">
         <h2>Tudo certo por aqui</h2>
         <p>
-          Quando um aluno agendar uma reposição, plantão de dúvidas ou aula instrumental,
-          o aviso aparecerá nesta tela e ficará disponível até ser registrado/concluído.
+          Quando um aluno agendar uma reposição, plantão de dúvidas, aula instrumental
+          ou informar que realizou uma avaliação, o aviso aparecerá nesta tela.
         </p>
       </div>
     </article>
@@ -321,7 +355,7 @@ function renderizarErro(mensagem = "Não foi possível carregar as notificaçõe
 }
 
 /* ======================
-   Consultas
+   Consultas de agendamentos
 ====================== */
 async function buscarHorariosDoProfessor() {
   const dataInicial = dataMenosDiasISO(120);
@@ -419,9 +453,7 @@ async function buscarReposicoesRegistradasPorAulaOriginal(aulasOriginaisIds) {
     return new Set();
   }
 
-  return new Set(
-    (data || []).map((item) => Number(item.aula_original_id))
-  );
+  return new Set((data || []).map((item) => Number(item.aula_original_id)));
 }
 
 async function buscarAulasRegistradasPorData(agendamentosComHorario) {
@@ -463,22 +495,12 @@ async function buscarAulasRegistradasPorData(agendamentosComHorario) {
   const chaves = new Set();
 
   (data || []).forEach((aula) => {
-    chaves.add(
-      `${Number(aula.matricula_id)}|${aula.data_aula}|${aula.status}`
-    );
+    chaves.add(`${Number(aula.matricula_id)}|${aula.data_aula}|${aula.status}`);
   });
 
   return chaves;
 }
 
-/* ======================
-   Buscar agendamentos ativos
-
-   Agora a reposição some em duas situações:
-   1. se foi registrada vinculada à aula original;
-   2. se foi registrada na mesma data, para a mesma matrícula,
-      com status "Reposição".
-====================== */
 async function buscarAgendamentosAtivosProfessor() {
   const horarios = await buscarHorariosDoProfessor();
 
@@ -521,6 +543,8 @@ async function buscarAgendamentosAtivosProfessor() {
         : null;
 
       return {
+        tipo_notificacao: "agendamento",
+        notificacao_id: `agendamento_${item.id}`,
         reposicao_id: item.id,
         aula_original_id: item.aula_id || null,
         matricula_id: item.matricula_id || null,
@@ -537,7 +561,8 @@ async function buscarAgendamentosAtivosProfessor() {
         materia_id: horario?.materia_id || null,
         aula_original_data: aulaOriginal?.data_aula || null,
         aula_original_status: aulaOriginal?.status || null,
-        aula_original_justificativa: aulaOriginal?.justificativa || null
+        aula_original_justificativa: aulaOriginal?.justificativa || null,
+        ordenacao: `${horario?.data || "9999-99-99"} ${horario?.hora_inicio || "00:00"}`
       };
     })
     .filter((item) => item.data_reposicao);
@@ -550,49 +575,402 @@ async function buscarAgendamentosAtivosProfessor() {
 
   const hoje = hojeISO();
 
-  return listaComHorario
-    .filter((item) => {
-      const tipo = item.tipo_agendamento || STATUS.REPOSICAO;
+  return listaComHorario.filter((item) => {
+    const tipo = item.tipo_agendamento || STATUS.REPOSICAO;
 
-      const chavePorData = `${Number(item.matricula_id)}|${item.data_reposicao}|${tipo}`;
+    const chavePorData =
+      `${Number(item.matricula_id)}|${item.data_reposicao}|${tipo}`;
 
-      const jaRegistrouPorData = aulasJaRegistradasPorData.has(chavePorData);
+    const jaRegistrouPorData = aulasJaRegistradasPorData.has(chavePorData);
 
-      if (jaRegistrouPorData) {
+    if (jaRegistrouPorData) {
+      return false;
+    }
+
+    if (tipo === STATUS.REPOSICAO) {
+      const jaRegistrouPelaAulaOriginal =
+        item.aula_original_id &&
+        aulasOriginaisJaRepostas.has(Number(item.aula_original_id));
+
+      if (jaRegistrouPelaAulaOriginal) {
         return false;
       }
 
-      if (tipo === STATUS.REPOSICAO) {
-        const jaRegistrouPelaAulaOriginal =
-          item.aula_original_id &&
-          aulasOriginaisJaRepostas.has(Number(item.aula_original_id));
+      return true;
+    }
 
-        if (jaRegistrouPelaAulaOriginal) {
-          return false;
-        }
+    if (
+      tipo === STATUS.AULA_INSTRUMENTAL ||
+      tipo === STATUS.PLANTAO_DUVIDAS
+    ) {
+      return true;
+    }
 
-        return true;
-      }
-
-      if (
-        tipo === STATUS.AULA_INSTRUMENTAL ||
-        tipo === STATUS.PLANTAO_DUVIDAS
-      ) {
-        return true;
-      }
-
-      return item.data_reposicao >= hoje;
-    })
-    .sort((a, b) => {
-      const dataA = `${a.data_reposicao} ${a.hora_inicio_reposicao || "00:00"}`;
-      const dataB = `${b.data_reposicao} ${b.hora_inicio_reposicao || "00:00"}`;
-      return dataA.localeCompare(dataB);
-    });
+    return item.data_reposicao >= hoje;
+  });
 }
 
 /* ======================
-   Renderizar notificações
+   Consultas de avaliações
 ====================== */
+async function buscarMatriculasDoProfessor() {
+  const { data, error } = await supabase
+    .from("matricula")
+    .select("id, aluno_id, professor_id, materia_id, modulo_id")
+    .eq("professor_id", professorId)
+    .eq("ativa", true);
+
+  if (error) {
+    console.error("Erro ao buscar matrículas do professor:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+async function buscarMateriasPorIds(materiasIds) {
+  if (!materiasIds.length) return new Map();
+
+  const { data, error } = await supabase
+    .from("materia")
+    .select("id, nome")
+    .in("id", materiasIds);
+
+  if (error) {
+    console.error("Erro ao buscar matérias:", error);
+    return new Map();
+  }
+
+  return new Map((data || []).map((materia) => [Number(materia.id), materia]));
+}
+
+async function buscarModulosPorIds(modulosIds) {
+  if (!modulosIds.length) return new Map();
+
+  const { data, error } = await supabase
+    .from("modulo")
+    .select("id, nome")
+    .in("id", modulosIds);
+
+  if (error) {
+    console.error("Erro ao buscar módulos:", error);
+    return new Map();
+  }
+
+  return new Map((data || []).map((modulo) => [Number(modulo.id), modulo]));
+}
+
+async function buscarFormulariosPorIds(formulariosIds) {
+  if (!formulariosIds.length) return new Map();
+
+  const { data, error } = await supabase
+    .from("avaliacao_formulario")
+    .select("id, titulo, link_formulario")
+    .in("id", formulariosIds);
+
+  if (error) {
+    console.error("Erro ao buscar formulários de avaliação:", error);
+    return new Map();
+  }
+
+  return new Map((data || []).map((formulario) => [Number(formulario.id), formulario]));
+}
+
+async function buscarAvaliacoesRealizadasProfessor() {
+  const matriculas = await buscarMatriculasDoProfessor();
+
+  if (!matriculas.length) return [];
+
+  const matriculasIds = matriculas.map((matricula) => Number(matricula.id));
+
+  const mapaMatriculas = new Map(
+    matriculas.map((matricula) => [Number(matricula.id), matricula])
+  );
+
+  const { data: avaliacoes, error } = await supabase
+    .from("avaliacao_aluno")
+    .select(`
+      id,
+      aluno_id,
+      matricula_id,
+      materia_id,
+      modulo_id,
+      avaliacao_formulario_id,
+      numero_avaliacao,
+      status,
+      enviado_em,
+      concluida_em,
+      aluno_confirmou_realizacao_em,
+      observacao
+    `)
+    .in("matricula_id", matriculasIds)
+    .eq("status", "Realizada pelo aluno")
+    .order("aluno_confirmou_realizacao_em", { ascending: false });
+
+  if (error) {
+    console.error("Erro ao buscar avaliações realizadas:", error);
+    return [];
+  }
+
+  const listaAvaliacoes = avaliacoes || [];
+
+  if (!listaAvaliacoes.length) return [];
+
+  const alunosIds = [
+    ...new Set(
+      listaAvaliacoes
+        .map((avaliacao) => Number(avaliacao.aluno_id))
+        .filter(Boolean)
+    )
+  ];
+
+  const materiasIds = [
+    ...new Set(
+      listaAvaliacoes
+        .map((avaliacao) => Number(avaliacao.materia_id))
+        .filter(Boolean)
+    )
+  ];
+
+  const modulosIds = [
+    ...new Set(
+      listaAvaliacoes
+        .map((avaliacao) => Number(avaliacao.modulo_id))
+        .filter(Boolean)
+    )
+  ];
+
+  const formulariosIds = [
+    ...new Set(
+      listaAvaliacoes
+        .map((avaliacao) => Number(avaliacao.avaliacao_formulario_id))
+        .filter(Boolean)
+    )
+  ];
+
+  const mapaAlunos = await buscarAlunosPorIds(alunosIds);
+  const mapaMaterias = await buscarMateriasPorIds(materiasIds);
+  const mapaModulos = await buscarModulosPorIds(modulosIds);
+  const mapaFormularios = await buscarFormulariosPorIds(formulariosIds);
+
+  return listaAvaliacoes.map((avaliacao) => {
+    const matricula = mapaMatriculas.get(Number(avaliacao.matricula_id));
+    const aluno = mapaAlunos.get(Number(avaliacao.aluno_id));
+    const materia = mapaMaterias.get(Number(avaliacao.materia_id || matricula?.materia_id));
+    const modulo = mapaModulos.get(Number(avaliacao.modulo_id || matricula?.modulo_id));
+    const formulario = mapaFormularios.get(Number(avaliacao.avaliacao_formulario_id));
+
+    return {
+      tipo_notificacao: "avaliacao",
+      notificacao_id: `avaliacao_${avaliacao.id}`,
+      avaliacao_id: avaliacao.id,
+      aluno_id: avaliacao.aluno_id || null,
+      aluno_nome: aluno?.nome || "Aluno não informado",
+      matricula_id: avaliacao.matricula_id || null,
+      materia_nome: materia?.nome || "Matéria não informada",
+      modulo_nome: modulo?.nome || "Módulo não informado",
+      avaliacao_titulo: formulario?.titulo || null,
+      link_formulario: formulario?.link_formulario || null,
+      numero_avaliacao: avaliacao.numero_avaliacao || null,
+      enviado_em: avaliacao.enviado_em || null,
+      aluno_confirmou_realizacao_em: avaliacao.aluno_confirmou_realizacao_em || null,
+      observacao: avaliacao.observacao || null,
+      tipo_agendamento: STATUS.AVALIACAO_REALIZADA,
+      ordenacao:
+        avaliacao.aluno_confirmou_realizacao_em ||
+        avaliacao.enviado_em ||
+        "0000-00-00"
+    };
+  });
+}
+
+/* ======================
+   Buscar tudo
+====================== */
+async function buscarTodasNotificacoesProfessor() {
+  const [agendamentos, avaliacoes] = await Promise.all([
+    buscarAgendamentosAtivosProfessor(),
+    buscarAvaliacoesRealizadasProfessor()
+  ]);
+
+  return [...agendamentos, ...avaliacoes].sort((a, b) => {
+    const dataA = String(a.ordenacao || "");
+    const dataB = String(b.ordenacao || "");
+
+    return dataB.localeCompare(dataA);
+  });
+}
+
+/* ======================
+   Renderização
+====================== */
+function renderizarCardAgendamento(item) {
+  const card = document.createElement("article");
+  card.className = "card-admin card-professor notificacao-professor-card";
+
+  const visto = estaVisto(item.notificacao_id);
+  const mensagem = montarTextoAgendamento(item);
+  const linkAgenda = criarLinkGoogleAgenda(item);
+  const estaAtrasado = item.data_reposicao < hojeISO();
+
+  const observacaoHTML = item.observacao_aluno
+    ? `
+      <p>
+        <strong>Observação do aluno:</strong>
+        ${escaparHTML(item.observacao_aluno)}
+      </p>
+    `
+    : "";
+
+  const custoHTML = item.tem_custo
+    ? `
+      <p style="color:#8a5a00;">
+        <strong>Atenção:</strong>
+        este agendamento possui custo.
+        ${
+          item.motivo_custo
+            ? `<br>${escaparHTML(item.motivo_custo)}`
+            : ""
+        }
+      </p>
+    `
+    : "";
+
+  const statusVisualHTML = visto
+    ? `<span style="display:inline-flex; padding:4px 9px; border-radius:999px; background:#e8f5e9; color:#1b5e20; font-size:12px; font-weight:bold;">Visto</span>`
+    : `<span style="display:inline-flex; padding:4px 9px; border-radius:999px; background:#c62828; color:white; font-size:12px; font-weight:bold;">Novo</span>`;
+
+  const atrasoHTML = estaAtrasado
+    ? `
+      <p style="color:#b71c1c; font-weight:bold;">
+        ⚠️ A data deste agendamento já passou, mas ele ainda aparece porque não foi encontrado registro de conclusão.
+      </p>
+    `
+    : "";
+
+  card.innerHTML = `
+    <div class="card-admin-icone">${visto ? "🗓️" : "📌"}</div>
+
+    <div class="card-admin-conteudo">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+        <h2 style="margin:0;">${escaparHTML(item.tipo_agendamento || "Agendamento")}</h2>
+        ${statusVisualHTML}
+      </div>
+
+      <p>
+        <strong>${escaparHTML(mensagem)}</strong>
+      </p>
+
+      ${atrasoHTML}
+
+      ${montarStatusAulaOriginal(item)}
+
+      ${observacaoHTML}
+
+      ${custoHTML}
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+        <a
+          href="${linkAgenda}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn-secundario"
+          style="text-decoration:none;"
+        >
+          Adicionar ao Google Agenda
+        </a>
+
+        <button
+          type="button"
+          class="btn-principal btn-marcar-visto"
+          data-notificacao-id="${escaparHTML(item.notificacao_id)}"
+          ${visto ? "disabled" : ""}
+        >
+          ${visto ? "Já visto" : "Marcar como visto"}
+        </button>
+      </div>
+    </div>
+  `;
+
+  return card;
+}
+
+function renderizarCardAvaliacao(item) {
+  const card = document.createElement("article");
+  card.className = "card-admin card-professor notificacao-professor-card";
+
+  const visto = estaVisto(item.notificacao_id);
+  const mensagem = montarTextoAvaliacao(item);
+
+  const statusVisualHTML = visto
+    ? `<span style="display:inline-flex; padding:4px 9px; border-radius:999px; background:#e8f5e9; color:#1b5e20; font-size:12px; font-weight:bold;">Visto</span>`
+    : `<span style="display:inline-flex; padding:4px 9px; border-radius:999px; background:#c62828; color:white; font-size:12px; font-weight:bold;">Novo</span>`;
+
+  const dataConfirmacao = item.aluno_confirmou_realizacao_em
+    ? formatarDataBR(item.aluno_confirmou_realizacao_em)
+    : "Data não informada";
+
+  const linkFormularioHTML = item.link_formulario
+    ? `
+      <a
+        href="${escaparHTML(item.link_formulario)}"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-secundario"
+        style="text-decoration:none;"
+      >
+        Abrir formulário
+      </a>
+    `
+    : "";
+
+  card.innerHTML = `
+    <div class="card-admin-icone">${visto ? "✅" : "📝"}</div>
+
+    <div class="card-admin-conteudo">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+        <h2 style="margin:0;">Avaliação realizada</h2>
+        ${statusVisualHTML}
+      </div>
+
+      <p>
+        <strong>${escaparHTML(mensagem)}</strong>
+      </p>
+
+      <p>
+        <strong>Curso:</strong>
+        ${escaparHTML(montarMateriaModuloAvaliacao(item))}
+      </p>
+
+      <p>
+        <strong>Informada como realizada em:</strong>
+        ${escaparHTML(dataConfirmacao)}
+      </p>
+
+      <p style="font-size:14px; opacity:0.9;">
+        Esta notificação continuará aparecendo enquanto a avaliação estiver com status
+        <strong>Realizada pelo aluno</strong>. Depois que a nota for lançada/concluída,
+        ela deverá sair da lista.
+      </p>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+        ${linkFormularioHTML}
+
+        <button
+          type="button"
+          class="btn-principal btn-marcar-visto"
+          data-notificacao-id="${escaparHTML(item.notificacao_id)}"
+          ${visto ? "disabled" : ""}
+        >
+          ${visto ? "Já visto" : "Marcar como visto"}
+        </button>
+      </div>
+    </div>
+  `;
+
+  return card;
+}
+
 function renderizarNotificacoes(notificacoes) {
   if (!textoNotificacoesProfessor || !listaNotificacoesProfessor) return;
 
@@ -605,7 +983,7 @@ function renderizarNotificacoes(notificacoes) {
   }
 
   const totalNovas = notificacoesAtuais.filter(
-    (item) => !estaVisto(item.reposicao_id)
+    (item) => !estaVisto(item.notificacao_id)
   ).length;
 
   atualizarBadge(totalNovas);
@@ -615,119 +993,37 @@ function renderizarNotificacoes(notificacoes) {
   if (totalNovas > 0) {
     textoNotificacoesProfessor.textContent =
       totalNovas === 1
-        ? `Você tem 1 novo agendamento e ${total} agendamento(s) ativo(s) no total.`
-        : `Você tem ${totalNovas} novos agendamentos e ${total} agendamento(s) ativo(s) no total.`;
+        ? `Você tem 1 nova notificação e ${total} notificação(ões) ativa(s) no total.`
+        : `Você tem ${totalNovas} novas notificações e ${total} notificação(ões) ativa(s) no total.`;
   } else {
     textoNotificacoesProfessor.textContent =
       total === 1
-        ? "Você tem 1 agendamento ativo aguardando registro/conclusão."
-        : `Você tem ${total} agendamentos ativos aguardando registro/conclusão.`;
+        ? "Você tem 1 notificação ativa já vista."
+        : `Você tem ${total} notificações ativas já vistas.`;
   }
 
   notificacoesAtuais.forEach((item) => {
-    const card = document.createElement("article");
-    card.className = "card-admin card-professor notificacao-professor-card";
-
-    const visto = estaVisto(item.reposicao_id);
-    const mensagem = montarTextoAgendamento(item);
-    const linkAgenda = criarLinkGoogleAgenda(item);
-    const estaAtrasado = item.data_reposicao < hojeISO();
-
-    const observacaoHTML = item.observacao_aluno
-      ? `
-        <p>
-          <strong>Observação do aluno:</strong>
-          ${escaparHTML(item.observacao_aluno)}
-        </p>
-      `
-      : "";
-
-    const custoHTML = item.tem_custo
-      ? `
-        <p style="color:#8a5a00;">
-          <strong>Atenção:</strong>
-          este agendamento possui custo.
-          ${
-            item.motivo_custo
-              ? `<br>${escaparHTML(item.motivo_custo)}`
-              : ""
-          }
-        </p>
-      `
-      : "";
-
-    const statusVisualHTML = visto
-      ? `<span style="display:inline-flex; padding:4px 9px; border-radius:999px; background:#e8f5e9; color:#1b5e20; font-size:12px; font-weight:bold;">Visto</span>`
-      : `<span style="display:inline-flex; padding:4px 9px; border-radius:999px; background:#c62828; color:white; font-size:12px; font-weight:bold;">Novo</span>`;
-
-    const atrasoHTML = estaAtrasado
-      ? `
-        <p style="color:#b71c1c; font-weight:bold;">
-          ⚠️ A data deste agendamento já passou, mas ele ainda aparece porque não foi encontrado registro de conclusão.
-        </p>
-      `
-      : "";
-
-    card.innerHTML = `
-      <div class="card-admin-icone">${visto ? "🗓️" : "📌"}</div>
-
-      <div class="card-admin-conteudo">
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
-          <h2 style="margin:0;">${escaparHTML(item.tipo_agendamento || "Agendamento")}</h2>
-          ${statusVisualHTML}
-        </div>
-
-        <p>
-          <strong>${escaparHTML(mensagem)}</strong>
-        </p>
-
-        ${atrasoHTML}
-
-        ${montarStatusAulaOriginal(item)}
-
-        ${observacaoHTML}
-
-        ${custoHTML}
-
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
-          <a
-            href="${linkAgenda}"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="btn-secundario"
-            style="text-decoration:none;"
-          >
-            Adicionar ao Google Agenda
-          </a>
-
-          <button
-            type="button"
-            class="btn-principal btn-marcar-visto"
-            data-reposicao-id="${item.reposicao_id}"
-            ${visto ? "disabled" : ""}
-          >
-            ${visto ? "Já visto" : "Marcar como visto"}
-          </button>
-        </div>
-      </div>
-    `;
+    const card =
+      item.tipo_notificacao === "avaliacao"
+        ? renderizarCardAvaliacao(item)
+        : renderizarCardAgendamento(item);
 
     listaNotificacoesProfessor.appendChild(card);
   });
 
   document.querySelectorAll(".btn-marcar-visto").forEach((botao) => {
     botao.addEventListener("click", async () => {
-      const reposicaoId = Number(botao.dataset.reposicaoId);
+      const notificacaoId = botao.dataset.notificacaoId;
 
-      if (!reposicaoId) return;
+      if (!notificacaoId) return;
 
-      await marcarComoVista(reposicaoId);
+      await marcarComoVista(notificacaoId);
     });
   });
 }
 
 /* ======================
-   Buscar notificações
+   Carregar notificações
 ====================== */
 async function carregarNotificacoes() {
   if (!textoNotificacoesProfessor || !listaNotificacoesProfessor) return;
@@ -740,7 +1036,7 @@ async function carregarNotificacoes() {
 
       <div class="card-admin-conteudo">
         <h2>Carregando...</h2>
-        <p>Aguarde enquanto buscamos seus agendamentos.</p>
+        <p>Aguarde enquanto buscamos suas notificações.</p>
       </div>
     </article>
   `;
@@ -748,8 +1044,8 @@ async function carregarNotificacoes() {
   atualizarBadge(0);
 
   try {
-    const agendamentos = await buscarAgendamentosAtivosProfessor();
-    renderizarNotificacoes(agendamentos);
+    const notificacoes = await buscarTodasNotificacoesProfessor();
+    renderizarNotificacoes(notificacoes);
   } catch (error) {
     console.error("Erro ao carregar notificações:", error);
     renderizarErro("Não foi possível carregar as notificações.");
@@ -759,19 +1055,8 @@ async function carregarNotificacoes() {
 /* ======================
    Marcar como visto
 ====================== */
-async function marcarComoVista(reposicaoId) {
-  marcarVistoLocal(reposicaoId);
-
-  try {
-    await supabase.rpc("marcar_notificacao_professor_visualizada", {
-      p_reposicao_id: reposicaoId
-    });
-  } catch (error) {
-    console.warn(
-      "O visto foi salvo neste navegador, mas a função do Supabase não respondeu:",
-      error
-    );
-  }
+async function marcarComoVista(notificacaoId) {
+  marcarVistoLocal(notificacaoId);
 
   renderizarNotificacoes(notificacoesAtuais);
 }
@@ -789,15 +1074,6 @@ async function marcarTodasComoVistas() {
   if (!confirmar) return;
 
   marcarTodosVistosLocal(notificacoesAtuais);
-
-  try {
-    await supabase.rpc("marcar_todas_notificacoes_professor_visualizadas");
-  } catch (error) {
-    console.warn(
-      "Os vistos foram salvos neste navegador, mas a função do Supabase não respondeu:",
-      error
-    );
-  }
 
   renderizarNotificacoes(notificacoesAtuais);
 }
