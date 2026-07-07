@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
+
 <body class="pagina-resumo-geral">
 
   <div class="overlay"></div>
@@ -20,7 +21,10 @@
 
     <header class="topo-resumo-geral">
       <div>
-        <h1 id="tituloResumoGeral" class="titulo-principal-resumo">Resumo Geral da Escola</h1>
+        <h1 id="tituloResumoGeral" class="titulo-principal-resumo">
+          Resumo Geral - Beehive Idiomas
+        </h1>
+
         <p class="subtitulo-resumo-geral">
           Acompanhe professores, alunos, matrículas e indicadores importantes da Beehive.
         </p>
@@ -34,15 +38,15 @@
          CONSULTA DE ALUNO
     ========================== -->
     <section class="bloco-resumo-professor">
-      <div class="cabecalho-bloco-resumo">
+      <div class="card card-destaque">
         <h2>🔎 Consulta de aluno</h2>
-        <p>Abra rapidamente os detalhes administrativos de um aluno.</p>
-      </div>
+        <p style="font-size:14px; margin-top:4px;">
+          Abra rapidamente os detalhes administrativos de um aluno.
+        </p>
 
-      <div class="card">
-        <div class="form form-resumo-professor" style="margin-top:0;">
+        <div class="form form-resumo-professor" style="margin-top:14px;">
           <label>
-            Aluno (curso)
+            Aluno / curso
             <select id="selectMatriculaAdmin" required>
               <option value="">Carregando alunos...</option>
             </select>
@@ -61,13 +65,15 @@
     <section class="bloco-resumo-professor">
       <div class="cabecalho-bloco-resumo">
         <h2>🚨 Pontos de atenção</h2>
-        <p>Alunos e situações que merecem acompanhamento administrativo.</p>
+        <p>Situações que merecem acompanhamento administrativo.</p>
       </div>
 
       <div class="dashboard dashboard-resumo-professor">
+
         <div class="card card-destaque">
           <h2>📦 Pacotes próximos da renovação</h2>
           <p><b id="qtdPacotesProximosResumo">0</b> aluno(s)</p>
+
           <div id="listaPacotesProximosResumo" style="margin-top:10px; font-size:13px;">
             Carregando...
           </div>
@@ -76,15 +82,30 @@
         <div class="card card-destaque">
           <h2>📝 Avaliações pendentes</h2>
           <p><b id="qtdAvaliacoesPendentesResumo">0</b> aluno(s)</p>
+
           <div id="listaAvaliacoesPendentesResumo" style="margin-top:10px; font-size:13px;">
             Carregando...
           </div>
         </div>
 
-        <div class="card">
-          <h2>🗓️ Eventos sem confirmação</h2>
-          <p><b id="qtdEventosSemConfirmacaoResumo">0</b> evento(s)</p>
+        <div class="card card-destaque">
+          <h2>🔁 Reposições pendentes</h2>
+          <p><b id="qtdReposicoesPendentesResumo">0</b> aula(s)</p>
+
+          <div id="listaReposicoesPendentesResumo" style="margin-top:10px; font-size:13px;">
+            Carregando...
+          </div>
         </div>
+
+        <div class="card">
+          <h2>📣 Eventos sem adesão</h2>
+          <p><b id="qtdEventosSemConfirmacaoResumo">0</b> evento(s)</p>
+
+          <div id="listaEventosSemConfirmacaoResumo" style="margin-top:10px; font-size:13px;">
+            Carregando...
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -111,8 +132,9 @@
       </div>
 
       <div class="dashboard dashboard-resumo-professor dashboard-resumo-admin-topo">
+
         <div class="card">
-          <h2>👥 Alunos únicos ativos</h2>
+          <h2>👥 Alunos ativos</h2>
           <p><b id="qtdAlunosUnicosAtivos">0</b> aluno(s)</p>
         </div>
 
@@ -127,19 +149,20 @@
         </div>
 
         <div class="card">
-          <h2>📚 Matérias ativas</h2>
-          <p><b id="qtdMateriasAtivas">0</b> matéria(s)</p>
+          <h2>📚 Cursos oferecidos</h2>
+          <p><b id="qtdMateriasAtivas">0</b> curso(s)</p>
         </div>
 
         <div class="card">
-          <h2>🎈 Eventos cadastrados</h2>
+          <h2>🎈 Eventos programados</h2>
           <p><b id="qtdEventosTotal">0</b> evento(s)</p>
         </div>
 
         <div class="card">
-          <h2>📅 Eventos futuros</h2>
+          <h2>✅ Eventos com adesão</h2>
           <p><b id="qtdEventosFuturos">0</b> evento(s)</p>
         </div>
+
       </div>
     </section>
 
@@ -149,7 +172,7 @@
     <section class="bloco-resumo-professor">
       <div class="cabecalho-bloco-resumo">
         <h2>🧑‍🏫 Professores ativos</h2>
-        <p>Quantidade de alunos separados por matéria para cada professor ativo.</p>
+        <p>Quantidade de alunos separados por curso para cada professor ativo.</p>
       </div>
 
       <div id="cardsProfessoresAtivos" class="dashboard dashboard-resumo-professor">
@@ -160,12 +183,12 @@
     </section>
 
     <!-- =========================
-         DISTRIBUIÇÃO POR MATÉRIA
+         DISTRIBUIÇÃO POR CURSO
     ========================== -->
     <section class="bloco-resumo-professor">
       <div class="cabecalho-bloco-resumo">
-        <h2>📚 Distribuição por matéria</h2>
-        <p>Quantidade de alunos e matrículas ativas por curso.</p>
+        <h2>📚 Distribuição por curso</h2>
+        <p>Quantidade de matrículas ativas por curso.</p>
       </div>
 
       <div id="cardsMateriasResumo" class="dashboard dashboard-resumo-professor">
@@ -176,33 +199,35 @@
     </section>
 
     <!-- =========================
-         DISTRIBUIÇÃO POR MÓDULO
+         DISTRIBUIÇÃO POR CURSO / MÓDULO
     ========================== -->
     <section class="bloco-resumo-professor">
       <div class="cabecalho-bloco-resumo">
-        <h2>🧩 Distribuição por módulo</h2>
-        <p>Selecione uma matéria e um módulo para visualizar os alunos ativos.</p>
+        <h2>🧩 Distribuição por curso / módulo</h2>
+        <p>
+          Filtre por curso inteiro ou por módulo específico para visualizar os alunos ativos.
+        </p>
       </div>
 
       <div class="card">
         <div class="form form-resumo-professor" style="margin-top:0;">
           <label>
-            Matéria
+            Curso
             <select id="selectMateriaResumo">
-              <option value="">Selecione a matéria</option>
+              <option value="">Selecione o curso</option>
             </select>
           </label>
 
           <label>
             Módulo
             <select id="selectModuloResumo" disabled>
-              <option value="">Selecione o módulo</option>
+              <option value="">Todos os módulos</option>
             </select>
           </label>
         </div>
 
         <div id="resultadoModuloResumo" style="margin-top:16px;">
-          <p style="font-size:14px;">Selecione uma matéria para começar.</p>
+          <p style="font-size:14px;">Selecione um curso para começar.</p>
         </div>
       </div>
     </section>

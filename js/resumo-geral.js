@@ -7,31 +7,14 @@ await exigirAdmin();
    CONFIGURAÇÃO
 ========================================================= */
 
-// CNPJ da Beehive para identificar alunos internos/funcionários.
 const CNPJ_BEEHIVE = "50715902000182";
 
-/*
-  ALERTA DE RENOVAÇÃO DO PACOTE
-
-  Regra:
-  - O pacote aparece no card "Pacotes próximos da renovação"
-    quando o aluno já usou 75% ou mais do pacote.
-
-  Exemplos:
-  - Pacote de 36 aulas: 75% = 27 aulas usadas.
-  - Pacote de 12 aulas: 75% = 9 aulas usadas.
-  - Pacote de 24 aulas: 75% = 18 aulas usadas.
-*/
 const PERCENTUAL_ALERTA_PACOTE = 0.75;
 
-// Quantidade de aulas válidas para alertar avaliação pendente.
 const LIMITE_AVALIACAO = 14;
 
-// Quantos alunos aparecem antes de clicar em "Ver todos".
 const LIMITE_ITENS_ALERTA_RECOLHIDO = 5;
 
-// Quantidade de linhas buscadas por página no Supabase.
-// Isso evita o problema de o Supabase retornar só uma parte dos registros.
 const TAMANHO_PAGINA_SUPABASE = 1000;
 
 /* =========================================================
@@ -49,12 +32,16 @@ const qtdEventosTotal = document.getElementById("qtdEventosTotal");
 const qtdEventosFuturos = document.getElementById("qtdEventosFuturos");
 
 const qtdEventosSemConfirmacaoResumo = document.getElementById("qtdEventosSemConfirmacaoResumo");
+const listaEventosSemConfirmacaoResumo = document.getElementById("listaEventosSemConfirmacaoResumo");
 
 const qtdPacotesProximosResumo = document.getElementById("qtdPacotesProximosResumo");
 const listaPacotesProximosResumo = document.getElementById("listaPacotesProximosResumo");
 
 const qtdAvaliacoesPendentesResumo = document.getElementById("qtdAvaliacoesPendentesResumo");
 const listaAvaliacoesPendentesResumo = document.getElementById("listaAvaliacoesPendentesResumo");
+
+const qtdReposicoesPendentesResumo = document.getElementById("qtdReposicoesPendentesResumo");
+const listaReposicoesPendentesResumo = document.getElementById("listaReposicoesPendentesResumo");
 
 const listaAniversariantesDiaResumo = document.getElementById("listaAniversariantesDiaResumo");
 
@@ -83,6 +70,8 @@ let pacotesAulas = [];
 
 let pacotesProximosExpandido = false;
 let avaliacoesPendentesExpandido = false;
+let reposicoesPendentesExpandido = false;
+let eventosSemConfirmacaoExpandido = false;
 
 /* =========================================================
    CONSTANTES
@@ -144,6 +133,7 @@ function hojeISO() {
   const ano = hoje.getFullYear();
   const mes = String(hoje.getMonth() + 1).padStart(2, "0");
   const dia = String(hoje.getDate()).padStart(2, "0");
+
   return `${ano}-${mes}-${dia}`;
 }
 
@@ -154,7 +144,36 @@ function formatarDataBR(dataISO) {
   if (partes.length < 3) return "-";
 
   const [yyyy, mm, dd] = partes;
+
   return `${dd}/${mm}/${yyyy}`;
+}
+
+function formatarHora(hora) {
+  if (!hora) return "";
+
+  const texto = String(hora).slice(0, 5);
+
+  if (/^\d{2}:\d{2}$/.test(texto)) {
+    return texto;
+  }
+
+  return "";
+}
+
+function formatarStatusAula(status) {
+  const s = normalizarTexto(status);
+
+  if (s === STATUS.PRESENTE) return "Presente";
+  if (s === STATUS.AUSENTE) return "Ausente";
+  if (s === STATUS.CANCELADA) return "Cancelada";
+  if (s === STATUS.TRANCADA) return "Trancada";
+  if (s === STATUS.REPOSICAO) return "Reposição";
+  if (s === STATUS.AULA_INSTRUMENTAL) return "Aula instrumental";
+  if (s === STATUS.PLANTAO_DUVIDAS) return "Plantão de dúvidas";
+  if (s === STATUS.EVENTO) return "Evento";
+  if (s === STATUS.EXPERIMENTAL) return "Aula experimental";
+
+  return status || "-";
 }
 
 function obterDiaMesDeData(dataISO) {
@@ -182,11 +201,13 @@ function ehAniversarioHoje(dataNascimento) {
 
 function ehAlunoInternoBeehive(matricula) {
   const empresaCnpj = String(matricula?.aluno?.empresa_cnpj || "").trim();
+
   return empresaCnpj !== "" && empresaCnpj === CNPJ_BEEHIVE;
 }
 
 function ehNotaDeAvaliacao(nota) {
   const tipo = normalizarTexto(nota?.tipo || "");
+
   return tipo.includes("avalia");
 }
 
@@ -204,6 +225,7 @@ function aulaTemOrigemVinculada(aula) {
 
 function percentualFormatado(valor) {
   const numero = Number(valor || 0);
+
   return `${Math.round(numero * 100)}%`;
 }
 
@@ -226,6 +248,8 @@ function configurarBotoesAbrirAluno() {
 function configurarBotoesExpandirRecolher() {
   const btnPacotes = document.getElementById("btnTogglePacotesProximosResumo");
   const btnAvaliacoes = document.getElementById("btnToggleAvaliacoesPendentesResumo");
+  const btnReposicoes = document.getElementById("btnToggleReposicoesPendentesResumo");
+  const btnEventos = document.getElementById("btnToggleEventosSemConfirmacaoResumo");
 
   if (btnPacotes) {
     btnPacotes.onclick = () => {
@@ -244,15 +268,25 @@ function configurarBotoesExpandirRecolher() {
       configurarBotoesExpandirRecolher();
     };
   }
+
+  if (btnReposicoes) {
+    btnReposicoes.onclick = () => {
+      reposicoesPendentesExpandido = !reposicoesPendentesExpandido;
+      renderAlertaReposicoesPendentes();
+      configurarBotoesAbrirAluno();
+      configurarBotoesExpandirRecolher();
+    };
+  }
+
+  if (btnEventos) {
+    btnEventos.onclick = () => {
+      eventosSemConfirmacaoExpandido = !eventosSemConfirmacaoExpandido;
+      renderAlertaEventosSemConfirmacao();
+      configurarBotoesExpandirRecolher();
+    };
+  }
 }
 
-/*
-  Busca paginada no Supabase.
-
-  Motivo:
-  O Supabase pode retornar no máximo uma quantidade limitada de linhas por consulta.
-  Se a tabela aula tiver muitas aulas, buscar tudo de uma vez pode deixar registros de fora.
-*/
 async function buscarTodasAsPaginas(criarConsulta) {
   let todos = [];
   let inicio = 0;
@@ -296,24 +330,6 @@ function aulaContaParaAvaliacao(aula) {
    REGRAS DE PACOTE
 ========================================================= */
 
-/*
-  REGRA DO PACOTE
-
-  Conta no pacote:
-  - Presente
-  - Ausente com aula gravada
-  - Ausente sem aula gravada, quando gerou reposição
-  - Cancelada, quando gerou reposição
-  - Trancada, quando gerou reposição
-  - Aula Instrumental
-  - Plantão de dúvidas
-  - Reposição sem aula original vinculada
-
-  NÃO conta no pacote:
-  - Reposição vinculada a uma aula original
-  - Evento
-  - Aula Experimental
-*/
 function aulaConsomePacote(aula) {
   const status = statusAula(aula);
   const gravada = aula?.aula_gravada === true;
@@ -417,7 +433,9 @@ async function carregarMatriculasAtivas() {
       .eq("ativa", true)
   );
 
-  const professoresAtivosIds = new Set(professoresAtivos.map((p) => Number(p.id)));
+  const professoresAtivosIds = new Set(
+    professoresAtivos.map((p) => Number(p.id))
+  );
 
   matriculasAtivas = (data || []).filter((m) => {
     const professorId = Number(m?.professor?.id || m?.professor_id || 0);
@@ -431,8 +449,15 @@ async function carregarEventos() {
   const data = await buscarTodasAsPaginas(() =>
     supabase
       .from("evento")
-      .select("id, data_evento, hora_evento, ativo")
+      .select(`
+        id,
+        titulo,
+        data_evento,
+        hora_evento,
+        ativo
+      `)
       .order("data_evento", { ascending: true })
+      .order("hora_evento", { ascending: true })
   );
 
   eventos = data || [];
@@ -552,6 +577,7 @@ function contarAulasUsadasNoPacote(pacote) {
   return aulas.filter((aula) => {
     if (Number(aula.matricula_id) !== Number(matricula.id)) return false;
     if (!aulaDentroDoPeriodoDoPacote(aula, pacote)) return false;
+
     return aulaConsomePacote(aula);
   }).length;
 }
@@ -582,7 +608,11 @@ function obterPacotesProximosRenovacao() {
     .filter(Boolean)
     .sort((a, b) => {
       if (a.restantes !== b.restantes) return a.restantes - b.restantes;
-      return a.matricula.aluno?.nome?.localeCompare(b.matricula.aluno?.nome || "", "pt-BR");
+
+      return (a.matricula.aluno?.nome || "").localeCompare(
+        b.matricula.aluno?.nome || "",
+        "pt-BR"
+      );
     });
 }
 
@@ -597,6 +627,7 @@ function contarAulasValidasDesdeUltimaAvaliacao(matricula) {
     .filter((aula) => {
       if (Number(aula.matricula_id) !== Number(matricula.id)) return false;
       if (Number(aula.modulo_id || 0) !== moduloAtual) return false;
+
       return aulaContaParaAvaliacao(aula);
     })
     .sort((a, b) => {
@@ -612,6 +643,7 @@ function contarAulasValidasDesdeUltimaAvaliacao(matricula) {
     .filter((nota) => {
       if (Number(nota.matricula_id) !== Number(matricula.id)) return false;
       if (Number(nota.modulo_id || 0) !== moduloAtual) return false;
+
       return ehNotaDeAvaliacao(nota);
     })
     .sort((a, b) => {
@@ -663,8 +695,124 @@ function obterMatriculasComAvaliacaoPendente() {
         return b.aulasDesdeUltima - a.aulasDesdeUltima;
       }
 
-      return a.matricula.aluno?.nome?.localeCompare(b.matricula.aluno?.nome || "", "pt-BR");
+      return (a.matricula.aluno?.nome || "").localeCompare(
+        b.matricula.aluno?.nome || "",
+        "pt-BR"
+      );
     });
+}
+
+/* =========================================================
+   CÁLCULOS - REPOSIÇÕES
+========================================================= */
+
+function aulaPodeGerarReposicaoPendente(aula) {
+  const status = statusAula(aula);
+
+  if (aula?.precisa_reposicao !== true) return false;
+
+  if (status === STATUS.AUSENTE) return true;
+  if (status === STATUS.CANCELADA) return true;
+  if (status === STATUS.TRANCADA) return true;
+
+  return false;
+}
+
+function obterReposicoesPendentes() {
+  const idsAulasQueJaTiveramReposicao = new Set(
+    aulas
+      .filter((aula) => {
+        return (
+          statusAula(aula) === STATUS.REPOSICAO &&
+          aula.aula_original_id
+        );
+      })
+      .map((aula) => Number(aula.aula_original_id))
+  );
+
+  return aulas
+    .filter((aula) => {
+      if (!aulaPodeGerarReposicaoPendente(aula)) return false;
+      if (idsAulasQueJaTiveramReposicao.has(Number(aula.id))) return false;
+
+      return true;
+    })
+    .map((aula) => {
+      const matricula = matriculasAtivasResumo.find((m) => {
+        return Number(m.id) === Number(aula.matricula_id);
+      });
+
+      if (!matricula) return null;
+
+      return {
+        aula,
+        matricula
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      const dataA = String(a.aula.data_aula || "");
+      const dataB = String(b.aula.data_aula || "");
+
+      if (dataA !== dataB) return dataA.localeCompare(dataB);
+
+      return (a.matricula.aluno?.nome || "").localeCompare(
+        b.matricula.aluno?.nome || "",
+        "pt-BR"
+      );
+    });
+}
+
+/* =========================================================
+   CÁLCULOS - EVENTOS
+========================================================= */
+
+function obterConfirmacoesPorEvento() {
+  const mapa = new Map();
+
+  confirmacoesEvento.forEach((confirmacao) => {
+    const eventoId = Number(confirmacao.evento_id);
+    const atual = mapa.get(eventoId) || 0;
+
+    mapa.set(eventoId, atual + 1);
+  });
+
+  return mapa;
+}
+
+function obterEventosProgramados() {
+  const hoje = hojeISO();
+
+  return eventos
+    .filter((evento) => {
+      if (!evento.ativo) return false;
+
+      return String(evento.data_evento || "") >= hoje;
+    })
+    .sort((a, b) => {
+      const dataA = String(a.data_evento || "");
+      const dataB = String(b.data_evento || "");
+
+      if (dataA !== dataB) return dataA.localeCompare(dataB);
+
+      return String(a.hora_evento || "").localeCompare(String(b.hora_evento || ""));
+    });
+}
+
+function obterEventosComAdesao() {
+  const confirmacoesPorEvento = obterConfirmacoesPorEvento();
+
+  return obterEventosProgramados().filter((evento) => {
+    return (confirmacoesPorEvento.get(Number(evento.id)) || 0) > 0;
+  });
+}
+
+function obterEventosSemConfirmacao() {
+  const confirmacoesPorEvento = obterConfirmacoesPorEvento();
+
+  return obterEventosProgramados().filter((evento) => {
+    return (confirmacoesPorEvento.get(Number(evento.id)) || 0) === 0;
+  });
 }
 
 /* =========================================================
@@ -725,20 +873,32 @@ function renderIndicadoresGerais() {
       .filter(Boolean)
   );
 
-  const hoje = hojeISO();
+  const eventosProgramados = obterEventosProgramados();
+  const eventosComAdesao = obterEventosComAdesao();
 
-  const eventosFuturos = eventos.filter((e) => {
-    if (!e.ativo) return false;
-    return String(e.data_evento || "") >= hoje;
-  }).length;
+  if (qtdAlunosUnicosAtivos) {
+    qtdAlunosUnicosAtivos.textContent = String(alunosUnicos.size);
+  }
 
-  if (qtdAlunosUnicosAtivos) qtdAlunosUnicosAtivos.textContent = String(alunosUnicos.size);
-  if (qtdMatriculasAtivas) qtdMatriculasAtivas.textContent = String(matriculasAtivasResumo.length);
-  if (qtdProfessoresAtivos) qtdProfessoresAtivos.textContent = String(professoresAtivos.length);
-  if (qtdMateriasAtivas) qtdMateriasAtivas.textContent = String(materiasUnicas.size);
+  if (qtdMatriculasAtivas) {
+    qtdMatriculasAtivas.textContent = String(matriculasAtivasResumo.length);
+  }
 
-  if (qtdEventosTotal) qtdEventosTotal.textContent = String(eventos.length);
-  if (qtdEventosFuturos) qtdEventosFuturos.textContent = String(eventosFuturos);
+  if (qtdProfessoresAtivos) {
+    qtdProfessoresAtivos.textContent = String(professoresAtivos.length);
+  }
+
+  if (qtdMateriasAtivas) {
+    qtdMateriasAtivas.textContent = String(materiasUnicas.size);
+  }
+
+  if (qtdEventosTotal) {
+    qtdEventosTotal.textContent = String(eventosProgramados.length);
+  }
+
+  if (qtdEventosFuturos) {
+    qtdEventosFuturos.textContent = String(eventosComAdesao.length);
+  }
 }
 
 /* =========================================================
@@ -748,7 +908,9 @@ function renderIndicadoresGerais() {
 function renderAlertasResumo() {
   renderAlertaPacotesProximos();
   renderAlertaAvaliacoesPendentes();
+  renderAlertaReposicoesPendentes();
   renderAlertaEventosSemConfirmacao();
+
   configurarBotoesAbrirAluno();
   configurarBotoesExpandirRecolher();
 }
@@ -771,9 +933,21 @@ function renderAlertaPacotesProximos() {
     return;
   }
 
-  const itensParaMostrar = pacotesProximosExpandido
-    ? pacotesProximos
-    : pacotesProximos.slice(0, LIMITE_ITENS_ALERTA_RECOLHIDO);
+  if (!pacotesProximosExpandido) {
+    listaPacotesProximosResumo.innerHTML = `
+      <button
+        id="btnTogglePacotesProximosResumo"
+        type="button"
+        class="btn"
+        style="padding:7px 10px; margin-top:6px; font-size:12px; width:100%;"
+      >
+        Ver alunos
+      </button>
+    `;
+    return;
+  }
+
+  const itensParaMostrar = pacotesProximos.slice(0, LIMITE_ITENS_ALERTA_RECOLHIDO);
 
   listaPacotesProximosResumo.innerHTML = itensParaMostrar.map((item) => {
     const aluno = item.matricula.aluno?.nome || "Aluno";
@@ -808,21 +982,23 @@ function renderAlertaPacotesProximos() {
   }).join("");
 
   if (pacotesProximos.length > LIMITE_ITENS_ALERTA_RECOLHIDO) {
-    const textoBotao = pacotesProximosExpandido
-      ? "Recolher"
-      : `Ver todos (${pacotesProximos.length})`;
-
     listaPacotesProximosResumo.innerHTML += `
-      <button
-        id="btnTogglePacotesProximosResumo"
-        type="button"
-        class="btn"
-        style="padding:7px 10px; margin-top:10px; font-size:12px; width:100%;"
-      >
-        ${textoBotao}
-      </button>
+      <p style="font-size:12px; margin-top:8px; opacity:0.8;">
+        Exibindo ${LIMITE_ITENS_ALERTA_RECOLHIDO} de ${pacotesProximos.length} aluno(s).
+      </p>
     `;
   }
+
+  listaPacotesProximosResumo.innerHTML += `
+    <button
+      id="btnTogglePacotesProximosResumo"
+      type="button"
+      class="btn"
+      style="padding:7px 10px; margin-top:10px; font-size:12px; width:100%;"
+    >
+      Recolher
+    </button>
+  `;
 }
 
 function renderAlertaAvaliacoesPendentes() {
@@ -843,9 +1019,21 @@ function renderAlertaAvaliacoesPendentes() {
     return;
   }
 
-  const itensParaMostrar = avaliacoesPendentesExpandido
-    ? avaliacoesPendentes
-    : avaliacoesPendentes.slice(0, LIMITE_ITENS_ALERTA_RECOLHIDO);
+  if (!avaliacoesPendentesExpandido) {
+    listaAvaliacoesPendentesResumo.innerHTML = `
+      <button
+        id="btnToggleAvaliacoesPendentesResumo"
+        type="button"
+        class="btn"
+        style="padding:7px 10px; margin-top:6px; font-size:12px; width:100%;"
+      >
+        Ver alunos
+      </button>
+    `;
+    return;
+  }
+
+  const itensParaMostrar = avaliacoesPendentes.slice(0, LIMITE_ITENS_ALERTA_RECOLHIDO);
 
   listaAvaliacoesPendentesResumo.innerHTML = itensParaMostrar.map((item) => {
     const aluno = item.matricula.aluno?.nome || "Aluno";
@@ -878,43 +1066,182 @@ function renderAlertaAvaliacoesPendentes() {
   }).join("");
 
   if (avaliacoesPendentes.length > LIMITE_ITENS_ALERTA_RECOLHIDO) {
-    const textoBotao = avaliacoesPendentesExpandido
-      ? "Recolher"
-      : `Ver todos (${avaliacoesPendentes.length})`;
-
     listaAvaliacoesPendentesResumo.innerHTML += `
-      <button
-        id="btnToggleAvaliacoesPendentesResumo"
-        type="button"
-        class="btn"
-        style="padding:7px 10px; margin-top:10px; font-size:12px; width:100%;"
-      >
-        ${textoBotao}
-      </button>
+      <p style="font-size:12px; margin-top:8px; opacity:0.8;">
+        Exibindo ${LIMITE_ITENS_ALERTA_RECOLHIDO} de ${avaliacoesPendentes.length} aluno(s).
+      </p>
     `;
   }
+
+  listaAvaliacoesPendentesResumo.innerHTML += `
+    <button
+      id="btnToggleAvaliacoesPendentesResumo"
+      type="button"
+      class="btn"
+      style="padding:7px 10px; margin-top:10px; font-size:12px; width:100%;"
+    >
+      Recolher
+    </button>
+  `;
+}
+
+function renderAlertaReposicoesPendentes() {
+  const reposicoesPendentes = obterReposicoesPendentes();
+
+  if (qtdReposicoesPendentesResumo) {
+    qtdReposicoesPendentesResumo.textContent = String(reposicoesPendentes.length);
+  }
+
+  if (!listaReposicoesPendentesResumo) return;
+
+  if (!reposicoesPendentes.length) {
+    listaReposicoesPendentesResumo.innerHTML = `
+      <p style="font-size:13px; opacity:0.85; margin:0;">
+        Nenhuma reposição pendente.
+      </p>
+    `;
+    return;
+  }
+
+  if (!reposicoesPendentesExpandido) {
+    listaReposicoesPendentesResumo.innerHTML = `
+      <button
+        id="btnToggleReposicoesPendentesResumo"
+        type="button"
+        class="btn"
+        style="padding:7px 10px; margin-top:6px; font-size:12px; width:100%;"
+      >
+        Ver alunos
+      </button>
+    `;
+    return;
+  }
+
+  const itensParaMostrar = reposicoesPendentes.slice(0, LIMITE_ITENS_ALERTA_RECOLHIDO);
+
+  listaReposicoesPendentesResumo.innerHTML = itensParaMostrar.map((item) => {
+    const aluno = item.matricula.aluno?.nome || "Aluno";
+    const materia = item.matricula.materia?.nome || "Curso";
+    const modulo = item.matricula.modulo?.nome || "Módulo";
+    const data = formatarDataBR(item.aula.data_aula);
+    const status = formatarStatusAula(item.aula.status);
+
+    return `
+      <div style="padding:8px 0; border-bottom:1px solid #e6dfcf;">
+        <strong>${escapeHtml(aluno)}</strong>
+
+        <div style="font-size:12px; opacity:0.88;">
+          ${escapeHtml(materia)} • ${escapeHtml(modulo)}
+        </div>
+
+        <div style="font-size:12px; opacity:0.88;">
+          Aula de ${escapeHtml(data)} • ${escapeHtml(status)}
+        </div>
+
+        <button
+          type="button"
+          class="btn"
+          data-abrir-matricula="${item.matricula.id}"
+          style="padding:5px 9px; margin-top:6px; font-size:12px;"
+        >
+          Abrir aluno
+        </button>
+      </div>
+    `;
+  }).join("");
+
+  if (reposicoesPendentes.length > LIMITE_ITENS_ALERTA_RECOLHIDO) {
+    listaReposicoesPendentesResumo.innerHTML += `
+      <p style="font-size:12px; margin-top:8px; opacity:0.8;">
+        Exibindo ${LIMITE_ITENS_ALERTA_RECOLHIDO} de ${reposicoesPendentes.length} aula(s).
+      </p>
+    `;
+  }
+
+  listaReposicoesPendentesResumo.innerHTML += `
+    <button
+      id="btnToggleReposicoesPendentesResumo"
+      type="button"
+      class="btn"
+      style="padding:7px 10px; margin-top:10px; font-size:12px; width:100%;"
+    >
+      Recolher
+    </button>
+  `;
 }
 
 function renderAlertaEventosSemConfirmacao() {
-  const confirmacoesPorEvento = new Map();
-
-  confirmacoesEvento.forEach((c) => {
-    const atual = confirmacoesPorEvento.get(c.evento_id) || 0;
-    confirmacoesPorEvento.set(c.evento_id, atual + 1);
-  });
-
-  const hoje = hojeISO();
-
-  const eventosSemConfirmacao = eventos.filter((e) => {
-    const futuro = e.ativo && String(e.data_evento || "") >= hoje;
-    if (!futuro) return false;
-
-    return !confirmacoesPorEvento.has(e.id);
-  });
+  const eventosSemConfirmacao = obterEventosSemConfirmacao();
 
   if (qtdEventosSemConfirmacaoResumo) {
     qtdEventosSemConfirmacaoResumo.textContent = String(eventosSemConfirmacao.length);
   }
+
+  if (!listaEventosSemConfirmacaoResumo) return;
+
+  if (!eventosSemConfirmacao.length) {
+    listaEventosSemConfirmacaoResumo.innerHTML = `
+      <p style="font-size:13px; opacity:0.85; margin:0;">
+        Nenhum evento programado sem adesão.
+      </p>
+    `;
+    return;
+  }
+
+  if (!eventosSemConfirmacaoExpandido) {
+    listaEventosSemConfirmacaoResumo.innerHTML = `
+      <button
+        id="btnToggleEventosSemConfirmacaoResumo"
+        type="button"
+        class="btn"
+        style="padding:7px 10px; margin-top:6px; font-size:12px; width:100%;"
+      >
+        Ver eventos
+      </button>
+    `;
+    return;
+  }
+
+  const itensParaMostrar = eventosSemConfirmacao.slice(0, LIMITE_ITENS_ALERTA_RECOLHIDO);
+
+  listaEventosSemConfirmacaoResumo.innerHTML = itensParaMostrar.map((evento) => {
+    const titulo = evento.titulo || "Evento sem título";
+    const data = formatarDataBR(evento.data_evento);
+    const hora = formatarHora(evento.hora_evento);
+
+    return `
+      <div style="padding:8px 0; border-bottom:1px solid #e6dfcf;">
+        <strong>${escapeHtml(titulo)}</strong>
+
+        <div style="font-size:12px; opacity:0.88;">
+          ${escapeHtml(data)}${hora ? ` • ${escapeHtml(hora)}` : ""}
+        </div>
+
+        <div style="font-size:12px; opacity:0.88;">
+          Nenhum aluno confirmou presença ainda.
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (eventosSemConfirmacao.length > LIMITE_ITENS_ALERTA_RECOLHIDO) {
+    listaEventosSemConfirmacaoResumo.innerHTML += `
+      <p style="font-size:12px; margin-top:8px; opacity:0.8;">
+        Exibindo ${LIMITE_ITENS_ALERTA_RECOLHIDO} de ${eventosSemConfirmacao.length} evento(s).
+      </p>
+    `;
+  }
+
+  listaEventosSemConfirmacaoResumo.innerHTML += `
+    <button
+      id="btnToggleEventosSemConfirmacaoResumo"
+      type="button"
+      class="btn"
+      style="padding:7px 10px; margin-top:10px; font-size:12px; width:100%;"
+    >
+      Recolher
+    </button>
+  `;
 }
 
 /* =========================================================
@@ -961,18 +1288,21 @@ function renderAniversariantesDoDia() {
 function renderSelectMatriculasAdmin() {
   if (!selectMatriculaAdmin) return;
 
-  selectMatriculaAdmin.innerHTML = `<option value="">Selecione o aluno (curso)</option>`;
+  selectMatriculaAdmin.innerHTML = `<option value="">Selecione o aluno / curso</option>`;
 
   const listaOrdenada = [...matriculasAtivas].sort((a, b) => {
     const nomeA = a?.aluno?.nome || "";
     const nomeB = b?.aluno?.nome || "";
+
     return nomeA.localeCompare(nomeB, "pt-BR");
   });
 
   listaOrdenada.forEach((m) => {
     const opt = document.createElement("option");
+
     opt.value = m.id;
-    opt.textContent = `${m.aluno?.nome || "Aluno"} — ${m.materia?.nome || "Matéria"} (${m.modulo?.nome || "Módulo"})`;
+    opt.textContent = `${m.aluno?.nome || "Aluno"} — ${m.materia?.nome || "Curso"} (${m.modulo?.nome || "Módulo"})`;
+
     selectMatriculaAdmin.appendChild(opt);
   });
 }
@@ -985,14 +1315,20 @@ function renderCardsProfessores() {
   if (!cardsProfessoresAtivos) return;
 
   if (!professoresAtivos.length) {
-    cardsProfessoresAtivos.innerHTML = `<div class="card">${criarParagrafoVazio("Nenhum professor ativo encontrado.")}</div>`;
+    cardsProfessoresAtivos.innerHTML = `
+      <div class="card">
+        ${criarParagrafoVazio("Nenhum professor ativo encontrado.")}
+      </div>
+    `;
     return;
   }
 
   const html = professoresAtivos.map((prof) => {
-    const matriculasDoProfessor = matriculasAtivasResumo.filter(
-      (m) => Number(m?.professor?.id) === Number(prof.id)
-    );
+    const matriculasDoProfessor = matriculasAtivasResumo.filter((m) => {
+      const professorId = Number(m?.professor?.id || m?.professor_id || 0);
+
+      return professorId === Number(prof.id);
+    });
 
     const alunosUnicos = new Set(
       matriculasDoProfessor
@@ -1003,15 +1339,20 @@ function renderCardsProfessores() {
     const porMateria = {};
 
     matriculasDoProfessor.forEach((m) => {
-      const nomeMateria = m?.materia?.nome || "Matéria";
-      if (!porMateria[nomeMateria]) porMateria[nomeMateria] = new Set();
+      const nomeMateria = m?.materia?.nome || "Curso";
+
+      if (!porMateria[nomeMateria]) {
+        porMateria[nomeMateria] = new Set();
+      }
 
       if (m?.aluno?.id) {
         porMateria[nomeMateria].add(m.aluno.id);
       }
     });
 
-    const materiasOrdenadas = Object.keys(porMateria).sort((a, b) => a.localeCompare(b, "pt-BR"));
+    const materiasOrdenadas = Object.keys(porMateria).sort((a, b) => {
+      return a.localeCompare(b, "pt-BR");
+    });
 
     return `
       <div class="card card-professor-admin">
@@ -1020,11 +1361,15 @@ function renderCardsProfessores() {
 
         ${
           materiasOrdenadas.length
-            ? `<ul class="lista-simples-resumo">
+            ? `
+              <ul class="lista-simples-resumo">
                 ${materiasOrdenadas
-                  .map((materia) => `<li>${escapeHtml(materia)}: ${porMateria[materia].size} aluno(s)</li>`)
+                  .map((materia) => {
+                    return `<li>${escapeHtml(materia)}: ${porMateria[materia].size} aluno(s)</li>`;
+                  })
                   .join("")}
-               </ul>`
+              </ul>
+            `
             : `<p>Nenhum aluno ativo vinculado.</p>`
         }
 
@@ -1051,7 +1396,7 @@ function renderCardsProfessores() {
 }
 
 /* =========================================================
-   RENDER - MATÉRIAS
+   RENDER - CURSOS
 ========================================================= */
 
 function renderCardsMaterias() {
@@ -1060,40 +1405,72 @@ function renderCardsMaterias() {
   const mapa = {};
 
   matriculasAtivasResumo.forEach((m) => {
-    const nomeMateria = m?.materia?.nome || "Matéria";
-    const alunoId = m?.aluno?.id;
+    const nomeMateria = m?.materia?.nome || "Curso";
+    const nomeModulo = m?.modulo?.nome || "Sem módulo";
 
     if (!mapa[nomeMateria]) {
       mapa[nomeMateria] = {
-        alunos: new Set(),
-        matriculas: 0
+        matriculas: 0,
+        modulos: {}
       };
     }
 
-    if (alunoId) mapa[nomeMateria].alunos.add(alunoId);
     mapa[nomeMateria].matriculas += 1;
+
+    if (!mapa[nomeMateria].modulos[nomeModulo]) {
+      mapa[nomeMateria].modulos[nomeModulo] = 0;
+    }
+
+    mapa[nomeMateria].modulos[nomeModulo] += 1;
   });
 
-  const materias = Object.keys(mapa).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const materias = Object.keys(mapa).sort((a, b) => {
+    return a.localeCompare(b, "pt-BR");
+  });
 
   if (!materias.length) {
-    cardsMateriasResumo.innerHTML = `<div class="card">${criarParagrafoVazio("Nenhuma matéria com matrícula ativa encontrada.")}</div>`;
+    cardsMateriasResumo.innerHTML = `
+      <div class="card">
+        ${criarParagrafoVazio("Nenhum curso com matrícula ativa encontrado.")}
+      </div>
+    `;
     return;
   }
 
-  const html = materias.map((nomeMateria) => `
-    <div class="card">
-      <h2>${escapeHtml(nomeMateria)}</h2>
-      <p><b>Alunos:</b> ${mapa[nomeMateria].alunos.size} pessoa(s)</p>
-      <p><b>Matrículas ativas:</b> ${mapa[nomeMateria].matriculas}</p>
-    </div>
-  `).join("");
+  const html = materias.map((nomeMateria) => {
+    const modulos = Object.keys(mapa[nomeMateria].modulos).sort((a, b) => {
+      return a.localeCompare(b, "pt-BR");
+    });
+
+    return `
+      <div class="card">
+        <h2>${escapeHtml(nomeMateria)}</h2>
+        <p><b>Matrículas ativas:</b> ${mapa[nomeMateria].matriculas}</p>
+
+        ${
+          modulos.length
+            ? `
+              <ul class="lista-simples-resumo">
+                ${modulos.map((modulo) => {
+                  return `
+                    <li>
+                      ${escapeHtml(modulo)}: ${mapa[nomeMateria].modulos[modulo]} matrícula(s)
+                    </li>
+                  `;
+                }).join("")}
+              </ul>
+            `
+            : ""
+        }
+      </div>
+    `;
+  }).join("");
 
   cardsMateriasResumo.innerHTML = html;
 }
 
 /* =========================================================
-   RENDER - FILTRO DE MÓDULO
+   RENDER - FILTRO POR CURSO / MÓDULO
 ========================================================= */
 
 function renderSelectMateriasResumo() {
@@ -1110,16 +1487,18 @@ function renderSelectMateriasResumo() {
     }
   });
 
-  const materiasOrdenadas = Array.from(mapaMaterias.entries()).sort((a, b) =>
-    a[1].localeCompare(b[1], "pt-BR")
-  );
+  const materiasOrdenadas = Array.from(mapaMaterias.entries()).sort((a, b) => {
+    return a[1].localeCompare(b[1], "pt-BR");
+  });
 
-  selectMateriaResumo.innerHTML = `<option value="">Selecione a matéria</option>`;
+  selectMateriaResumo.innerHTML = `<option value="">Selecione o curso</option>`;
 
   materiasOrdenadas.forEach(([id, nome]) => {
     const opt = document.createElement("option");
+
     opt.value = String(id);
     opt.textContent = nome;
+
     selectMateriaResumo.appendChild(opt);
   });
 }
@@ -1127,7 +1506,7 @@ function renderSelectMateriasResumo() {
 function limparSelectModulos() {
   if (!selectModuloResumo) return;
 
-  selectModuloResumo.innerHTML = `<option value="">Selecione o módulo</option>`;
+  selectModuloResumo.innerHTML = `<option value="">Todos os módulos</option>`;
   selectModuloResumo.disabled = true;
 }
 
@@ -1135,7 +1514,9 @@ function renderResultadoModuloInicial() {
   if (!resultadoModuloResumo) return;
 
   resultadoModuloResumo.innerHTML = `
-    <p style="font-size:14px;">Selecione uma matéria para começar.</p>
+    <p style="font-size:14px;">
+      Selecione um curso para visualizar os alunos ativos.
+    </p>
   `;
 }
 
@@ -1155,77 +1536,149 @@ function renderModulosPorMateria(materiaIdSelecionada) {
     modulosMap.set(moduloId, moduloNome);
   });
 
-  const modulosOrdenados = Array.from(modulosMap.entries()).sort((a, b) =>
-    a[1].localeCompare(b[1], "pt-BR")
-  );
+  const modulosOrdenados = Array.from(modulosMap.entries()).sort((a, b) => {
+    return a[1].localeCompare(b[1], "pt-BR");
+  });
 
-  limparSelectModulos();
-
-  if (!modulosOrdenados.length) {
-    selectModuloResumo.disabled = true;
-
-    if (resultadoModuloResumo) {
-      resultadoModuloResumo.innerHTML = `
-        <p style="font-size:14px;">Nenhum módulo encontrado para esta matéria.</p>
-      `;
-    }
-
-    return;
-  }
+  selectModuloResumo.innerHTML = `<option value="">Todos os módulos</option>`;
 
   modulosOrdenados.forEach(([id, nome]) => {
     const opt = document.createElement("option");
+
     opt.value = String(id);
     opt.textContent = nome;
+
     selectModuloResumo.appendChild(opt);
   });
 
   selectModuloResumo.disabled = false;
 
-  if (resultadoModuloResumo) {
-    resultadoModuloResumo.innerHTML = `
-      <p style="font-size:14px;">Agora selecione o módulo.</p>
-    `;
-  }
+  renderResultadoCursoModulo(materiaIdSelecionada, "");
 }
 
-function renderResultadoModulo(materiaIdSelecionada, moduloIdSelecionado) {
+function renderResultadoCursoModulo(materiaIdSelecionada, moduloIdSelecionado = "") {
   if (!resultadoModuloResumo) return;
+
+  if (!materiaIdSelecionada) {
+    renderResultadoModuloInicial();
+    return;
+  }
 
   const filtradas = matriculasAtivasResumo.filter((m) => {
     const materiaId = String(m?.materia?.id || "");
     const moduloId = String(m?.modulo?.id || "");
 
-    return (
-      materiaId === String(materiaIdSelecionada) &&
-      moduloId === String(moduloIdSelecionado)
-    );
+    const pertenceAoCurso = materiaId === String(materiaIdSelecionada);
+    const pertenceAoModulo = !moduloIdSelecionado || moduloId === String(moduloIdSelecionado);
+
+    return pertenceAoCurso && pertenceAoModulo;
   });
 
   if (!filtradas.length) {
     resultadoModuloResumo.innerHTML = `
-      <p style="font-size:14px;">Nenhuma matrícula ativa encontrada neste módulo.</p>
+      <p style="font-size:14px;">
+        Nenhuma matrícula ativa encontrada para este filtro.
+      </p>
     `;
     return;
   }
 
-  const nomeMateria = filtradas[0]?.materia?.nome || "Matéria";
-  const nomeModulo = filtradas[0]?.modulo?.nome || "Módulo";
+  const filtradasOrdenadas = [...filtradas].sort((a, b) => {
+    const moduloA = a?.modulo?.nome || "";
+    const moduloB = b?.modulo?.nome || "";
+
+    if (moduloA !== moduloB) {
+      return moduloA.localeCompare(moduloB, "pt-BR");
+    }
+
+    const alunoA = a?.aluno?.nome || "";
+    const alunoB = b?.aluno?.nome || "";
+
+    return alunoA.localeCompare(alunoB, "pt-BR");
+  });
+
+  const nomeMateria = filtradasOrdenadas[0]?.materia?.nome || "Curso";
 
   const alunosUnicos = new Set(
-    filtradas
+    filtradasOrdenadas
       .map((m) => m?.aluno?.id)
       .filter(Boolean)
   );
 
+  const nomeFiltroModulo = moduloIdSelecionado
+    ? filtradasOrdenadas[0]?.modulo?.nome || "Módulo"
+    : "Todos os módulos";
+
+  const gruposPorModulo = new Map();
+
+  filtradasOrdenadas.forEach((matricula) => {
+    const nomeModulo = matricula?.modulo?.nome || "Sem módulo";
+
+    if (!gruposPorModulo.has(nomeModulo)) {
+      gruposPorModulo.set(nomeModulo, []);
+    }
+
+    gruposPorModulo.get(nomeModulo).push(matricula);
+  });
+
+  const htmlGrupos = Array.from(gruposPorModulo.entries()).map(([nomeModulo, lista]) => {
+    return `
+      <div style="margin-top:14px; padding-top:10px; border-top:1px solid #e6dfcf;">
+        <strong>${escapeHtml(nomeModulo)}</strong>
+
+        ${lista.map((matricula) => {
+          const aluno = matricula?.aluno?.nome || "Aluno";
+          const professor = matricula?.professor?.nome || "Professor não informado";
+
+          return `
+            <div
+              style="
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                gap:10px;
+                padding:8px 0;
+                border-bottom:1px solid rgba(0,0,0,0.06);
+              "
+            >
+              <div>
+                <div style="font-size:14px;">
+                  <strong>${escapeHtml(aluno)}</strong>
+                </div>
+
+                <div style="font-size:12px; opacity:0.85;">
+                  Professor(a): ${escapeHtml(professor)}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn"
+                data-abrir-matricula="${matricula.id}"
+                style="padding:5px 9px; font-size:12px; width:auto;"
+              >
+                Abrir
+              </button>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }).join("");
+
   resultadoModuloResumo.innerHTML = `
     <div class="item-avaliacao-resumo">
-      <strong>${escapeHtml(nomeModulo)}</strong>
-      <p><b>Matéria:</b> ${escapeHtml(nomeMateria)}</p>
-      <p><b>Alunos:</b> ${alunosUnicos.size} pessoa(s)</p>
-      <p><b>Matrículas ativas:</b> ${filtradas.length}</p>
+      <strong>${escapeHtml(nomeMateria)}</strong>
+
+      <p><b>Filtro:</b> ${escapeHtml(nomeFiltroModulo)}</p>
+      <p><b>Alunos encontrados:</b> ${alunosUnicos.size} pessoa(s)</p>
+      <p><b>Matrículas ativas:</b> ${filtradasOrdenadas.length}</p>
+
+      ${htmlGrupos}
     </div>
   `;
+
+  configurarBotoesAbrirAluno();
 }
 
 /* =========================================================
@@ -1255,6 +1708,7 @@ async function montarResumoGeral() {
 
   } catch (error) {
     console.error("Erro ao carregar resumo geral:", error);
+
     mostrarMensagem(
       "Erro ao carregar o resumo geral. Confira os relacionamentos, nomes das colunas e permissões RLS.",
       false
@@ -1270,7 +1724,7 @@ btnDetalhesAdmin?.addEventListener("click", () => {
   const matriculaId = selectMatriculaAdmin.value;
 
   if (!matriculaId) {
-    mostrarMensagem("Selecione o aluno (curso).", false);
+    mostrarMensagem("Selecione o aluno / curso.", false);
     return;
   }
 
@@ -1293,14 +1747,7 @@ selectModuloResumo?.addEventListener("change", () => {
   const materiaId = selectMateriaResumo.value;
   const moduloId = selectModuloResumo.value;
 
-  if (!materiaId || !moduloId) {
-    resultadoModuloResumo.innerHTML = `
-      <p style="font-size:14px;">Selecione um módulo para visualizar os dados.</p>
-    `;
-    return;
-  }
-
-  renderResultadoModulo(materiaId, moduloId);
+  renderResultadoCursoModulo(materiaId, moduloId);
 });
 
 /* =========================================================

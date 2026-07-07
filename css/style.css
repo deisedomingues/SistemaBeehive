@@ -4560,3 +4560,79 @@ textarea[readonly] {
     max-height: 22px !important;
   }
 }
+/* =========================================
+   RESUMO GERAL - DISTRIBUIÇÃO POR CURSO
+========================================= */
+
+.card-curso-resumo {
+  min-height: auto !important;
+  padding: 16px !important;
+}
+
+.card-curso-resumo h2 {
+  margin-bottom: 8px;
+}
+
+.card-curso-resumo p {
+  margin: 6px 0;
+}
+
+.modulos-curso-resumo {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.modulos-curso-resumo summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #5b4300;
+  margin-top: 8px;
+}
+
+.lista-modulos-resumo {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.lista-modulos-resumo li {
+  margin: 4px 0;
+}
+
+/* =========================================
+   RESUMO GERAL - CARD DE ALUNO NO FILTRO
+========================================= */
+
+.card-aluno-modulo-resumo {
+  background: #fff6c9;
+  border: 1px solid #f3d46b;
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card-aluno-modulo-resumo .nome-aluno-modulo {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.card-aluno-modulo-resumo .dados-aluno-modulo {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: 3px;
+}
+
+.linha-card-aluno-modulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-abrir-aluno-modulo {
+  padding: 5px 9px !important;
+  font-size: 12px !important;
+  width: auto !important;
+}
