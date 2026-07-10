@@ -46,8 +46,8 @@
     }
   </style>
 </head>
-<body>
 
+<body>
   <div class="overlay"></div>
 
   <main class="container home-professor-page">
@@ -77,12 +77,18 @@
 
       <div class="saudacao-card saudacao-card-professor">
         <div class="saudacao-card-texto">
-          <p id="saudacaoProfessor" class="saudacao saudacao-professor">
+
+          <p
+            id="saudacaoProfessor"
+            class="saudacao saudacao-professor"
+          >
             Carregando...
           </p>
 
           <p class="subtitulo-admin subtitulo-professor">
-           Veja novos agendamentos e avaliações informadas como realizadas pelos alunos.
+            Veja novos agendamentos e avaliações informadas como realizadas
+            pelos alunos.
+          </p>
         </div>
 
         <img
@@ -93,13 +99,25 @@
       </div>
     </section>
 
-    <section class="card-admin card-professor" style="margin-bottom:16px;">
+    <section
+      class="card-admin card-professor"
+      style="margin-bottom:16px;"
+    >
       <div class="card-admin-icone">🔔</div>
 
       <div class="card-admin-conteudo">
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <h2 style="margin:0;">Notificações recebidas</h2>
-        
+
+        <div
+          style="
+            display:flex;
+            align-items:center;
+            gap:8px;
+            flex-wrap:wrap;
+          "
+        >
+          <h2 style="margin:0;">
+            Notificações recebidas
+          </h2>
 
           <span
             id="badgeNotificacoesProfessor"
@@ -126,6 +144,7 @@
         </p>
 
         <div class="acoes-notificacoes-professor">
+
           <button
             id="btnAtualizarNotificacoesProfessor"
             type="button"
@@ -149,6 +168,7 @@
           >
             Ativar notificações push
           </button>
+
         </div>
       </div>
     </section>
@@ -157,19 +177,31 @@
       id="listaNotificacoesProfessor"
       class="lista-notificacoes-professor"
     >
-      <article class="card-admin card-professor notificacao-professor-card">
+      <article
+        class="card-admin card-professor notificacao-professor-card"
+      >
         <div class="card-admin-icone">⏳</div>
 
         <div class="card-admin-conteudo">
           <h2>Carregando...</h2>
-          <p>Aguarde enquanto buscamos suas notificações.</p>
+
+          <p>
+            Aguarde enquanto buscamos suas notificações.
+          </p>
         </div>
       </article>
     </section>
 
   </main>
 
-  <script type="module" src="js/push-professor-notificacoes.js"></script>
-  <script type="module" src="js/notificacao-professor.js"></script>
+  <script
+    type="module"
+    src="js/push-professor-notificacoes.js?v=20260710-1"
+  ></script>
+
+  <script
+    type="module"
+    src="js/notificacao-professor.js?v=20260710-1"
+  ></script>
 </body>
 </html>
