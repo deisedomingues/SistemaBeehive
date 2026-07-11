@@ -74,20 +74,24 @@ const regraIguais = document.getElementById(
   "regraIguais"
 );
 
+let sessaoDoConvite = null;
+
 /* =========================
-   Funções de mensagem
+   Mensagens
 ========================= */
 
-function mostrarMensagem(texto, tipo = "erro") {
+function mostrarMensagem(
+  texto,
+  tipo = "erro"
+) {
   msg.style.display = "block";
   msg.textContent = texto;
 
   if (tipo === "sucesso") {
     msg.className = "msg sucesso";
-    return;
+  } else {
+    msg.className = "msg erro";
   }
-
-  msg.className = "msg erro";
 }
 
 function esconderMensagem() {
@@ -97,42 +101,54 @@ function esconderMensagem() {
 }
 
 /* =========================
-   Controle dos cards
+   Cards
 ========================= */
 
 function esconderTodosOsCards() {
-  cardCarregando.style.display = "none";
-  cardLinkInvalido.style.display = "none";
-  cardCriarSenha.style.display = "none";
-  cardSucesso.style.display = "none";
+  cardCarregando.style.display =
+    "none";
+
+  cardLinkInvalido.style.display =
+    "none";
+
+  cardCriarSenha.style.display =
+    "none";
+
+  cardSucesso.style.display =
+    "none";
 }
 
 function mostrarCardCriarSenha() {
   esconderTodosOsCards();
   esconderMensagem();
 
-  cardCriarSenha.style.display = "block";
+  cardCriarSenha.style.display =
+    "block";
 }
 
 function mostrarCardLinkInvalido() {
   esconderTodosOsCards();
   esconderMensagem();
 
-  cardLinkInvalido.style.display = "block";
+  cardLinkInvalido.style.display =
+    "block";
 }
 
 function mostrarCardSucesso() {
   esconderTodosOsCards();
   esconderMensagem();
 
-  cardSucesso.style.display = "block";
+  cardSucesso.style.display =
+    "block";
 }
 
 /* =========================
    Validação da senha
 ========================= */
 
-function senhaPossuiTamanhoValido(senha) {
+function senhaPossuiTamanhoValido(
+  senha
+) {
   return senha.length >= 8;
 }
 
@@ -147,7 +163,9 @@ function senhaPossuiNumero(senha) {
 function senhasSaoIguais() {
   return (
     novaSenha.value.length > 0 &&
-    novaSenha.value === confirmarSenha.value
+    confirmarSenha.value.length > 0 &&
+    novaSenha.value ===
+      confirmarSenha.value
   );
 }
 
@@ -155,22 +173,16 @@ function atualizarAparenciaRegra(
   elemento,
   regraCumprida
 ) {
-  if (regraCumprida) {
-    elemento.style.fontWeight = "bold";
-    elemento.style.textDecoration = "none";
-    elemento.setAttribute(
-      "data-cumprida",
-      "true"
-    );
+  elemento.style.fontWeight =
+    regraCumprida
+      ? "bold"
+      : "normal";
 
-    return;
-  }
-
-  elemento.style.fontWeight = "normal";
-  elemento.style.textDecoration = "none";
   elemento.setAttribute(
     "data-cumprida",
-    "false"
+    regraCumprida
+      ? "true"
+      : "false"
   );
 }
 
@@ -178,6 +190,7 @@ function formularioEstaValido() {
   const senha = novaSenha.value;
 
   return (
+    Boolean(sessaoDoConvite) &&
     senhaPossuiTamanhoValido(senha) &&
     senhaPossuiLetra(senha) &&
     senhaPossuiNumero(senha) &&
@@ -187,6 +200,9 @@ function formularioEstaValido() {
 
 function validarCamposSenha() {
   const senha = novaSenha.value;
+
+  const confirmacao =
+    confirmarSenha.value;
 
   atualizarAparenciaRegra(
     regraTamanho,
@@ -208,12 +224,24 @@ function validarCamposSenha() {
     senhasSaoIguais()
   );
 
+  if (
+    confirmacao.length > 0 &&
+    senha !== confirmacao
+  ) {
+    mostrarMensagem(
+      "As senhas não coincidem. Digite a mesma senha nos dois campos.",
+      "erro"
+    );
+  } else {
+    esconderMensagem();
+  }
+
   btnSalvarSenha.disabled =
     !formularioEstaValido();
 }
 
 /* =========================
-   Mostrar e ocultar senha
+   Mostrar senha
 ========================= */
 
 function alternarVisibilidadeSenha(
@@ -257,7 +285,8 @@ btnMostrarConfirmacao.addEventListener(
 ========================= */
 
 function obterNomeDoUsuario(usuario) {
-  const metadados = usuario?.user_metadata || {};
+  const metadados =
+    usuario?.user_metadata || {};
 
   return (
     metadados.nome ||
@@ -267,45 +296,70 @@ function obterNomeDoUsuario(usuario) {
 }
 
 function exibirDadosDoUsuario(usuario) {
-  const nome = obterNomeDoUsuario(usuario);
-  const email = usuario?.email || "—";
+  nomeUsuario.textContent =
+    obterNomeDoUsuario(usuario);
 
-  nomeUsuario.textContent = nome;
-  emailUsuario.textContent = email;
+  emailUsuario.textContent =
+    usuario?.email || "—";
 
-  dadosConvite.style.display = "block";
+  dadosConvite.style.display =
+    "block";
 }
 
 /* =========================
-   Processamento do convite
+   Dados do endereço
 ========================= */
 
-async function trocarCodigoPorSessao() {
-  const parametros = new URLSearchParams(
-    window.location.search
+function obterParametrosDoHash() {
+  const hash =
+    window.location.hash.replace(
+      /^#/,
+      ""
+    );
+
+  return new URLSearchParams(hash);
+}
+
+function enderecoPossuiDadosDeConvite() {
+  const parametrosUrl =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const parametrosHash =
+    obterParametrosDoHash();
+
+  const possuiCodigo =
+    parametrosUrl.has("code");
+
+  const possuiTokenNoHash =
+    parametrosHash.has(
+      "access_token"
+    ) &&
+    parametrosHash.has(
+      "refresh_token"
+    );
+
+  const tipoDoHash =
+    parametrosHash.get("type");
+
+  const tipoPermitido =
+    !tipoDoHash ||
+    tipoDoHash === "invite" ||
+    tipoDoHash === "recovery" ||
+    tipoDoHash === "signup" ||
+    tipoDoHash === "magiclink";
+
+  return (
+    possuiCodigo ||
+    (
+      possuiTokenNoHash &&
+      tipoPermitido
+    )
   );
+}
 
-  const codigo = parametros.get("code");
-
-  if (!codigo) {
-    return null;
-  }
-
-  const {
-    data,
-    error
-  } = await supabase.auth.exchangeCodeForSession(
-    codigo
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  /*
-    Retira o código da barra de endereço depois
-    que ele já foi utilizado.
-  */
+function limparEndereco() {
   const urlLimpa =
     `${window.location.origin}${window.location.pathname}`;
 
@@ -314,64 +368,97 @@ async function trocarCodigoPorSessao() {
     document.title,
     urlLimpa
   );
+}
+
+/* =========================
+   Processar convite
+========================= */
+
+async function processarCodigoPkce() {
+  const parametros =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const codigo =
+    parametros.get("code");
+
+  if (!codigo) {
+    return null;
+  }
+
+  const { data, error } =
+    await supabase.auth
+      .exchangeCodeForSession(
+        codigo
+      );
+
+  if (error) {
+    throw error;
+  }
 
   return data?.session || null;
 }
 
-async function aguardarProcessamentoAutomatico() {
-  /*
-    Quando o Supabase envia os dados na parte final
-    do endereço, a biblioteca pode precisar de um
-    pequeno intervalo para processá-los.
-  */
-  for (let tentativa = 0; tentativa < 12; tentativa += 1) {
-    const {
-      data,
-      error
-    } = await supabase.auth.getSession();
+async function processarTokensDoHash() {
+  const parametrosHash =
+    obterParametrosDoHash();
 
-    if (error) {
-      throw error;
-    }
+  const accessToken =
+    parametrosHash.get(
+      "access_token"
+    );
 
-    if (data?.session) {
-      return data.session;
-    }
+  const refreshToken =
+    parametrosHash.get(
+      "refresh_token"
+    );
 
-    await new Promise((resolve) => {
-      setTimeout(resolve, 250);
-    });
+  if (
+    !accessToken ||
+    !refreshToken
+  ) {
+    return null;
   }
 
-  return null;
+  const { data, error } =
+    await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.session || null;
 }
 
 async function validarConvite() {
-  cardCarregando.style.display = "block";
+  cardCarregando.style.display =
+    "block";
 
   try {
-    let sessao = null;
-
-    /*
-      Alguns links utilizam o fluxo PKCE e retornam
-      um código na URL.
-
-      Nesse caso, trocamos o código por uma sessão.
-    */
-    const parametros = new URLSearchParams(
-      window.location.search
-    );
-
-    if (parametros.has("code")) {
-      sessao = await trocarCodigoPorSessao();
+    if (
+      !enderecoPossuiDadosDeConvite()
+    ) {
+      mostrarCardLinkInvalido();
+      return;
     }
 
-    /*
-      Outros links são processados automaticamente
-      pela biblioteca do Supabase.
-    */
-    if (!sessao) {
-      sessao = await aguardarProcessamentoAutomatico();
+    let sessao = null;
+
+    const parametrosUrl =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    if (parametrosUrl.has("code")) {
+      sessao =
+        await processarCodigoPkce();
+    } else {
+      sessao =
+        await processarTokensDoHash();
     }
 
     if (!sessao?.user) {
@@ -379,14 +466,23 @@ async function validarConvite() {
       return;
     }
 
-    exibirDadosDoUsuario(sessao.user);
+    sessaoDoConvite = sessao;
+
+    limparEndereco();
+
+    exibirDadosDoUsuario(
+      sessaoDoConvite.user
+    );
+
     mostrarCardCriarSenha();
+    validarCamposSenha();
   } catch (error) {
     console.error(
-      "Erro ao validar o convite:",
+      "Erro ao validar convite:",
       error
     );
 
+    sessaoDoConvite = null;
     mostrarCardLinkInvalido();
   }
 }
@@ -397,22 +493,16 @@ async function validarConvite() {
 
 novaSenha.addEventListener(
   "input",
-  () => {
-    esconderMensagem();
-    validarCamposSenha();
-  }
+  validarCamposSenha
 );
 
 confirmarSenha.addEventListener(
   "input",
-  () => {
-    esconderMensagem();
-    validarCamposSenha();
-  }
+  validarCamposSenha
 );
 
 /* =========================
-   Salvar a nova senha
+   Salvar senha
 ========================= */
 
 formDefinirSenha.addEventListener(
@@ -420,15 +510,33 @@ formDefinirSenha.addEventListener(
   async (event) => {
     event.preventDefault();
 
-    esconderMensagem();
+    if (
+      !sessaoDoConvite ||
+      !formularioEstaValido()
+    ) {
+      if (
+        confirmarSenha.value.length > 0 &&
+        novaSenha.value !==
+          confirmarSenha.value
+      ) {
+        mostrarMensagem(
+          "As senhas não coincidem. Digite a mesma senha nos dois campos.",
+          "erro"
+        );
 
-    if (!formularioEstaValido()) {
+        confirmarSenha.focus();
+        return;
+      }
+
       mostrarMensagem(
-        "Confira os requisitos da senha antes de continuar."
+        "Confira os requisitos da senha antes de continuar.",
+        "erro"
       );
 
       return;
     }
+
+    esconderMensagem();
 
     const senha = novaSenha.value;
 
@@ -436,38 +544,15 @@ formDefinirSenha.addEventListener(
       btnSalvarSenha.textContent;
 
     btnSalvarSenha.disabled = true;
+
     btnSalvarSenha.textContent =
       "Criando senha...";
 
     try {
-      /*
-        Confirma novamente que existe uma sessão
-        válida antes de alterar a senha.
-      */
-      const {
-        data: dadosSessao,
-        error: erroSessao
-      } = await supabase.auth.getSession();
-
-      if (
-        erroSessao ||
-        !dadosSessao?.session
-      ) {
-        throw new Error(
-          "O convite expirou ou não é mais válido."
-        );
-      }
-
-      /*
-        Atualiza a senha do usuário autenticado
-        temporariamente pelo link de convite.
-      */
-      const {
-        data,
-        error
-      } = await supabase.auth.updateUser({
-        password: senha
-      });
+      const { data, error } =
+        await supabase.auth.updateUser({
+          password: senha
+        });
 
       if (error) {
         throw error;
@@ -475,25 +560,22 @@ formDefinirSenha.addEventListener(
 
       if (!data?.user) {
         throw new Error(
-          "Não foi possível confirmar a alteração da senha."
+          "Não foi possível confirmar a criação da senha."
         );
       }
 
       novaSenha.value = "";
       confirmarSenha.value = "";
 
+      sessaoDoConvite = null;
+
       mostrarCardSucesso();
 
-      /*
-        Encerra a sessão temporária do convite.
-
-        A pessoa fará o primeiro login normalmente
-        usando o e-mail e a senha escolhida.
-      */
       await supabase.auth.signOut();
 
       setTimeout(() => {
-        window.location.href = "index.html";
+        window.location.href =
+          "index.html";
       }, 4000);
     } catch (error) {
       console.error(
@@ -502,23 +584,35 @@ formDefinirSenha.addEventListener(
       );
 
       const mensagemOriginal =
-        String(error?.message || "").toLowerCase();
+        String(
+          error?.message || ""
+        ).toLowerCase();
 
       let mensagem =
         "Não foi possível criar a senha. Tente novamente.";
 
       if (
-        mensagemOriginal.includes("expired") ||
-        mensagemOriginal.includes("invalid") ||
-        mensagemOriginal.includes("session")
+        mensagemOriginal.includes(
+          "expired"
+        ) ||
+        mensagemOriginal.includes(
+          "invalid"
+        ) ||
+        mensagemOriginal.includes(
+          "session"
+        )
       ) {
         mensagem =
           "O link de convite expirou ou não é mais válido. Solicite um novo convite à Beehive.";
       }
 
       if (
-        mensagemOriginal.includes("password") &&
-        mensagemOriginal.includes("characters")
+        mensagemOriginal.includes(
+          "password"
+        ) &&
+        mensagemOriginal.includes(
+          "characters"
+        )
       ) {
         mensagem =
           "A senha não atende aos requisitos de segurança.";

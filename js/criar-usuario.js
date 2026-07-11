@@ -1,9 +1,6 @@
 import { supabase } from "./supabase.js";
 import { exigirAdmin } from "./guard.js";
 
-/*
-  Somente administradores podem acessar esta página.
-*/
 await exigirAdmin();
 
 /* =========================
@@ -77,26 +74,29 @@ const btnCriarAcesso = document.getElementById(
   "btnCriarAcesso"
 );
 
-/*
-  Guarda temporariamente os alunos ou professores
-  carregados do banco.
-*/
 let pessoasCarregadas = [];
 
 /* =========================
-   Funções auxiliares
+   Mensagens
 ========================= */
 
-function mostrarMensagem(texto, tipo = "sucesso") {
+function mostrarMensagem(
+  texto,
+  tipo = "sucesso"
+) {
   msg.style.display = "block";
   msg.textContent = texto;
 
   if (tipo === "erro") {
     msg.className = "msg erro";
-    return;
+  } else {
+    msg.className = "msg sucesso";
   }
 
-  msg.className = "msg sucesso";
+  msg.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
 }
 
 function esconderMensagem() {
@@ -105,12 +105,17 @@ function esconderMensagem() {
   msg.className = "";
 }
 
+/* =========================
+   Funções auxiliares
+========================= */
+
 function normalizarTexto(valor) {
   return String(valor || "").trim();
 }
 
 function normalizarEmail(valor) {
-  return normalizarTexto(valor).toLowerCase();
+  return normalizarTexto(valor)
+    .toLowerCase();
 }
 
 function obterNomePessoa(registro) {
@@ -148,8 +153,12 @@ function limparSelectPessoa() {
   `;
 }
 
-function redefinirFormularioAoTrocarTipo() {
-  esconderMensagem();
+function redefinirFormulario(
+  preservarMensagem = false
+) {
+  if (!preservarMensagem) {
+    esconderMensagem();
+  }
 
   pessoasCarregadas = [];
 
@@ -167,14 +176,23 @@ function redefinirFormularioAoTrocarTipo() {
 
   confirmarMatriculaAluno.checked = false;
 
-  grupoPessoaCadastrada.style.display = "none";
-  grupoCadastroManual.style.display = "none";
-  grupoEmail.style.display = "none";
+  grupoPessoaCadastrada.style.display =
+    "none";
 
-  avisoAlunoExperimental.style.display = "none";
-  grupoConfirmacaoAluno.style.display = "none";
+  grupoCadastroManual.style.display =
+    "none";
 
-  resumoConvite.style.display = "none";
+  grupoEmail.style.display =
+    "none";
+
+  avisoAlunoExperimental.style.display =
+    "none";
+
+  grupoConfirmacaoAluno.style.display =
+    "none";
+
+  resumoConvite.style.display =
+    "none";
 
   btnCriarAcesso.disabled = true;
 }
@@ -191,36 +209,45 @@ function obterDadosAtuais() {
     };
   }
 
-  /*
-    Funcionários administrativos são preenchidos
-    manualmente porque não existe, necessariamente,
-    uma tabela específica de funcionários.
-  */
   if (tipo === "admin") {
     return {
       tipo,
       cadastroId: null,
-      nome: normalizarTexto(nomeManual.value),
-      email: normalizarEmail(emailUsuario.value)
+      nome: normalizarTexto(
+        nomeManual.value
+      ),
+      email: normalizarEmail(
+        emailUsuario.value
+      )
     };
   }
 
-  const cadastroId = pessoaCadastrada.value;
+  const cadastroId =
+    pessoaCadastrada.value;
 
-  const pessoa = pessoasCarregadas.find(
-    (item) => String(item.id) === String(cadastroId)
-  );
+  const pessoa =
+    pessoasCarregadas.find(
+      (item) =>
+        String(item.id) ===
+        String(cadastroId)
+    );
 
   return {
     tipo,
     cadastroId: cadastroId || "",
-    nome: pessoa ? obterNomePessoa(pessoa) : "",
-    email: normalizarEmail(emailUsuario.value)
+    nome: pessoa
+      ? obterNomePessoa(pessoa)
+      : "",
+    email: normalizarEmail(
+      emailUsuario.value
+    )
   };
 }
 
 function emailPareceValido(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+    email
+  );
 }
 
 function formularioEstaValido() {
@@ -234,7 +261,10 @@ function formularioEstaValido() {
     return false;
   }
 
-  if (!dados.email || !emailPareceValido(dados.email)) {
+  if (
+    !dados.email ||
+    !emailPareceValido(dados.email)
+  ) {
     return false;
   }
 
@@ -264,28 +294,36 @@ function atualizarResumo() {
     dados.email;
 
   if (!temDadosMinimos) {
-    resumoConvite.style.display = "none";
+    resumoConvite.style.display =
+      "none";
+
     btnCriarAcesso.disabled = true;
     return;
   }
 
-  resumoNome.textContent = dados.nome;
-  resumoEmail.textContent = dados.email;
-  resumoTipo.textContent = obterTipoPorExtenso(
-    dados.tipo
-  );
+  resumoNome.textContent =
+    dados.nome;
 
-  resumoConvite.style.display = "block";
+  resumoEmail.textContent =
+    dados.email;
 
-  btnCriarAcesso.disabled = !formularioEstaValido();
+  resumoTipo.textContent =
+    obterTipoPorExtenso(dados.tipo);
+
+  resumoConvite.style.display =
+    "block";
+
+  btnCriarAcesso.disabled =
+    !formularioEstaValido();
 }
 
 /* =========================
-   Carregamento das pessoas
+   Carregar pessoas
 ========================= */
 
 async function carregarPessoas(tipo) {
-  grupoPessoaCadastrada.style.display = "block";
+  grupoPessoaCadastrada.style.display =
+    "block";
 
   pessoaCadastrada.disabled = true;
 
@@ -296,26 +334,29 @@ async function carregarPessoas(tipo) {
   `;
 
   try {
-    /*
-      As tabelas utilizadas atualmente no sistema
-      são aluno e professor.
-    */
-    const tabela = tipo === "aluno"
-      ? "aluno"
-      : "professor";
+    const tabela =
+      tipo === "aluno"
+        ? "aluno"
+        : "professor";
 
-    const { data, error } = await supabase
-      .from(tabela)
-      .select("*");
+    const { data, error } =
+      await supabase
+        .from(tabela)
+        .select("*");
 
     if (error) {
       throw error;
     }
 
-    pessoasCarregadas = [...(data || [])].sort(
+    pessoasCarregadas = [
+      ...(data || [])
+    ].sort(
       (pessoaA, pessoaB) => {
-        const nomeA = obterNomePessoa(pessoaA);
-        const nomeB = obterNomePessoa(pessoaB);
+        const nomeA =
+          obterNomePessoa(pessoaA);
+
+        const nomeB =
+          obterNomePessoa(pessoaB);
 
         return nomeA.localeCompare(
           nomeB,
@@ -326,7 +367,9 @@ async function carregarPessoas(tipo) {
 
     limparSelectPessoa();
 
-    if (pessoasCarregadas.length === 0) {
+    if (
+      pessoasCarregadas.length === 0
+    ) {
       pessoaCadastrada.innerHTML = `
         <option value="">
           Nenhum cadastro encontrado
@@ -345,22 +388,30 @@ async function carregarPessoas(tipo) {
       return;
     }
 
-    pessoasCarregadas.forEach((pessoa) => {
-      const option = document.createElement(
-        "option"
-      );
+    pessoasCarregadas.forEach(
+      (pessoa) => {
+        const option =
+          document.createElement(
+            "option"
+          );
 
-      const nome = obterNomePessoa(pessoa);
-      const email = obterEmailPessoa(pessoa);
+        const nome =
+          obterNomePessoa(pessoa);
 
-      option.value = pessoa.id;
+        const email =
+          obterEmailPessoa(pessoa);
 
-      option.textContent = email
-        ? `${nome} — ${email}`
-        : `${nome} — sem e-mail cadastrado`;
+        option.value = pessoa.id;
 
-      pessoaCadastrada.appendChild(option);
-    });
+        option.textContent = email
+          ? `${nome} — ${email}`
+          : `${nome} — sem e-mail cadastrado`;
+
+        pessoaCadastrada.appendChild(
+          option
+        );
+      }
+    );
 
     pessoaCadastrada.disabled = false;
     pessoaCadastrada.required = true;
@@ -384,13 +435,13 @@ async function carregarPessoas(tipo) {
 }
 
 /* =========================
-   Eventos do formulário
+   Eventos
 ========================= */
 
 tipoUsuario.addEventListener(
   "change",
   async () => {
-    redefinirFormularioAoTrocarTipo();
+    redefinirFormulario();
 
     const tipo = tipoUsuario.value;
 
@@ -398,11 +449,14 @@ tipoUsuario.addEventListener(
       return;
     }
 
-    grupoEmail.style.display = "block";
+    grupoEmail.style.display =
+      "block";
+
     emailUsuario.required = true;
 
     if (tipo === "admin") {
-      grupoCadastroManual.style.display = "block";
+      grupoCadastroManual.style.display =
+        "block";
 
       nomeManual.required = true;
       emailUsuario.disabled = false;
@@ -412,8 +466,11 @@ tipoUsuario.addEventListener(
     }
 
     if (tipo === "aluno") {
-      avisoAlunoExperimental.style.display = "block";
-      grupoConfirmacaoAluno.style.display = "block";
+      avisoAlunoExperimental.style.display =
+        "block";
+
+      grupoConfirmacaoAluno.style.display =
+        "block";
     }
 
     await carregarPessoas(tipo);
@@ -425,12 +482,15 @@ pessoaCadastrada.addEventListener(
   () => {
     esconderMensagem();
 
-    const cadastroId = pessoaCadastrada.value;
+    const cadastroId =
+      pessoaCadastrada.value;
 
-    const pessoa = pessoasCarregadas.find(
-      (item) =>
-        String(item.id) === String(cadastroId)
-    );
+    const pessoa =
+      pessoasCarregadas.find(
+        (item) =>
+          String(item.id) ===
+          String(cadastroId)
+      );
 
     if (!pessoa) {
       emailUsuario.value = "";
@@ -440,13 +500,9 @@ pessoaCadastrada.addEventListener(
       return;
     }
 
-    emailUsuario.value = obterEmailPessoa(pessoa);
+    emailUsuario.value =
+      obterEmailPessoa(pessoa);
 
-    /*
-      O campo continua editável porque pode acontecer
-      de o e-mail não ter sido preenchido no cadastro
-      ou precisar ser corrigido antes do convite.
-    */
     emailUsuario.disabled = false;
 
     atualizarResumo();
@@ -469,7 +525,7 @@ confirmarMatriculaAluno.addEventListener(
 );
 
 /* =========================
-   Criação do acesso
+   Criar acesso
 ========================= */
 
 formCriarAcesso.addEventListener(
@@ -490,9 +546,10 @@ formCriarAcesso.addEventListener(
 
     const dados = obterDadosAtuais();
 
-    const confirmarEnvio = window.confirm(
-      `Deseja criar o acesso de ${dados.nome} e enviar o convite para ${dados.email}?`
-    );
+    const confirmarEnvio =
+      window.confirm(
+        `Deseja criar o acesso de ${dados.nome} e enviar o convite para ${dados.email}?`
+      );
 
     if (!confirmarEnvio) {
       return;
@@ -502,29 +559,19 @@ formCriarAcesso.addEventListener(
       btnCriarAcesso.textContent;
 
     btnCriarAcesso.disabled = true;
+
     btnCriarAcesso.textContent =
-      "Criando acesso...";
+      "Criando acesso e enviando e-mail...";
 
     try {
-      /*
-        A Edge Function será criada na próxima etapa.
-
-        Ela será responsável por:
-
-        1. Verificar se quem fez a solicitação é admin;
-        2. Verificar se o e-mail já possui acesso;
-        3. Criar o usuário no Supabase Authentication;
-        4. Criar ou atualizar o registro na tabela perfil;
-        5. Relacionar o acesso ao aluno ou professor;
-        6. Enviar o convite para criação da senha.
-      */
       const { data, error } =
         await supabase.functions.invoke(
           "criar-acesso-usuario",
           {
             body: {
               tipo: dados.tipo,
-              cadastro_id: dados.cadastroId,
+              cadastro_id:
+                dados.cadastroId,
               nome: dados.nome,
               email: dados.email
             }
@@ -539,22 +586,16 @@ formCriarAcesso.addEventListener(
         throw new Error(data.erro);
       }
 
-      mostrarMensagem(
-        data?.mensagem ||
-        `Acesso criado com sucesso. O convite foi enviado para ${dados.email}.`,
-        "sucesso"
-      );
-
       formCriarAcesso.reset();
-
-      redefinirFormularioAoTrocarTipo();
-
       tipoUsuario.value = "";
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
+      redefinirFormulario(true);
+
+      mostrarMensagem(
+        data?.mensagem ||
+        `E-mail de boas-vindas com solicitação de criação de senha enviado com sucesso para ${dados.email}.`,
+        "sucesso"
+      );
     } catch (error) {
       console.error(
         "Erro ao criar acesso:",
@@ -562,9 +603,10 @@ formCriarAcesso.addEventListener(
       );
 
       const mensagemErro =
+        error?.context?.body?.erro ||
         error?.context?.body?.mensagem ||
         error?.message ||
-        "Não foi possível criar o acesso.";
+        "Não foi possível criar o acesso nem enviar o e-mail.";
 
       mostrarMensagem(
         mensagemErro,
@@ -596,11 +638,18 @@ btnSair.addEventListener(
       }
 
       localStorage.removeItem("role");
-      localStorage.removeItem("professorId");
-      localStorage.removeItem("professorNome");
-      localStorage.removeItem("professorEmail");
+      localStorage.removeItem(
+        "professorId"
+      );
+      localStorage.removeItem(
+        "professorNome"
+      );
+      localStorage.removeItem(
+        "professorEmail"
+      );
 
-      window.location.href = "index.html";
+      window.location.href =
+        "index.html";
     } catch (error) {
       console.error(
         "Erro ao sair:",
