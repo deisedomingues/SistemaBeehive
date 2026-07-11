@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Beehive | Criar senha</title>
+
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  />
+</head>
+
+<body class="pagina-definir-senha">
+
+  <div class="overlay"></div>
+
+  <main class="container container-definir-senha">
+
+    <section class="cabecalho-admin-central">
+
+      <div
+        aria-hidden="true"
+        style="
+          font-size: 46px;
+          line-height: 1;
+          margin-bottom: 12px;
+        "
+      >
+        🐝
+      </div>
+
+      <p class="rotulo-admin">
+        Beehive Idiomas
+      </p>
+
+      <h1>Crie sua senha</h1>
+
+      <p class="subtitulo-admin">
+        Escolha uma senha segura para acessar o sistema da Beehive.
+      </p>
+
+    </section>
+
+    <div
+      id="msg"
+      role="alert"
+      aria-live="polite"
+      style="display: none;"
+    ></div>
+
+    <section
+      id="cardCarregando"
+      class="card"
+      style="
+        margin-top: 18px;
+        text-align: center;
+      "
+    >
+      <p style="margin: 0;">
+        Verificando seu convite...
+      </p>
+    </section>
+
+    <section
+      id="cardLinkInvalido"
+      class="card"
+      style="
+        display: none;
+        margin-top: 18px;
+        text-align: center;
+      "
+    >
+      <h2 style="margin-top: 0;">
+        Link inválido ou expirado
+      </h2>
+
+      <p>
+        Não foi possível validar este convite. Isso pode acontecer
+        quando o link já foi utilizado ou quando o prazo de validade
+        terminou.
+      </p>
+
+      <p>
+        Entre em contato com a Beehive para solicitar um novo convite.
+      </p>
+
+      <a
+        href="mailto:contato.beehiveidiomas@gmail.com"
+        class="btn"
+        style="
+          display: inline-block;
+          width: auto;
+          margin-top: 8px;
+          text-decoration: none;
+        "
+      >
+        Entrar em contato
+      </a>
+
+      <a
+        href="index.html"
+        class="link-voltar"
+        style="
+          display: block;
+          margin-top: 18px;
+        "
+      >
+        Ir para o login
+      </a>
+    </section>
+
+    <section
+      id="cardCriarSenha"
+      class="card"
+      style="
+        display: none;
+        margin-top: 18px;
+      "
+    >
+
+      <div
+        id="dadosConvite"
+        style="
+          margin-bottom: 20px;
+          padding: 14px;
+          background: #fff8df;
+          border-radius: 10px;
+        "
+      >
+        <p style="margin: 0 0 6px;">
+          Olá,
+          <strong id="nomeUsuario">novo usuário</strong>!
+        </p>
+
+        <p style="margin: 0;">
+          Você está criando a senha para:
+          <strong id="emailUsuario">—</strong>
+        </p>
+      </div>
+
+      <form
+        id="formDefinirSenha"
+        class="form"
+      >
+
+        <label for="novaSenha">
+          Nova senha
+
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            "
+          >
+            <input
+              type="password"
+              id="novaSenha"
+              name="novaSenha"
+              minlength="8"
+              autocomplete="new-password"
+              placeholder="Digite sua nova senha"
+              required
+              style="flex: 1;"
+            />
+
+            <button
+              type="button"
+              id="btnMostrarNovaSenha"
+              class="btn"
+              aria-label="Mostrar ou ocultar a nova senha"
+              style="
+                width: auto;
+                padding: 10px 12px;
+                white-space: nowrap;
+              "
+            >
+              Mostrar
+            </button>
+          </div>
+        </label>
+
+        <label for="confirmarSenha">
+          Confirmar senha
+
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            "
+          >
+            <input
+              type="password"
+              id="confirmarSenha"
+              name="confirmarSenha"
+              minlength="8"
+              autocomplete="new-password"
+              placeholder="Digite novamente a senha"
+              required
+              style="flex: 1;"
+            />
+
+            <button
+              type="button"
+              id="btnMostrarConfirmacao"
+              class="btn"
+              aria-label="Mostrar ou ocultar a confirmação da senha"
+              style="
+                width: auto;
+                padding: 10px 12px;
+                white-space: nowrap;
+              "
+            >
+              Mostrar
+            </button>
+          </div>
+        </label>
+
+        <div
+          style="
+            padding: 14px;
+            background: #f7f7f3;
+            border-radius: 10px;
+          "
+        >
+          <strong>Sua senha deve:</strong>
+
+          <ul
+            style="
+              margin: 10px 0 0;
+              padding-left: 22px;
+            "
+          >
+            <li id="regraTamanho">
+              ter pelo menos 8 caracteres;
+            </li>
+
+            <li id="regraLetra">
+              conter pelo menos uma letra;
+            </li>
+
+            <li id="regraNumero">
+              conter pelo menos um número;
+            </li>
+
+            <li id="regraIguais">
+              ser igual nos dois campos.
+            </li>
+          </ul>
+        </div>
+
+        <button
+          id="btnSalvarSenha"
+          class="btn"
+          type="submit"
+          disabled
+        >
+          Criar senha e acessar
+        </button>
+
+      </form>
+
+    </section>
+
+    <section
+      id="cardSucesso"
+      class="card"
+      style="
+        display: none;
+        margin-top: 18px;
+        text-align: center;
+      "
+    >
+      <div
+        aria-hidden="true"
+        style="
+          font-size: 48px;
+          line-height: 1;
+          margin-bottom: 12px;
+        "
+      >
+        ✅
+      </div>
+
+      <h2 style="margin-top: 0;">
+        Senha criada com sucesso!
+      </h2>
+
+      <p>
+        Seu acesso ao sistema da Beehive está pronto.
+      </p>
+
+      <p>
+        Você será direcionado para a página de login.
+      </p>
+
+      <a
+        href="index.html"
+        class="btn"
+        style="
+          display: inline-block;
+          width: auto;
+          margin-top: 10px;
+          text-decoration: none;
+        "
+      >
+        Ir para o login
+      </a>
+    </section>
+
+  </main>
+
+  <script
+    type="module"
+    src="js/definir-senha.js"
+  ></script>
+
+</body>
+</html>
