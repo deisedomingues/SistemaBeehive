@@ -4636,3 +4636,8 @@ textarea[readonly] {
   font-size: 12px !important;
   width: auto !important;
 }
+.texto-opcional {
+  color: var(--texto-claro);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
