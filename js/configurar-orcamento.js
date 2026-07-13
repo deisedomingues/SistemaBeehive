@@ -10,20 +10,25 @@ await exigirAdmin();
 const formPacote = document.getElementById("formPacote");
 
 const pacoteId = document.getElementById("pacoteId");
+
 const tituloFormulario = document.getElementById(
   "tituloFormulario"
 );
 
-const nomePacote = document.getElementById("nomePacote");
-const publico = document.getElementById("publico");
-const curso = document.getElementById("curso");
-
-const campoModalidadePessoal = document.getElementById(
-  "campoModalidadePessoal"
+const nomePacote = document.getElementById(
+  "nomePacote"
 );
 
-const modalidadePessoal = document.getElementById(
-  "modalidadePessoal"
+const publico = document.getElementById(
+  "publico"
+);
+
+const curso = document.getElementById(
+  "curso"
+);
+
+const tipoOrcamento = document.getElementById(
+  "tipoOrcamento"
 );
 
 const campoQuantidadeAlunos = document.getElementById(
@@ -62,7 +67,10 @@ const validadeDias = document.getElementById(
   "validadeDias"
 );
 
-const estrategia = document.getElementById("estrategia");
+const estrategia = document.getElementById(
+  "estrategia"
+);
+
 const vantagensPlano = document.getElementById(
   "vantagensPlano"
 );
@@ -182,7 +190,7 @@ const listaPacotes = document.getElementById(
 let pacotesCarregados = [];
 
 /* ======================================================
-   SEGURANÇA PARA TEXTOS
+   SEGURANÇA DE TEXTO
 ====================================================== */
 
 function escaparHTML(valor) {
@@ -264,7 +272,7 @@ function numeroParaCampoMoeda(valor) {
 }
 
 /* ======================================================
-   TEXTOS
+   TEXTOS DA LISTA
 ====================================================== */
 
 function textoPublico(valor) {
@@ -299,11 +307,11 @@ function textoFaixa(valor) {
 
 function textoModalidade(orcamento) {
   if (orcamento.modalidade === "individual") {
-    return "Individual — 1 pessoa";
+    return "Individual — 1 aluno";
   }
 
   if (orcamento.modalidade === "grupo") {
-    return `Coletivo — ${orcamento.quantidade_alunos} pessoas`;
+    return `Coletivo — ${orcamento.quantidade_alunos} alunos`;
   }
 
   return "Empresarial";
@@ -315,7 +323,9 @@ function textoModalidade(orcamento) {
 
 function mostrarMensagem(texto, tipo = "erro") {
   mensagemFormulario.textContent = texto;
-  mensagemFormulario.className = `mensagem ${tipo}`;
+
+  mensagemFormulario.className =
+    `mensagem ${tipo}`;
 
   mensagemFormulario.scrollIntoView({
     behavior: "smooth",
@@ -329,16 +339,73 @@ function limparMensagem() {
 }
 
 /* ======================================================
-   CAMPOS CONDICIONAIS
+   TIPO DE ORÇAMENTO
 ====================================================== */
 
-function atualizarCamposPublico() {
-  const ePessoal = publico.value === "pessoal";
-  const eEmpresa = publico.value === "empresa";
+function atualizarOpcoesTipoOrcamento() {
+  const valorAnterior = tipoOrcamento.value;
 
-  campoModalidadePessoal.classList.toggle(
+  tipoOrcamento.innerHTML = `
+    <option value="">
+      Selecione
+    </option>
+  `;
+
+  if (publico.value === "pessoal") {
+    tipoOrcamento.innerHTML += `
+      <option value="individual">
+        Individual — 1 aluno
+      </option>
+
+      <option value="grupo">
+        Coletivo — 2 ou 3 alunos
+      </option>
+    `;
+  }
+
+  if (publico.value === "empresa") {
+    tipoOrcamento.innerHTML += `
+      <option value="empresarial">
+        Empresarial
+      </option>
+    `;
+
+    tipoOrcamento.value = "empresarial";
+  }
+
+  if (
+    valorAnterior &&
+    [...tipoOrcamento.options].some(
+      (option) => option.value === valorAnterior
+    )
+  ) {
+    tipoOrcamento.value = valorAnterior;
+  }
+
+  atualizarCamposQuantidade();
+}
+
+function atualizarCamposQuantidade() {
+  const eIndividual =
+    publico.value === "pessoal" &&
+    tipoOrcamento.value === "individual";
+
+  const eColetivo =
+    publico.value === "pessoal" &&
+    tipoOrcamento.value === "grupo";
+
+  const eEmpresa =
+    publico.value === "empresa" &&
+    tipoOrcamento.value === "empresarial";
+
+  avisoIndividual.classList.toggle(
     "ativo",
-    ePessoal
+    eIndividual
+  );
+
+  campoQuantidadeAlunos.classList.toggle(
+    "ativo",
+    eColetivo
   );
 
   campoFaixaParticipantes.classList.toggle(
@@ -346,57 +413,21 @@ function atualizarCamposPublico() {
     eEmpresa
   );
 
-  modalidadePessoal.required = ePessoal;
+  quantidadeAlunos.required = eColetivo;
   faixaParticipantes.required = eEmpresa;
 
-  if (!ePessoal) {
-    modalidadePessoal.value = "";
+  if (!eColetivo) {
     quantidadeAlunos.value = "";
-    quantidadeAlunos.required = false;
-
-    campoQuantidadeAlunos.classList.remove(
-      "ativo"
-    );
-
-    avisoIndividual.classList.remove(
-      "ativo"
-    );
   }
 
   if (!eEmpresa) {
     faixaParticipantes.value = "";
   }
-
-  atualizarQuantidadeAlunos();
 }
 
-function atualizarQuantidadeAlunos() {
-  const ePessoal = publico.value === "pessoal";
-
-  const eColetivo =
-    ePessoal &&
-    modalidadePessoal.value === "grupo";
-
-  const eIndividual =
-    ePessoal &&
-    modalidadePessoal.value === "individual";
-
-  campoQuantidadeAlunos.classList.toggle(
-    "ativo",
-    eColetivo
-  );
-
-  avisoIndividual.classList.toggle(
-    "ativo",
-    eIndividual
-  );
-
-  quantidadeAlunos.required = eColetivo;
-
-  if (!eColetivo) {
-    quantidadeAlunos.value = "";
-  }
-}
+/* ======================================================
+   CAMPOS DE PAGAMENTO E MATERIAL
+====================================================== */
 
 function atualizarCamposPagamento() {
   blocoPagamentos.classList.toggle(
@@ -406,17 +437,6 @@ function atualizarCamposPagamento() {
 
   if (sobConsulta.checked) {
     limparCamposPagamento();
-  }
-}
-
-function atualizarCampoMaterial() {
-  campoDescricaoMaterial.classList.toggle(
-    "ativo",
-    materialIncluso.checked
-  );
-
-  if (!materialIncluso.checked) {
-    descricaoMaterial.value = "";
   }
 }
 
@@ -431,14 +451,27 @@ function limparCamposPagamento() {
   cartaoValorParcelaAnterior.value = "";
   cartaoValorParcela.value = "";
   cartaoValorTotal.value = "";
-  cartaoDescricao.value = "";
+
+  cartaoDescricao.value =
+    "Pagamento parcelado no cartão de crédito";
 
   taxaMatricula.value = "0,00";
   observacoesPagamento.value = "";
 }
 
+function atualizarCampoMaterial() {
+  campoDescricaoMaterial.classList.toggle(
+    "ativo",
+    materialIncluso.checked
+  );
+
+  if (!materialIncluso.checked) {
+    descricaoMaterial.value = "";
+  }
+}
+
 /* ======================================================
-   TEXTAREAS
+   TEXTAREA
 ====================================================== */
 
 function obterListaTextarea(elemento) {
@@ -455,7 +488,7 @@ function listaParaTextarea(lista) {
 }
 
 /* ======================================================
-   VALIDAÇÕES
+   VALIDAÇÃO
 ====================================================== */
 
 function formaCartaoPreenchida() {
@@ -517,10 +550,7 @@ function validarFormulario() {
     return false;
   }
 
-  if (
-    publico.value === "pessoal" &&
-    !modalidadePessoal.value
-  ) {
+  if (!tipoOrcamento.value) {
     mostrarMensagem(
       "Selecione o tipo de orçamento."
     );
@@ -529,23 +559,22 @@ function validarFormulario() {
   }
 
   if (
-    publico.value === "pessoal" &&
-    modalidadePessoal.value === "grupo" &&
+    tipoOrcamento.value === "grupo" &&
     !quantidadeAlunos.value
   ) {
     mostrarMensagem(
-      "Selecione se o orçamento coletivo é para 2 ou 3 pessoas."
+      "Selecione se o orçamento coletivo é para 2 ou 3 alunos."
     );
 
     return false;
   }
 
   if (
-    publico.value === "empresa" &&
+    tipoOrcamento.value === "empresarial" &&
     !faixaParticipantes.value
   ) {
     mostrarMensagem(
-      "Selecione a faixa prevista de participantes."
+      "Selecione a quantidade de funcionários ou participantes."
     );
 
     return false;
@@ -594,7 +623,7 @@ function validarFormulario() {
 
     if (!temValorComum && !temCartao) {
       mostrarMensagem(
-        "Informe o valor à vista ou no boleto, o pagamento no cartão ou marque o investimento como sob consulta."
+        "Informe o valor à vista ou no boleto, o pagamento no cartão ou marque o valor como sob consulta."
       );
 
       return false;
@@ -605,19 +634,6 @@ function validarFormulario() {
     }
   }
 
-  const taxa =
-    converterMoedaParaNumero(
-      taxaMatricula.value
-    ) ?? 0;
-
-  if (taxa < 0) {
-    mostrarMensagem(
-      "A taxa de matrícula não pode ser negativa."
-    );
-
-    return false;
-  }
-
   return true;
 }
 
@@ -625,22 +641,24 @@ function validarFormulario() {
    DADOS PARA O SUPABASE
 ====================================================== */
 
-function montarDadosPacote() {
-  const ePessoal =
-    publico.value === "pessoal";
+function montarDadosOrcamento() {
+  const modalidade =
+    tipoOrcamento.value;
 
-  let modalidade = "empresarial";
   let quantidade = null;
   let faixa = null;
 
-  if (ePessoal) {
-    modalidade = modalidadePessoal.value;
+  if (modalidade === "individual") {
+    quantidade = 1;
+  }
 
-    quantidade =
-      modalidade === "individual"
-        ? 1
-        : Number(quantidadeAlunos.value);
-  } else {
+  if (modalidade === "grupo") {
+    quantidade = Number(
+      quantidadeAlunos.value
+    );
+  }
+
+  if (modalidade === "empresarial") {
     faixa = faixaParticipantes.value;
   }
 
@@ -653,49 +671,50 @@ function montarDadosPacote() {
         valorAvista.value
       );
 
-  const cartaoTotal = valorSobConsulta
-    ? null
-    : converterMoedaParaNumero(
+  const temCartao =
+    !valorSobConsulta &&
+    formaCartaoPreenchida();
+
+  const cartaoTotal = temCartao
+    ? converterMoedaParaNumero(
         cartaoValorTotal.value
-      );
+      )
+    : null;
 
   const valorTotalReferencia =
     valorComum ??
     cartaoTotal ??
     null;
 
-  const temCartao =
-    !valorSobConsulta &&
-    formaCartaoPreenchida();
-
   return {
-    nome: nomePacote.value.trim(),
+    nome:
+      nomePacote.value.trim(),
 
-    publico: publico.value,
+    publico:
+      publico.value,
 
-    curso: curso.value,
+    curso:
+      curso.value,
 
     modalidade,
 
-    quantidade_alunos: quantidade,
+    quantidade_alunos:
+      quantidade,
 
-    faixa_participantes: faixa,
+    faixa_participantes:
+      faixa,
 
-    quantidade_aulas: Number(
-      quantidadeAulas.value
-    ),
+    quantidade_aulas:
+      Number(quantidadeAulas.value),
 
-    aulas_por_semana: Number(
-      aulasPorSemana.value
-    ),
+    aulas_por_semana:
+      Number(aulasPorSemana.value),
 
-    duracao_aula_minutos: Number(
-      duracaoAula.value
-    ),
+    duracao_aula_minutos:
+      Number(duracaoAula.value),
 
-    validade_dias: Number(
-      validadeDias.value
-    ),
+    validade_dias:
+      Number(validadeDias.value),
 
     estrategia:
       estrategia.value.trim() || null,
@@ -712,17 +731,23 @@ function montarDadosPacote() {
     condicoes_gerais:
       condicoesGerais.value.trim() || null,
 
-    valor_avista_anterior: valorSobConsulta
-      ? null
-      : converterMoedaParaNumero(
-          valorAvistaAnterior.value
-        ),
+    valor_avista_anterior:
+      valorSobConsulta
+        ? null
+        : converterMoedaParaNumero(
+            valorAvistaAnterior.value
+          ),
 
-    valor_avista: valorComum,
+    valor_avista:
+      valorComum,
 
     descricao_avista:
-      descricaoAvista.value.trim() ||
-      "Pagamento à vista ou no boleto",
+      valorSobConsulta
+        ? null
+        : (
+            descricaoAvista.value.trim() ||
+            "Pagamento à vista ou no boleto"
+          ),
 
     cartao_quantidade_parcelas:
       temCartao
@@ -746,42 +771,52 @@ function montarDadosPacote() {
         : null,
 
     cartao_valor_total:
-      temCartao
-        ? cartaoTotal
-        : null,
+      cartaoTotal,
 
     cartao_descricao:
       temCartao
-        ? cartaoDescricao.value.trim() || null
+        ? (
+            cartaoDescricao.value.trim() ||
+            "Pagamento parcelado no cartão de crédito"
+          )
         : null,
 
-    /*
-      Os antigos campos específicos de boleto ficam vazios,
-      pois o boleto usa o mesmo valor do pagamento à vista.
-    */
-    boleto_quantidade_parcelas: null,
-    boleto_valor_parcela_anterior: null,
-    boleto_valor_parcela: null,
-    boleto_valor_total: null,
-    boleto_descricao: null,
+    boleto_quantidade_parcelas:
+      null,
+
+    boleto_valor_parcela_anterior:
+      null,
+
+    boleto_valor_parcela:
+      null,
+
+    boleto_valor_total:
+      null,
+
+    boleto_descricao:
+      null,
 
     observacoes_pagamento:
       observacoesPagamento.value.trim() || null,
 
-    taxa_matricula: valorSobConsulta
-      ? 0
-      : (
-          converterMoedaParaNumero(
-            taxaMatricula.value
-          ) ?? 0
-        ),
+    taxa_matricula:
+      valorSobConsulta
+        ? 0
+        : (
+            converterMoedaParaNumero(
+              taxaMatricula.value
+            ) ?? 0
+          ),
 
     material_incluso:
       materialIncluso.checked,
 
     descricao_material:
       materialIncluso.checked
-        ? descricaoMaterial.value.trim() || null
+        ? (
+            descricaoMaterial.value.trim() ||
+            null
+          )
         : null,
 
     beneficios:
@@ -796,12 +831,10 @@ function montarDadosPacote() {
     ativo:
       pacoteAtivo.checked,
 
-    /*
-      Campos antigos mantidos por compatibilidade.
-    */
-    valor_total: valorSobConsulta
-      ? null
-      : valorTotalReferencia,
+    valor_total:
+      valorSobConsulta
+        ? null
+        : valorTotalReferencia,
 
     quantidade_parcelas:
       temCartao
@@ -854,6 +887,9 @@ function limparFormulario() {
   descricaoAvista.value =
     "Pagamento à vista ou no boleto";
 
+  cartaoDescricao.value =
+    "Pagamento parcelado no cartão de crédito";
+
   pacoteAtivo.checked = true;
   sobConsulta.checked = false;
   materialIncluso.checked = false;
@@ -871,13 +907,14 @@ function limparFormulario() {
 
   limparMensagem();
 
-  atualizarCamposPublico();
+  atualizarOpcoesTipoOrcamento();
   atualizarCamposPagamento();
   atualizarCampoMaterial();
 }
 
 function preencherFormulario(orcamento) {
-  pacoteId.value = orcamento.id;
+  pacoteId.value =
+    orcamento.id;
 
   nomePacote.value =
     orcamento.nome || "";
@@ -888,22 +925,22 @@ function preencherFormulario(orcamento) {
   curso.value =
     orcamento.curso || "";
 
-  atualizarCamposPublico();
+  atualizarOpcoesTipoOrcamento();
 
-  if (orcamento.publico === "pessoal") {
-    modalidadePessoal.value =
-      orcamento.modalidade || "";
+  tipoOrcamento.value =
+    orcamento.modalidade || "";
 
-    atualizarQuantidadeAlunos();
+  atualizarCamposQuantidade();
 
-    if (orcamento.modalidade === "grupo") {
-      quantidadeAlunos.value = String(
-        orcamento.quantidade_alunos || ""
-      );
-    }
+  if (orcamento.modalidade === "grupo") {
+    quantidadeAlunos.value = String(
+      orcamento.quantidade_alunos || ""
+    );
   }
 
-  if (orcamento.publico === "empresa") {
+  if (
+    orcamento.modalidade === "empresarial"
+  ) {
     faixaParticipantes.value =
       orcamento.faixa_participantes || "";
   }
@@ -972,7 +1009,8 @@ function preencherFormulario(orcamento) {
     );
 
   cartaoDescricao.value =
-    orcamento.cartao_descricao || "";
+    orcamento.cartao_descricao ||
+    "Pagamento parcelado no cartão de crédito";
 
   taxaMatricula.value =
     numeroParaCampoMoeda(
@@ -1039,7 +1077,7 @@ formPacote.addEventListener(
     definirCarregamento(true);
 
     const dadosOrcamento =
-      montarDadosPacote();
+      montarDadosOrcamento();
 
     const idEmEdicao =
       pacoteId.value;
@@ -1082,7 +1120,7 @@ formPacote.addEventListener(
 
       if (error.code === "23505") {
         mostrarMensagem(
-          "Já existe um orçamento ativo com essa mesma combinação de curso, modalidade e quantidade de pessoas."
+          "Já existe um orçamento ativo para essa mesma combinação de curso, modalidade e quantidade de participantes."
         );
 
         return;
@@ -1090,7 +1128,7 @@ formPacote.addEventListener(
 
       if (error.code === "23514") {
         mostrarMensagem(
-          "Algumas informações não combinam entre si. Confira o tipo de orçamento, a quantidade de pessoas e as formas de pagamento."
+          "Confira o tipo do orçamento, a quantidade de alunos, a faixa empresarial e os valores."
         );
 
         return;
@@ -1157,7 +1195,7 @@ function renderizarPacotes() {
   const status =
     filtroStatus.value;
 
-  const orcamentosFiltrados =
+  const filtrados =
     pacotesCarregados.filter(
       (orcamento) => {
         const texto = [
@@ -1200,7 +1238,7 @@ function renderizarPacotes() {
       }
     );
 
-  if (!orcamentosFiltrados.length) {
+  if (!filtrados.length) {
     listaPacotes.innerHTML = `
       <div class="estado-lista">
         <i class="fa-solid fa-file-invoice-dollar"></i>
@@ -1212,14 +1250,14 @@ function renderizarPacotes() {
   }
 
   listaPacotes.innerHTML =
-    orcamentosFiltrados
-      .map(criarHTMLPacote)
+    filtrados
+      .map(criarHTMLOrcamento)
       .join("");
 
-  configurarBotoesPacotes();
+  configurarBotoesOrcamentos();
 }
 
-function criarHTMLPacote(orcamento) {
+function criarHTMLOrcamento(orcamento) {
   const valorPrincipal =
     orcamento.valor_avista ??
     orcamento.cartao_valor_total;
@@ -1246,10 +1284,10 @@ function criarHTMLPacote(orcamento) {
       `;
 
   const participantesHTML =
-    orcamento.publico === "empresa"
+    orcamento.modalidade === "empresarial"
       ? `
         <div class="pacote-detalhe">
-          <i class="fa-solid fa-users"></i>
+          <i class="fa-solid fa-building"></i>
 
           <span>
             ${escaparHTML(
@@ -1262,13 +1300,13 @@ function criarHTMLPacote(orcamento) {
       `
       : `
         <div class="pacote-detalhe">
-          <i class="fa-solid fa-user-group"></i>
+          <i class="fa-solid fa-users"></i>
 
           <span>
             ${
               orcamento.quantidade_alunos === 1
-                ? "1 pessoa"
-                : `${orcamento.quantidade_alunos} pessoas`
+                ? "1 aluno"
+                : `${orcamento.quantidade_alunos} alunos`
             }
           </span>
         </div>
@@ -1456,7 +1494,7 @@ function criarHTMLPacote(orcamento) {
   `;
 }
 
-function configurarBotoesPacotes() {
+function configurarBotoesOrcamentos() {
   const botoes =
     listaPacotes.querySelectorAll(
       "[data-acao][data-id]"
@@ -1480,30 +1518,21 @@ function configurarBotoesPacotes() {
           return;
         }
 
-        if (
-          botao.dataset.acao === "editar"
-        ) {
-          preencherFormulario(
+        if (botao.dataset.acao === "editar") {
+          preencherFormulario(orcamento);
+          return;
+        }
+
+        if (botao.dataset.acao === "status") {
+          await alterarStatusOrcamento(
             orcamento
           );
 
           return;
         }
 
-        if (
-          botao.dataset.acao === "status"
-        ) {
-          await alterarStatusPacote(
-            orcamento
-          );
-
-          return;
-        }
-
-        if (
-          botao.dataset.acao === "excluir"
-        ) {
-          await excluirPacote(
+        if (botao.dataset.acao === "excluir") {
+          await excluirOrcamento(
             orcamento
           );
         }
@@ -1516,7 +1545,9 @@ function configurarBotoesPacotes() {
    ATIVAR OU DESATIVAR
 ====================================================== */
 
-async function alterarStatusPacote(orcamento) {
+async function alterarStatusOrcamento(
+  orcamento
+) {
   const novoStatus =
     !orcamento.ativo;
 
@@ -1545,7 +1576,7 @@ async function alterarStatusPacote(orcamento) {
 
     window.alert(
       error.code === "23505"
-        ? "Já existe outro orçamento ativo com essa combinação."
+        ? "Já existe outro orçamento ativo com essa mesma combinação."
         : "Não foi possível alterar o orçamento."
     );
 
@@ -1559,10 +1590,12 @@ async function alterarStatusPacote(orcamento) {
    EXCLUIR
 ====================================================== */
 
-async function excluirPacote(orcamento) {
+async function excluirOrcamento(
+  orcamento
+) {
   const confirmou = window.confirm(
     `Deseja excluir o orçamento "${orcamento.nome}"?\n\n` +
-    "Se ele já estiver ligado a uma consulta realizada, o sistema poderá impedir a exclusão. Nesse caso, basta desativá-lo."
+    "Se ele já tiver sido usado em uma consulta, desative-o em vez de excluir."
   );
 
   if (!confirmou) {
@@ -1611,12 +1644,16 @@ async function excluirPacote(orcamento) {
 
 publico.addEventListener(
   "change",
-  atualizarCamposPublico
+  () => {
+    tipoOrcamento.value = "";
+
+    atualizarOpcoesTipoOrcamento();
+  }
 );
 
-modalidadePessoal.addEventListener(
+tipoOrcamento.addEventListener(
   "change",
-  atualizarQuantidadeAlunos
+  atualizarCamposQuantidade
 );
 
 sobConsulta.addEventListener(

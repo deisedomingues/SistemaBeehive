@@ -178,7 +178,9 @@
 
     .layout-configuracao {
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+      grid-template-columns:
+        minmax(0, 1.2fr)
+        minmax(360px, 0.8fr);
       gap: 24px;
       align-items: start;
     }
@@ -258,7 +260,8 @@
 
     .grid-formulario {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
       gap: 17px;
     }
 
@@ -315,7 +318,8 @@
     .campo select:focus,
     .campo textarea:focus {
       border-color: var(--amarelo);
-      box-shadow: 0 0 0 3px rgba(217, 154, 0, 0.1);
+      box-shadow:
+        0 0 0 3px rgba(217, 154, 0, 0.1);
     }
 
     .campo-condicional {
@@ -391,7 +395,8 @@
 
     .grid-pagamento {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
       gap: 14px;
     }
 
@@ -462,7 +467,9 @@
     .filtros-lista {
       margin-bottom: 16px;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 150px;
+      grid-template-columns:
+        minmax(0, 1fr)
+        150px;
       gap: 10px;
     }
 
@@ -572,7 +579,8 @@
 
     .pacote-detalhes {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
       gap: 8px 14px;
     }
 
@@ -714,8 +722,8 @@
       <h1>Cadastrar orçamentos</h1>
 
       <p>
-        Cadastre cada tipo de orçamento separadamente, conforme o curso,
-        a modalidade e a quantidade de participantes.
+        Cadastre um orçamento diferente para cada curso,
+        modalidade e quantidade de participantes.
       </p>
     </header>
 
@@ -724,13 +732,14 @@
       <section class="card-painel">
 
         <div class="topo-card">
+
           <div>
             <h2 id="tituloFormulario">
               Cadastrar orçamento
             </h2>
 
             <p>
-              Cadastre novos orçamentos ou altere valores já existentes.
+              Cadastre novos orçamentos ou edite os valores existentes.
             </p>
           </div>
 
@@ -742,6 +751,7 @@
             <i class="fa-solid fa-plus"></i>
             Novo orçamento
           </button>
+
         </div>
 
         <div
@@ -766,13 +776,14 @@
               <h3>Identificação do orçamento</h3>
 
               <p>
-                A combinação escolhida será usada para encontrar o orçamento correto.
+                Escolha exatamente para qual situação este orçamento será usado.
               </p>
             </div>
 
             <div class="grid-formulario">
 
               <div class="campo campo-largo">
+
                 <label for="nomePacote">
                   Nome do orçamento
                   <span class="obrigatorio">*</span>
@@ -782,104 +793,161 @@
                   type="text"
                   id="nomePacote"
                   maxlength="150"
-                  placeholder="Ex.: Inglês coletivo para 2 pessoas"
+                  placeholder="Ex.: Inglês coletivo para 2 alunos"
                   required
                 />
+
               </div>
 
               <div class="campo">
+
                 <label for="publico">
                   Orçamento para
                   <span class="obrigatorio">*</span>
                 </label>
 
-                <select id="publico" required>
-                  <option value="">Selecione</option>
-                  <option value="pessoal">Pessoa física</option>
-                  <option value="empresa">Empresa</option>
+                <select
+                  id="publico"
+                  required
+                >
+                  <option value="">
+                    Selecione
+                  </option>
+
+                  <option value="pessoal">
+                    Pessoa física
+                  </option>
+
+                  <option value="empresa">
+                    Empresa
+                  </option>
                 </select>
+
               </div>
 
               <div class="campo">
+
                 <label for="curso">
                   Curso
                   <span class="obrigatorio">*</span>
                 </label>
 
-                <select id="curso" required>
-                  <option value="">Selecione</option>
-                  <option value="ingles">Inglês</option>
-                  <option value="espanhol">Espanhol</option>
-                  <option value="ambos">Inglês e espanhol</option>
+                <select
+                  id="curso"
+                  required
+                >
+                  <option value="">
+                    Selecione
+                  </option>
+
+                  <option value="ingles">
+                    Inglês
+                  </option>
+
+                  <option value="espanhol">
+                    Espanhol
+                  </option>
+
+                  <option value="ambos">
+                    Inglês e espanhol
+                  </option>
                 </select>
+
               </div>
 
-              <div
-                id="campoModalidadePessoal"
-                class="campo campo-condicional"
-              >
-                <label for="modalidadePessoal">
+              <div class="campo">
+
+                <label for="tipoOrcamento">
                   Tipo de orçamento
                   <span class="obrigatorio">*</span>
                 </label>
 
-                <select id="modalidadePessoal">
-                  <option value="">Selecione</option>
-                  <option value="individual">Individual</option>
-                  <option value="grupo">Coletivo</option>
+                <select
+                  id="tipoOrcamento"
+                  required
+                >
+                  <option value="">
+                    Primeiro selecione para quem é o orçamento
+                  </option>
                 </select>
+
               </div>
 
               <div
                 id="campoQuantidadeAlunos"
                 class="campo campo-condicional"
               >
+
                 <label for="quantidadeAlunos">
-                  Quantidade de pessoas
+                  Quantidade de alunos
                   <span class="obrigatorio">*</span>
                 </label>
 
                 <select id="quantidadeAlunos">
-                  <option value="">Selecione</option>
-                  <option value="2">2 pessoas</option>
-                  <option value="3">3 pessoas</option>
+                  <option value="">
+                    Selecione
+                  </option>
+
+                  <option value="2">
+                    2 alunos
+                  </option>
+
+                  <option value="3">
+                    3 alunos
+                  </option>
                 </select>
 
                 <small>
-                  Cadastre um orçamento para 2 pessoas e outro para 3,
+                  Cadastre um orçamento para 2 alunos e outro para 3 alunos
                   caso os valores sejam diferentes.
                 </small>
+
               </div>
 
               <div
                 id="avisoIndividual"
                 class="aviso-condicional"
               >
-                No orçamento individual, a quantidade será registrada
-                automaticamente como 1 pessoa.
+                Este orçamento será registrado automaticamente para
+                <strong>1 aluno</strong>.
               </div>
 
               <div
                 id="campoFaixaParticipantes"
                 class="campo campo-largo campo-condicional"
               >
+
                 <label for="faixaParticipantes">
-                  Faixa prevista de participantes
+                  Quantidade de funcionários ou participantes
                   <span class="obrigatorio">*</span>
                 </label>
 
                 <select id="faixaParticipantes">
-                  <option value="">Selecione</option>
-                  <option value="1_a_5">Até 5 pessoas</option>
-                  <option value="6_a_15">De 6 a 15 pessoas</option>
-                  <option value="16_a_40">De 16 a 40 pessoas</option>
-                  <option value="mais_de_40">Mais de 40 pessoas</option>
+                  <option value="">
+                    Selecione
+                  </option>
+
+                  <option value="1_a_5">
+                    Até 5 pessoas
+                  </option>
+
+                  <option value="6_a_15">
+                    De 6 a 15 pessoas
+                  </option>
+
+                  <option value="16_a_40">
+                    De 16 a 40 pessoas
+                  </option>
+
+                  <option value="mais_de_40">
+                    Mais de 40 pessoas
+                  </option>
                 </select>
 
                 <small>
-                  Cadastre um orçamento diferente para cada faixa,
-                  caso os valores mudem.
+                  Cada faixa poderá ter um valor diferente.
                 </small>
+
               </div>
 
             </div>
@@ -894,6 +962,7 @@
             <div class="grid-formulario">
 
               <div class="campo">
+
                 <label for="quantidadeAulas">
                   Quantidade de aulas
                   <span class="obrigatorio">*</span>
@@ -906,9 +975,11 @@
                   value="36"
                   required
                 />
+
               </div>
 
               <div class="campo">
+
                 <label for="aulasPorSemana">
                   Aulas por semana
                   <span class="obrigatorio">*</span>
@@ -921,11 +992,13 @@
                   value="2"
                   required
                 />
+
               </div>
 
               <div class="campo">
+
                 <label for="duracaoAula">
-                  Duração da aula em minutos
+                  Duração de cada aula em minutos
                   <span class="obrigatorio">*</span>
                 </label>
 
@@ -936,9 +1009,11 @@
                   value="40"
                   required
                 />
+
               </div>
 
               <div class="campo">
+
                 <label for="validadeDias">
                   Validade do orçamento em dias
                   <span class="obrigatorio">*</span>
@@ -951,6 +1026,7 @@
                   value="7"
                   required
                 />
+
               </div>
 
             </div>
@@ -969,6 +1045,7 @@
             <div class="grid-formulario">
 
               <div class="campo campo-largo">
+
                 <label for="estrategia">
                   Estratégia
                 </label>
@@ -979,9 +1056,11 @@
                   maxlength="6000"
                   placeholder="Descreva a estratégia, organização e proposta das aulas."
                 ></textarea>
+
               </div>
 
               <div class="campo campo-largo">
+
                 <label for="vantagensPlano">
                   Vantagens do plano
                 </label>
@@ -994,11 +1073,13 @@
                 ></textarea>
 
                 <small>
-                  Cada linha poderá aparecer como um item separado.
+                  Digite uma vantagem por linha.
                 </small>
+
               </div>
 
               <div class="campo campo-largo">
+
                 <label for="programaFidelidade">
                   Programa de fidelidade
                 </label>
@@ -1008,9 +1089,11 @@
                   maxlength="6000"
                   placeholder="Explique como funciona o programa de fidelidade."
                 ></textarea>
+
               </div>
 
               <div class="campo campo-largo">
+
                 <label for="atividadesFidelidade">
                   Atividades do programa de fidelidade
                 </label>
@@ -1020,9 +1103,11 @@
                   maxlength="6000"
                   placeholder="Digite uma atividade por linha."
                 ></textarea>
+
               </div>
 
               <div class="campo campo-largo">
+
                 <label for="condicoesGerais">
                   Condições gerais
                 </label>
@@ -1030,8 +1115,9 @@
                 <textarea
                   id="condicoesGerais"
                   maxlength="6000"
-                  placeholder="Ex.: dias e horários, teste de nível, disponibilidade e demais condições."
+                  placeholder="Informe horários, teste de nível, disponibilidade e demais condições."
                 ></textarea>
+
               </div>
 
             </div>
@@ -1043,14 +1129,16 @@
               <h3>Investimento</h3>
 
               <p>
-                O pagamento à vista e no boleto terá o mesmo valor.
+                O pagamento à vista e no boleto possui o mesmo valor.
               </p>
             </div>
 
             <div class="grid-formulario">
 
               <div class="campo campo-largo">
+
                 <label class="linha-check">
+
                   <input
                     type="checkbox"
                     id="sobConsulta"
@@ -1059,7 +1147,9 @@
                   <span>
                     Não exibir valores: informar que o investimento está sob consulta
                   </span>
+
                 </label>
+
               </div>
 
               <div
@@ -1068,6 +1158,7 @@
               >
 
                 <div class="card-pagamento">
+
                   <h4>
                     <i class="fa-solid fa-money-bill-wave"></i>
                     Pagamento à vista ou no boleto
@@ -1076,6 +1167,7 @@
                   <div class="grid-pagamento">
 
                     <div class="campo">
+
                       <label for="valorAvistaAnterior">
                         Valor anterior
                       </label>
@@ -1086,9 +1178,11 @@
                         inputmode="decimal"
                         placeholder="Ex.: 1.475,00"
                       />
+
                     </div>
 
                     <div class="campo">
+
                       <label for="valorAvista">
                         Valor atual
                       </label>
@@ -1099,9 +1193,11 @@
                         inputmode="decimal"
                         placeholder="Ex.: 1.275,00"
                       />
+
                     </div>
 
                     <div class="campo campo-largo">
+
                       <label for="descricaoAvista">
                         Descrição
                       </label>
@@ -1111,14 +1207,15 @@
                         id="descricaoAvista"
                         maxlength="400"
                         value="Pagamento à vista ou no boleto"
-                        placeholder="Ex.: Pagamento à vista ou no boleto"
                       />
+
                     </div>
 
                   </div>
                 </div>
 
                 <div class="card-pagamento">
+
                   <h4>
                     <i class="fa-solid fa-credit-card"></i>
                     Pagamento no cartão
@@ -1127,6 +1224,7 @@
                   <div class="grid-pagamento">
 
                     <div class="campo">
+
                       <label for="cartaoQuantidadeParcelas">
                         Quantidade de parcelas
                       </label>
@@ -1137,9 +1235,11 @@
                         min="1"
                         placeholder="Ex.: 5"
                       />
+
                     </div>
 
                     <div class="campo">
+
                       <label for="cartaoValorParcelaAnterior">
                         Valor anterior da parcela
                       </label>
@@ -1150,9 +1250,11 @@
                         inputmode="decimal"
                         placeholder="Ex.: 315,00"
                       />
+
                     </div>
 
                     <div class="campo">
+
                       <label for="cartaoValorParcela">
                         Valor atual da parcela
                       </label>
@@ -1163,9 +1265,11 @@
                         inputmode="decimal"
                         placeholder="Ex.: 280,00"
                       />
+
                     </div>
 
                     <div class="campo">
+
                       <label for="cartaoValorTotal">
                         Valor total no cartão
                       </label>
@@ -1176,9 +1280,11 @@
                         inputmode="decimal"
                         placeholder="Ex.: 1.400,00"
                       />
+
                     </div>
 
                     <div class="campo campo-largo">
+
                       <label for="cartaoDescricao">
                         Descrição
                       </label>
@@ -1187,14 +1293,16 @@
                         type="text"
                         id="cartaoDescricao"
                         maxlength="400"
-                        placeholder="Ex.: Parcelamento no cartão de crédito"
+                        value="Pagamento parcelado no cartão de crédito"
                       />
+
                     </div>
 
                   </div>
                 </div>
 
                 <div class="campo">
+
                   <label for="taxaMatricula">
                     Taxa de matrícula
                   </label>
@@ -1205,9 +1313,11 @@
                     inputmode="decimal"
                     value="0,00"
                   />
+
                 </div>
 
                 <div class="campo">
+
                   <label for="observacoesPagamento">
                     Observações de pagamento
                   </label>
@@ -1217,6 +1327,7 @@
                     maxlength="3000"
                     placeholder="Ex.: Condições promocionais válidas durante o prazo informado."
                   ></textarea>
+
                 </div>
 
               </div>
@@ -1233,20 +1344,27 @@
             <div class="grid-formulario">
 
               <div class="campo campo-largo">
+
                 <label class="linha-check">
+
                   <input
                     type="checkbox"
                     id="materialIncluso"
                   />
 
-                  <span>O material está incluído no valor</span>
+                  <span>
+                    O material está incluído no valor
+                  </span>
+
                 </label>
+
               </div>
 
               <div
                 id="campoDescricaoMaterial"
                 class="campo campo-largo campo-condicional"
               >
+
                 <label for="descricaoMaterial">
                   Informação sobre o material
                 </label>
@@ -1257,9 +1375,11 @@
                   maxlength="500"
                   placeholder="Ex.: Material digital e atividades complementares"
                 />
+
               </div>
 
               <div class="campo campo-largo">
+
                 <label for="beneficios">
                   Outros benefícios
                 </label>
@@ -1269,9 +1389,11 @@
                   maxlength="4000"
                   placeholder="Digite um benefício por linha."
                 ></textarea>
+
               </div>
 
               <div class="campo campo-largo">
+
                 <label for="observacoes">
                   Observações adicionais
                 </label>
@@ -1281,10 +1403,13 @@
                   maxlength="4000"
                   placeholder="Informações adicionais que aparecerão no orçamento."
                 ></textarea>
+
               </div>
 
               <div class="campo campo-largo">
+
                 <label class="linha-check">
+
                   <input
                     type="checkbox"
                     id="pacoteAtivo"
@@ -1294,7 +1419,9 @@
                   <span>
                     Orçamento ativo e disponível para novas consultas
                   </span>
+
                 </label>
+
               </div>
 
             </div>
@@ -1333,7 +1460,7 @@
             <h2>Orçamentos cadastrados</h2>
 
             <p>
-              Encontre, edite, ative ou desative os orçamentos cadastrados.
+              Encontre, edite, ative ou desative os orçamentos.
             </p>
           </div>
         </div>
@@ -1347,9 +1474,17 @@
           />
 
           <select id="filtroStatus">
-            <option value="todos">Todos</option>
-            <option value="ativos">Ativos</option>
-            <option value="inativos">Inativos</option>
+            <option value="todos">
+              Todos
+            </option>
+
+            <option value="ativos">
+              Ativos
+            </option>
+
+            <option value="inativos">
+              Inativos
+            </option>
           </select>
 
         </div>
