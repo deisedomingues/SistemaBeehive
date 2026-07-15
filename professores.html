@@ -4,34 +4,76 @@
   <meta charset="UTF-8">
   <title>Cadastrar Professor | Beehive</title>
   <link rel="stylesheet" href="css/style.css">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 </head>
+
 <body>
 
   <div class="overlay"></div>
 
   <main class="container">
-    <h1 style="margin-bottom:10px;">Cadastrar Professor</h1>
 
-    <form class="form" id="form-professor">
+    <h1 style="margin-bottom:10px;">
+      Cadastrar Professor
+    </h1>
 
+    <form
+      class="form"
+      id="form-professor"
+    >
+
+      <!-- =========================
+           NOME
+      ========================== -->
       <label style="margin-bottom:8px;">
         Nome do professor
-        <input type="text" id="nomeProfessor" placeholder="Ex: Gretha" required style="padding:8px;">
+
+        <input
+          type="text"
+          id="nomeProfessor"
+          placeholder="Ex: Gretha Mayer"
+          required
+          style="padding:8px;"
+        >
       </label>
 
+      <!-- =========================
+           E-MAIL
+      ========================== -->
       <label style="margin-bottom:10px;">
         E-mail (para login)
-        <input type="email" id="emailProfessor" placeholder="ex: gretha@beehive.com" required style="padding:8px;">
+
+        <input
+          type="email"
+          id="emailProfessor"
+          placeholder="Ex: gretha@beehive.com"
+          required
+          style="padding:8px;"
+        >
       </label>
 
+      <!-- =========================
+           DATA DE NASCIMENTO
+      ========================== -->
       <label style="margin-bottom:10px;">
         Data de nascimento
-        <input type="date" id="dataNascimentoProfessor" style="padding:8px;">
+
+        <input
+          type="date"
+          id="dataNascimentoProfessor"
+          style="padding:8px;"
+        >
       </label>
 
+      <!-- =========================
+           LINK DE EVENTOS
+      ========================== -->
       <label style="margin-bottom:10px;">
         Link recorrente para eventos
+
         <input
           type="url"
           id="linkEventosProfessor"
@@ -40,31 +82,148 @@
         >
       </label>
 
-      <hr style="margin: 6px 0 8px 0; border: none; border-top: 1px solid #eee;">
+      <!-- =========================
+           LINK DE REPOSIÇÕES
+      ========================== -->
+      <label style="margin-bottom:10px;">
+        Link recorrente para aulas de reposição
 
-      <div style="margin: 8px 0 10px 0; padding: 10px 12px; border: 1px solid #f1d98a; border-left: 4px solid #F1BC32; border-radius: 10px; background: #fff8e8;">
-        <p style="margin:0; font-size:13px; line-height:1.45; color:#6b5200;">
-          <strong>Matérias que leciona:</strong> marque abaixo as matérias que este professor pode lecionar e informe o valor/hora base de cada uma.
-        </p>
-        <p style="margin:8px 0 0 0; font-size:12px; line-height:1.45; color:#6b5200;">
-          Aulas coletivas poderão ser calculadas automaticamente depois com acréscimo de 50%.
+        <input
+          type="url"
+          id="linkZoomReposicaoProfessor"
+          placeholder="Ex: https://zoom.us/j/..."
+          style="padding:8px;"
+        >
+      </label>
+
+      <div
+        style="
+          margin: 0 0 14px 0;
+          padding: 10px 12px;
+          border: 1px solid #f1d98a;
+          border-left: 4px solid #F1BC32;
+          border-radius: 10px;
+          background: #fff8e8;
+        "
+      >
+        <p
+          style="
+            margin:0;
+            font-size:12px;
+            line-height:1.45;
+            color:#6b5200;
+          "
+        >
+          O link de reposição será usado automaticamente quando
+          este professor for responsável por uma aula de reposição,
+          inclusive para alunos de outros professores.
         </p>
       </div>
 
-      <div id="listaMaterias" style="display:grid; gap:10px; margin-bottom:10px;">
-        <div style="opacity:0.8; font-size:13px;">Carregando matérias...</div>
+      <hr
+        style="
+          margin: 6px 0 8px 0;
+          border: none;
+          border-top: 1px solid #eee;
+        "
+      >
+
+      <!-- =========================
+           MATÉRIAS
+      ========================== -->
+      <div
+        style="
+          margin: 8px 0 10px 0;
+          padding: 10px 12px;
+          border: 1px solid #f1d98a;
+          border-left: 4px solid #F1BC32;
+          border-radius: 10px;
+          background: #fff8e8;
+        "
+      >
+        <p
+          style="
+            margin:0;
+            font-size:13px;
+            line-height:1.45;
+            color:#6b5200;
+          "
+        >
+          <strong>Matérias que leciona:</strong>
+          marque abaixo as matérias que este professor pode
+          lecionar e informe o valor/hora base de cada uma.
+        </p>
+
+        <p
+          style="
+            margin:8px 0 0 0;
+            font-size:12px;
+            line-height:1.45;
+            color:#6b5200;
+          "
+        >
+          Aulas coletivas poderão ser calculadas automaticamente
+          depois com acréscimo de 50%.
+        </p>
       </div>
 
-      <button type="submit" class="btn" style="padding:12px;">
+      <div
+        id="listaMaterias"
+        style="
+          display:grid;
+          gap:10px;
+          margin-bottom:10px;
+        "
+      >
+        <div
+          style="
+            opacity:0.8;
+            font-size:13px;
+          "
+        >
+          Carregando matérias...
+        </div>
+      </div>
+
+      <!-- =========================
+           BOTÃO SALVAR
+      ========================== -->
+      <button
+        type="submit"
+        class="btn"
+        id="btnSalvarProfessor"
+        style="padding:12px;"
+      >
         Salvar professor
       </button>
+
     </form>
 
-    <div id="msg" style="display:none; margin-bottom:10px;"></div>
+    <!-- =========================
+         MENSAGEM
+    ========================== -->
+    <div
+      id="msg"
+      style="
+        display:none;
+        margin-bottom:10px;
+      "
+    ></div>
 
-    <a href="menu-cadastros.html" class="link-voltar" style="margin-top:10px;">← Voltar</a>
+    <a
+      href="menu-cadastros.html"
+      class="link-voltar"
+      style="margin-top:10px;"
+    >
+      ← Voltar
+    </a>
+
   </main>
 
-  <script type="module" src="js/professores.js"></script>
+  <script
+    type="module"
+    src="js/professores.js"
+  ></script>
+
 </body>
 </html>
