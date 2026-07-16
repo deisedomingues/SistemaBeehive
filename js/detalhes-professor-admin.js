@@ -3,9 +3,9 @@ import { exigirAdmin } from "./guard.js";
 
 await exigirAdmin();
 
-// =====================================================
-// 1. PEGAR ID DO PROFESSOR
-// =====================================================
+/* =====================================================
+   1. PEGAR ID DO PROFESSOR
+===================================================== */
 
 function obterProfessorIdSelecionado() {
   const params = new URLSearchParams(window.location.search);
@@ -15,7 +15,9 @@ function obterProfessorIdSelecionado() {
     params.get("professor_id") ||
     params.get("professorId");
 
-  if (idUrl) return Number(idUrl);
+  if (idUrl) {
+    return Number(idUrl);
+  }
 
   const idStorage =
     localStorage.getItem("professorSelecionadoAdmin") ||
@@ -24,7 +26,9 @@ function obterProfessorIdSelecionado() {
     localStorage.getItem("professorAdminId") ||
     localStorage.getItem("detalhesProfessorId");
 
-  if (idStorage) return Number(idStorage);
+  if (idStorage) {
+    return Number(idStorage);
+  }
 
   return null;
 }
@@ -32,61 +36,115 @@ function obterProfessorIdSelecionado() {
 const professorId = obterProfessorIdSelecionado();
 
 if (!professorId) {
-  alert("Professor não encontrado. Volte ao resumo e selecione um professor.");
+  alert(
+    "Professor não encontrado. Volte ao resumo e selecione um professor."
+  );
+
   window.location.href = "resumo-geral.html";
 }
 
-// =====================================================
-// 2. ELEMENTOS DA TELA
-// =====================================================
+/* =====================================================
+   2. ELEMENTOS DA TELA
+===================================================== */
 
 const msg = document.getElementById("msg");
 
 const tituloProfessor = document.getElementById("tituloProfessor");
 const subtituloProfessor = document.getElementById("subtituloProfessor");
 
-const infoNomeProfessor = document.getElementById("infoNomeProfessor");
-const infoEmailProfessor = document.getElementById("infoEmailProfessor");
-const infoStatusProfessor = document.getElementById("infoStatusProfessor");
-const infoCursosProfessor = document.getElementById("infoCursosProfessor");
+const infoNomeProfessor =
+  document.getElementById("infoNomeProfessor");
 
-const qtdMatriculasProfessor = document.getElementById("qtdMatriculasProfessor");
-const qtdAlunosAtivosProfessor = document.getElementById("qtdAlunosAtivosProfessor");
-const qtdCursosProfessor = document.getElementById("qtdCursosProfessor");
-const qtdAulasMesProfessor = document.getElementById("qtdAulasMesProfessor");
-const qtdAulasComputaveisProfessor = document.getElementById("qtdAulasComputaveisProfessor");
-const qtdMinutosProfessor = document.getElementById("qtdMinutosProfessor");
+const infoEmailProfessor =
+  document.getElementById("infoEmailProfessor");
 
-const cardsCursosProfessor = document.getElementById("cardsCursosProfessor");
+const infoStatusProfessor =
+  document.getElementById("infoStatusProfessor");
 
-const listaAlunosProfessor = document.getElementById("listaAlunosProfessor");
-const btnExpandirAlunosProfessor = document.getElementById("btnExpandirAlunosProfessor");
+const infoCursosProfessor =
+  document.getElementById("infoCursosProfessor");
 
-const filtroStatusAulaProfessor = document.getElementById("filtroStatusAulaProfessor");
-const listaAulasProfessor = document.getElementById("listaAulasProfessor");
-const boxExpandirAulasProfessor = document.getElementById("boxExpandirAulasProfessor");
-const btnExpandirAulasProfessor = document.getElementById("btnExpandirAulasProfessor");
+const qtdMatriculasProfessor =
+  document.getElementById("qtdMatriculasProfessor");
 
-const btnMostrarFormOcorrencia = document.getElementById("btnMostrarFormOcorrencia");
-const formOcorrenciaProfessor = document.getElementById("formOcorrenciaProfessor");
+const qtdAlunosAtivosProfessor =
+  document.getElementById("qtdAlunosAtivosProfessor");
 
-const ocorrenciaData = document.getElementById("ocorrenciaData");
-const ocorrenciaTipo = document.getElementById("ocorrenciaTipo");
-const ocorrenciaGravidade = document.getElementById("ocorrenciaGravidade");
-const ocorrenciaMotivo = document.getElementById("ocorrenciaMotivo");
-const ocorrenciaProvidencia = document.getElementById("ocorrenciaProvidencia");
-const ocorrenciaDescricao = document.getElementById("ocorrenciaDescricao");
+const qtdCursosProfessor =
+  document.getElementById("qtdCursosProfessor");
 
-const btnCancelarOcorrencia = document.getElementById("btnCancelarOcorrencia");
-const btnSalvarOcorrencia = document.getElementById("btnSalvarOcorrencia");
+const qtdAulasMesProfessor =
+  document.getElementById("qtdAulasMesProfessor");
 
-const listaOcorrenciasProfessor = document.getElementById("listaOcorrenciasProfessor");
-const boxExpandirOcorrenciasProfessor = document.getElementById("boxExpandirOcorrenciasProfessor");
-const btnExpandirOcorrenciasProfessor = document.getElementById("btnExpandirOcorrenciasProfessor");
+const qtdAulasComputaveisProfessor =
+  document.getElementById("qtdAulasComputaveisProfessor");
 
-// =====================================================
-// 3. ESTADO
-// =====================================================
+const qtdMinutosProfessor =
+  document.getElementById("qtdMinutosProfessor");
+
+const cardsCursosProfessor =
+  document.getElementById("cardsCursosProfessor");
+
+const listaAlunosProfessor =
+  document.getElementById("listaAlunosProfessor");
+
+const btnExpandirAlunosProfessor =
+  document.getElementById("btnExpandirAlunosProfessor");
+
+const filtroStatusAulaProfessor =
+  document.getElementById("filtroStatusAulaProfessor");
+
+const listaAulasProfessor =
+  document.getElementById("listaAulasProfessor");
+
+const boxExpandirAulasProfessor =
+  document.getElementById("boxExpandirAulasProfessor");
+
+const btnExpandirAulasProfessor =
+  document.getElementById("btnExpandirAulasProfessor");
+
+const btnMostrarFormOcorrencia =
+  document.getElementById("btnMostrarFormOcorrencia");
+
+const formOcorrenciaProfessor =
+  document.getElementById("formOcorrenciaProfessor");
+
+const ocorrenciaData =
+  document.getElementById("ocorrenciaData");
+
+const ocorrenciaTipo =
+  document.getElementById("ocorrenciaTipo");
+
+const ocorrenciaGravidade =
+  document.getElementById("ocorrenciaGravidade");
+
+const ocorrenciaMotivo =
+  document.getElementById("ocorrenciaMotivo");
+
+const ocorrenciaProvidencia =
+  document.getElementById("ocorrenciaProvidencia");
+
+const ocorrenciaDescricao =
+  document.getElementById("ocorrenciaDescricao");
+
+const btnCancelarOcorrencia =
+  document.getElementById("btnCancelarOcorrencia");
+
+const btnSalvarOcorrencia =
+  document.getElementById("btnSalvarOcorrencia");
+
+const listaOcorrenciasProfessor =
+  document.getElementById("listaOcorrenciasProfessor");
+
+const boxExpandirOcorrenciasProfessor =
+  document.getElementById("boxExpandirOcorrenciasProfessor");
+
+const btnExpandirOcorrenciasProfessor =
+  document.getElementById("btnExpandirOcorrenciasProfessor");
+
+/* =====================================================
+   3. ESTADO
+===================================================== */
 
 let professorAtual = null;
 let cursosProfessor = [];
@@ -98,9 +156,9 @@ let alunosExpandido = false;
 let aulasExpandido = false;
 let ocorrenciasExpandido = false;
 
-// =====================================================
-// 4. CONSTANTES
-// =====================================================
+/* =====================================================
+   4. CONSTANTES
+===================================================== */
 
 const STATUS = {
   PRESENTE: "Presente",
@@ -109,12 +167,13 @@ const STATUS = {
   TRANCADA: "Trancada",
   REPOSICAO: "Reposição",
   AULA_INSTRUMENTAL: "Aula Instrumental",
-  PLANTAO_DUVIDAS: "Plantão de dúvidas"
+  PLANTAO_DUVIDAS: "Plantão de dúvidas",
+  AULA_EXPERIMENTAL: "Aula Experimental"
 };
 
-// =====================================================
-// 5. UTILITÁRIOS
-// =====================================================
+/* =====================================================
+   5. UTILITÁRIOS
+===================================================== */
 
 function mostrarMensagem(texto, ok = true) {
   if (!msg) {
@@ -152,20 +211,26 @@ function escaparHtml(texto) {
 }
 
 function formatarDataBR(dataISO) {
-  if (!dataISO) return "-";
+  if (!dataISO) {
+    return "-";
+  }
 
   const partes = String(dataISO).split("-");
+
   const ano = partes[0];
   const mes = partes[1];
   const dia = partes[2];
 
-  if (!ano || !mes || !dia) return "-";
+  if (!ano || !mes || !dia) {
+    return "-";
+  }
 
   return `${dia}/${mes}/${ano}`;
 }
 
 function hojeISO() {
   const hoje = new Date();
+
   const ano = hoje.getFullYear();
   const mes = String(hoje.getMonth() + 1).padStart(2, "0");
   const dia = String(hoje.getDate()).padStart(2, "0");
@@ -175,6 +240,7 @@ function hojeISO() {
 
 function inicioMesISO() {
   const hoje = new Date();
+
   const ano = hoje.getFullYear();
   const mes = String(hoje.getMonth() + 1).padStart(2, "0");
 
@@ -183,30 +249,45 @@ function inicioMesISO() {
 
 function proximoMesISO() {
   const hoje = new Date();
+
   const ano = hoje.getFullYear();
   const mesAtual = hoje.getMonth();
 
-  const primeiroDiaProximoMes = new Date(ano, mesAtual + 1, 1);
+  const primeiroDiaProximoMes = new Date(
+    ano,
+    mesAtual + 1,
+    1
+  );
 
-  const anoFinal = primeiroDiaProximoMes.getFullYear();
-  const mesFinal = String(primeiroDiaProximoMes.getMonth() + 1).padStart(2, "0");
+  const anoFinal =
+    primeiroDiaProximoMes.getFullYear();
+
+  const mesFinal = String(
+    primeiroDiaProximoMes.getMonth() + 1
+  ).padStart(2, "0");
 
   return `${anoFinal}-${mesFinal}-01`;
 }
 
 function normalizarTexto(valor) {
-  return String(valor || "").trim().toLowerCase();
+  return String(valor || "")
+    .trim()
+    .toLowerCase();
 }
 
 function formatarMinutosDeSegundos(segundos) {
   const totalSegundos = Number(segundos || 0);
 
-  if (!totalSegundos) return "0";
+  if (!totalSegundos) {
+    return "0";
+  }
 
   const minutos = Math.floor(totalSegundos / 60);
   const restoSegundos = totalSegundos % 60;
 
-  if (restoSegundos === 0) return String(minutos);
+  if (restoSegundos === 0) {
+    return String(minutos);
+  }
 
   return `${minutos}m ${restoSegundos}s`;
 }
@@ -215,43 +296,244 @@ function aulaComputavelFinanceiro(aula) {
   const status = normalizarTexto(aula?.status);
   const gravada = aula?.aula_gravada === true;
 
-  if (status === "presente" && gravada) return true;
-  if (status === "ausente" && gravada) return true;
-  if ((status === "reposição" || status === "reposicao") && gravada) return true;
-  if (status === "aula instrumental" && gravada) return true;
-  if (status === "plantão de dúvidas" && gravada) return true;
-  if (status === "plantao de dúvidas" && gravada) return true;
-  if (status === "plantão de duvidas" && gravada) return true;
-  if (status === "plantao de duvidas" && gravada) return true;
+  if (status === "aula experimental") {
+    return true;
+  }
+
+  if (status === "presente" && gravada) {
+    return true;
+  }
+
+  if (status === "ausente" && gravada) {
+    return true;
+  }
+
+  if (
+    (status === "reposição" || status === "reposicao") &&
+    gravada
+  ) {
+    return true;
+  }
+
+  if (status === "aula instrumental" && gravada) {
+    return true;
+  }
+
+  if (
+    status === "plantão de dúvidas" &&
+    gravada
+  ) {
+    return true;
+  }
+
+  if (
+    status === "plantao de dúvidas" &&
+    gravada
+  ) {
+    return true;
+  }
+
+  if (
+    status === "plantão de duvidas" &&
+    gravada
+  ) {
+    return true;
+  }
+
+  if (
+    status === "plantao de duvidas" &&
+    gravada
+  ) {
+    return true;
+  }
 
   return false;
 }
 
 function textoStatusProfessor(ativo) {
-  if (ativo === false) return "Inativo";
+  if (ativo === false) {
+    return "Inativo";
+  }
+
   return "Ativo";
 }
 
 function textoParte(parte) {
-  if (!parte) return "Parte não informada";
+  if (!parte) {
+    return "Parte não informada";
+  }
+
   return `Parte ${parte}`;
 }
 
 function obterNomeAlunoDaAula(aula) {
-  return aula?.matricula?.aluno?.nome || "Aluno não informado";
+  return (
+    aula?.matricula?.aluno?.nome ||
+    "Aluno não informado"
+  );
 }
 
 function obterCursoDaAula(aula) {
-  return aula?.matricula?.materia?.nome || "Curso não informado";
+  return (
+    aula?.matricula?.materia?.nome ||
+    "Curso não informado"
+  );
 }
 
 function obterModuloDaAula(aula) {
-  return aula?.modulo?.nome || aula?.matricula?.modulo?.nome || "Módulo não informado";
+  return (
+    aula?.modulo?.nome ||
+    aula?.matricula?.modulo?.nome ||
+    "Módulo não informado"
+  );
 }
 
-// =====================================================
-// 6. BUSCAS NO BANCO
-// =====================================================
+/* =====================================================
+   6. ABRIR EDIÇÃO DA AULA
+===================================================== */
+
+function abrirEdicaoAulaIndividual(aulaId) {
+  const id = Number(aulaId);
+
+  if (!id) {
+    mostrarMensagem(
+      "Aula não encontrada para edição.",
+      false
+    );
+
+    return;
+  }
+
+  const aula = aulasProfessor.find(
+    (item) => Number(item.id) === id
+  );
+
+  if (!aula) {
+    mostrarMensagem(
+      "Não foi possível localizar os dados desta aula.",
+      false
+    );
+
+    return;
+  }
+
+  localStorage.setItem(
+    "aulaSelecionadaEdicaoAdmin",
+    String(aula.id)
+  );
+
+  localStorage.setItem(
+    "aulaSelecionadaEdicao",
+    String(aula.id)
+  );
+
+  localStorage.setItem(
+    "professorSelecionadoAdmin",
+    String(professorId)
+  );
+
+  if (aula.matricula_id) {
+    localStorage.setItem(
+      "matriculaSelecionadaEdicaoAdmin",
+      String(aula.matricula_id)
+    );
+
+    localStorage.setItem(
+      "matriculaSelecionadaEdicao",
+      String(aula.matricula_id)
+    );
+  }
+
+  localStorage.removeItem(
+    "grupoAulaSelecionadoEdicaoAdmin"
+  );
+
+  const parametros = new URLSearchParams({
+    id: String(aula.id),
+    professor_id: String(professorId)
+  });
+
+  window.location.href =
+    `editar-aula-admin.html?${parametros.toString()}`;
+}
+
+function abrirEdicaoAulaColetiva(grupoAulaId) {
+  const grupoId = String(
+    grupoAulaId || ""
+  ).trim();
+
+  if (!grupoId) {
+    mostrarMensagem(
+      "Grupo da aula coletiva não encontrado.",
+      false
+    );
+
+    return;
+  }
+
+  const aulasDoGrupo = aulasProfessor.filter((aula) => {
+    return (
+      aula.aula_coletiva === true &&
+      String(aula.grupo_aula_id || "") === grupoId
+    );
+  });
+
+  if (!aulasDoGrupo.length) {
+    mostrarMensagem(
+      "Nenhuma aula foi encontrada neste grupo coletivo.",
+      false
+    );
+
+    return;
+  }
+
+  const primeiraAula = aulasDoGrupo[0];
+
+  localStorage.setItem(
+    "grupoAulaSelecionadoEdicaoAdmin",
+    grupoId
+  );
+
+  localStorage.setItem(
+    "aulaSelecionadaEdicaoAdmin",
+    String(primeiraAula.id)
+  );
+
+  localStorage.setItem(
+    "aulaSelecionadaEdicao",
+    String(primeiraAula.id)
+  );
+
+  localStorage.setItem(
+    "professorSelecionadoAdmin",
+    String(professorId)
+  );
+
+  if (primeiraAula.matricula_id) {
+    localStorage.setItem(
+      "matriculaSelecionadaEdicaoAdmin",
+      String(primeiraAula.matricula_id)
+    );
+
+    localStorage.setItem(
+      "matriculaSelecionadaEdicao",
+      String(primeiraAula.matricula_id)
+    );
+  }
+
+  const parametros = new URLSearchParams({
+    id: String(primeiraAula.id),
+    professor_id: String(professorId),
+    grupo_aula_id: grupoId
+  });
+
+  window.location.href =
+    `editar-aula-admin.html?${parametros.toString()}`;
+}
+
+/* =====================================================
+   7. BUSCAS NO BANCO
+===================================================== */
 
 async function carregarProfessor() {
   const { data, error } = await supabase
@@ -261,12 +543,21 @@ async function carregarProfessor() {
     .single();
 
   if (error || !data) {
-    console.error("Erro ao carregar professor:", error);
-    mostrarMensagem("Erro ao carregar dados do professor.", false);
+    console.error(
+      "Erro ao carregar professor:",
+      error
+    );
+
+    mostrarMensagem(
+      "Erro ao carregar dados do professor.",
+      false
+    );
+
     return null;
   }
 
   professorAtual = data;
+
   return data;
 }
 
@@ -286,12 +577,18 @@ async function carregarCursosProfessor() {
     .eq("professor_id", professorId);
 
   if (error) {
-    console.error("Erro ao carregar cursos do professor:", error);
+    console.error(
+      "Erro ao carregar cursos do professor:",
+      error
+    );
+
     cursosProfessor = [];
+
     return [];
   }
 
   cursosProfessor = data || [];
+
   return cursosProfessor;
 }
 
@@ -327,12 +624,18 @@ async function carregarMatriculasProfessor() {
     .order("id", { ascending: false });
 
   if (error) {
-    console.error("Erro ao carregar matrículas do professor:", error);
+    console.error(
+      "Erro ao carregar matrículas do professor:",
+      error
+    );
+
     matriculasProfessor = [];
+
     return [];
   }
 
   matriculasProfessor = data || [];
+
   return matriculasProfessor;
 }
 
@@ -360,6 +663,7 @@ async function carregarAulasProfessor() {
       quantidade_alunos,
       modulo_id,
       matricula_id,
+      professor_id,
       modulo:modulo_id (
         id,
         nome
@@ -390,12 +694,18 @@ async function carregarAulasProfessor() {
     .order("id", { ascending: false });
 
   if (error) {
-    console.error("Erro ao carregar aulas do professor:", error);
+    console.error(
+      "Erro ao carregar aulas do professor:",
+      error
+    );
+
     aulasProfessor = [];
+
     return [];
   }
 
   aulasProfessor = data || [];
+
   return aulasProfessor;
 }
 
@@ -408,125 +718,175 @@ async function carregarOcorrenciasProfessor() {
     .order("id", { ascending: false });
 
   if (error) {
-    console.error("Erro ao carregar ocorrências do professor:", error);
+    console.error(
+      "Erro ao carregar ocorrências do professor:",
+      error
+    );
 
     if (listaOcorrenciasProfessor) {
       listaOcorrenciasProfessor.innerHTML = `
         <p style="font-size:13px; color:#b71c1c;">
-          Não foi possível carregar as ocorrências. Verifique se a tabela professor_ocorrencia
-          possui as colunas esperadas.
+          Não foi possível carregar as ocorrências. Verifique se a
+          tabela professor_ocorrencia possui as colunas esperadas.
         </p>
       `;
     }
 
     ocorrenciasProfessor = [];
+
     return [];
   }
 
   ocorrenciasProfessor = data || [];
+
   return ocorrenciasProfessor;
 }
 
-// =====================================================
-// 7. RENDERIZAÇÃO — CABEÇALHO E CARDS
-// =====================================================
+/* =====================================================
+   8. RENDERIZAÇÃO — CABEÇALHO E CARDS
+===================================================== */
 
 function renderProfessor() {
-  if (!professorAtual) return;
+  if (!professorAtual) {
+    return;
+  }
 
-  const nome = professorAtual.nome || "Professor";
-  const email = professorAtual.email || "-";
-  const status = textoStatusProfessor(professorAtual.ativo);
+  const nome =
+    professorAtual.nome || "Professor";
+
+  const email =
+    professorAtual.email || "-";
+
+  const status =
+    textoStatusProfessor(professorAtual.ativo);
 
   const nomesCursos = cursosProfessor
     .map((item) => item.materia?.nome)
     .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+    .sort((a, b) => {
+      return a.localeCompare(b, "pt-BR");
+    });
 
   if (tituloProfessor) {
     tituloProfessor.textContent = nome;
   }
 
   if (subtituloProfessor) {
-    subtituloProfessor.textContent = nomesCursos.length
-      ? `Professor(a) de ${nomesCursos.join(", ")}`
-      : "Professor(a) sem curso vinculado.";
+    subtituloProfessor.textContent =
+      nomesCursos.length
+        ? `Professor(a) de ${nomesCursos.join(", ")}`
+        : "Professor(a) sem curso vinculado.";
   }
 
-  if (infoNomeProfessor) infoNomeProfessor.textContent = nome;
-  if (infoEmailProfessor) infoEmailProfessor.textContent = email;
-  if (infoStatusProfessor) infoStatusProfessor.textContent = status;
+  if (infoNomeProfessor) {
+    infoNomeProfessor.textContent = nome;
+  }
+
+  if (infoEmailProfessor) {
+    infoEmailProfessor.textContent = email;
+  }
 
   if (infoStatusProfessor) {
-    infoStatusProfessor.style.color = professorAtual.ativo === false ? "#b71c1c" : "#1b5e20";
+    infoStatusProfessor.textContent = status;
+
+    infoStatusProfessor.style.color =
+      professorAtual.ativo === false
+        ? "#b71c1c"
+        : "#1b5e20";
   }
 
   if (infoCursosProfessor) {
-    infoCursosProfessor.textContent = nomesCursos.length
-      ? nomesCursos.join(", ")
-      : "Nenhum curso vinculado";
+    infoCursosProfessor.textContent =
+      nomesCursos.length
+        ? nomesCursos.join(", ")
+        : "Nenhum curso vinculado";
   }
 }
 
 function renderIndicadores() {
-  const matriculasAtivas = matriculasProfessor.filter((m) => m.ativa === true);
+  const matriculasAtivas =
+    matriculasProfessor.filter(
+      (matricula) => matricula.ativa === true
+    );
 
   const alunosAtivosUnicos = new Set(
     matriculasAtivas
-      .map((m) => m.aluno_id)
+      .map((matricula) => matricula.aluno_id)
       .filter(Boolean)
   );
 
   const cursosAtivosUnicos = new Set(
     matriculasAtivas
-      .map((m) => m.materia_id)
+      .map((matricula) => matricula.materia_id)
       .filter(Boolean)
   );
 
   const aulasMes = aulasProfessor;
 
-  const aulasComputaveis = aulasMes.filter(aulaComputavelFinanceiro);
+  const aulasComputaveis =
+    aulasMes.filter(aulaComputavelFinanceiro);
 
-  const totalSegundos = aulasMes.reduce((total, aula) => {
-    return total + Number(aula.duracao_segundos || 0);
-  }, 0);
+  const totalSegundos = aulasMes.reduce(
+    (total, aula) => {
+      return (
+        total +
+        Number(aula.duracao_segundos || 0)
+      );
+    },
+    0
+  );
 
   if (qtdMatriculasProfessor) {
-    qtdMatriculasProfessor.textContent = String(matriculasAtivas.length);
+    qtdMatriculasProfessor.textContent =
+      String(matriculasAtivas.length);
   }
 
   if (qtdAlunosAtivosProfessor) {
-    qtdAlunosAtivosProfessor.textContent = String(alunosAtivosUnicos.size);
+    qtdAlunosAtivosProfessor.textContent =
+      String(alunosAtivosUnicos.size);
   }
 
   if (qtdCursosProfessor) {
-    qtdCursosProfessor.textContent = String(cursosAtivosUnicos.size);
+    qtdCursosProfessor.textContent =
+      String(cursosAtivosUnicos.size);
   }
 
   if (qtdAulasMesProfessor) {
-    qtdAulasMesProfessor.textContent = String(aulasMes.length);
+    qtdAulasMesProfessor.textContent =
+      String(aulasMes.length);
   }
 
   if (qtdAulasComputaveisProfessor) {
-    qtdAulasComputaveisProfessor.textContent = String(aulasComputaveis.length);
+    qtdAulasComputaveisProfessor.textContent =
+      String(aulasComputaveis.length);
   }
 
   if (qtdMinutosProfessor) {
-    qtdMinutosProfessor.textContent = formatarMinutosDeSegundos(totalSegundos);
+    qtdMinutosProfessor.textContent =
+      formatarMinutosDeSegundos(totalSegundos);
   }
 }
 
 function renderCursosProfessor() {
-  if (!cardsCursosProfessor) return;
+  if (!cardsCursosProfessor) {
+    return;
+  }
 
-  const matriculasAtivas = matriculasProfessor.filter((m) => m.ativa === true);
+  const matriculasAtivas =
+    matriculasProfessor.filter(
+      (matricula) => matricula.ativa === true
+    );
 
-  if (!cursosProfessor.length && !matriculasAtivas.length) {
+  if (
+    !cursosProfessor.length &&
+    !matriculasAtivas.length
+  ) {
     cardsCursosProfessor.innerHTML = `
       <p style="font-size:13px; opacity:0.85;">
         Nenhum curso vinculado a este professor.
       </p>
     `;
+
     return;
   }
 
@@ -537,69 +897,112 @@ function renderCursosProfessor() {
 
     mapa.set(materiaId, {
       materiaId,
-      nome: curso.materia?.nome || "Curso não informado",
+      nome:
+        curso.materia?.nome ||
+        "Curso não informado",
       valorHora: curso.valor_hora,
       quantidade: 0
     });
   });
 
   matriculasAtivas.forEach((matricula) => {
-    const materiaId = String(matricula.materia_id);
+    const materiaId =
+      String(matricula.materia_id);
 
     if (!mapa.has(materiaId)) {
       mapa.set(materiaId, {
         materiaId,
-        nome: matricula.materia?.nome || "Curso não informado",
+        nome:
+          matricula.materia?.nome ||
+          "Curso não informado",
         valorHora: null,
         quantidade: 0
       });
     }
 
     const item = mapa.get(materiaId);
+
     item.quantidade += 1;
   });
 
   const cursos = Array.from(mapa.values())
-    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    .sort((a, b) => {
+      return a.nome.localeCompare(
+        b.nome,
+        "pt-BR"
+      );
+    });
 
-  cardsCursosProfessor.innerHTML = cursos.map((curso) => {
-    const valorHoraTexto =
-      curso.valorHora !== null && curso.valorHora !== undefined
-        ? `Valor hora: R$ ${Number(curso.valorHora).toFixed(2).replace(".", ",")}`
-        : "Valor hora não cadastrado";
+  cardsCursosProfessor.innerHTML = cursos
+    .map((curso) => {
+      const valorHoraTexto =
+        curso.valorHora !== null &&
+        curso.valorHora !== undefined
+          ? `Valor hora: R$ ${Number(
+              curso.valorHora
+            )
+              .toFixed(2)
+              .replace(".", ",")}`
+          : "Valor hora não cadastrado";
 
-    return `
-      <div style="padding:12px; border:1px solid #eee; border-radius:10px; background:#fffdf5;">
-        <div style="font-weight:700; margin-bottom:6px;">
-          ${escaparHtml(curso.nome)}
+      return `
+        <div
+          style="
+            padding:12px;
+            border:1px solid #eee;
+            border-radius:10px;
+            background:#fffdf5;
+          "
+        >
+          <div style="font-weight:700; margin-bottom:6px;">
+            ${escaparHtml(curso.nome)}
+          </div>
+
+          <div style="font-size:13px; opacity:0.85;">
+            ${curso.quantidade} matrícula(s) ativa(s)
+          </div>
+
+          <div
+            style="
+              font-size:12px;
+              opacity:0.75;
+              margin-top:4px;
+            "
+          >
+            ${escaparHtml(valorHoraTexto)}
+          </div>
         </div>
-
-        <div style="font-size:13px; opacity:0.85;">
-          ${curso.quantidade} matrícula(s) ativa(s)
-        </div>
-
-        <div style="font-size:12px; opacity:0.75; margin-top:4px;">
-          ${escaparHtml(valorHoraTexto)}
-        </div>
-      </div>
-    `;
-  }).join("");
+      `;
+    })
+    .join("");
 }
 
-// =====================================================
-// 8. RENDERIZAÇÃO — ALUNOS
-// =====================================================
+/* =====================================================
+   9. RENDERIZAÇÃO — ALUNOS
+===================================================== */
 
 function renderAlunosProfessor() {
-  if (!listaAlunosProfessor) return;
+  if (!listaAlunosProfessor) {
+    return;
+  }
 
-  const matriculasAtivas = matriculasProfessor
-    .filter((m) => m.ativa === true)
-    .sort((a, b) => {
-      const nomeA = a.aluno?.nome || "";
-      const nomeB = b.aluno?.nome || "";
-      return nomeA.localeCompare(nomeB, "pt-BR");
-    });
+  const matriculasAtivas =
+    matriculasProfessor
+      .filter(
+        (matricula) => matricula.ativa === true
+      )
+      .sort((a, b) => {
+        const nomeA =
+          a.aluno?.nome || "";
+
+        const nomeB =
+          b.aluno?.nome || "";
+
+        return nomeA.localeCompare(
+          nomeB,
+          "pt-BR"
+        );
+      });
 
   if (!matriculasAtivas.length) {
     listaAlunosProfessor.innerHTML = `
@@ -609,66 +1012,130 @@ function renderAlunosProfessor() {
     `;
 
     if (btnExpandirAlunosProfessor) {
-      btnExpandirAlunosProfessor.style.display = "none";
+      btnExpandirAlunosProfessor.style.display =
+        "none";
     }
 
     return;
   }
 
-  const limite = alunosExpandido ? matriculasAtivas.length : 5;
-  const visiveis = matriculasAtivas.slice(0, limite);
+  const limite =
+    alunosExpandido
+      ? matriculasAtivas.length
+      : 5;
 
-  listaAlunosProfessor.innerHTML = visiveis.map((matricula) => {
-    const nome = matricula.aluno?.nome || "Aluno sem nome";
-    const curso = matricula.materia?.nome || "Curso não informado";
-    const modulo = matricula.modulo?.nome || "Módulo não informado";
-    const email = matricula.aluno?.email || "";
-    const telefone = matricula.aluno?.telefone || "";
+  const visiveis =
+    matriculasAtivas.slice(0, limite);
 
-    return `
-      <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
-        <div style="font-weight:700;">
-          ${escaparHtml(nome)}
+  listaAlunosProfessor.innerHTML = visiveis
+    .map((matricula) => {
+      const nome =
+        matricula.aluno?.nome ||
+        "Aluno sem nome";
+
+      const curso =
+        matricula.materia?.nome ||
+        "Curso não informado";
+
+      const modulo =
+        matricula.modulo?.nome ||
+        "Módulo não informado";
+
+      const email =
+        matricula.aluno?.email || "";
+
+      const telefone =
+        matricula.aluno?.telefone || "";
+
+      return `
+        <div
+          style="
+            padding:10px 0;
+            border-bottom:1px solid #e6dfcf;
+          "
+        >
+          <div style="font-weight:700;">
+            ${escaparHtml(nome)}
+          </div>
+
+          <div
+            style="
+              font-size:13px;
+              opacity:0.9;
+              margin-top:3px;
+            "
+          >
+            ${escaparHtml(curso)}
+            |
+            ${escaparHtml(modulo)}
+          </div>
+
+          ${
+            email || telefone
+              ? `
+                <div
+                  style="
+                    font-size:12px;
+                    opacity:0.75;
+                    margin-top:3px;
+                  "
+                >
+                  ${
+                    email
+                      ? `E-mail: ${escaparHtml(email)}`
+                      : ""
+                  }
+
+                  ${
+                    email && telefone
+                      ? " | "
+                      : ""
+                  }
+
+                  ${
+                    telefone
+                      ? `Telefone: ${escaparHtml(telefone)}`
+                      : ""
+                  }
+                </div>
+              `
+              : ""
+          }
         </div>
-
-        <div style="font-size:13px; opacity:0.9; margin-top:3px;">
-          ${escaparHtml(curso)} | ${escaparHtml(modulo)}
-        </div>
-
-        ${
-          email || telefone
-            ? `<div style="font-size:12px; opacity:0.75; margin-top:3px;">
-                ${email ? `E-mail: ${escaparHtml(email)}` : ""}
-                ${email && telefone ? " | " : ""}
-                ${telefone ? `Telefone: ${escaparHtml(telefone)}` : ""}
-              </div>`
-            : ""
-        }
-      </div>
-    `;
-  }).join("");
+      `;
+    })
+    .join("");
 
   if (btnExpandirAlunosProfessor) {
     if (matriculasAtivas.length <= 5) {
-      btnExpandirAlunosProfessor.style.display = "none";
+      btnExpandirAlunosProfessor.style.display =
+        "none";
     } else {
-      btnExpandirAlunosProfessor.style.display = "inline-block";
-      btnExpandirAlunosProfessor.textContent = alunosExpandido ? "Ver menos" : "Ver mais";
+      btnExpandirAlunosProfessor.style.display =
+        "inline-block";
+
+      btnExpandirAlunosProfessor.textContent =
+        alunosExpandido
+          ? "Ver menos"
+          : "Ver mais";
     }
   }
 }
 
-// =====================================================
-// 9. RENDERIZAÇÃO — AULAS
-// =====================================================
+/* =====================================================
+   10. RENDERIZAÇÃO — AULAS
+===================================================== */
 
 function obterAulasFiltradas() {
-  const statusFiltro = filtroStatusAulaProfessor?.value || "";
+  const statusFiltro =
+    filtroStatusAulaProfessor?.value || "";
 
   let aulas = [...aulasProfessor];
 
   if (statusFiltro) {
-    aulas = aulas.filter((aula) => aula.status === statusFiltro);
+    aulas = aulas.filter((aula) => {
+      return aula.status === statusFiltro;
+    });
   }
 
   return aulas;
@@ -679,7 +1146,10 @@ function agruparAulasColetivas(aulas) {
   const individuais = [];
 
   aulas.forEach((aula) => {
-    if (aula.aula_coletiva && aula.grupo_aula_id) {
+    if (
+      aula.aula_coletiva &&
+      aula.grupo_aula_id
+    ) {
       const chave = aula.grupo_aula_id;
 
       if (!grupos.has(chave)) {
@@ -691,10 +1161,14 @@ function agruparAulasColetivas(aulas) {
           parte: aula.parte,
           conteudo: aula.conteudo,
           licao_casa: aula.licao_casa,
-          duracao_segundos: aula.duracao_segundos,
-          quantidade_alunos: aula.quantidade_alunos,
-          modulo: obterModuloDaAula(aula),
-          curso: obterCursoDaAula(aula),
+          duracao_segundos:
+            aula.duracao_segundos,
+          quantidade_alunos:
+            aula.quantidade_alunos,
+          modulo:
+            obterModuloDaAula(aula),
+          curso:
+            obterCursoDaAula(aula),
           alunos: [],
           aulas: [],
           ids: []
@@ -702,7 +1176,11 @@ function agruparAulasColetivas(aulas) {
       }
 
       const grupoAtual = grupos.get(chave);
-      grupoAtual.alunos.push(obterNomeAlunoDaAula(aula));
+
+      grupoAtual.alunos.push(
+        obterNomeAlunoDaAula(aula)
+      );
+
       grupoAtual.aulas.push(aula);
       grupoAtual.ids.push(aula.id);
     } else {
@@ -713,10 +1191,20 @@ function agruparAulasColetivas(aulas) {
     }
   });
 
-  const coletivas = Array.from(grupos.values()).map((grupo) => {
-    grupo.alunos = grupo.alunos.sort((a, b) => a.localeCompare(b, "pt-BR"));
-    return grupo;
-  });
+  const coletivas =
+    Array.from(grupos.values())
+      .map((grupo) => {
+        grupo.alunos = grupo.alunos.sort(
+          (a, b) => {
+            return a.localeCompare(
+              b,
+              "pt-BR"
+            );
+          }
+        );
+
+        return grupo;
+      });
 
   const todos = [
     ...individuais,
@@ -724,20 +1212,39 @@ function agruparAulasColetivas(aulas) {
   ];
 
   todos.sort((a, b) => {
-    const dataA = a.tipo === "individual" ? a.aula.data_aula : a.data_aula;
-    const dataB = b.tipo === "individual" ? b.aula.data_aula : b.data_aula;
+    const dataA =
+      a.tipo === "individual"
+        ? a.aula.data_aula
+        : a.data_aula;
+
+    const dataB =
+      b.tipo === "individual"
+        ? b.aula.data_aula
+        : b.data_aula;
 
     if (String(dataA) !== String(dataB)) {
-      return String(dataB).localeCompare(String(dataA));
+      return String(dataB).localeCompare(
+        String(dataA)
+      );
     }
 
-    const idA = a.tipo === "individual"
-      ? Number(a.aula.id || 0)
-      : Math.max(...(a.ids || [0]).map((id) => Number(id || 0)));
+    const idA =
+      a.tipo === "individual"
+        ? Number(a.aula.id || 0)
+        : Math.max(
+            ...(a.ids || [0]).map((id) => {
+              return Number(id || 0);
+            })
+          );
 
-    const idB = b.tipo === "individual"
-      ? Number(b.aula.id || 0)
-      : Math.max(...(b.ids || [0]).map((id) => Number(id || 0)));
+    const idB =
+      b.tipo === "individual"
+        ? Number(b.aula.id || 0)
+        : Math.max(
+            ...(b.ids || [0]).map((id) => {
+              return Number(id || 0);
+            })
+          );
 
     return idB - idA;
   });
@@ -746,115 +1253,355 @@ function agruparAulasColetivas(aulas) {
 }
 
 function renderAulaIndividual(aula) {
-  const dataBR = formatarDataBR(aula.data_aula);
-  const aluno = obterNomeAlunoDaAula(aula);
-  const curso = obterCursoDaAula(aula);
-  const modulo = obterModuloDaAula(aula);
-  const status = aula.status || "-";
-  const parte = textoParte(aula.parte);
-  const conteudo = aula.conteudo?.trim() || "Sem conteúdo informado";
-  const licao = aula.licao_casa?.trim() || "Sem lição";
-  const duracao = formatarMinutosDeSegundos(aula.duracao_segundos);
-  const computavel = aulaComputavelFinanceiro(aula);
+  const dataBR =
+    formatarDataBR(aula.data_aula);
+
+  const aluno =
+    obterNomeAlunoDaAula(aula);
+
+  const curso =
+    obterCursoDaAula(aula);
+
+  const modulo =
+    obterModuloDaAula(aula);
+
+  const status =
+    aula.status || "-";
+
+  const parte =
+    textoParte(aula.parte);
+
+  const conteudo =
+    aula.conteudo?.trim() ||
+    "Sem conteúdo informado";
+
+  const licao =
+    aula.licao_casa?.trim() ||
+    "Sem lição";
+
+  const duracao =
+    formatarMinutosDeSegundos(
+      aula.duracao_segundos
+    );
+
+  const computavel =
+    aulaComputavelFinanceiro(aula);
+
+  const gravada =
+    aula.aula_gravada === true
+      ? "Sim"
+      : "Não";
+
+  const precisaReposicao =
+    aula.precisa_reposicao === true
+      ? "Sim"
+      : "Não";
 
   return `
-    <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+    <div
+      style="
+        padding:10px 0;
+        border-bottom:1px solid #e6dfcf;
+      "
+    >
+
+      <div
+        style="
+          display:flex;
+          justify-content:space-between;
+          align-items:flex-start;
+          gap:10px;
+          flex-wrap:wrap;
+        "
+      >
+
         <div>
           <div style="font-weight:700;">
             ${escaparHtml(dataBR)}
-            <span style="font-weight:400;"> — Aula individual</span>
+
+            <span style="font-weight:400;">
+              — Aula individual
+            </span>
           </div>
 
-          <div style="font-weight:700; margin-top:4px;">
+          <div
+            style="
+              font-weight:700;
+              margin-top:4px;
+            "
+          >
             • ${escaparHtml(aluno)}
           </div>
         </div>
 
-        <button
-          type="button"
-          class="btn-secundario btn-excluir-aula-professor"
-          data-excluir-aula-id="${aula.id}"
-          style="padding:7px 10px; font-size:12px; border-color:#ffcdd2; color:#b71c1c; background:#fff5f5;"
+        <div
+          style="
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+            justify-content:flex-end;
+          "
         >
-          Excluir aula
-        </button>
+
+          <button
+            type="button"
+            class="btn btn-editar-aula-professor"
+            data-editar-aula-id="${aula.id}"
+            style="
+              padding:7px 10px;
+              font-size:12px;
+            "
+          >
+            Editar aula
+          </button>
+
+          <button
+            type="button"
+            class="btn-secundario btn-excluir-aula-professor"
+            data-excluir-aula-id="${aula.id}"
+            style="
+              padding:7px 10px;
+              font-size:12px;
+              border-color:#ffcdd2;
+              color:#b71c1c;
+              background:#fff5f5;
+            "
+          >
+            Excluir aula
+          </button>
+
+        </div>
       </div>
 
-      <div style="font-size:13px; margin-top:4px;">
-        ${escaparHtml(status)} | ${escaparHtml(parte)} | ${escaparHtml(curso)} | ${escaparHtml(modulo)}
+      <div
+        style="
+          font-size:13px;
+          margin-top:4px;
+        "
+      >
+        ${escaparHtml(status)}
+        |
+        ${escaparHtml(parte)}
+        |
+        ${escaparHtml(curso)}
+        |
+        ${escaparHtml(modulo)}
       </div>
 
-      <div style="font-size:13px; margin-top:4px;">
-        Conteúdo: ${escaparHtml(conteudo)}
+      <div
+        style="
+          font-size:13px;
+          margin-top:4px;
+        "
+      >
+        Conteúdo:
+        ${escaparHtml(conteudo)}
       </div>
 
-      <div style="font-size:12px; opacity:0.8; margin-top:4px;">
-        Lição: ${escaparHtml(licao)} | Duração: ${escaparHtml(duracao)} | 
-        ${computavel ? "Computável" : "Não computável"}
+      <div
+        style="
+          font-size:12px;
+          opacity:0.8;
+          margin-top:4px;
+        "
+      >
+        Lição:
+        ${escaparHtml(licao)}
+        |
+        Duração:
+        ${escaparHtml(duracao)}
+        |
+        Gravada:
+        ${escaparHtml(gravada)}
+        |
+        Reposição pendente:
+        ${escaparHtml(precisaReposicao)}
+        |
+        ${
+          computavel
+            ? "Computável"
+            : "Não computável"
+        }
       </div>
+
     </div>
   `;
 }
 
 function renderAulaColetiva(grupo) {
-  const dataBR = formatarDataBR(grupo.data_aula);
-  const status = grupo.status || "-";
-  const parte = textoParte(grupo.parte);
-  const conteudo = grupo.conteudo?.trim() || "Sem conteúdo informado";
-  const licao = grupo.licao_casa?.trim() || "Sem lição";
-  const duracao = formatarMinutosDeSegundos(grupo.duracao_segundos);
-  const quantidade = grupo.alunos.length || grupo.quantidade_alunos || 0;
+  const dataBR =
+    formatarDataBR(grupo.data_aula);
+
+  const status =
+    grupo.status || "-";
+
+  const parte =
+    textoParte(grupo.parte);
+
+  const conteudo =
+    grupo.conteudo?.trim() ||
+    "Sem conteúdo informado";
+
+  const licao =
+    grupo.licao_casa?.trim() ||
+    "Sem lição";
+
+  const duracao =
+    formatarMinutosDeSegundos(
+      grupo.duracao_segundos
+    );
+
+  const quantidade =
+    grupo.alunos.length ||
+    grupo.quantidade_alunos ||
+    0;
 
   return `
-    <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+    <div
+      style="
+        padding:10px 0;
+        border-bottom:1px solid #e6dfcf;
+      "
+    >
+
+      <div
+        style="
+          display:flex;
+          justify-content:space-between;
+          align-items:flex-start;
+          gap:10px;
+          flex-wrap:wrap;
+        "
+      >
+
         <div>
           <div style="font-weight:700;">
             ${escaparHtml(dataBR)}
-            <span style="font-weight:400;"> — Aula coletiva</span>
+
+            <span style="font-weight:400;">
+              — Aula coletiva
+            </span>
           </div>
 
-          <div style="font-size:12px; opacity:0.75; margin-top:3px;">
-            Excluir aqui apaga esta aula coletiva para todos os alunos listados abaixo.
+          <div
+            style="
+              font-size:12px;
+              opacity:0.75;
+              margin-top:3px;
+            "
+          >
+            Editar ou excluir aqui afeta os registros
+            pertencentes a este grupo de aula coletiva.
           </div>
         </div>
 
-        <button
-          type="button"
-          class="btn-secundario btn-excluir-aula-professor"
-          data-excluir-grupo-aula-id="${escaparHtml(grupo.grupoAulaId)}"
-          style="padding:7px 10px; font-size:12px; border-color:#ffcdd2; color:#b71c1c; background:#fff5f5;"
+        <div
+          style="
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+            justify-content:flex-end;
+          "
         >
-          Excluir aula coletiva
-        </button>
+
+          <button
+            type="button"
+            class="btn btn-editar-aula-professor"
+            data-editar-grupo-aula-id="${escaparHtml(
+              grupo.grupoAulaId
+            )}"
+            style="
+              padding:7px 10px;
+              font-size:12px;
+            "
+          >
+            Editar aula coletiva
+          </button>
+
+          <button
+            type="button"
+            class="btn-secundario btn-excluir-aula-professor"
+            data-excluir-grupo-aula-id="${escaparHtml(
+              grupo.grupoAulaId
+            )}"
+            style="
+              padding:7px 10px;
+              font-size:12px;
+              border-color:#ffcdd2;
+              color:#b71c1c;
+              background:#fff5f5;
+            "
+          >
+            Excluir aula coletiva
+          </button>
+
+        </div>
       </div>
 
       <div style="margin-top:4px;">
-        ${grupo.alunos.map((nome) => `
-          <div style="font-weight:700;">• ${escaparHtml(nome)}</div>
-        `).join("")}
+        ${grupo.alunos
+          .map((nome) => {
+            return `
+              <div style="font-weight:700;">
+                • ${escaparHtml(nome)}
+              </div>
+            `;
+          })
+          .join("")}
       </div>
 
-      <div style="font-size:13px; margin-top:4px;">
-        ${escaparHtml(status)} | ${escaparHtml(parte)} | ${quantidade} aluno(s) | ${escaparHtml(grupo.curso)} | ${escaparHtml(grupo.modulo)}
+      <div
+        style="
+          font-size:13px;
+          margin-top:4px;
+        "
+      >
+        ${escaparHtml(status)}
+        |
+        ${escaparHtml(parte)}
+        |
+        ${quantidade} aluno(s)
+        |
+        ${escaparHtml(grupo.curso)}
+        |
+        ${escaparHtml(grupo.modulo)}
       </div>
 
-      <div style="font-size:13px; margin-top:4px;">
-        Conteúdo: ${escaparHtml(conteudo)}
+      <div
+        style="
+          font-size:13px;
+          margin-top:4px;
+        "
+      >
+        Conteúdo:
+        ${escaparHtml(conteudo)}
       </div>
 
-      <div style="font-size:12px; opacity:0.8; margin-top:4px;">
-        Lição: ${escaparHtml(licao)} | Duração: ${escaparHtml(duracao)}
+      <div
+        style="
+          font-size:12px;
+          opacity:0.8;
+          margin-top:4px;
+        "
+      >
+        Lição:
+        ${escaparHtml(licao)}
+        |
+        Duração:
+        ${escaparHtml(duracao)}
       </div>
+
     </div>
   `;
 }
 
 function renderAulasProfessor() {
-  if (!listaAulasProfessor) return;
+  if (!listaAulasProfessor) {
+    return;
+  }
 
-  const aulasFiltradas = obterAulasFiltradas();
+  const aulasFiltradas =
+    obterAulasFiltradas();
 
   if (!aulasFiltradas.length) {
     listaAulasProfessor.innerHTML = `
@@ -864,42 +1611,61 @@ function renderAulasProfessor() {
     `;
 
     if (boxExpandirAulasProfessor) {
-      boxExpandirAulasProfessor.style.display = "none";
+      boxExpandirAulasProfessor.style.display =
+        "none";
     }
 
     return;
   }
 
-  const agrupadas = agruparAulasColetivas(aulasFiltradas);
-  const limite = aulasExpandido ? agrupadas.length : 3;
-  const visiveis = agrupadas.slice(0, limite);
+  const agrupadas =
+    agruparAulasColetivas(aulasFiltradas);
 
-  listaAulasProfessor.innerHTML = visiveis.map((item) => {
-    if (item.tipo === "coletiva") {
-      return renderAulaColetiva(item);
-    }
+  const limite =
+    aulasExpandido
+      ? agrupadas.length
+      : 3;
 
-    return renderAulaIndividual(item.aula);
-  }).join("");
+  const visiveis =
+    agrupadas.slice(0, limite);
 
-  if (boxExpandirAulasProfessor && btnExpandirAulasProfessor) {
+  listaAulasProfessor.innerHTML = visiveis
+    .map((item) => {
+      if (item.tipo === "coletiva") {
+        return renderAulaColetiva(item);
+      }
+
+      return renderAulaIndividual(item.aula);
+    })
+    .join("");
+
+  if (
+    boxExpandirAulasProfessor &&
+    btnExpandirAulasProfessor
+  ) {
     if (agrupadas.length <= 3) {
-      boxExpandirAulasProfessor.style.display = "none";
+      boxExpandirAulasProfessor.style.display =
+        "none";
     } else {
-      boxExpandirAulasProfessor.style.display = "block";
-      btnExpandirAulasProfessor.textContent = aulasExpandido
-        ? "Ver menos aulas"
-        : "Ver mais aulas";
+      boxExpandirAulasProfessor.style.display =
+        "block";
+
+      btnExpandirAulasProfessor.textContent =
+        aulasExpandido
+          ? "Ver menos aulas"
+          : "Ver mais aulas";
     }
   }
 }
 
-// =====================================================
-// 10. RENDERIZAÇÃO — OCORRÊNCIAS
-// =====================================================
+/* =====================================================
+   11. RENDERIZAÇÃO — OCORRÊNCIAS
+===================================================== */
 
 function renderOcorrenciasProfessor() {
-  if (!listaOcorrenciasProfessor) return;
+  if (!listaOcorrenciasProfessor) {
+    return;
+  }
 
   if (!ocorrenciasProfessor.length) {
     listaOcorrenciasProfessor.innerHTML = `
@@ -909,81 +1675,172 @@ function renderOcorrenciasProfessor() {
     `;
 
     if (boxExpandirOcorrenciasProfessor) {
-      boxExpandirOcorrenciasProfessor.style.display = "none";
+      boxExpandirOcorrenciasProfessor.style.display =
+        "none";
     }
 
     return;
   }
 
-  const limite = ocorrenciasExpandido ? ocorrenciasProfessor.length : 3;
-  const visiveis = ocorrenciasProfessor.slice(0, limite);
+  const limite =
+    ocorrenciasExpandido
+      ? ocorrenciasProfessor.length
+      : 3;
 
-  listaOcorrenciasProfessor.innerHTML = visiveis.map((oc) => {
-    const data = formatarDataBR(oc.data_ocorrencia || oc.data || oc.created_at?.slice(0, 10));
-    const tipo = oc.tipo || oc.tipo_ocorrencia || "Ocorrência";
-    const gravidade = oc.gravidade || "Observação";
-    const motivo = oc.motivo || "";
-    const providencia = oc.providencia || "";
-    const descricao = oc.descricao || oc.observacao || "";
+  const visiveis =
+    ocorrenciasProfessor.slice(0, limite);
 
-    return `
-      <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
-        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <strong>${escaparHtml(data)} — ${escaparHtml(tipo)}</strong>
-          <span style="font-size:12px; font-weight:700;">
-            ${escaparHtml(gravidade)}
-          </span>
+  listaOcorrenciasProfessor.innerHTML = visiveis
+    .map((ocorrencia) => {
+      const data = formatarDataBR(
+        ocorrencia.data_ocorrencia ||
+        ocorrencia.data ||
+        ocorrencia.created_at?.slice(0, 10)
+      );
+
+      const tipo =
+        ocorrencia.tipo ||
+        ocorrencia.tipo_ocorrencia ||
+        "Ocorrência";
+
+      const gravidade =
+        ocorrencia.gravidade ||
+        "Observação";
+
+      const motivo =
+        ocorrencia.motivo || "";
+
+      const providencia =
+        ocorrencia.providencia || "";
+
+      const descricao =
+        ocorrencia.descricao ||
+        ocorrencia.observacao ||
+        "";
+
+      return `
+        <div
+          style="
+            padding:10px 0;
+            border-bottom:1px solid #e6dfcf;
+          "
+        >
+
+          <div
+            style="
+              display:flex;
+              justify-content:space-between;
+              gap:10px;
+              flex-wrap:wrap;
+            "
+          >
+            <strong>
+              ${escaparHtml(data)}
+              —
+              ${escaparHtml(tipo)}
+            </strong>
+
+            <span
+              style="
+                font-size:12px;
+                font-weight:700;
+              "
+            >
+              ${escaparHtml(gravidade)}
+            </span>
+          </div>
+
+          ${
+            motivo
+              ? `
+                <div
+                  style="
+                    font-size:13px;
+                    margin-top:5px;
+                  "
+                >
+                  <b>Motivo:</b>
+                  ${escaparHtml(motivo)}
+                </div>
+              `
+              : ""
+          }
+
+          ${
+            providencia
+              ? `
+                <div
+                  style="
+                    font-size:13px;
+                    margin-top:5px;
+                  "
+                >
+                  <b>Providência:</b>
+                  ${escaparHtml(providencia)}
+                </div>
+              `
+              : ""
+          }
+
+          ${
+            descricao
+              ? `
+                <div
+                  style="
+                    font-size:12px;
+                    opacity:0.85;
+                    margin-top:5px;
+                  "
+                >
+                  ${escaparHtml(descricao)}
+                </div>
+              `
+              : ""
+          }
+
         </div>
+      `;
+    })
+    .join("");
 
-        ${
-          motivo
-            ? `<div style="font-size:13px; margin-top:5px;">
-                <b>Motivo:</b> ${escaparHtml(motivo)}
-              </div>`
-            : ""
-        }
-
-        ${
-          providencia
-            ? `<div style="font-size:13px; margin-top:5px;">
-                <b>Providência:</b> ${escaparHtml(providencia)}
-              </div>`
-            : ""
-        }
-
-        ${
-          descricao
-            ? `<div style="font-size:12px; opacity:0.85; margin-top:5px;">
-                ${escaparHtml(descricao)}
-              </div>`
-            : ""
-        }
-      </div>
-    `;
-  }).join("");
-
-  if (boxExpandirOcorrenciasProfessor && btnExpandirOcorrenciasProfessor) {
+  if (
+    boxExpandirOcorrenciasProfessor &&
+    btnExpandirOcorrenciasProfessor
+  ) {
     if (ocorrenciasProfessor.length <= 3) {
-      boxExpandirOcorrenciasProfessor.style.display = "none";
+      boxExpandirOcorrenciasProfessor.style.display =
+        "none";
     } else {
-      boxExpandirOcorrenciasProfessor.style.display = "block";
-      btnExpandirOcorrenciasProfessor.textContent = ocorrenciasExpandido
-        ? "Ver menos ocorrências"
-        : "Ver mais ocorrências";
+      boxExpandirOcorrenciasProfessor.style.display =
+        "block";
+
+      btnExpandirOcorrenciasProfessor.textContent =
+        ocorrenciasExpandido
+          ? "Ver menos ocorrências"
+          : "Ver mais ocorrências";
     }
   }
 }
 
-// =====================================================
-// 11. EXCLUSÃO DE AULAS
-// =====================================================
+/* =====================================================
+   12. EXCLUSÃO DE AULAS
+===================================================== */
 
-async function limparReposicoesAgendadasDasAulas(aulaIds) {
+async function limparReposicoesAgendadasDasAulas(
+  aulaIds
+) {
   const idsValidos = (aulaIds || [])
     .map((id) => Number(id))
-    .filter((id) => Number.isFinite(id) && id > 0);
+    .filter((id) => {
+      return (
+        Number.isFinite(id) &&
+        id > 0
+      );
+    });
 
-  if (!idsValidos.length) return;
+  if (!idsValidos.length) {
+    return;
+  }
 
   const { error } = await supabase
     .from("reposicao_agendada")
@@ -992,30 +1849,52 @@ async function limparReposicoesAgendadasDasAulas(aulaIds) {
 
   if (error) {
     console.warn(
-      "Não foi possível limpar registros de reposição_agendada antes de excluir a aula. A exclusão da aula ainda será tentada.",
+      "Não foi possível limpar registros de reposicao_agendada antes de excluir a aula. A exclusão da aula ainda será tentada.",
       error
     );
   }
 }
 
-async function excluirAulaIndividual(aulaId, botao = null) {
+async function excluirAulaIndividual(
+  aulaId,
+  botao = null
+) {
   const id = Number(aulaId);
 
   if (!id) {
-    mostrarMensagem("Aula não encontrada para exclusão.", false);
+    mostrarMensagem(
+      "Aula não encontrada para exclusão.",
+      false
+    );
+
     return;
   }
 
-  const aula = aulasProfessor.find((item) => Number(item.id) === id);
+  const aula = aulasProfessor.find((item) => {
+    return Number(item.id) === id;
+  });
 
-  const aluno = aula ? obterNomeAlunoDaAula(aula) : "este aluno";
-  const data = aula ? formatarDataBR(aula.data_aula) : "data não informada";
+  const aluno = aula
+    ? obterNomeAlunoDaAula(aula)
+    : "este aluno";
+
+  const data = aula
+    ? formatarDataBR(aula.data_aula)
+    : "data não informada";
 
   const confirmou = confirm(
-    `Deseja excluir esta aula?\n\nAluno: ${aluno}\nData: ${data}\n\nEssa ação não pode ser desfeita.`
+    `Deseja excluir esta aula?\n\n` +
+    `Aluno: ${aluno}\n` +
+    `Data: ${data}\n\n` +
+    `Essa ação não pode ser desfeita.`
   );
 
-  if (!confirmou) return;
+  if (!confirmou) {
+    return;
+  }
+
+  const textoOriginal =
+    botao?.textContent || "Excluir aula";
 
   if (botao) {
     botao.disabled = true;
@@ -1032,58 +1911,104 @@ async function excluirAulaIndividual(aulaId, botao = null) {
 
   if (botao) {
     botao.disabled = false;
-    botao.textContent = "Excluir aula";
+    botao.textContent = textoOriginal;
   }
 
   if (error) {
-    console.error("Erro ao excluir aula:", error);
+    console.error(
+      "Erro ao excluir aula:",
+      error
+    );
+
     mostrarMensagem(
       "Não foi possível excluir a aula. Se ela estiver vinculada a outra reposição, exclua primeiro o vínculo relacionado.",
       false
     );
+
     return;
   }
 
-  mostrarMensagem("Aula excluída com sucesso.");
+  mostrarMensagem(
+    "Aula excluída com sucesso."
+  );
 
   await carregarAulasProfessor();
+
   renderIndicadores();
   renderAulasProfessor();
 }
 
-async function excluirAulaColetiva(grupoAulaId, botao = null) {
-  const grupoId = String(grupoAulaId || "").trim();
+async function excluirAulaColetiva(
+  grupoAulaId,
+  botao = null
+) {
+  const grupoId = String(
+    grupoAulaId || ""
+  ).trim();
 
   if (!grupoId) {
-    mostrarMensagem("Grupo da aula coletiva não encontrado para exclusão.", false);
+    mostrarMensagem(
+      "Grupo da aula coletiva não encontrado para exclusão.",
+      false
+    );
+
     return;
   }
 
-  const aulasDoGrupo = aulasProfessor.filter((aula) => {
-    return aula.aula_coletiva === true && String(aula.grupo_aula_id || "") === grupoId;
-  });
+  const aulasDoGrupo =
+    aulasProfessor.filter((aula) => {
+      return (
+        aula.aula_coletiva === true &&
+        String(aula.grupo_aula_id || "") === grupoId
+      );
+    });
 
   if (!aulasDoGrupo.length) {
-    mostrarMensagem("Nenhuma aula encontrada neste grupo coletivo.", false);
+    mostrarMensagem(
+      "Nenhuma aula encontrada neste grupo coletivo.",
+      false
+    );
+
     return;
   }
 
   const ids = aulasDoGrupo
     .map((aula) => Number(aula.id))
-    .filter((id) => Number.isFinite(id) && id > 0);
+    .filter((id) => {
+      return (
+        Number.isFinite(id) &&
+        id > 0
+      );
+    });
 
   const nomesAlunos = aulasDoGrupo
     .map(obterNomeAlunoDaAula)
     .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+    .sort((a, b) => {
+      return a.localeCompare(
+        b,
+        "pt-BR"
+      );
+    });
 
-  const data = formatarDataBR(aulasDoGrupo[0]?.data_aula);
-
-  const confirmou = confirm(
-    `Deseja excluir esta aula coletiva?\n\nData: ${data}\nAlunos:\n- ${nomesAlunos.join("\n- ")}\n\nEssa ação apaga a aula para todos os alunos acima e não pode ser desfeita.`
+  const data = formatarDataBR(
+    aulasDoGrupo[0]?.data_aula
   );
 
-  if (!confirmou) return;
+  const confirmou = confirm(
+    `Deseja excluir esta aula coletiva?\n\n` +
+    `Data: ${data}\n` +
+    `Alunos:\n- ${nomesAlunos.join("\n- ")}\n\n` +
+    `Essa ação apaga a aula para todos os alunos acima e não pode ser desfeita.`
+  );
+
+  if (!confirmou) {
+    return;
+  }
+
+  const textoOriginal =
+    botao?.textContent ||
+    "Excluir aula coletiva";
 
   if (botao) {
     botao.disabled = true;
@@ -1100,28 +2025,36 @@ async function excluirAulaColetiva(grupoAulaId, botao = null) {
 
   if (botao) {
     botao.disabled = false;
-    botao.textContent = "Excluir aula coletiva";
+    botao.textContent = textoOriginal;
   }
 
   if (error) {
-    console.error("Erro ao excluir aula coletiva:", error);
+    console.error(
+      "Erro ao excluir aula coletiva:",
+      error
+    );
+
     mostrarMensagem(
       "Não foi possível excluir a aula coletiva. Se alguma aula estiver vinculada a uma reposição, exclua primeiro o vínculo relacionado.",
       false
     );
+
     return;
   }
 
-  mostrarMensagem("Aula coletiva excluída com sucesso para todos os alunos do grupo.");
+  mostrarMensagem(
+    "Aula coletiva excluída com sucesso para todos os alunos do grupo."
+  );
 
   await carregarAulasProfessor();
+
   renderIndicadores();
   renderAulasProfessor();
 }
 
-// =====================================================
-// 12. OCORRÊNCIA — FORM
-// =====================================================
+/* =====================================================
+   13. OCORRÊNCIA — FORMULÁRIO
+===================================================== */
 
 function prepararFormOcorrencia() {
   if (ocorrenciaData) {
@@ -1130,9 +2063,13 @@ function prepararFormOcorrencia() {
 }
 
 function abrirFormOcorrencia() {
-  if (!formOcorrenciaProfessor) return;
+  if (!formOcorrenciaProfessor) {
+    return;
+  }
 
-  formOcorrenciaProfessor.style.display = "block";
+  formOcorrenciaProfessor.style.display =
+    "block";
+
   prepararFormOcorrencia();
 
   formOcorrenciaProfessor.scrollIntoView({
@@ -1142,31 +2079,59 @@ function abrirFormOcorrencia() {
 }
 
 function fecharFormOcorrencia() {
-  if (!formOcorrenciaProfessor) return;
+  if (!formOcorrenciaProfessor) {
+    return;
+  }
 
   formOcorrenciaProfessor.reset();
-  formOcorrenciaProfessor.style.display = "none";
+
+  formOcorrenciaProfessor.style.display =
+    "none";
+
   prepararFormOcorrencia();
 }
 
-async function salvarOcorrencia(e) {
-  e.preventDefault();
+async function salvarOcorrencia(event) {
+  event.preventDefault();
 
-  const dataOcorrencia = ocorrenciaData?.value;
-  const tipo = ocorrenciaTipo?.value;
-  const gravidade = ocorrenciaGravidade?.value;
-  const motivo = ocorrenciaMotivo?.value?.trim();
-  const providencia = ocorrenciaProvidencia?.value?.trim();
-  const descricao = ocorrenciaDescricao?.value?.trim();
+  const dataOcorrencia =
+    ocorrenciaData?.value;
 
-  if (!dataOcorrencia || !tipo || !gravidade || !motivo || !providencia || !descricao) {
-    mostrarMensagem("Preencha todos os campos da ocorrência.", false);
+  const tipo =
+    ocorrenciaTipo?.value;
+
+  const gravidade =
+    ocorrenciaGravidade?.value;
+
+  const motivo =
+    ocorrenciaMotivo?.value?.trim();
+
+  const providencia =
+    ocorrenciaProvidencia?.value?.trim();
+
+  const descricao =
+    ocorrenciaDescricao?.value?.trim();
+
+  if (
+    !dataOcorrencia ||
+    !tipo ||
+    !gravidade ||
+    !motivo ||
+    !providencia ||
+    !descricao
+  ) {
+    mostrarMensagem(
+      "Preencha todos os campos da ocorrência.",
+      false
+    );
+
     return;
   }
 
   if (btnSalvarOcorrencia) {
     btnSalvarOcorrencia.disabled = true;
-    btnSalvarOcorrencia.textContent = "Salvando...";
+    btnSalvarOcorrencia.textContent =
+      "Salvando...";
   }
 
   const payload = {
@@ -1185,40 +2150,52 @@ async function salvarOcorrencia(e) {
 
   if (btnSalvarOcorrencia) {
     btnSalvarOcorrencia.disabled = false;
-    btnSalvarOcorrencia.textContent = "Salvar ocorrência";
+    btnSalvarOcorrencia.textContent =
+      "Salvar ocorrência";
   }
 
   if (error) {
-    console.error("Erro ao salvar ocorrência:", error);
+    console.error(
+      "Erro ao salvar ocorrência:",
+      error
+    );
+
     mostrarMensagem(
       "Erro ao salvar ocorrência. Confira se a tabela professor_ocorrencia tem as colunas: professor_id, data_ocorrencia, tipo, gravidade, motivo, providencia e descricao.",
       false
     );
+
     return;
   }
 
-  mostrarMensagem("Ocorrência salva com sucesso!");
+  mostrarMensagem(
+    "Ocorrência salva com sucesso!"
+  );
 
   fecharFormOcorrencia();
 
   await carregarOcorrenciasProfessor();
+
   renderOcorrenciasProfessor();
 }
 
-// =====================================================
-// 13. INIT
-// =====================================================
+/* =====================================================
+   14. INICIAR
+===================================================== */
 
 async function init() {
   if (subtituloProfessor) {
-    subtituloProfessor.textContent = "Carregando informações...";
+    subtituloProfessor.textContent =
+      "Carregando informações...";
   }
 
   prepararFormOcorrencia();
 
   await carregarProfessor();
 
-  if (!professorAtual) return;
+  if (!professorAtual) {
+    return;
+  }
 
   await carregarCursosProfessor();
   await carregarMatriculasProfessor();
@@ -1232,67 +2209,142 @@ async function init() {
   renderAulasProfessor();
   renderOcorrenciasProfessor();
 
-  if (subtituloProfessor && professorAtual) {
+  if (
+    subtituloProfessor &&
+    professorAtual
+  ) {
     const cursos = cursosProfessor
-      .map((c) => c.materia?.nome)
+      .map((curso) => curso.materia?.nome)
       .filter(Boolean);
 
-    subtituloProfessor.textContent = cursos.length
-      ? `Professor(a) de ${cursos.join(", ")}`
-      : "Professor(a) sem curso vinculado.";
+    subtituloProfessor.textContent =
+      cursos.length
+        ? `Professor(a) de ${cursos.join(", ")}`
+        : "Professor(a) sem curso vinculado.";
   }
 }
 
-// =====================================================
-// 14. EVENTOS DA INTERFACE
-// =====================================================
+/* =====================================================
+   15. EVENTOS DA INTERFACE
+===================================================== */
 
-listaAulasProfessor?.addEventListener("click", async (event) => {
-  const botao = event.target.closest("[data-excluir-aula-id], [data-excluir-grupo-aula-id]");
+listaAulasProfessor?.addEventListener(
+  "click",
+  async (event) => {
+    const botaoEditar = event.target.closest(
+      "[data-editar-aula-id], [data-editar-grupo-aula-id]"
+    );
 
-  if (!botao) return;
+    if (botaoEditar) {
+      const aulaId =
+        botaoEditar.dataset.editarAulaId;
 
-  const aulaId = botao.dataset.excluirAulaId;
-  const grupoAulaId = botao.dataset.excluirGrupoAulaId;
+      const grupoAulaId =
+        botaoEditar.dataset.editarGrupoAulaId;
 
-  if (grupoAulaId) {
-    await excluirAulaColetiva(grupoAulaId, botao);
-    return;
+      if (grupoAulaId) {
+        abrirEdicaoAulaColetiva(
+          grupoAulaId
+        );
+
+        return;
+      }
+
+      if (aulaId) {
+        abrirEdicaoAulaIndividual(
+          aulaId
+        );
+
+        return;
+      }
+    }
+
+    const botaoExcluir = event.target.closest(
+      "[data-excluir-aula-id], [data-excluir-grupo-aula-id]"
+    );
+
+    if (!botaoExcluir) {
+      return;
+    }
+
+    const aulaId =
+      botaoExcluir.dataset.excluirAulaId;
+
+    const grupoAulaId =
+      botaoExcluir.dataset.excluirGrupoAulaId;
+
+    if (grupoAulaId) {
+      await excluirAulaColetiva(
+        grupoAulaId,
+        botaoExcluir
+      );
+
+      return;
+    }
+
+    if (aulaId) {
+      await excluirAulaIndividual(
+        aulaId,
+        botaoExcluir
+      );
+    }
   }
+);
 
-  if (aulaId) {
-    await excluirAulaIndividual(aulaId, botao);
+btnExpandirAlunosProfessor?.addEventListener(
+  "click",
+  () => {
+    alunosExpandido = !alunosExpandido;
+
+    renderAlunosProfessor();
   }
-});
+);
 
-btnExpandirAlunosProfessor?.addEventListener("click", () => {
-  alunosExpandido = !alunosExpandido;
-  renderAlunosProfessor();
-});
+filtroStatusAulaProfessor?.addEventListener(
+  "change",
+  () => {
+    aulasExpandido = false;
 
-filtroStatusAulaProfessor?.addEventListener("change", () => {
-  aulasExpandido = false;
-  renderAulasProfessor();
-});
+    renderAulasProfessor();
+  }
+);
 
-btnExpandirAulasProfessor?.addEventListener("click", () => {
-  aulasExpandido = !aulasExpandido;
-  renderAulasProfessor();
-});
+btnExpandirAulasProfessor?.addEventListener(
+  "click",
+  () => {
+    aulasExpandido = !aulasExpandido;
 
-btnMostrarFormOcorrencia?.addEventListener("click", () => {
-  abrirFormOcorrencia();
-});
+    renderAulasProfessor();
+  }
+);
 
-btnCancelarOcorrencia?.addEventListener("click", () => {
-  fecharFormOcorrencia();
-});
+btnMostrarFormOcorrencia?.addEventListener(
+  "click",
+  () => {
+    abrirFormOcorrencia();
+  }
+);
 
-formOcorrenciaProfessor?.addEventListener("submit", salvarOcorrencia);
+btnCancelarOcorrencia?.addEventListener(
+  "click",
+  () => {
+    fecharFormOcorrencia();
+  }
+);
 
-btnExpandirOcorrenciasProfessor?.addEventListener("click", () => {
-  ocorrenciasExpandido = !ocorrenciasExpandido;
-  renderOcorrenciasProfessor();
-});
+formOcorrenciaProfessor?.addEventListener(
+  "submit",
+  salvarOcorrencia
+);
+
+btnExpandirOcorrenciasProfessor?.addEventListener(
+  "click",
+  () => {
+    ocorrenciasExpandido =
+      !ocorrenciasExpandido;
+
+    renderOcorrenciasProfessor();
+  }
+);
 
 init();
