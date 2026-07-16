@@ -4,6 +4,7 @@ import { exigirProfessor } from "./guard.js";
 await exigirProfessor();
 
 const matriculaId = localStorage.getItem("matriculaSelecionada");
+const professorLogadoId = Number(localStorage.getItem("professorId") || 0);
 
 // ===============================
 // ELEMENTOS
@@ -28,14 +29,28 @@ const cPlantao = document.getElementById("cPlantao");
 const cEventos = document.getElementById("cEventos");
 const cAulasValidas = document.getElementById("cAulasValidas");
 
-const statusAvaliacaoPendente = document.getElementById("statusAvaliacaoPendente");
-const textoAvaliacaoPendente = document.getElementById("textoAvaliacaoPendente");
-const btnEnviarAvaliacaoAluno = document.getElementById("btnEnviarAvaliacaoAluno");
-const textoEnvioAvaliacaoAluno = document.getElementById("textoEnvioAvaliacaoAluno");
+const statusAvaliacaoPendente = document.getElementById(
+  "statusAvaliacaoPendente"
+);
+
+const textoAvaliacaoPendente = document.getElementById(
+  "textoAvaliacaoPendente"
+);
+
+const btnEnviarAvaliacaoAluno = document.getElementById(
+  "btnEnviarAvaliacaoAluno"
+);
+
+const textoEnvioAvaliacaoAluno = document.getElementById(
+  "textoEnvioAvaliacaoAluno"
+);
 
 const listaAulas = document.getElementById("listaAulas");
 const listaReposicoes = document.getElementById("listaReposicoes");
-const btnToggleReposicoes = document.getElementById("btnToggleReposicoes");
+
+const btnToggleReposicoes = document.getElementById(
+  "btnToggleReposicoes"
+);
 
 const btnToggleEventos = document.getElementById("btnToggleEventos");
 const boxEventosAluno = document.getElementById("boxEventosAluno");
@@ -61,8 +76,13 @@ const btnVoltarRodape = document.getElementById("btnVoltarRodape");
 const boxExpandirAulas = document.getElementById("boxExpandirAulas");
 const btnExpandirAulas = document.getElementById("btnExpandirAulas");
 
-const listaObservacoesPedagogicas = document.getElementById("listaObservacoesPedagogicas");
-const btnAdicionarObservacaoPedagogica = document.getElementById("btnAdicionarObservacaoPedagogica");
+const listaObservacoesPedagogicas = document.getElementById(
+  "listaObservacoesPedagogicas"
+);
+
+const btnAdicionarObservacaoPedagogica = document.getElementById(
+  "btnAdicionarObservacaoPedagogica"
+);
 
 // ===============================
 // ESTADO
@@ -113,6 +133,7 @@ function mostrarMensagem(texto, ok = true) {
 
 function limparLista(el) {
   if (!el) return;
+
   el.innerHTML = "";
 }
 
@@ -161,6 +182,7 @@ function hojeISO() {
   const ano = hoje.getFullYear();
   const mes = String(hoje.getMonth() + 1).padStart(2, "0");
   const dia = String(hoje.getDate()).padStart(2, "0");
+
   return `${ano}-${mes}-${dia}`;
 }
 
@@ -187,7 +209,10 @@ function ehAniversarioHoje(dataNascimento) {
   const hoje = new Date();
   const [, mes, dia] = dataNascimento.split("-").map(Number);
 
-  return hoje.getMonth() + 1 === mes && hoje.getDate() === dia;
+  return (
+    hoje.getMonth() + 1 === mes &&
+    hoje.getDate() === dia
+  );
 }
 
 function voltarParaResumo() {
@@ -209,7 +234,10 @@ function obterMapaAulasPorId(aulas) {
 }
 
 function textoParte(parte) {
-  if (!parte) return "Parte não informada";
+  if (!parte) {
+    return "Parte não informada";
+  }
+
   return `Parte ${parte}`;
 }
 
@@ -227,9 +255,13 @@ function ehNotaDeAvaliacao(nota) {
 
   /*
     Algumas notas são salvas como "Avaliação".
-    Outras podem ser salvas como "Progress Check 1", "PC 1" etc.
-    Todas devem contar como avaliação para o card e para a lista de pendências.
+    Outras podem ser salvas como "Progress Check 1",
+    "PC 1" etc.
+
+    Todas devem contar como avaliação para o card
+    e para a lista de pendências.
   */
+
   return (
     texto.includes("avalia") ||
     texto.includes("progress check") ||
@@ -242,7 +274,9 @@ function ehNotaDeAvaliacao(nota) {
 function extrairNumeroAvaliacaoDeTexto(texto) {
   const normalizado = normalizarTexto(texto);
 
-  if (!normalizado) return null;
+  if (!normalizado) {
+    return null;
+  }
 
   const padroes = [
     /progress\s*check\s*(\d+)/i,
@@ -279,7 +313,9 @@ function extrairNumeroAvaliacaoDaNota(nota) {
   for (const campo of campos) {
     const numero = extrairNumeroAvaliacaoDeTexto(campo);
 
-    if (numero) return numero;
+    if (numero) {
+      return numero;
+    }
   }
 
   return null;
@@ -287,7 +323,11 @@ function extrairNumeroAvaliacaoDaNota(nota) {
 
 function statusAvaliacaoConcluida(status) {
   const normalizado = normalizarTexto(status);
-  return normalizado === "concluida" || normalizado === "concluido";
+
+  return (
+    normalizado === "concluida" ||
+    normalizado === "concluido"
+  );
 }
 
 function statusAvaliacaoCancelada(status) {
@@ -302,9 +342,13 @@ function notaPertenceAoModuloAtual(nota, moduloAtual) {
   }
 
   /*
-    Se alguma nota antiga estiver sem módulo, não descartamos automaticamente.
-    Isso evita que uma avaliação já lançada continue aparecendo como pendente.
+    Se alguma nota antiga estiver sem módulo,
+    não descartamos automaticamente.
+
+    Isso evita que uma avaliação já lançada
+    continue aparecendo como pendente.
   */
+
   return true;
 }
 
@@ -321,9 +365,20 @@ function aulaContaComoValida(aula) {
   const status = normalizarTexto(aula?.status);
   const gravada = aula?.aula_gravada === true;
 
-  if (status === "presente") return true;
-  if (status === "ausente" && gravada) return true;
-  if ((status === "reposicao" || status === "reposição") && gravada) return true;
+  if (status === "presente") {
+    return true;
+  }
+
+  if (status === "ausente" && gravada) {
+    return true;
+  }
+
+  if (
+    (status === "reposicao" || status === "reposição") &&
+    gravada
+  ) {
+    return true;
+  }
 
   return false;
 }
@@ -342,34 +397,61 @@ function ordenarAulasDecrescente(aulas) {
 }
 
 function irParaEditarAula(aulaId) {
-  localStorage.setItem("aulaSelecionadaEdicao", String(aulaId));
-  localStorage.setItem("matriculaSelecionadaEdicao", String(matriculaId));
-  window.location.href = `editar-aula.html?id=${encodeURIComponent(aulaId)}`;
+  localStorage.setItem(
+    "aulaSelecionadaEdicao",
+    String(aulaId)
+  );
+
+  localStorage.setItem(
+    "matriculaSelecionadaEdicao",
+    String(matriculaId)
+  );
+
+  window.location.href =
+    `editar-aula.html?id=${encodeURIComponent(aulaId)}`;
 }
 
 function obterAulasValidasModuloAtual() {
-  const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
+  const moduloAtual = Number(
+    dadosCabecalho?.modulo_id || 0
+  );
 
   return todasAulas.filter((aula) => {
-    if (Number(aula.modulo_id || 0) !== moduloAtual) return false;
+    if (Number(aula.modulo_id || 0) !== moduloAtual) {
+      return false;
+    }
+
     return aulaContaComoValida(aula);
   });
 }
 
 function obterNotasDeAvaliacaoModuloAtual() {
-  const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
+  const moduloAtual = Number(
+    dadosCabecalho?.modulo_id || 0
+  );
 
   return todasNotas
     .filter((nota) => {
-      if (!moduloAtual) return false;
-      if (!notaPertenceAoModuloAtual(nota, moduloAtual)) return false;
+      if (!moduloAtual) {
+        return false;
+      }
+
+      if (!notaPertenceAoModuloAtual(nota, moduloAtual)) {
+        return false;
+      }
+
       return ehNotaDeAvaliacao(nota);
     })
     .sort((a, b) => {
-      const numeroA = extrairNumeroAvaliacaoDaNota(a) || 9999;
-      const numeroB = extrairNumeroAvaliacaoDaNota(b) || 9999;
+      const numeroA =
+        extrairNumeroAvaliacaoDaNota(a) || 9999;
 
-      if (numeroA !== numeroB) return numeroA - numeroB;
+      const numeroB =
+        extrairNumeroAvaliacaoDaNota(b) || 9999;
+
+      if (numeroA !== numeroB) {
+        return numeroA - numeroB;
+      }
 
       const dataA = String(a.data || "");
       const dataB = String(b.data || "");
@@ -386,12 +468,22 @@ function contarAulasValidasModuloAtual() {
   return obterAulasValidasModuloAtual().length;
 }
 
-function chaveAvaliacao({ matriculaId, moduloId, numeroAvaliacao }) {
-  return `${Number(matriculaId)}-${Number(moduloId)}-${Number(numeroAvaliacao)}`;
+function chaveAvaliacao({
+  matriculaId,
+  moduloId,
+  numeroAvaliacao
+}) {
+  return (
+    `${Number(matriculaId)}-` +
+    `${Number(moduloId)}-` +
+    `${Number(numeroAvaliacao)}`
+  );
 }
 
 function obterEnvioAvaliacaoAtual(numeroAvaliacao) {
-  const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
+  const moduloAtual = Number(
+    dadosCabecalho?.modulo_id || 0
+  );
 
   const chaveAtual = chaveAvaliacao({
     matriculaId,
@@ -413,11 +505,18 @@ function obterEnvioAvaliacaoAtual(numeroAvaliacao) {
 }
 
 function obterResumoAvaliacoesModuloAtual() {
-  const totalAulasValidas = contarAulasValidasModuloAtual();
-  const avaliacoesEsperadas = Math.floor(totalAulasValidas / 14);
-  const notasAvaliacao = obterNotasDeAvaliacaoModuloAtual();
+  const totalAulasValidas =
+    contarAulasValidasModuloAtual();
+
+  const avaliacoesEsperadas = Math.floor(
+    totalAulasValidas / 14
+  );
+
+  const notasAvaliacao =
+    obterNotasDeAvaliacaoModuloAtual();
 
   const numerosComNota = new Set();
+
   let notasSemNumeroDisponiveis = 0;
 
   notasAvaliacao.forEach((nota) => {
@@ -431,12 +530,22 @@ function obterResumoAvaliacoesModuloAtual() {
   });
 
   const numerosPendentes = [];
+
   let totalResolvidas = 0;
 
-  for (let numeroAvaliacao = 1; numeroAvaliacao <= avaliacoesEsperadas; numeroAvaliacao++) {
-    const envio = obterEnvioAvaliacaoAtual(numeroAvaliacao);
-    const temNotaComEsseNumero = numerosComNota.has(numeroAvaliacao);
-    const envioJaConcluido = statusAvaliacaoConcluida(envio?.status);
+  for (
+    let numeroAvaliacao = 1;
+    numeroAvaliacao <= avaliacoesEsperadas;
+    numeroAvaliacao++
+  ) {
+    const envio =
+      obterEnvioAvaliacaoAtual(numeroAvaliacao);
+
+    const temNotaComEsseNumero =
+      numerosComNota.has(numeroAvaliacao);
+
+    const envioJaConcluido =
+      statusAvaliacaoConcluida(envio?.status);
 
     if (temNotaComEsseNumero || envioJaConcluido) {
       totalResolvidas++;
@@ -444,10 +553,14 @@ function obterResumoAvaliacoesModuloAtual() {
     }
 
     /*
-      Fallback para notas antigas salvas apenas como "Avaliação".
-      Se existe uma nota de avaliação sem número, usamos essa nota para resolver
-      a primeira avaliação pendente da sequência.
+      Fallback para notas antigas salvas
+      apenas como "Avaliação".
+
+      Se existe uma nota de avaliação sem número,
+      usamos essa nota para resolver a primeira
+      avaliação pendente da sequência.
     */
+
     if (notasSemNumeroDisponiveis > 0) {
       notasSemNumeroDisponiveis--;
       totalResolvidas++;
@@ -457,8 +570,13 @@ function obterResumoAvaliacoesModuloAtual() {
     numerosPendentes.push(numeroAvaliacao);
   }
 
-  const proximoMarco = (avaliacoesEsperadas + 1) * 14;
-  const faltamParaProximaPrevisao = Math.max(0, proximoMarco - totalAulasValidas);
+  const proximoMarco =
+    (avaliacoesEsperadas + 1) * 14;
+
+  const faltamParaProximaPrevisao = Math.max(
+    0,
+    proximoMarco - totalAulasValidas
+  );
 
   return {
     totalAulasValidas,
@@ -479,29 +597,53 @@ function obterDadosAvaliacaoPendenteAtual() {
   }
 
   return {
-    alunoId: Number(dadosCabecalho?.aluno?.id || 0),
-    matriculaId: Number(matriculaId || 0),
+    alunoId: Number(
+      dadosCabecalho?.aluno?.id || 0
+    ),
+
+    matriculaId: Number(
+      matriculaId || 0
+    ),
+
     materiaId: obterMateriaIdCabecalho(),
-    moduloId: Number(dadosCabecalho?.modulo_id || 0),
+
+    moduloId: Number(
+      dadosCabecalho?.modulo_id || 0
+    ),
+
     numeroAvaliacao: resumo.primeiraPendente,
-    totalAulasValidas: resumo.totalAulasValidas,
-    totalAvaliacoesLancadas: resumo.totalResolvidas,
-    avaliacoesEsperadas: resumo.avaliacoesEsperadas,
-    avaliacoesPendentes: resumo.numerosPendentes.length
+
+    totalAulasValidas:
+      resumo.totalAulasValidas,
+
+    totalAvaliacoesLancadas:
+      resumo.totalResolvidas,
+
+    avaliacoesEsperadas:
+      resumo.avaliacoesEsperadas,
+
+    avaliacoesPendentes:
+      resumo.numerosPendentes.length
   };
 }
-
 function textoStatusEnvioAvaliacao(envio) {
   if (!envio) return "";
 
   const status = normalizarTexto(envio.status);
 
   if (status === "pendente") {
-    return `Avaliação enviada em ${formatarDataHoraBR(envio.enviado_em)}. Aguardando realização pelo aluno.`;
+    return (
+      `Avaliação enviada em ${formatarDataHoraBR(envio.enviado_em)}. ` +
+      `Aguardando realização pelo aluno.`
+    );
   }
 
   if (status === "realizada pelo aluno") {
-    return `O aluno informou que realizou em ${formatarDataHoraBR(envio.aluno_confirmou_realizacao_em)}. Aguardando correção/lançamento de nota.`;
+    return (
+      `O aluno informou que realizou em ` +
+      `${formatarDataHoraBR(envio.aluno_confirmou_realizacao_em)}. ` +
+      `Aguardando correção/lançamento de nota.`
+    );
   }
 
   if (statusAvaliacaoConcluida(envio.status)) {
@@ -509,66 +651,120 @@ function textoStatusEnvioAvaliacao(envio) {
   }
 
   if (statusAvaliacaoCancelada(envio.status)) {
-    return "Avaliação cancelada. Você pode reenviar, se necessário.";
+    return (
+      "Avaliação cancelada. " +
+      "Você pode reenviar, se necessário."
+    );
   }
 
   return `Status: ${envio.status}`;
 }
 
 function atualizarBotaoEnviarAvaliacaoAluno() {
-  if (!btnEnviarAvaliacaoAluno || !textoEnvioAvaliacaoAluno) return;
+  if (
+    !btnEnviarAvaliacaoAluno ||
+    !textoEnvioAvaliacaoAluno
+  ) {
+    return;
+  }
 
-  const dadosAvaliacao = obterDadosAvaliacaoPendenteAtual();
+  const dadosAvaliacao =
+    obterDadosAvaliacaoPendenteAtual();
 
   if (!dadosAvaliacao) {
     btnEnviarAvaliacaoAluno.style.display = "none";
     textoEnvioAvaliacaoAluno.style.display = "none";
     textoEnvioAvaliacaoAluno.textContent = "";
+
     return;
   }
 
-  const envio = obterEnvioAvaliacaoAtual(dadosAvaliacao.numeroAvaliacao);
-  const jaEnviada = envio && !statusAvaliacaoCancelada(envio.status);
+  const envio = obterEnvioAvaliacaoAtual(
+    dadosAvaliacao.numeroAvaliacao
+  );
 
-  btnEnviarAvaliacaoAluno.dataset.alunoId = String(dadosAvaliacao.alunoId);
-  btnEnviarAvaliacaoAluno.dataset.matriculaId = String(dadosAvaliacao.matriculaId);
-  btnEnviarAvaliacaoAluno.dataset.materiaId = String(dadosAvaliacao.materiaId);
-  btnEnviarAvaliacaoAluno.dataset.moduloId = String(dadosAvaliacao.moduloId);
-  btnEnviarAvaliacaoAluno.dataset.numeroAvaliacao = String(dadosAvaliacao.numeroAvaliacao);
+  const jaEnviada =
+    envio &&
+    !statusAvaliacaoCancelada(envio.status);
 
-  btnEnviarAvaliacaoAluno.style.display = "inline-flex";
+  btnEnviarAvaliacaoAluno.dataset.alunoId =
+    String(dadosAvaliacao.alunoId);
+
+  btnEnviarAvaliacaoAluno.dataset.matriculaId =
+    String(dadosAvaliacao.matriculaId);
+
+  btnEnviarAvaliacaoAluno.dataset.materiaId =
+    String(dadosAvaliacao.materiaId);
+
+  btnEnviarAvaliacaoAluno.dataset.moduloId =
+    String(dadosAvaliacao.moduloId);
+
+  btnEnviarAvaliacaoAluno.dataset.numeroAvaliacao =
+    String(dadosAvaliacao.numeroAvaliacao);
+
+  btnEnviarAvaliacaoAluno.style.display =
+    "inline-flex";
 
   if (jaEnviada) {
     btnEnviarAvaliacaoAluno.disabled = true;
 
-    if (normalizarTexto(envio.status) === "pendente") {
-      btnEnviarAvaliacaoAluno.textContent = "Já enviada";
-    } else if (normalizarTexto(envio.status) === "realizada pelo aluno") {
-      btnEnviarAvaliacaoAluno.textContent = "Aluno informou realização";
-    } else if (statusAvaliacaoConcluida(envio.status)) {
-      btnEnviarAvaliacaoAluno.textContent = "Concluída";
+    if (
+      normalizarTexto(envio.status) === "pendente"
+    ) {
+      btnEnviarAvaliacaoAluno.textContent =
+        "Já enviada";
+    } else if (
+      normalizarTexto(envio.status) ===
+      "realizada pelo aluno"
+    ) {
+      btnEnviarAvaliacaoAluno.textContent =
+        "Aluno informou realização";
+    } else if (
+      statusAvaliacaoConcluida(envio.status)
+    ) {
+      btnEnviarAvaliacaoAluno.textContent =
+        "Concluída";
     } else {
-      btnEnviarAvaliacaoAluno.textContent = "Já enviada";
+      btnEnviarAvaliacaoAluno.textContent =
+        "Já enviada";
     }
   } else {
     btnEnviarAvaliacaoAluno.disabled = false;
-    btnEnviarAvaliacaoAluno.textContent = `Enviar Progress Check ${dadosAvaliacao.numeroAvaliacao}`;
+
+    btnEnviarAvaliacaoAluno.textContent =
+      `Enviar Progress Check ` +
+      `${dadosAvaliacao.numeroAvaliacao}`;
   }
 
-  const textoStatus = textoStatusEnvioAvaliacao(envio);
+  const textoStatus =
+    textoStatusEnvioAvaliacao(envio);
 
   if (textoStatus) {
-    textoEnvioAvaliacaoAluno.textContent = textoStatus;
-    textoEnvioAvaliacaoAluno.style.display = "block";
+    textoEnvioAvaliacaoAluno.textContent =
+      textoStatus;
+
+    textoEnvioAvaliacaoAluno.style.display =
+      "block";
   } else {
     textoEnvioAvaliacaoAluno.textContent = "";
-    textoEnvioAvaliacaoAluno.style.display = "none";
+    textoEnvioAvaliacaoAluno.style.display =
+      "none";
   }
 }
 
-async function buscarFormularioAvaliacao({ materiaId, moduloId, numeroAvaliacao }) {
-  if (!materiaId || !moduloId || !numeroAvaliacao) {
-    throw new Error("Dados insuficientes para localizar o formulário.");
+async function buscarFormularioAvaliacao({
+  materiaId,
+  moduloId,
+  numeroAvaliacao
+}) {
+  if (
+    !materiaId ||
+    !moduloId ||
+    !numeroAvaliacao
+  ) {
+    throw new Error(
+      "Dados insuficientes para localizar o formulário."
+    );
   }
 
   const { data, error } = await supabase
@@ -585,7 +781,9 @@ async function buscarFormularioAvaliacao({ materiaId, moduloId, numeroAvaliacao 
   }
 
   if (!data?.id) {
-    throw new Error("Nenhum formulário ativo encontrado para esta avaliação.");
+    throw new Error(
+      "Nenhum formulário ativo encontrado para esta avaliação."
+    );
   }
 
   return data;
@@ -598,17 +796,29 @@ async function enviarAvaliacaoParaAluno({
   moduloId,
   numeroAvaliacao
 }) {
-  if (!alunoId || !matriculaId || !materiaId || !moduloId || !numeroAvaliacao) {
-    throw new Error("Dados insuficientes para enviar a avaliação.");
+  if (
+    !alunoId ||
+    !matriculaId ||
+    !materiaId ||
+    !moduloId ||
+    !numeroAvaliacao
+  ) {
+    throw new Error(
+      "Dados insuficientes para enviar a avaliação."
+    );
   }
 
-  const formulario = await buscarFormularioAvaliacao({
-    materiaId,
-    moduloId,
-    numeroAvaliacao
-  });
+  const formulario =
+    await buscarFormularioAvaliacao({
+      materiaId,
+      moduloId,
+      numeroAvaliacao
+    });
 
-  const { data: existente, error: erroExistente } = await supabase
+  const {
+    data: existente,
+    error: erroExistente
+  } = await supabase
     .from("avaliacao_aluno")
     .select("id, status, enviado_em")
     .eq("matricula_id", matriculaId)
@@ -620,7 +830,10 @@ async function enviarAvaliacaoParaAluno({
     throw erroExistente;
   }
 
-  if (existente && existente.status !== "Cancelada") {
+  if (
+    existente &&
+    existente.status !== "Cancelada"
+  ) {
     return {
       jaExistia: true,
       formulario,
@@ -629,10 +842,15 @@ async function enviarAvaliacaoParaAluno({
   }
 
   const professorResponsavelId = Number(
-    localStorage.getItem("professorId") || dadosCabecalho?.professor_id || 0
+    localStorage.getItem("professorId") ||
+      dadosCabecalho?.professor_id ||
+      0
   );
 
-  if (existente && existente.status === "Cancelada") {
+  if (
+    existente &&
+    existente.status === "Cancelada"
+  ) {
     const { data, error } = await supabase
       .from("avaliacao_aluno")
       .update({
@@ -643,7 +861,8 @@ async function enviarAvaliacaoParaAluno({
         avaliacao_formulario_id: formulario.id,
         numero_avaliacao: numeroAvaliacao,
         status: "Pendente",
-        enviado_por_professor_id: professorResponsavelId || null,
+        enviado_por_professor_id:
+          professorResponsavelId || null,
         enviado_em: new Date().toISOString(),
         visualizado: false,
         aluno_confirmou_realizacao_em: null,
@@ -653,7 +872,9 @@ async function enviarAvaliacaoParaAluno({
       .select("id, status, enviado_em")
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
     return {
       jaExistia: false,
@@ -672,14 +893,17 @@ async function enviarAvaliacaoParaAluno({
       avaliacao_formulario_id: formulario.id,
       numero_avaliacao: numeroAvaliacao,
       status: "Pendente",
-      enviado_por_professor_id: professorResponsavelId || null,
+      enviado_por_professor_id:
+        professorResponsavelId || null,
       enviado_em: new Date().toISOString(),
       visualizado: false
     })
     .select("id, status, enviado_em")
     .single();
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
 
   return {
     jaExistia: false,
@@ -689,30 +913,53 @@ async function enviarAvaliacaoParaAluno({
 }
 
 function atualizarCardAulasValidasEAvaliacao() {
-  if (!cAulasValidas || !statusAvaliacaoPendente || !textoAvaliacaoPendente) return;
+  if (
+    !cAulasValidas ||
+    !statusAvaliacaoPendente ||
+    !textoAvaliacaoPendente
+  ) {
+    return;
+  }
 
-  const resumo = obterResumoAvaliacoesModuloAtual();
+  const resumo =
+    obterResumoAvaliacoesModuloAtual();
 
-  cAulasValidas.textContent = String(resumo.totalAulasValidas);
+  cAulasValidas.textContent =
+    String(resumo.totalAulasValidas);
 
   if (resumo.primeiraPendente) {
-    statusAvaliacaoPendente.textContent = `Pendente: Progress Check ${resumo.primeiraPendente}`;
-    statusAvaliacaoPendente.style.color = "#b71c1c";
+    statusAvaliacaoPendente.textContent =
+      `Pendente: Progress Check ` +
+      `${resumo.primeiraPendente}`;
+
+    statusAvaliacaoPendente.style.color =
+      "#b71c1c";
 
     textoAvaliacaoPendente.textContent =
-      `${resumo.totalAulasValidas} aula(s) válida(s) no módulo atual • ` +
-      `${resumo.avaliacoesEsperadas} avaliação(ões) prevista(s) pelo sistema • ` +
-      `${resumo.totalResolvidas} avaliação(ões) já resolvida(s). ` +
-      `Depois que a nota for lançada, esta pendência some automaticamente.`;
+      `${resumo.totalAulasValidas} aula(s) válida(s) ` +
+      `no módulo atual • ` +
+      `${resumo.avaliacoesEsperadas} avaliação(ões) ` +
+      `prevista(s) pelo sistema • ` +
+      `${resumo.totalResolvidas} avaliação(ões) ` +
+      `já resolvida(s). ` +
+      `Depois que a nota for lançada, esta pendência ` +
+      `some automaticamente.`;
   } else {
-    statusAvaliacaoPendente.textContent = "Nenhuma avaliação pendente";
-    statusAvaliacaoPendente.style.color = "#1b5e20";
+    statusAvaliacaoPendente.textContent =
+      "Nenhuma avaliação pendente";
+
+    statusAvaliacaoPendente.style.color =
+      "#1b5e20";
 
     textoAvaliacaoPendente.textContent =
-      `${resumo.totalAulasValidas} aula(s) válida(s) no módulo atual • ` +
-      `${resumo.avaliacoesEsperadas} avaliação(ões) prevista(s) pelo sistema • ` +
-      `${resumo.totalResolvidas} avaliação(ões) já resolvida(s). ` +
-      `Faltam ${resumo.faltamParaProximaPrevisao} aula(s) válida(s) para a próxima previsão.`;
+      `${resumo.totalAulasValidas} aula(s) válida(s) ` +
+      `no módulo atual • ` +
+      `${resumo.avaliacoesEsperadas} avaliação(ões) ` +
+      `prevista(s) pelo sistema • ` +
+      `${resumo.totalResolvidas} avaliação(ões) ` +
+      `já resolvida(s). ` +
+      `Faltam ${resumo.faltamParaProximaPrevisao} ` +
+      `aula(s) válida(s) para a próxima previsão.`;
   }
 
   atualizarBotaoEnviarAvaliacaoAluno();
@@ -720,16 +967,26 @@ function atualizarCardAulasValidasEAvaliacao() {
 
 function montarLinhaConteudo(aula) {
   const conteudo = aula.conteudo?.trim();
-  return conteudo ? `Conteúdo da aula: ${conteudo}` : "Conteúdo da aula: Não informado";
+
+  return conteudo
+    ? `Conteúdo da aula: ${conteudo}`
+    : "Conteúdo da aula: Não informado";
 }
 
 function montarLinhaLicao(aula) {
   const licao = aula.licao_casa?.trim();
-  return licao ? `Lição de casa: ${licao}` : "";
+
+  return licao
+    ? `Lição de casa: ${licao}`
+    : "";
 }
 
-function obterTextoRodapeHistorico(aula, mapaAulas) {
-  const professor = aula.professor?.nome || "-";
+function obterTextoRodapeHistorico(
+  aula,
+  mapaAulas
+) {
+  const professor =
+    aula.professor?.nome || "-";
 
   const partes = [
     `Professor: ${professor}`,
@@ -737,8 +994,12 @@ function obterTextoRodapeHistorico(aula, mapaAulas) {
     textoParte(aula.parte)
   ];
 
-  if (aula.status === STATUS.PRESENTE && aula.aula_gravada) {
+  if (
+    aula.status === STATUS.PRESENTE &&
+    aula.aula_gravada
+  ) {
     partes.push("Aula gravada");
+
     return partes.join(" | ");
   }
 
@@ -752,7 +1013,10 @@ function obterTextoRodapeHistorico(aula, mapaAulas) {
     return partes.join(" | ");
   }
 
-  if (aula.status === STATUS.CANCELADA || aula.status === STATUS.TRANCADA) {
+  if (
+    aula.status === STATUS.CANCELADA ||
+    aula.status === STATUS.TRANCADA
+  ) {
     if (aula.precisa_reposicao) {
       partes.push("Reposição pendente");
     }
@@ -765,12 +1029,19 @@ function obterTextoRodapeHistorico(aula, mapaAulas) {
       partes.push("Aula gravada");
     }
 
-    const aulaOriginal = mapaAulas.get(Number(aula.aula_original_id));
+    const aulaOriginal = mapaAulas.get(
+      Number(aula.aula_original_id)
+    );
 
     if (aulaOriginal?.data_aula) {
-      partes.push(`Referente à ausência do dia ${formatarDataBR(aulaOriginal.data_aula)}`);
+      partes.push(
+        `Referente à ausência do dia ` +
+        `${formatarDataBR(aulaOriginal.data_aula)}`
+      );
     } else if (aula.aula_original_id) {
-      partes.push("Referente a uma ausência anterior");
+      partes.push(
+        "Referente a uma ausência anterior"
+      );
     }
 
     return partes.join(" | ");
@@ -787,8 +1058,13 @@ function obterTextoRodapeHistorico(aula, mapaAulas) {
     return partes.join(" | ");
   }
 
-  if (aula.status === STATUS.AULA_EXPERIMENTAL) {
-    partes.push("Duração padrão de 40 minutos");
+  if (
+    aula.status === STATUS.AULA_EXPERIMENTAL
+  ) {
+    partes.push(
+      "Duração padrão de 40 minutos"
+    );
+
     return partes.join(" | ");
   }
 
@@ -807,33 +1083,61 @@ function irParaAdicionarObservacaoPedagogica() {
   const alunoId = obterAlunoIdAtual();
 
   if (!alunoId) {
-    mostrarMensagem("Não foi possível identificar o aluno.", false);
+    mostrarMensagem(
+      "Não foi possível identificar o aluno.",
+      false
+    );
+
     return;
   }
 
-  localStorage.setItem("alunoObservacaoPedagogica", String(alunoId));
-  localStorage.setItem("matriculaObservacaoPedagogica", String(matriculaId));
+  localStorage.setItem(
+    "alunoObservacaoPedagogica",
+    String(alunoId)
+  );
+
+  localStorage.setItem(
+    "matriculaObservacaoPedagogica",
+    String(matriculaId)
+  );
 
   window.location.href =
-    `observacoes-pedagogicas.html?aluno_id=${encodeURIComponent(alunoId)}&matricula_id=${encodeURIComponent(matriculaId)}`;
+    `observacoes-pedagogicas.html?` +
+    `aluno_id=${encodeURIComponent(alunoId)}` +
+    `&matricula_id=${encodeURIComponent(matriculaId)}`;
 }
 
 async function carregarObservacoesPedagogicas() {
-  if (!listaObservacoesPedagogicas) return;
+  if (!listaObservacoesPedagogicas) {
+    return;
+  }
 
   const alunoId = obterAlunoIdAtual();
 
   if (!alunoId) {
     listaObservacoesPedagogicas.innerHTML = `
-      <p style="margin:0; font-size:13px; opacity:0.85;">
+      <p
+        style="
+          margin:0;
+          font-size:13px;
+          opacity:0.85;
+        "
+      >
         Não foi possível carregar as observações deste aluno.
       </p>
     `;
+
     return;
   }
 
   listaObservacoesPedagogicas.innerHTML = `
-    <p style="margin:0; font-size:13px; opacity:0.85;">
+    <p
+      style="
+        margin:0;
+        font-size:13px;
+        opacity:0.85;
+      "
+    >
       Carregando observações...
     </p>
   `;
@@ -850,13 +1154,24 @@ async function carregarObservacoesPedagogicas() {
       )
     `)
     .eq("aluno_id", alunoId)
-    .order("criado_em", { ascending: false });
+    .order("criado_em", {
+      ascending: false
+    });
 
   if (error) {
-    console.error("Erro ao carregar observações pedagógicas:", error);
+    console.error(
+      "Erro ao carregar observações pedagógicas:",
+      error
+    );
 
     listaObservacoesPedagogicas.innerHTML = `
-      <p style="margin:0; font-size:13px; color:#b71c1c;">
+      <p
+        style="
+          margin:0;
+          font-size:13px;
+          color:#b71c1c;
+        "
+      >
         Erro ao carregar observações pedagógicas.
       </p>
     `;
@@ -868,40 +1183,70 @@ async function carregarObservacoesPedagogicas() {
 
   if (!observacoes.length) {
     listaObservacoesPedagogicas.innerHTML = `
-      <p style="margin:0; font-size:13px; opacity:0.85;">
+      <p
+        style="
+          margin:0;
+          font-size:13px;
+          opacity:0.85;
+        "
+      >
         Nenhuma observação pedagógica registrada para este aluno.
       </p>
     `;
+
     return;
   }
 
-  listaObservacoesPedagogicas.innerHTML = observacoes
-    .map((item) => {
-      const dataFormatada = formatarDataHoraBR(item.criado_em);
-      const professor = item.professor?.nome || "Professor não identificado";
-      const texto = escaparHtml(item.observacao).replaceAll("\n", "<br>");
+  listaObservacoesPedagogicas.innerHTML =
+    observacoes
+      .map((item) => {
+        const dataFormatada =
+          formatarDataHoraBR(item.criado_em);
 
-      return `
-        <div
-          style="
-            padding:10px 12px;
-            border:1px solid #eadb9a;
-            border-radius:10px;
-            background:rgba(255,255,255,0.45);
-            margin-bottom:8px;
-          "
-        >
-          <div style="font-size:12px; opacity:0.8; margin-bottom:6px;">
-            <strong>${escaparHtml(dataFormatada)}</strong> · ${escaparHtml(professor)}
-          </div>
+        const professor =
+          item.professor?.nome ||
+          "Professor não identificado";
 
-          <div style="font-size:14px; line-height:1.45;">
-            ${texto}
+        const texto = escaparHtml(
+          item.observacao
+        ).replaceAll("\n", "<br>");
+
+        return `
+          <div
+            style="
+              padding:10px 12px;
+              border:1px solid #eadb9a;
+              border-radius:10px;
+              background:rgba(255,255,255,0.45);
+              margin-bottom:8px;
+            "
+          >
+            <div
+              style="
+                font-size:12px;
+                opacity:0.8;
+                margin-bottom:6px;
+              "
+            >
+              <strong>
+                ${escaparHtml(dataFormatada)}
+              </strong>
+              ·
+              ${escaparHtml(professor)}
+            </div>
+
+            <div
+              style="
+                font-size:14px;
+                line-height:1.45;
+              "
+            >
+              ${texto}
+            </div>
           </div>
-        </div>
-      `;
-    })
-    .join("");
+        `;
+      })
+      .join("");
 }
 
 // ===============================
@@ -909,68 +1254,124 @@ async function carregarObservacoesPedagogicas() {
 // ===============================
 
 function obterOuCriarBlocoAvaliacoesEnviadas() {
-  let bloco = document.getElementById("blocoAvaliacoesEnviadasAluno");
+  let bloco = document.getElementById(
+    "blocoAvaliacoesEnviadasAluno"
+  );
 
-  if (bloco) return bloco;
+  if (bloco) {
+    return bloco;
+  }
 
   bloco = document.createElement("section");
-  bloco.id = "blocoAvaliacoesEnviadasAluno";
+
+  bloco.id =
+    "blocoAvaliacoesEnviadasAluno";
+
   bloco.className = "card";
   bloco.style.marginBottom = "16px";
 
   bloco.innerHTML = `
     <h2>📝 Avaliações enviadas ao aluno</h2>
-    <p style="font-size:14px; opacity:0.9; margin-bottom:12px;">
-      Acompanhe as avaliações liberadas para este aluno e o status informado pelo sistema.
+
+    <p
+      style="
+        font-size:14px;
+        opacity:0.9;
+        margin-bottom:12px;
+      "
+    >
+      Acompanhe as avaliações liberadas para este aluno
+      e o status informado pelo sistema.
     </p>
+
     <div id="listaAvaliacoesEnviadasAluno">
-      <p style="font-size:14px;">Carregando avaliações enviadas...</p>
+      <p style="font-size:14px;">
+        Carregando avaliações enviadas...
+      </p>
     </div>
   `;
 
   const referencia =
-    document.getElementById("form-nota")?.closest("section") ||
-    document.getElementById("form-nota")?.closest(".card") ||
+    document
+      .getElementById("form-nota")
+      ?.closest("section") ||
+    document
+      .getElementById("form-nota")
+      ?.closest(".card") ||
     listaNotas?.closest("section") ||
     listaNotas?.closest(".card");
 
   if (referencia?.parentElement) {
-    referencia.parentElement.insertBefore(bloco, referencia);
+    referencia.parentElement.insertBefore(
+      bloco,
+      referencia
+    );
   } else {
-    document.querySelector("main")?.appendChild(bloco);
+    document
+      .querySelector("main")
+      ?.appendChild(bloco);
   }
 
   return bloco;
 }
 
 function textoStatusAvaliacaoAluno(avaliacao) {
-  const status = normalizarTexto(avaliacao?.status);
+  const status = normalizarTexto(
+    avaliacao?.status
+  );
 
   if (status === "pendente") {
-    return "Pendente — enviada ao aluno, aguardando realização.";
+    return (
+      "Pendente — enviada ao aluno, " +
+      "aguardando realização."
+    );
   }
 
   if (status === "realizada pelo aluno") {
-    return "Realizada pelo aluno — aguardando conferência/correção e lançamento de nota.";
+    return (
+      "Realizada pelo aluno — aguardando " +
+      "conferência/correção e lançamento de nota."
+    );
   }
 
-  if (statusAvaliacaoConcluida(avaliacao?.status)) {
-    return "Concluída — nota lançada no sistema.";
+  if (
+    statusAvaliacaoConcluida(
+      avaliacao?.status
+    )
+  ) {
+    return (
+      "Concluída — nota lançada no sistema."
+    );
   }
 
-  if (statusAvaliacaoCancelada(avaliacao?.status)) {
+  if (
+    statusAvaliacaoCancelada(
+      avaliacao?.status
+    )
+  ) {
     return "Cancelada.";
   }
 
-  return avaliacao?.status || "Status não informado.";
+  return (
+    avaliacao?.status ||
+    "Status não informado."
+  );
 }
 
 function tituloAvaliacaoAluno(avaliacao) {
-  const tituloFormulario = avaliacao?.avaliacao_formulario?.titulo;
-  const numero = avaliacao?.numero_avaliacao;
+  const tituloFormulario =
+    avaliacao?.avaliacao_formulario?.titulo;
 
-  if (tituloFormulario) return tituloFormulario;
-  if (numero) return `Progress Check ${numero}`;
+  const numero =
+    avaliacao?.numero_avaliacao;
+
+  if (tituloFormulario) {
+    return tituloFormulario;
+  }
+
+  if (numero) {
+    return `Progress Check ${numero}`;
+  }
 
   return "Avaliação";
 }
@@ -978,73 +1379,148 @@ function tituloAvaliacaoAluno(avaliacao) {
 function renderAvaliacoesEnviadasAluno() {
   obterOuCriarBlocoAvaliacoesEnviadas();
 
-  const lista = document.getElementById("listaAvaliacoesEnviadasAluno");
+  const lista = document.getElementById(
+    "listaAvaliacoesEnviadasAluno"
+  );
 
-  if (!lista) return;
+  if (!lista) {
+    return;
+  }
 
   if (!avaliacoesAluno.length) {
     lista.innerHTML = `
       <p style="font-size:14px;">
-        Nenhuma avaliação foi enviada para este aluno até o momento.
+        Nenhuma avaliação foi enviada para este aluno
+        até o momento.
       </p>
     `;
+
     return;
   }
 
-  const ordenadas = [...avaliacoesAluno].sort((a, b) => {
-    const dataA = String(a.enviado_em || "");
-    const dataB = String(b.enviado_em || "");
+  const ordenadas = [...avaliacoesAluno].sort(
+    (a, b) => {
+      const dataA = String(a.enviado_em || "");
+      const dataB = String(b.enviado_em || "");
 
-    if (dataA !== dataB) return dataB.localeCompare(dataA);
+      if (dataA !== dataB) {
+        return dataB.localeCompare(dataA);
+      }
 
-    return Number(b.id || 0) - Number(a.id || 0);
-  });
+      return (
+        Number(b.id || 0) -
+        Number(a.id || 0)
+      );
+    }
+  );
 
   lista.innerHTML = ordenadas
     .map((avaliacao) => {
-      const titulo = tituloAvaliacaoAluno(avaliacao);
-      const materia = avaliacao?.materia?.nome || dadosCabecalho?.materia?.nome || "Matéria";
-      const modulo = avaliacao?.modulo?.nome || dadosCabecalho?.modulo?.nome || "Módulo";
+      const titulo =
+        tituloAvaliacaoAluno(avaliacao);
 
-      const enviadaEm = formatarDataHoraBR(avaliacao.enviado_em);
+      const materia =
+        avaliacao?.materia?.nome ||
+        dadosCabecalho?.materia?.nome ||
+        "Matéria";
 
-      const realizadaEm = avaliacao.aluno_confirmou_realizacao_em
-        ? formatarDataHoraBR(avaliacao.aluno_confirmou_realizacao_em)
-        : "-";
+      const modulo =
+        avaliacao?.modulo?.nome ||
+        dadosCabecalho?.modulo?.nome ||
+        "Módulo";
 
-      const concluidaEm = avaliacao.concluida_em
-        ? formatarDataHoraBR(avaliacao.concluida_em)
-        : "-";
+      const enviadaEm =
+        formatarDataHoraBR(
+          avaliacao.enviado_em
+        );
+
+      const realizadaEm =
+        avaliacao.aluno_confirmou_realizacao_em
+          ? formatarDataHoraBR(
+              avaliacao
+                .aluno_confirmou_realizacao_em
+            )
+          : "-";
+
+      const concluidaEm =
+        avaliacao.concluida_em
+          ? formatarDataHoraBR(
+              avaliacao.concluida_em
+            )
+          : "-";
 
       return `
-        <div style="padding:12px 0; border-bottom:1px solid #e6dfcf;">
-          <strong>${escaparHtml(titulo)} — ${escaparHtml(modulo)}</strong>
+        <div
+          style="
+            padding:12px 0;
+            border-bottom:1px solid #e6dfcf;
+          "
+        >
+          <strong>
+            ${escaparHtml(titulo)}
+            —
+            ${escaparHtml(modulo)}
+          </strong>
 
-          <p style="font-size:13px; margin:6px 0 4px 0;">
-            ${escaparHtml(materia)} • ${escaparHtml(modulo)}
+          <p
+            style="
+              font-size:13px;
+              margin:6px 0 4px 0;
+            "
+          >
+            ${escaparHtml(materia)}
+            •
+            ${escaparHtml(modulo)}
           </p>
 
-          <p style="font-size:13px; margin:4px 0;">
-            <b>Status:</b> ${escaparHtml(textoStatusAvaliacaoAluno(avaliacao))}
+          <p
+            style="
+              font-size:13px;
+              margin:4px 0;
+            "
+          >
+            <b>Status:</b>
+            ${escaparHtml(
+              textoStatusAvaliacaoAluno(
+                avaliacao
+              )
+            )}
           </p>
 
-          <p style="font-size:13px; margin:4px 0;">
-            <b>Enviada em:</b> ${escaparHtml(enviadaEm)}
+          <p
+            style="
+              font-size:13px;
+              margin:4px 0;
+            "
+          >
+            <b>Enviada em:</b>
+            ${escaparHtml(enviadaEm)}
           </p>
 
-          <p style="font-size:13px; margin:4px 0;">
-            <b>Aluno informou realização em:</b> ${escaparHtml(realizadaEm)}
+          <p
+            style="
+              font-size:13px;
+              margin:4px 0;
+            "
+          >
+            <b>Aluno informou realização em:</b>
+            ${escaparHtml(realizadaEm)}
           </p>
 
-          <p style="font-size:13px; margin:4px 0;">
-            <b>Concluída em:</b> ${escaparHtml(concluidaEm)}
+          <p
+            style="
+              font-size:13px;
+              margin:4px 0;
+            "
+          >
+            <b>Concluída em:</b>
+            ${escaparHtml(concluidaEm)}
           </p>
         </div>
       `;
     })
     .join("");
 }
-
 // ===============================
 // CABEÇALHO
 // ===============================
@@ -1080,33 +1556,66 @@ async function carregarCabecalho() {
 
   if (error || !data) {
     console.error(error);
-    mostrarMensagem("Erro ao carregar aluno", false);
+    mostrarMensagem(
+      "Erro ao carregar aluno",
+      false
+    );
+
     return null;
   }
 
   dadosCabecalho = data;
 
-  const nomeAluno = data.aluno?.nome || "Aluno";
-  const nomeMateria = data.materia?.nome || data.modulo?.materia?.nome || "-";
-  const nomeModulo = data.modulo?.nome || "-";
-  const nomeProfessor = data.professor?.nome || "-";
-  const nascimento = data.aluno?.data_nascimento || null;
+  const nomeAluno =
+    data.aluno?.nome || "Aluno";
 
-  tituloAluno.textContent = nomeAluno;
-  subtituloAluno.textContent = `${nomeMateria} — ${nomeModulo} — Prof(a). ${nomeProfessor}`;
+  const nomeMateria =
+    data.materia?.nome ||
+    data.modulo?.materia?.nome ||
+    "-";
 
-  infoMateria.textContent = nomeMateria;
-  infoModuloAtual.textContent = nomeModulo;
-  infoProfessor.textContent = nomeProfessor;
-  infoNascimento.textContent = nascimento ? formatarDataBR(nascimento) : "-";
+  const nomeModulo =
+    data.modulo?.nome || "-";
+
+  const nomeProfessor =
+    data.professor?.nome || "-";
+
+  const nascimento =
+    data.aluno?.data_nascimento || null;
+
+  tituloAluno.textContent =
+    nomeAluno;
+
+  subtituloAluno.textContent =
+    `${nomeMateria} — ${nomeModulo} — ` +
+    `Prof(a). ${nomeProfessor}`;
+
+  infoMateria.textContent =
+    nomeMateria;
+
+  infoModuloAtual.textContent =
+    nomeModulo;
+
+  infoProfessor.textContent =
+    nomeProfessor;
+
+  infoNascimento.textContent =
+    nascimento
+      ? formatarDataBR(nascimento)
+      : "-";
 
   if (ehAniversarioHoje(nascimento)) {
-    badgeAniversario.style.display = "inline-flex";
+    badgeAniversario.style.display =
+      "inline-flex";
   } else {
-    badgeAniversario.style.display = "none";
+    badgeAniversario.style.display =
+      "none";
   }
 
-  await carregarModulos(data.materia_id, data.modulo_id);
+  await carregarModulos(
+    data.materia_id,
+    data.modulo_id
+  );
 
   return data;
 }
@@ -1115,45 +1624,75 @@ async function carregarCabecalho() {
 // MÓDULOS
 // ===============================
 
-async function carregarModulos(materiaId, moduloAtual) {
+async function carregarModulos(
+  materiaId,
+  moduloAtual
+) {
   const { data, error } = await supabase
     .from("modulo")
     .select("id, nome, ordem")
     .eq("materia_id", materiaId)
-    .order("ordem", { ascending: true });
+    .order("ordem", {
+      ascending: true
+    });
 
   if (error) {
     console.error(error);
-    mostrarMensagem("Erro ao carregar módulos", false);
+
+    mostrarMensagem(
+      "Erro ao carregar módulos",
+      false
+    );
+
     return;
   }
 
   const modulos = data || [];
 
-  notaModulo.innerHTML = `<option value="">Selecione o módulo</option>`;
-  filtroModulo.innerHTML = `<option value="">Todos</option>`;
-  filtroModuloAula.innerHTML = `<option value="">Todos</option>`;
+  notaModulo.innerHTML =
+    `<option value="">Selecione o módulo</option>`;
+
+  filtroModulo.innerHTML =
+    `<option value="">Todos</option>`;
+
+  filtroModuloAula.innerHTML =
+    `<option value="">Todos</option>`;
 
   modulos.forEach((m) => {
-    const optNota = document.createElement("option");
+    const optNota =
+      document.createElement("option");
+
     optNota.value = m.id;
     optNota.textContent = m.nome;
 
-    if (String(m.id) === String(moduloAtual)) {
+    if (
+      String(m.id) ===
+      String(moduloAtual)
+    ) {
       optNota.selected = true;
     }
 
     notaModulo.appendChild(optNota);
 
-    const optFiltroNota = document.createElement("option");
+    const optFiltroNota =
+      document.createElement("option");
+
     optFiltroNota.value = m.id;
     optFiltroNota.textContent = m.nome;
-    filtroModulo.appendChild(optFiltroNota);
 
-    const optFiltroAula = document.createElement("option");
+    filtroModulo.appendChild(
+      optFiltroNota
+    );
+
+    const optFiltroAula =
+      document.createElement("option");
+
     optFiltroAula.value = m.id;
     optFiltroAula.textContent = m.nome;
-    filtroModuloAula.appendChild(optFiltroAula);
+
+    filtroModuloAula.appendChild(
+      optFiltroAula
+    );
   });
 }
 
@@ -1176,56 +1715,127 @@ async function carregarAulas() {
       aula_original_id,
       parte,
       modulo_id,
-      modulo:modulo_id ( nome ),
-      professor:professor_id ( nome )
+      professor_id,
+      modulo:modulo_id (
+        nome
+      ),
+      professor:professor_id (
+        nome
+      )
     `)
     .eq("matricula_id", matriculaId)
-    .order("data_aula", { ascending: false })
-    .order("id", { ascending: false });
+    .order("data_aula", {
+      ascending: false
+    })
+    .order("id", {
+      ascending: false
+    });
 
   if (error) {
-    console.error(error);
-    mostrarMensagem("Erro ao carregar aulas", false);
+    console.error(
+      "Erro ao carregar aulas:",
+      error
+    );
+
+    mostrarMensagem(
+      "Erro ao carregar aulas",
+      false
+    );
+
     return [];
   }
 
-  return ordenarAulasDecrescente(data || []);
+  return ordenarAulasDecrescente(
+    data || []
+  );
 }
 
-function atualizarBotaoExpandirAulas(totalAulas) {
-  if (!boxExpandirAulas || !btnExpandirAulas) return;
-
-  if (totalAulas <= 3) {
-    boxExpandirAulas.style.display = "none";
+function atualizarBotaoExpandirAulas(
+  totalAulas
+) {
+  if (
+    !boxExpandirAulas ||
+    !btnExpandirAulas
+  ) {
     return;
   }
 
-  boxExpandirAulas.style.display = "block";
-  btnExpandirAulas.textContent = aulasExpandido ? "Ver menos aulas" : "Ver mais aulas";
+  if (totalAulas <= 3) {
+    boxExpandirAulas.style.display =
+      "none";
+
+    return;
+  }
+
+  boxExpandirAulas.style.display =
+    "block";
+
+  btnExpandirAulas.textContent =
+    aulasExpandido
+      ? "Ver menos aulas"
+      : "Ver mais aulas";
 }
 
 function obterAulasFiltradas() {
-  const moduloId = Number(filtroModuloAula?.value || "");
-  const statusFiltro = filtroStatusAula?.value || "";
+  const moduloId = Number(
+    filtroModuloAula?.value || ""
+  );
 
-  let filtradas = ordenarAulasDecrescente(todasAulas);
+  const statusFiltro =
+    filtroStatusAula?.value || "";
+
+  let filtradas =
+    ordenarAulasDecrescente(
+      todasAulas
+    );
 
   if (moduloId) {
-    filtradas = filtradas.filter((aula) => Number(aula.modulo_id) === moduloId);
+    filtradas = filtradas.filter(
+      (aula) =>
+        Number(aula.modulo_id) ===
+        moduloId
+    );
   }
 
-  if (statusFiltro === "__VALIDAS__") {
-    filtradas = filtradas.filter((aula) => aulaContaComoValida(aula));
-    return ordenarAulasDecrescente(filtradas);
+  if (
+    statusFiltro === "__VALIDAS__"
+  ) {
+    filtradas = filtradas.filter(
+      (aula) =>
+        aulaContaComoValida(aula)
+    );
+
+    return ordenarAulasDecrescente(
+      filtradas
+    );
   }
 
   if (statusFiltro) {
     filtradas = filtradas.filter(
-      (aula) => normalizarTexto(aula.status) === normalizarTexto(statusFiltro)
+      (aula) =>
+        normalizarTexto(aula.status) ===
+        normalizarTexto(statusFiltro)
     );
   }
 
-  return ordenarAulasDecrescente(filtradas);
+  return ordenarAulasDecrescente(
+    filtradas
+  );
+}
+
+function professorPodeEditarAula(aula) {
+  if (!professorLogadoId) {
+    return false;
+  }
+
+  const professorDaAulaId = Number(
+    aula?.professor_id || 0
+  );
+
+  return (
+    professorDaAulaId ===
+    professorLogadoId
+  );
 }
 
 function renderAulas(aulasOriginais) {
@@ -1239,79 +1849,178 @@ function renderAulas(aulasOriginais) {
     `;
 
     atualizarBotaoExpandirAulas(0);
+
     return;
   }
 
-  const aulasOrdenadas = ordenarAulasDecrescente(aulasOriginais);
-  const mapaAulas = obterMapaAulasPorId(todasAulas);
-  const aulasParaMostrar = aulasExpandido ? aulasOrdenadas : aulasOrdenadas.slice(0, 3);
-  const totalAulasFiltradas = aulasOrdenadas.length;
+  const aulasOrdenadas =
+    ordenarAulasDecrescente(
+      aulasOriginais
+    );
 
-  aulasParaMostrar.forEach((aula, index) => {
-    const li = document.createElement("li");
+  const mapaAulas =
+    obterMapaAulasPorId(
+      todasAulas
+    );
 
-    li.style.listStyle = "none";
-    li.style.marginBottom = "0";
-    li.style.padding = "12px 0";
-    li.style.borderBottom = "1px solid #e6dfcf";
+  const aulasParaMostrar =
+    aulasExpandido
+      ? aulasOrdenadas
+      : aulasOrdenadas.slice(0, 3);
 
-    const numeroAula = totalAulasFiltradas - index;
-    const dataBR = formatarDataBR(aula.data_aula);
-    const linhaConteudo = montarLinhaConteudo(aula);
-    const linhaLicao = montarLinhaLicao(aula);
-    const rodape = obterTextoRodapeHistorico(aula, mapaAulas);
+  const totalAulasFiltradas =
+    aulasOrdenadas.length;
 
-    li.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:6px;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
-          <div style="font-weight:700; font-size:14px;">
-            ${escaparHtml(`Aula ${numeroAula} — ${dataBR}`)}
+  aulasParaMostrar.forEach(
+    (aula, index) => {
+      const li =
+        document.createElement("li");
+
+      li.style.listStyle = "none";
+      li.style.marginBottom = "0";
+      li.style.padding = "12px 0";
+      li.style.borderBottom =
+        "1px solid #e6dfcf";
+
+      const numeroAula =
+        totalAulasFiltradas - index;
+
+      const dataBR =
+        formatarDataBR(
+          aula.data_aula
+        );
+
+      const linhaConteudo =
+        montarLinhaConteudo(aula);
+
+      const linhaLicao =
+        montarLinhaLicao(aula);
+
+      const rodape =
+        obterTextoRodapeHistorico(
+          aula,
+          mapaAulas
+        );
+
+      const podeEditar =
+        professorPodeEditarAula(aula);
+
+      li.innerHTML = `
+        <div
+          style="
+            display:flex;
+            flex-direction:column;
+            gap:6px;
+          "
+        >
+          <div
+            style="
+              display:flex;
+              justify-content:space-between;
+              align-items:flex-start;
+              gap:10px;
+              flex-wrap:wrap;
+            "
+          >
+            <div
+              style="
+                font-weight:700;
+                font-size:14px;
+              "
+            >
+              ${escaparHtml(
+                `Aula ${numeroAula} — ${dataBR}`
+              )}
+            </div>
+
+            ${
+              podeEditar
+                ? `
+                  <button
+                    type="button"
+                    class="btn btn-editar-aula"
+                    data-aula-id="${escaparHtml(
+                      aula.id
+                    )}"
+                    style="
+                      padding:6px 10px;
+                      font-size:12px;
+                    "
+                  >
+                    ✏️ Editar aula
+                  </button>
+                `
+                : ""
+            }
           </div>
 
-          <button
-            type="button"
-            class="btn btn-editar-aula"
-            data-aula-id="${escaparHtml(aula.id)}"
-            style="padding:6px 10px; font-size:12px;"
+          <div
+            style="
+              font-size:13px;
+              line-height:1.45;
+            "
           >
-            ✏️ Editar aula
-          </button>
-        </div>
+            ${escaparHtml(
+              linhaConteudo
+            )}
+          </div>
 
-        <div style="font-size:13px; line-height:1.45;">
-          ${escaparHtml(linhaConteudo)}
-        </div>
+          ${
+            linhaLicao
+              ? `
+                <div
+                  style="
+                    font-size:13px;
+                    line-height:1.45;
+                  "
+                >
+                  ${escaparHtml(
+                    linhaLicao
+                  )}
+                </div>
+              `
+              : ""
+          }
 
-        ${
-          linhaLicao
-            ? `
-              <div style="font-size:13px; line-height:1.45;">
-                ${escaparHtml(linhaLicao)}
-              </div>
-            `
-            : ""
+          <div
+            style="
+              font-size:12px;
+              opacity:0.88;
+              line-height:1.45;
+            "
+          >
+            ${escaparHtml(rodape)}
+          </div>
+        </div>
+      `;
+
+      const btnEditar =
+        li.querySelector(
+          ".btn-editar-aula"
+        );
+
+      btnEditar?.addEventListener(
+        "click",
+        () => {
+          irParaEditarAula(
+            aula.id
+          );
         }
+      );
 
-        <div style="font-size:12px; opacity:0.88; line-height:1.45;">
-          ${escaparHtml(rodape)}
-        </div>
-      </div>
-    `;
+      listaAulas.appendChild(li);
+    }
+  );
 
-    const btnEditar = li.querySelector(".btn-editar-aula");
-
-    btnEditar?.addEventListener("click", () => {
-      irParaEditarAula(aula.id);
-    });
-
-    listaAulas.appendChild(li);
-  });
-
-  atualizarBotaoExpandirAulas(totalAulasFiltradas);
+  atualizarBotaoExpandirAulas(
+    totalAulasFiltradas
+  );
 }
 
 function atualizarRenderAulas() {
-  const aulasFiltradas = obterAulasFiltradas();
+  const aulasFiltradas =
+    obterAulasFiltradas();
+
   renderAulas(aulasFiltradas);
 }
 
@@ -1351,28 +2060,45 @@ async function carregarAvaliacoesAluno() {
         link_formulario
       )
     `)
-    .eq("matricula_id", matriculaId)
-    .order("enviado_em", { ascending: false });
+    .eq(
+      "matricula_id",
+      matriculaId
+    )
+    .order("enviado_em", {
+      ascending: false
+    });
 
   if (error) {
-    console.error("Erro ao carregar avaliações enviadas:", error);
+    console.error(
+      "Erro ao carregar avaliações enviadas:",
+      error
+    );
 
     avaliacoesAluno = [];
+
     renderAvaliacoesEnviadasAluno();
 
     return;
   }
 
-  avaliacoesAluno = data || [];
+  avaliacoesAluno =
+    data || [];
 
   renderAvaliacoesEnviadasAluno();
+
   atualizarCardAulasValidasEAvaliacao();
 }
 
-async function concluirAvaliacaoNoBanco(avaliacao) {
-  if (!avaliacao?.id) return false;
+async function concluirAvaliacaoNoBanco(
+  avaliacao
+) {
+  if (!avaliacao?.id) {
+    return false;
+  }
 
-  const concluidaEm = avaliacao.concluida_em || new Date().toISOString();
+  const concluidaEm =
+    avaliacao.concluida_em ||
+    new Date().toISOString();
 
   const { error } = await supabase
     .from("avaliacao_aluno")
@@ -1392,60 +2118,111 @@ async function concluirAvaliacaoNoBanco(avaliacao) {
     return false;
   }
 
-  avaliacao.status = "Concluída";
-  avaliacao.concluida_em = concluidaEm;
+  avaliacao.status =
+    "Concluída";
+
+  avaliacao.concluida_em =
+    concluidaEm;
 
   return true;
 }
 
-function avaliacaoEstaAberta(avaliacao) {
-  const status = normalizarTexto(avaliacao?.status);
+function avaliacaoEstaAberta(
+  avaliacao
+) {
+  const status = normalizarTexto(
+    avaliacao?.status
+  );
 
-  return status === "pendente" || status === "realizada pelo aluno";
+  return (
+    status === "pendente" ||
+    status ===
+      "realizada pelo aluno"
+  );
 }
 
-async function marcarAvaliacaoComoConcluidaAposNota(moduloId, tipoNota, obsNota = "") {
+async function marcarAvaliacaoComoConcluidaAposNota(
+  moduloId,
+  tipoNota,
+  obsNota = ""
+) {
   const notaFake = {
     tipo: tipoNota,
     observacao: obsNota,
     modulo_id: moduloId
   };
 
-  if (!ehNotaDeAvaliacao(notaFake)) {
+  if (
+    !ehNotaDeAvaliacao(notaFake)
+  ) {
     return;
   }
 
-  const modulo = Number(moduloId || 0);
+  const modulo = Number(
+    moduloId || 0
+  );
 
-  if (!modulo) return;
+  if (!modulo) {
+    return;
+  }
 
-  const numeroNota = extrairNumeroAvaliacaoDaNota(notaFake);
+  const numeroNota =
+    extrairNumeroAvaliacaoDaNota(
+      notaFake
+    );
 
-  const avaliacoesAbertas = avaliacoesAluno
-    .filter((avaliacao) => {
-      const mesmoModulo = Number(avaliacao.modulo_id || 0) === modulo;
-      return mesmoModulo && avaliacaoEstaAberta(avaliacao);
-    })
-    .sort((a, b) => {
-      const numeroA = Number(a.numero_avaliacao || 0);
-      const numeroB = Number(b.numero_avaliacao || 0);
+  const avaliacoesAbertas =
+    avaliacoesAluno
+      .filter((avaliacao) => {
+        const mesmoModulo =
+          Number(
+            avaliacao.modulo_id || 0
+          ) === modulo;
 
-      if (numeroA !== numeroB) return numeroA - numeroB;
+        return (
+          mesmoModulo &&
+          avaliacaoEstaAberta(
+            avaliacao
+          )
+        );
+      })
+      .sort((a, b) => {
+        const numeroA = Number(
+          a.numero_avaliacao || 0
+        );
 
-      return Number(a.id || 0) - Number(b.id || 0);
-    });
+        const numeroB = Number(
+          b.numero_avaliacao || 0
+        );
 
-  const avaliacaoParaConcluir = numeroNota
-    ? avaliacoesAbertas.find(
-        (avaliacao) => Number(avaliacao.numero_avaliacao || 0) === numeroNota
-      ) || avaliacoesAbertas[0]
-    : avaliacoesAbertas[0];
+        if (numeroA !== numeroB) {
+          return numeroA - numeroB;
+        }
+
+        return (
+          Number(a.id || 0) -
+          Number(b.id || 0)
+        );
+      });
+
+  const avaliacaoParaConcluir =
+    numeroNota
+      ? avaliacoesAbertas.find(
+          (avaliacao) =>
+            Number(
+              avaliacao.numero_avaliacao || 0
+            ) === numeroNota
+        ) || avaliacoesAbertas[0]
+      : avaliacoesAbertas[0];
 
   if (!avaliacaoParaConcluir) {
     return;
   }
 
-  const concluiu = await concluirAvaliacaoNoBanco(avaliacaoParaConcluir);
+  const concluiu =
+    await concluirAvaliacaoNoBanco(
+      avaliacaoParaConcluir
+    );
 
   if (concluiu) {
     await carregarAvaliacoesAluno();
@@ -1453,77 +2230,140 @@ async function marcarAvaliacaoComoConcluidaAposNota(moduloId, tipoNota, obsNota 
 }
 
 async function sincronizarAvaliacoesConcluidasComNotas() {
-  if (!avaliacoesAluno.length || !todasNotas.length) return;
+  if (
+    !avaliacoesAluno.length ||
+    !todasNotas.length
+  ) {
+    return;
+  }
 
-  const moduloAtual = Number(dadosCabecalho?.modulo_id || 0);
+  const moduloAtual = Number(
+    dadosCabecalho?.modulo_id || 0
+  );
 
-  if (!moduloAtual) return;
+  if (!moduloAtual) {
+    return;
+  }
 
-  const notasAvaliacao = obterNotasDeAvaliacaoModuloAtual();
+  const notasAvaliacao =
+    obterNotasDeAvaliacaoModuloAtual();
 
-  if (!notasAvaliacao.length) return;
+  if (!notasAvaliacao.length) {
+    return;
+  }
 
-  const numerosComNota = new Set();
+  const numerosComNota =
+    new Set();
+
   let notasSemNumeroDisponiveis = 0;
 
-  notasAvaliacao.forEach((nota) => {
-    const numero = extrairNumeroAvaliacaoDaNota(nota);
+  notasAvaliacao.forEach(
+    (nota) => {
+      const numero =
+        extrairNumeroAvaliacaoDaNota(
+          nota
+        );
 
-    if (numero) {
-      numerosComNota.add(numero);
-    } else {
-      notasSemNumeroDisponiveis++;
+      if (numero) {
+        numerosComNota.add(numero);
+      } else {
+        notasSemNumeroDisponiveis++;
+      }
     }
-  });
+  );
 
-  const abertas = avaliacoesAluno
-    .filter((avaliacao) => {
-      const mesmoModulo = Number(avaliacao.modulo_id || 0) === moduloAtual;
-      return mesmoModulo && avaliacaoEstaAberta(avaliacao);
-    })
-    .sort((a, b) => {
-      const numeroA = Number(a.numero_avaliacao || 0);
-      const numeroB = Number(b.numero_avaliacao || 0);
+  const abertas =
+    avaliacoesAluno
+      .filter((avaliacao) => {
+        const mesmoModulo =
+          Number(
+            avaliacao.modulo_id || 0
+          ) === moduloAtual;
 
-      if (numeroA !== numeroB) return numeroA - numeroB;
+        return (
+          mesmoModulo &&
+          avaliacaoEstaAberta(
+            avaliacao
+          )
+        );
+      })
+      .sort((a, b) => {
+        const numeroA = Number(
+          a.numero_avaliacao || 0
+        );
 
-      return Number(a.id || 0) - Number(b.id || 0);
-    });
+        const numeroB = Number(
+          b.numero_avaliacao || 0
+        );
+
+        if (numeroA !== numeroB) {
+          return numeroA - numeroB;
+        }
+
+        return (
+          Number(a.id || 0) -
+          Number(b.id || 0)
+        );
+      });
 
   let alterou = false;
 
-  for (const avaliacao of abertas) {
-    const numero = Number(avaliacao.numero_avaliacao || 0);
+  for (
+    const avaliacao of abertas
+  ) {
+    const numero = Number(
+      avaliacao.numero_avaliacao || 0
+    );
 
-    if (numero && numerosComNota.has(numero)) {
-      const concluiu = await concluirAvaliacaoNoBanco(avaliacao);
-      alterou = alterou || concluiu;
+    if (
+      numero &&
+      numerosComNota.has(numero)
+    ) {
+      const concluiu =
+        await concluirAvaliacaoNoBanco(
+          avaliacao
+        );
+
+      alterou =
+        alterou || concluiu;
+
       continue;
     }
 
-    if (notasSemNumeroDisponiveis > 0) {
+    if (
+      notasSemNumeroDisponiveis > 0
+    ) {
       notasSemNumeroDisponiveis--;
-      const concluiu = await concluirAvaliacaoNoBanco(avaliacao);
-      alterou = alterou || concluiu;
+
+      const concluiu =
+        await concluirAvaliacaoNoBanco(
+          avaliacao
+        );
+
+      alterou =
+        alterou || concluiu;
     }
   }
 
   if (alterou) {
     renderAvaliacoesEnviadasAluno();
+
     atualizarCardAulasValidasEAvaliacao();
   }
 }
-
 // ===============================
 // EVENTOS DO ALUNO
 // ===============================
 
 async function carregarEventosAluno() {
-  const alunoId = dadosCabecalho?.aluno?.id;
+  const alunoId =
+    dadosCabecalho?.aluno?.id;
 
   if (!alunoId) {
     eventosAluno = [];
+
     atualizarCardEventos();
+
     return;
   }
 
@@ -1545,9 +2385,13 @@ async function carregarEventosAluno() {
     .eq("aluno_id", alunoId);
 
   if (error) {
-    console.error("Erro ao carregar eventos do aluno:", error);
+    console.error(
+      "Erro ao carregar eventos do aluno:",
+      error
+    );
 
     eventosAluno = [];
+
     atualizarCardEventos();
 
     return;
@@ -1557,8 +2401,13 @@ async function carregarEventosAluno() {
     .map((item) => item.evento)
     .filter(Boolean)
     .sort((a, b) => {
-      const dataA = `${a.data_evento || ""} ${a.hora_evento || "00:00"}`;
-      const dataB = `${b.data_evento || ""} ${b.hora_evento || "00:00"}`;
+      const dataA =
+        `${a.data_evento || ""} ` +
+        `${a.hora_evento || "00:00"}`;
+
+      const dataB =
+        `${b.data_evento || ""} ` +
+        `${b.hora_evento || "00:00"}`;
 
       return dataB.localeCompare(dataA);
     });
@@ -1567,14 +2416,24 @@ async function carregarEventosAluno() {
 }
 
 function atualizarCardEventos() {
-  cEventos.textContent = eventosAluno.length;
+  cEventos.textContent =
+    eventosAluno.length;
 
   if (!eventosAluno.length) {
-    btnToggleEventos.style.display = "none";
-    boxEventosAluno.style.display = "none";
+    btnToggleEventos.style.display =
+      "none";
+
+    boxEventosAluno.style.display =
+      "none";
 
     listaEventosAluno.innerHTML = `
-      <p style="font-size:13px; color:#666; margin-top:10px;">
+      <p
+        style="
+          font-size:13px;
+          color:#666;
+          margin-top:10px;
+        "
+      >
         Nenhum evento participado até agora.
       </p>
     `;
@@ -1582,14 +2441,21 @@ function atualizarCardEventos() {
     return;
   }
 
-  btnToggleEventos.style.display = "inline-flex";
+  btnToggleEventos.style.display =
+    "inline-flex";
+
   renderEventosAluno();
 }
 
 function renderEventosAluno() {
   if (!eventosAluno.length) {
     listaEventosAluno.innerHTML = `
-      <p style="font-size:13px; color:#666;">
+      <p
+        style="
+          font-size:13px;
+          color:#666;
+        "
+      >
         Nenhum evento encontrado.
       </p>
     `;
@@ -1597,30 +2463,83 @@ function renderEventosAluno() {
     return;
   }
 
-  listaEventosAluno.innerHTML = eventosAluno
-    .map((evento) => {
-      const situacao = evento.ativo ? "Ativo" : "Encerrado/Cancelado";
+  listaEventosAluno.innerHTML =
+    eventosAluno
+      .map((evento) => {
+        const situacao =
+          evento.ativo
+            ? "Ativo"
+            : "Encerrado/Cancelado";
 
-      return `
-        <div class="item-evento-aluno" style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
-          <div class="item-evento-aluno-topo" style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-            <strong>${escaparHtml(evento.titulo || "Evento")}</strong>
-            <span class="badge-evento-aluno">${escaparHtml(situacao)}</span>
+        return `
+          <div
+            class="item-evento-aluno"
+            style="
+              padding:10px 0;
+              border-bottom:1px solid #e6dfcf;
+            "
+          >
+            <div
+              class="item-evento-aluno-topo"
+              style="
+                display:flex;
+                justify-content:space-between;
+                gap:10px;
+                flex-wrap:wrap;
+              "
+            >
+              <strong>
+                ${escaparHtml(
+                  evento.titulo || "Evento"
+                )}
+              </strong>
+
+              <span class="badge-evento-aluno">
+                ${escaparHtml(situacao)}
+              </span>
+            </div>
+
+            <p
+              style="
+                margin:6px 0 4px 0;
+                font-size:13px;
+              "
+            >
+              ${escaparHtml(
+                evento.tipo_evento || "Evento"
+              )}
+              •
+              ${formatarDataBR(
+                evento.data_evento
+              )}
+              ${
+                evento.hora_evento
+                  ? ` às ${escaparHtml(
+                      evento.hora_evento.slice(
+                        0,
+                        5
+                      )
+                    )}`
+                  : ""
+              }
+            </p>
+
+            <p
+              style="
+                margin:0;
+                font-size:13px;
+              "
+            >
+              Link/local:
+              ${escaparHtml(
+                evento.local ||
+                  "Não informado"
+              )}
+            </p>
           </div>
-
-          <p style="margin:6px 0 4px 0; font-size:13px;">
-            ${escaparHtml(evento.tipo_evento || "Evento")} •
-            ${formatarDataBR(evento.data_evento)}
-            ${evento.hora_evento ? ` às ${escaparHtml(evento.hora_evento.slice(0, 5))}` : ""}
-          </p>
-
-          <p style="margin:0; font-size:13px;">
-            Link/local: ${escaparHtml(evento.local || "Não informado")}
-          </p>
-        </div>
-      `;
-    })
-    .join("");
+        `;
+      })
+      .join("");
 }
 
 // ===============================
@@ -1628,85 +2547,165 @@ function renderEventosAluno() {
 // ===============================
 
 function obterReposicoesPendentes(aulas) {
-  const idsAulasOriginaisJaRepostas = new Set(
-    (aulas || [])
-      .filter((x) => normalizarTexto(x.status) === normalizarTexto(STATUS.REPOSICAO) && x.aula_original_id)
-      .map((x) => Number(x.aula_original_id))
-  );
+  const idsAulasOriginaisJaRepostas =
+    new Set(
+      (aulas || [])
+        .filter(
+          (x) =>
+            normalizarTexto(x.status) ===
+              normalizarTexto(
+                STATUS.REPOSICAO
+              ) &&
+            x.aula_original_id
+        )
+        .map((x) =>
+          Number(x.aula_original_id)
+        )
+    );
 
   return (aulas || [])
     .filter((x) => {
-      const status = normalizarTexto(x.status);
+      const status =
+        normalizarTexto(x.status);
 
       const statusGeraReposicao =
-        status === normalizarTexto(STATUS.AUSENTE) ||
-        status === normalizarTexto(STATUS.CANCELADA) ||
-        status === normalizarTexto(STATUS.TRANCADA);
+        status ===
+          normalizarTexto(
+            STATUS.AUSENTE
+          ) ||
+        status ===
+          normalizarTexto(
+            STATUS.CANCELADA
+          ) ||
+        status ===
+          normalizarTexto(
+            STATUS.TRANCADA
+          );
 
-      if (!statusGeraReposicao) return false;
-      if (x.precisa_reposicao !== true) return false;
-      if (idsAulasOriginaisJaRepostas.has(Number(x.id))) return false;
+      if (!statusGeraReposicao) {
+        return false;
+      }
+
+      if (
+        x.precisa_reposicao !== true
+      ) {
+        return false;
+      }
+
+      if (
+        idsAulasOriginaisJaRepostas.has(
+          Number(x.id)
+        )
+      ) {
+        return false;
+      }
 
       return true;
     })
     .sort((a, b) => {
-      const dataA = String(a.data_aula || "");
-      const dataB = String(b.data_aula || "");
+      const dataA =
+        String(a.data_aula || "");
+
+      const dataB =
+        String(b.data_aula || "");
 
       if (dataA !== dataB) {
-        return dataB.localeCompare(dataA);
+        return dataB.localeCompare(
+          dataA
+        );
       }
 
-      return Number(b.id || 0) - Number(a.id || 0);
+      return (
+        Number(b.id || 0) -
+        Number(a.id || 0)
+      );
     });
 }
 
 function renderReposicoesPendentes() {
   limparLista(listaReposicoes);
 
-  if (!reposicoesPendentesLista.length) {
-    listaReposicoes.innerHTML = `<li>Nenhuma reposição pendente.</li>`;
+  if (
+    !reposicoesPendentesLista.length
+  ) {
+    listaReposicoes.innerHTML = `
+      <li>
+        Nenhuma reposição pendente.
+      </li>
+    `;
 
     if (btnToggleReposicoes) {
-      btnToggleReposicoes.style.display = "none";
+      btnToggleReposicoes.style.display =
+        "none";
     }
 
     return;
   }
 
-  const reposicoesParaMostrar = reposicoesExpandido
-    ? reposicoesPendentesLista
-    : reposicoesPendentesLista.slice(0, 3);
+  const reposicoesParaMostrar =
+    reposicoesExpandido
+      ? reposicoesPendentesLista
+      : reposicoesPendentesLista.slice(
+          0,
+          3
+        );
 
-  reposicoesParaMostrar.forEach((x) => {
-    const li = document.createElement("li");
-    li.style.marginBottom = "6px";
+  reposicoesParaMostrar.forEach(
+    (x) => {
+      const li =
+        document.createElement("li");
 
-    const status = normalizarTexto(x.status);
+      li.style.marginBottom = "6px";
 
-    const textoPadrao =
-      status === normalizarTexto(STATUS.CANCELADA)
-        ? "Aula cancelada"
-        : status === normalizarTexto(STATUS.TRANCADA)
-          ? "Aula trancada"
-          : "Reposição solicitada";
+      const status =
+        normalizarTexto(x.status);
 
-    li.textContent = `${formatarDataBR(x.data_aula)} — ${x.justificativa || textoPadrao}`;
+      const textoPadrao =
+        status ===
+        normalizarTexto(
+          STATUS.CANCELADA
+        )
+          ? "Aula cancelada"
+          : status ===
+            normalizarTexto(
+              STATUS.TRANCADA
+            )
+            ? "Aula trancada"
+            : "Reposição solicitada";
 
-    listaReposicoes.appendChild(li);
-  });
+      li.textContent =
+        `${formatarDataBR(
+          x.data_aula
+        )} — ` +
+        `${x.justificativa || textoPadrao}`;
 
-  if (!btnToggleReposicoes) return;
+      listaReposicoes.appendChild(li);
+    }
+  );
 
-  if (reposicoesPendentesLista.length <= 3) {
-    btnToggleReposicoes.style.display = "none";
+  if (!btnToggleReposicoes) {
     return;
   }
 
-  btnToggleReposicoes.style.display = "inline-flex";
-  btnToggleReposicoes.textContent = reposicoesExpandido
-    ? "Ver menos"
-    : `Ver mais ${reposicoesPendentesLista.length - 3}`;
+  if (
+    reposicoesPendentesLista.length <= 3
+  ) {
+    btnToggleReposicoes.style.display =
+      "none";
+
+    return;
+  }
+
+  btnToggleReposicoes.style.display =
+    "inline-flex";
+
+  btnToggleReposicoes.textContent =
+    reposicoesExpandido
+      ? "Ver menos"
+      : `Ver mais ${
+          reposicoesPendentesLista.length -
+          3
+        }`;
 }
 
 function preencherContadores(aulas) {
@@ -1717,40 +2716,60 @@ function preencherContadores(aulas) {
   let plantao = 0;
 
   aulas.forEach((x) => {
-    if (x.status === STATUS.PRESENTE) {
+    if (
+      x.status === STATUS.PRESENTE
+    ) {
       p++;
       return;
     }
 
-    if (x.status === STATUS.AUSENTE) {
+    if (
+      x.status === STATUS.AUSENTE
+    ) {
       a++;
       return;
     }
 
-    if (x.status === STATUS.CANCELADA) {
+    if (
+      x.status === STATUS.CANCELADA
+    ) {
       c++;
       return;
     }
 
-    if (x.status === STATUS.AULA_INSTRUMENTAL) {
+    if (
+      x.status ===
+      STATUS.AULA_INSTRUMENTAL
+    ) {
       instrumental++;
       return;
     }
 
-    if (x.status === STATUS.PLANTAO_DUVIDAS) {
+    if (
+      x.status ===
+      STATUS.PLANTAO_DUVIDAS
+    ) {
       plantao++;
     }
   });
 
-  reposicoesPendentesLista = obterReposicoesPendentes(aulas);
+  reposicoesPendentesLista =
+    obterReposicoesPendentes(aulas);
+
   renderReposicoesPendentes();
 
   cPresente.textContent = p;
   cAusente.textContent = a;
   cCancelada.textContent = c;
-  cReposicao.textContent = reposicoesPendentesLista.length;
-  cInstrumental.textContent = instrumental;
-  cPlantao.textContent = plantao;
+
+  cReposicao.textContent =
+    reposicoesPendentesLista.length;
+
+  cInstrumental.textContent =
+    instrumental;
+
+  cPlantao.textContent =
+    plantao;
 }
 
 // ===============================
@@ -1767,23 +2786,38 @@ async function carregarNotas() {
       valor,
       observacao,
       modulo_id,
-      modulo:modulo_id ( nome )
+      modulo:modulo_id (
+        nome
+      )
     `)
-    .eq("matricula_id", matriculaId)
-    .order("data", { ascending: false });
+    .eq(
+      "matricula_id",
+      matriculaId
+    )
+    .order("data", {
+      ascending: false
+    });
 
   if (error) {
     console.error(error);
-    mostrarMensagem("Erro ao carregar notas", false);
+
+    mostrarMensagem(
+      "Erro ao carregar notas",
+      false
+    );
+
     return;
   }
 
-  todasNotas = data || [];
+  todasNotas =
+    data || [];
 
   await sincronizarAvaliacoesConcluidasComNotas();
 
   calcularMediaGeral(todasNotas);
+
   renderNotas(todasNotas);
+
   atualizarCardAulasValidasEAvaliacao();
 }
 
@@ -1791,16 +2825,26 @@ function renderNotas(notas) {
   limparLista(listaNotas);
 
   if (!notas.length) {
-    listaNotas.innerHTML = "<li>Nenhuma nota registrada</li>";
+    listaNotas.innerHTML =
+      "<li>Nenhuma nota registrada</li>";
+
     return;
   }
 
   notas.forEach((n) => {
-    const li = document.createElement("li");
+    const li =
+      document.createElement("li");
 
     li.textContent =
-      `${formatarDataBR(n.data)} — ${n.tipo} — ${n.valor} — ${n.modulo?.nome || ""}` +
-      `${n.observacao ? " — " + n.observacao : ""}`;
+      `${formatarDataBR(n.data)} — ` +
+      `${n.tipo} — ` +
+      `${n.valor} — ` +
+      `${n.modulo?.nome || ""}` +
+      `${
+        n.observacao
+          ? " — " + n.observacao
+          : ""
+      }`;
 
     listaNotas.appendChild(li);
   });
@@ -1809,6 +2853,7 @@ function renderNotas(notas) {
 function calcularMediaGeral(notas) {
   if (!notas.length) {
     mediaGeralEl.textContent = "0.0";
+
     return;
   }
 
@@ -1818,199 +2863,348 @@ function calcularMediaGeral(notas) {
     soma += Number(n.valor) || 0;
   });
 
-  const media = soma / notas.length;
-  mediaGeralEl.textContent = media.toFixed(2);
+  const media =
+    soma / notas.length;
+
+  mediaGeralEl.textContent =
+    media.toFixed(2);
 }
 
 // ===============================
 // EVENTOS
 // ===============================
 
-btnToggleEventos?.addEventListener("click", () => {
-  const aberto = boxEventosAluno.style.display === "block";
+btnToggleEventos?.addEventListener(
+  "click",
+  () => {
+    const aberto =
+      boxEventosAluno.style.display ===
+      "block";
 
-  if (aberto) {
-    boxEventosAluno.style.display = "none";
-    btnToggleEventos.textContent = "Ver mais";
-  } else {
-    boxEventosAluno.style.display = "block";
-    btnToggleEventos.textContent = "Ver menos";
+    if (aberto) {
+      boxEventosAluno.style.display =
+        "none";
+
+      btnToggleEventos.textContent =
+        "Ver mais";
+    } else {
+      boxEventosAluno.style.display =
+        "block";
+
+      btnToggleEventos.textContent =
+        "Ver menos";
+    }
   }
-});
+);
 
-btnToggleReposicoes?.addEventListener("click", () => {
-  reposicoesExpandido = !reposicoesExpandido;
-  renderReposicoesPendentes();
-});
+btnToggleReposicoes?.addEventListener(
+  "click",
+  () => {
+    reposicoesExpandido =
+      !reposicoesExpandido;
+
+    renderReposicoesPendentes();
+  }
+);
 
 // ===============================
 // OBSERVAÇÕES PEDAGÓGICAS
 // ===============================
 
-btnAdicionarObservacaoPedagogica?.addEventListener("click", () => {
-  irParaAdicionarObservacaoPedagogica();
-});
+btnAdicionarObservacaoPedagogica?.addEventListener(
+  "click",
+  () => {
+    irParaAdicionarObservacaoPedagogica();
+  }
+);
 
 // ===============================
 // FILTRO DAS NOTAS
 // ===============================
 
-filtroModulo.addEventListener("change", () => {
-  const moduloId = Number(filtroModulo.value);
+filtroModulo.addEventListener(
+  "change",
+  () => {
+    const moduloId = Number(
+      filtroModulo.value
+    );
 
-  if (!moduloId) {
-    renderNotas(todasNotas);
-    calcularMediaGeral(todasNotas);
-    return;
+    if (!moduloId) {
+      renderNotas(todasNotas);
+
+      calcularMediaGeral(
+        todasNotas
+      );
+
+      return;
+    }
+
+    const filtradas =
+      todasNotas.filter(
+        (n) =>
+          Number(n.modulo_id) ===
+          moduloId
+      );
+
+    renderNotas(filtradas);
+
+    calcularMediaGeral(
+      filtradas
+    );
   }
-
-  const filtradas = todasNotas.filter((n) => Number(n.modulo_id) === moduloId);
-
-  renderNotas(filtradas);
-  calcularMediaGeral(filtradas);
-});
+);
 
 // ===============================
 // FILTROS DAS AULAS
 // ===============================
 
-filtroModuloAula?.addEventListener("change", () => {
-  aulasExpandido = false;
-  atualizarRenderAulas();
-});
+filtroModuloAula?.addEventListener(
+  "change",
+  () => {
+    aulasExpandido = false;
 
-filtroStatusAula?.addEventListener("change", () => {
-  aulasExpandido = false;
-  atualizarRenderAulas();
-});
+    atualizarRenderAulas();
+  }
+);
 
-btnExpandirAulas?.addEventListener("click", () => {
-  aulasExpandido = !aulasExpandido;
-  atualizarRenderAulas();
-});
+filtroStatusAula?.addEventListener(
+  "change",
+  () => {
+    aulasExpandido = false;
+
+    atualizarRenderAulas();
+  }
+);
+
+btnExpandirAulas?.addEventListener(
+  "click",
+  () => {
+    aulasExpandido =
+      !aulasExpandido;
+
+    atualizarRenderAulas();
+  }
+);
 
 // ===============================
 // ENVIAR AVALIAÇÃO AO ALUNO
 // ===============================
 
-btnEnviarAvaliacaoAluno?.addEventListener("click", async () => {
-  const dadosAvaliacao = obterDadosAvaliacaoPendenteAtual();
+btnEnviarAvaliacaoAluno?.addEventListener(
+  "click",
+  async () => {
+    const dadosAvaliacao =
+      obterDadosAvaliacaoPendenteAtual();
 
-  if (!dadosAvaliacao) {
-    mostrarMensagem("Este aluno ainda não tem avaliação pendente.", false);
-    atualizarBotaoEnviarAvaliacaoAluno();
-    return;
-  }
+    if (!dadosAvaliacao) {
+      mostrarMensagem(
+        "Este aluno ainda não tem avaliação pendente.",
+        false
+      );
 
-  const textoOriginal = btnEnviarAvaliacaoAluno.textContent;
+      atualizarBotaoEnviarAvaliacaoAluno();
 
-  btnEnviarAvaliacaoAluno.disabled = true;
-  btnEnviarAvaliacaoAluno.textContent = "Enviando...";
-
-  try {
-    const resultado = await enviarAvaliacaoParaAluno(dadosAvaliacao);
-
-    if (resultado.jaExistia) {
-      mostrarMensagem("Esta avaliação já tinha sido enviada para o aluno.");
-    } else {
-      mostrarMensagem("Avaliação enviada!");
+      return;
     }
 
-    await carregarAvaliacoesAluno();
-  } catch (error) {
-    console.error("Erro ao enviar avaliação:", error);
+    const textoOriginal =
+      btnEnviarAvaliacaoAluno.textContent;
 
-    btnEnviarAvaliacaoAluno.disabled = false;
-    btnEnviarAvaliacaoAluno.textContent = textoOriginal;
+    btnEnviarAvaliacaoAluno.disabled =
+      true;
 
-    mostrarMensagem(
-      "Não foi possível enviar a avaliação. Confira se o formulário está cadastrado e ativo no Supabase.",
-      false
-    );
+    btnEnviarAvaliacaoAluno.textContent =
+      "Enviando...";
+
+    try {
+      const resultado =
+        await enviarAvaliacaoParaAluno(
+          dadosAvaliacao
+        );
+
+      if (resultado.jaExistia) {
+        mostrarMensagem(
+          "Esta avaliação já tinha sido enviada para o aluno."
+        );
+      } else {
+        mostrarMensagem(
+          "Avaliação enviada!"
+        );
+      }
+
+      await carregarAvaliacoesAluno();
+    } catch (error) {
+      console.error(
+        "Erro ao enviar avaliação:",
+        error
+      );
+
+      btnEnviarAvaliacaoAluno.disabled =
+        false;
+
+      btnEnviarAvaliacaoAluno.textContent =
+        textoOriginal;
+
+      mostrarMensagem(
+        "Não foi possível enviar a avaliação. " +
+          "Confira se o formulário está cadastrado " +
+          "e ativo no Supabase.",
+        false
+      );
+    }
   }
-});
+);
 
 // ===============================
 // SALVAR NOTA
 // ===============================
 
-formNota.addEventListener("submit", async (e) => {
-  e.preventDefault();
+formNota.addEventListener(
+  "submit",
+  async (e) => {
+    e.preventDefault();
 
-  const data = notaData.value;
-  const tipo = notaTipo.value.trim();
-  const valor = Number(notaValor.value);
-  const obs = notaObs.value.trim();
-  const moduloId = notaModulo.value;
+    const data =
+      notaData.value;
 
-  if (!data || !tipo || Number.isNaN(valor) || !moduloId) {
-    mostrarMensagem("Preencha todos os campos", false);
-    return;
+    const tipo =
+      notaTipo.value.trim();
+
+    const valor =
+      Number(notaValor.value);
+
+    const obs =
+      notaObs.value.trim();
+
+    const moduloId =
+      notaModulo.value;
+
+    if (
+      !data ||
+      !tipo ||
+      Number.isNaN(valor) ||
+      !moduloId
+    ) {
+      mostrarMensagem(
+        "Preencha todos os campos",
+        false
+      );
+
+      return;
+    }
+
+    if (
+      valor < 0 ||
+      valor > 10
+    ) {
+      mostrarMensagem(
+        "A nota precisa estar entre 0 e 10.",
+        false
+      );
+
+      return;
+    }
+
+    const { error } = await supabase
+      .from("nota")
+      .insert([
+        {
+          matricula_id:
+            matriculaId,
+          data,
+          tipo,
+          valor,
+          observacao:
+            obs || null,
+          modulo_id:
+            moduloId
+        }
+      ]);
+
+    if (error) {
+      console.error(error);
+
+      mostrarMensagem(
+        "Erro ao salvar nota",
+        false
+      );
+
+      return;
+    }
+
+    await marcarAvaliacaoComoConcluidaAposNota(
+      moduloId,
+      tipo,
+      obs
+    );
+
+    mostrarMensagem(
+      "Nota salva!"
+    );
+
+    formNota.reset();
+
+    notaData.value =
+      hojeISO();
+
+    notaTipo.value =
+      "Avaliação";
+
+    await carregarNotas();
+
+    await carregarAvaliacoesAluno();
   }
-
-  if (valor < 0 || valor > 10) {
-    mostrarMensagem("A nota precisa estar entre 0 e 10.", false);
-    return;
-  }
-
-  const { error } = await supabase
-    .from("nota")
-    .insert([
-      {
-        matricula_id: matriculaId,
-        data,
-        tipo,
-        valor,
-        observacao: obs || null,
-        modulo_id: moduloId
-      }
-    ]);
-
-  if (error) {
-    console.error(error);
-    mostrarMensagem("Erro ao salvar nota", false);
-    return;
-  }
-
-  await marcarAvaliacaoComoConcluidaAposNota(moduloId, tipo, obs);
-
-  mostrarMensagem("Nota salva!");
-
-  formNota.reset();
-  notaData.value = hojeISO();
-  notaTipo.value = "Avaliação";
-
-  await carregarNotas();
-  await carregarAvaliacoesAluno();
-});
+);
 
 // ===============================
 // BOTÕES VOLTAR
 // ===============================
 
-btnVoltarTopo?.addEventListener("click", voltarParaResumo);
-btnVoltarRodape?.addEventListener("click", voltarParaResumo);
+btnVoltarTopo?.addEventListener(
+  "click",
+  voltarParaResumo
+);
+
+btnVoltarRodape?.addEventListener(
+  "click",
+  voltarParaResumo
+);
 
 // ===============================
 // INIT
 // ===============================
 
 async function init() {
-  notaData.value = hojeISO();
-  notaTipo.value = "Avaliação";
+  notaData.value =
+    hojeISO();
 
-  const cab = await carregarCabecalho();
-  if (!cab) return;
+  notaTipo.value =
+    "Avaliação";
 
-  todasAulas = await carregarAulas();
+  const cab =
+    await carregarCabecalho();
 
-  preencherContadores(todasAulas);
+  if (!cab) {
+    return;
+  }
+
+  todasAulas =
+    await carregarAulas();
+
+  preencherContadores(
+    todasAulas
+  );
+
   atualizarRenderAulas();
+
   atualizarCardAulasValidasEAvaliacao();
 
   await carregarObservacoesPedagogicas();
+
   await carregarAvaliacoesAluno();
+
   await carregarEventosAluno();
+
   await carregarNotas();
 }
 
