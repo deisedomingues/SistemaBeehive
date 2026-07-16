@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+
+  <title>Editar Aula | Administração | Beehive</title>
+
+  <link rel="stylesheet" href="css/style.css" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+</head>
+
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo">
+
+    <!-- VOLTAR DO TOPO -->
+    <div
+      style="
+        display:flex;
+        justify-content:flex-start;
+        margin-bottom:10px;
+      "
+    >
+      <button
+        id="btnVoltarTopo"
+        type="button"
+        class="btn"
+        style="padding:8px 14px;"
+      >
+        ← Voltar
+      </button>
+    </div>
+
+    <h1 style="margin-bottom:8px;">
+      Editar aula
+    </h1>
+
+    <p
+      id="textoOrientacao"
+      style="
+        font-size:14px;
+        opacity:0.9;
+        margin-top:0;
+        margin-bottom:12px;
+      "
+    >
+      O administrador pode corrigir a data, o status e as informações
+      pedagógicas. Professor, aluno, matrícula, módulo, parte e duração
+      manual permanecem bloqueados.
+    </p>
+
+    <div
+      id="msg"
+      style="
+        display:none;
+        margin-bottom:12px;
+      "
+    ></div>
+
+    <!-- CARREGAMENTO -->
+    <section
+      id="boxCarregando"
+      class="card"
+      style="
+        margin-bottom:12px;
+        padding:16px;
+      "
+    >
+      <p style="margin:0;">
+        Carregando dados da aula...
+      </p>
+    </section>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <div
+      id="conteudoPagina"
+      style="display:none;"
+    >
+
+      <!-- INFORMAÇÕES BLOQUEADAS -->
+      <section
+        class="card"
+        style="
+          margin-bottom:12px;
+          padding:12px 14px;
+        "
+      >
+        <h2 style="margin:0 0 10px 0;">
+          Dados bloqueados da aula
+        </h2>
+
+        <div
+          style="
+            display:grid;
+            grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+            gap:8px;
+          "
+        >
+
+          <div
+            style="
+              background:rgba(255,255,255,0.45);
+              border:1px solid #eadb9a;
+              border-radius:10px;
+              padding:8px 10px;
+            "
+          >
+            <div style="font-size:11px; opacity:0.75;">
+              Tipo
+            </div>
+
+            <strong
+              id="infoTipoAula"
+              style="font-size:13px;"
+            >
+              -
+            </strong>
+          </div>
+
+          <div
+            style="
+              background:rgba(255,255,255,0.45);
+              border:1px solid #eadb9a;
+              border-radius:10px;
+              padding:8px 10px;
+            "
+          >
+            <div style="font-size:11px; opacity:0.75;">
+              Professor(a)
+            </div>
+
+            <strong
+              id="infoProfessor"
+              style="font-size:13px;"
+            >
+              -
+            </strong>
+          </div>
+
+          <div
+            style="
+              background:rgba(255,255,255,0.45);
+              border:1px solid #eadb9a;
+              border-radius:10px;
+              padding:8px 10px;
+            "
+          >
+            <div style="font-size:11px; opacity:0.75;">
+              Curso
+            </div>
+
+            <strong
+              id="infoMateria"
+              style="font-size:13px;"
+            >
+              -
+            </strong>
+          </div>
+
+          <div
+            style="
+              background:rgba(255,255,255,0.45);
+              border:1px solid #eadb9a;
+              border-radius:10px;
+              padding:8px 10px;
+            "
+          >
+            <div style="font-size:11px; opacity:0.75;">
+              Módulo
+            </div>
+
+            <strong
+              id="infoModulo"
+              style="font-size:13px;"
+            >
+              -
+            </strong>
+          </div>
+
+          <div
+            style="
+              background:rgba(255,255,255,0.45);
+              border:1px solid #eadb9a;
+              border-radius:10px;
+              padding:8px 10px;
+            "
+          >
+            <div style="font-size:11px; opacity:0.75;">
+              Parte
+            </div>
+
+            <strong
+              id="infoParte"
+              style="font-size:13px;"
+            >
+              -
+            </strong>
+          </div>
+
+          <div
+            style="
+              background:rgba(255,255,255,0.45);
+              border:1px solid #eadb9a;
+              border-radius:10px;
+              padding:8px 10px;
+            "
+          >
+            <div style="font-size:11px; opacity:0.75;">
+              Duração atual
+            </div>
+
+            <strong
+              id="infoDuracao"
+              style="font-size:13px;"
+            >
+              -
+            </strong>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ALUNO INDIVIDUAL -->
+      <section
+        id="boxAlunoIndividual"
+        class="card"
+        style="
+          display:none;
+          margin-bottom:12px;
+          padding:12px 14px;
+        "
+      >
+        <h2 style="margin:0 0 10px 0;">
+          Aluno
+        </h2>
+
+        <div
+          style="
+            background:#fffdf5;
+            border:1px solid #eadb9a;
+            border-radius:10px;
+            padding:10px 12px;
+          "
+        >
+          <strong id="infoAlunoIndividual">
+            -
+          </strong>
+        </div>
+      </section>
+
+      <!-- ALUNOS DA AULA COLETIVA -->
+      <section
+        id="boxAlunosColetivos"
+        class="card"
+        style="
+          display:none;
+          margin-bottom:12px;
+          padding:12px 14px;
+        "
+      >
+        <h2 style="margin:0 0 6px 0;">
+          Alunos da aula coletiva
+        </h2>
+
+        <p
+          style="
+            margin:0 0 12px 0;
+            font-size:13px;
+            opacity:0.85;
+          "
+        >
+          Cada aluno pode ter um status diferente. A data, o conteúdo e
+          a lição de casa serão comuns ao grupo.
+        </p>
+
+        <div id="listaEdicaoAlunosColetivos"></div>
+      </section>
+
+      <!-- FORMULÁRIO INDIVIDUAL -->
+      <section
+        id="boxFormularioIndividual"
+        class="card"
+        style="
+          display:none;
+          margin-bottom:12px;
+          padding:12px 14px;
+        "
+      >
+        <h2 style="margin:0 0 10px 0;">
+          Informações permitidas para edição
+        </h2>
+
+        <form id="formEditarAulaIndividual">
+
+          <label
+            style="
+              display:block;
+              margin-bottom:10px;
+            "
+          >
+            Data da aula
+
+            <input
+              id="dataAulaIndividual"
+              type="date"
+              required
+              style="
+                width:100%;
+                margin-top:4px;
+              "
+            />
+          </label>
+
+          <label
+            style="
+              display:block;
+              margin-bottom:10px;
+            "
+          >
+            Status da aula
+
+            <select
+              id="statusAulaIndividual"
+              required
+              style="
+                width:100%;
+                margin-top:4px;
+              "
+            >
+              <option value="">
+                Selecione o status
+              </option>
+
+              <option value="Presente">
+                Presente
+              </option>
+
+              <option value="Ausente">
+                Ausente
+              </option>
+
+              <option value="Cancelada">
+                Cancelada
+              </option>
+
+              <option value="Trancada">
+                Trancada
+              </option>
+
+              <option value="Reposição">
+                Reposição
+              </option>
+
+              <option value="Aula Instrumental">
+                Aula Instrumental
+              </option>
+
+              <option value="Plantão de dúvidas">
+                Plantão de dúvidas
+              </option>
+
+              <option value="Aula Experimental">
+                Aula Experimental
+              </option>
+            </select>
+          </label>
+
+          <!-- AVISO DAS REGRAS AUTOMÁTICAS -->
+          <div
+            id="avisoRegraStatusIndividual"
+            style="
+              display:none;
+              background:#fff8dc;
+              border:1px solid #f1bc32;
+              color:#5f4700;
+              padding:10px 12px;
+              border-radius:10px;
+              margin-bottom:10px;
+              line-height:1.4;
+              font-size:13px;
+            "
+          ></div>
+
+          <!-- JUSTIFICATIVA -->
+          <div
+            id="boxJustificativaIndividual"
+            style="display:none;"
+          >
+            <label
+              style="
+                display:block;
+                margin-bottom:10px;
+              "
+            >
+              Justificativa
+
+              <textarea
+                id="justificativaIndividual"
+                rows="3"
+                style="
+                  width:100%;
+                  margin-top:4px;
+                "
+                placeholder="Explique o motivo da ausência, cancelamento ou trancamento"
+              ></textarea>
+            </label>
+
+            <small
+              style="
+                display:block;
+                margin-top:-6px;
+                margin-bottom:10px;
+                opacity:0.75;
+              "
+            >
+              Obrigatória para Ausente, Cancelada e Trancada.
+            </small>
+          </div>
+
+          <!-- REGRA DE AUSÊNCIA -->
+          <div
+            id="boxAusenciaIndividual"
+            class="box-regra-ausencia"
+            style="
+              display:none;
+              margin-bottom:10px;
+            "
+          >
+            <h3>
+              Regra da ausência
+            </h3>
+
+            <p>
+              Escolha apenas uma opção.
+            </p>
+
+            <div class="opcoes-ausencia">
+
+              <label
+                id="cardAulaGravadaIndividual"
+                class="card-opcao-ausencia"
+              >
+                <input
+                  type="checkbox"
+                  id="aulaGravadaIndividual"
+                />
+
+                <span>
+                  <strong>
+                    Aula foi gravada
+                  </strong>
+
+                  <small>
+                    O aluno poderá assistir à gravação.
+                  </small>
+                </span>
+              </label>
+
+              <label
+                id="cardPrecisaReposicaoIndividual"
+                class="card-opcao-ausencia"
+              >
+                <input
+                  type="checkbox"
+                  id="precisaReposicaoIndividual"
+                />
+
+                <span>
+                  <strong>
+                    Precisa de reposição
+                  </strong>
+
+                  <small>
+                    A aula não foi gravada e precisará ser reposta.
+                  </small>
+                </span>
+              </label>
+
+            </div>
+          </div>
+
+          <!-- AULA ORIGINAL DA REPOSIÇÃO -->
+          <div
+            id="boxReposicaoIndividual"
+            style="
+              display:none;
+              margin-bottom:10px;
+            "
+          >
+            <label style="display:block;">
+              Aula original
+
+              <select
+                id="aulaOriginalIndividual"
+                style="
+                  width:100%;
+                  margin-top:4px;
+                "
+              >
+                <option value="">
+                  Carregando aulas pendentes...
+                </option>
+              </select>
+            </label>
+
+            <small
+              style="
+                display:block;
+                margin-top:5px;
+                opacity:0.75;
+              "
+            >
+              Selecione a aula que está sendo reposta.
+            </small>
+          </div>
+
+          <label
+            style="
+              display:block;
+              margin-bottom:10px;
+            "
+          >
+            Conteúdo da aula
+
+            <textarea
+              id="conteudoIndividual"
+              rows="4"
+              style="
+                width:100%;
+                margin-top:4px;
+              "
+              placeholder="Conteúdo trabalhado na aula"
+            ></textarea>
+          </label>
+
+          <label
+            id="labelLicaoIndividual"
+            style="
+              display:block;
+              margin-bottom:12px;
+            "
+          >
+            Lição de casa
+
+            <textarea
+              id="licaoIndividual"
+              rows="3"
+              style="
+                width:100%;
+                margin-top:4px;
+              "
+              placeholder="Lição de casa, se houver"
+            ></textarea>
+          </label>
+
+          <div
+            style="
+              display:flex;
+              gap:10px;
+              flex-wrap:wrap;
+              justify-content:flex-end;
+            "
+          >
+            <button
+              id="btnCancelarIndividual"
+              type="button"
+              class="btn-secundario"
+              style="padding:8px 14px;"
+            >
+              Cancelar
+            </button>
+
+            <button
+              id="btnSalvarIndividual"
+              type="submit"
+              class="btn"
+              style="padding:8px 14px;"
+            >
+              Salvar alterações
+            </button>
+          </div>
+
+        </form>
+      </section>
+
+      <!-- FORMULÁRIO COLETIVO -->
+      <section
+        id="boxFormularioColetivo"
+        class="card"
+        style="
+          display:none;
+          margin-bottom:12px;
+          padding:12px 14px;
+        "
+      >
+        <h2 style="margin:0 0 10px 0;">
+          Informações comuns da aula coletiva
+        </h2>
+
+        <form id="formEditarAulaColetiva">
+
+          <label
+            style="
+              display:block;
+              margin-bottom:10px;
+            "
+          >
+            Data da aula
+
+            <input
+              id="dataAulaColetiva"
+              type="date"
+              required
+              style="
+                width:100%;
+                margin-top:4px;
+              "
+            />
+          </label>
+
+          <label
+            style="
+              display:block;
+              margin-bottom:10px;
+            "
+          >
+            Conteúdo da aula
+
+            <textarea
+              id="conteudoColetivo"
+              rows="4"
+              style="
+                width:100%;
+                margin-top:4px;
+              "
+              placeholder="Conteúdo trabalhado na aula"
+            ></textarea>
+          </label>
+
+          <label
+            style="
+              display:block;
+              margin-bottom:12px;
+            "
+          >
+            Lição de casa
+
+            <textarea
+              id="licaoColetiva"
+              rows="3"
+              style="
+                width:100%;
+                margin-top:4px;
+              "
+              placeholder="Lição de casa, se houver"
+            ></textarea>
+          </label>
+
+          <div
+            style="
+              display:flex;
+              gap:10px;
+              flex-wrap:wrap;
+              justify-content:flex-end;
+            "
+          >
+            <button
+              id="btnCancelarColetivo"
+              type="button"
+              class="btn-secundario"
+              style="padding:8px 14px;"
+            >
+              Cancelar
+            </button>
+
+            <button
+              id="btnSalvarColetivo"
+              type="submit"
+              class="btn"
+              style="padding:8px 14px;"
+            >
+              Salvar aula coletiva
+            </button>
+          </div>
+
+        </form>
+      </section>
+
+      <!-- VOLTAR DO RODAPÉ -->
+      <div
+        style="
+          display:flex;
+          justify-content:center;
+          margin:16px 0 4px;
+        "
+      >
+        <button
+          id="btnVoltarRodape"
+          type="button"
+          class="btn"
+          style="padding:8px 14px;"
+        >
+          ← Voltar
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script
+    type="module"
+    src="js/editar-aula-admin.js"
+  ></script>
+
+</body>
+</html>
