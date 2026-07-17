@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+
+  <title>Configurações | Beehive</title>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  />
+
+  <style>
+    .pagina-configuracoes-aluno {
+      min-height: 100vh;
+    }
+
+    .container-configuracoes-aluno {
+      max-width: 980px;
+    }
+
+    .topo-configuracoes-aluno {
+      margin-bottom: 24px;
+    }
+
+    .topo-configuracoes-aluno h1 {
+      margin-bottom: 8px;
+    }
+
+    .topo-configuracoes-aluno p {
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    .acoes-topo-configuracoes {
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .grid-configuracoes-aluno {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card-configuracao {
+      padding: 22px;
+    }
+
+    .card-configuracao h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .card-configuracao > p {
+      line-height: 1.6;
+    }
+
+    .card-configuracao-largo {
+      grid-column: 1 / -1;
+    }
+
+    .linha-dado-conta {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .linha-dado-conta:last-child {
+      border-bottom: none;
+    }
+
+    .rotulo-dado-conta {
+      font-weight: 700;
+    }
+
+    .valor-dado-conta {
+      overflow-wrap: anywhere;
+    }
+
+    .status-notificacoes {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .icone-status-notificacoes {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 38px;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      font-size: 20px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .status-notificacoes strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .status-notificacoes p {
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .status-notificacoes.status-ativo {
+      background: #eef9ef;
+      border-color: #b8dfbd;
+    }
+
+    .status-notificacoes.status-pendente {
+      background: #fff9df;
+      border-color: #e9d998;
+    }
+
+    .status-notificacoes.status-bloqueado {
+      background: #fff0ee;
+      border-color: #e8b3aa;
+    }
+
+    .status-notificacoes.status-indisponivel {
+      background: #f3f3f3;
+      border-color: #d0d0d0;
+    }
+
+    .acoes-configuracao {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .instrucoes-notificacoes {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.62);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .instrucoes-notificacoes h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+
+    .instrucoes-notificacoes ol {
+      margin: 0;
+      padding-left: 22px;
+    }
+
+    .instrucoes-notificacoes li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .form-configuracoes {
+      display: grid;
+      gap: 15px;
+      margin-top: 18px;
+    }
+
+    .form-configuracoes label {
+      display: grid;
+      gap: 7px;
+      font-weight: 700;
+    }
+
+    .form-configuracoes input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .campo-senha {
+      position: relative;
+    }
+
+    .campo-senha input {
+      padding-right: 54px;
+    }
+
+    .btn-mostrar-senha {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: transparent;
+      font-size: 18px;
+    }
+
+    .requisitos-senha {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .barra-forca-senha {
+      height: 8px;
+      margin-top: 4px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .preenchimento-forca-senha {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: #b9b9b9;
+      transition:
+        width 0.2s ease,
+        background 0.2s ease;
+    }
+
+    .texto-forca-senha {
+      margin: 4px 0 0;
+      font-size: 0.88rem;
+    }
+
+    .mensagem-configuracoes {
+      display: none;
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      line-height: 1.5;
+    }
+
+    .mensagem-configuracoes.mensagem-sucesso {
+      display: block;
+      color: #215b2a;
+      background: #e8f7ea;
+      border: 1px solid #a8d6ae;
+    }
+
+    .mensagem-configuracoes.mensagem-erro {
+      display: block;
+      color: #77291e;
+      background: #fff0ee;
+      border: 1px solid #e4afa7;
+    }
+
+    .mensagem-configuracoes.mensagem-aviso {
+      display: block;
+      color: #66520e;
+      background: #fff9df;
+      border: 1px solid #e7d68e;
+    }
+
+    .aviso-dados-cadastrais {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      line-height: 1.5;
+    }
+
+    .btn-secundario-configuracoes {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 8px 14px;
+      box-sizing: border-box;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.16);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      background: rgba(255, 255, 255, 0.65);
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .btn-perigo-configuracoes {
+      border-color: #c47b70;
+      color: #77291e;
+      background: #fff0ee;
+    }
+
+    .texto-carregando {
+      opacity: 0.75;
+    }
+
+    @media (max-width: 760px) {
+      .grid-configuracoes-aluno {
+        grid-template-columns: 1fr;
+      }
+
+      .card-configuracao-largo {
+        grid-column: auto;
+      }
+
+      .linha-dado-conta {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+
+      .acoes-configuracao {
+        flex-direction: column;
+      }
+
+      .acoes-configuracao .btn,
+      .acoes-configuracao button,
+      .acoes-configuracao a {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body class="pagina-configuracoes-aluno">
+
+  <div class="overlay"></div>
+
+  <main class="container container-resumo container-configuracoes-aluno">
+
+    <div class="acoes-topo-configuracoes">
+      <a
+        href="home-aluno.html"
+        class="btn"
+        style="
+          display: inline-block;
+          padding: 8px 14px;
+          text-decoration: none;
+        "
+      >
+        ← Voltar
+      </a>
+    </div>
+
+    <header class="topo-configuracoes-aluno">
+      <h1>Configurações</h1>
+
+      <p>
+        Gerencie sua conta, sua senha e as notificações
+        recebidas neste aparelho.
+      </p>
+    </header>
+
+    <div
+      id="mensagemPagina"
+      class="mensagem-configuracoes"
+      role="alert"
+      aria-live="polite"
+    ></div>
+
+    <div class="grid-configuracoes-aluno">
+
+      <!-- =======================================
+           CARD 1 — DADOS DA CONTA
+      ======================================== -->
+      <section class="card card-configuracao">
+        <h2>👤 Minha conta</h2>
+
+        <p>
+          Confira os dados relacionados ao seu acesso.
+        </p>
+
+        <div class="linha-dado-conta">
+          <span class="rotulo-dado-conta">Nome</span>
+
+          <span
+            id="nomeAluno"
+            class="valor-dado-conta texto-carregando"
+          >
+            Carregando...
+          </span>
+        </div>
+
+        <div class="linha-dado-conta">
+          <span class="rotulo-dado-conta">E-mail</span>
+
+          <span
+            id="emailAluno"
+            class="valor-dado-conta texto-carregando"
+          >
+            Carregando...
+          </span>
+        </div>
+
+        <div class="linha-dado-conta">
+          <span class="rotulo-dado-conta">
+            Tipo de acesso
+          </span>
+
+          <span class="valor-dado-conta">
+            Aluno(a)
+          </span>
+        </div>
+
+        <div class="aviso-dados-cadastrais">
+          Para alterar nome, e-mail ou informações da matrícula,
+          entre em contato com a administração da Beehive.
+        </div>
+      </section>
+
+      <!-- =======================================
+           CARD 2 — SUPORTE
+      ======================================== -->
+      <section class="card card-configuracao">
+        <h2>💬 Ajuda e suporte</h2>
+
+        <p>
+          Está com dificuldade para acessar alguma função
+          ou precisa corrigir seus dados?
+        </p>
+
+        <p>
+          Fale com a equipe da Beehive pelos canais oficiais.
+        </p>
+
+        <div class="acoes-configuracao">
+          <a
+            href="mailto:contato.beehiveidiomas@gmail.com"
+            class="btn"
+          >
+            Enviar e-mail
+          </a>
+
+          <a
+            href="https://wa.me/5511999999999"
+            id="btnWhatsappSuporte"
+            class="btn-secundario-configuracoes"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Abrir WhatsApp
+          </a>
+        </div>
+
+        <p
+          style="
+            margin-top: 16px;
+            margin-bottom: 0;
+            font-size: 0.92rem;
+          "
+        >
+          E-mail:
+          <strong>contato.beehiveidiomas@gmail.com</strong>
+        </p>
+      </section>
+
+      <!-- =======================================
+           CARD 3 — NOTIFICAÇÕES
+      ======================================== -->
+      <section
+        class="card card-configuracao card-configuracao-largo"
+      >
+        <h2>🔔 Notificações</h2>
+
+        <p>
+          Ative as notificações para receber lembretes de aulas,
+          eventos, avaliações, reposições e outros avisos
+          importantes da escola.
+        </p>
+
+        <div
+          id="blocoStatusNotificacoes"
+          class="status-notificacoes"
+        >
+          <span
+            id="iconeStatusNotificacoes"
+            class="icone-status-notificacoes"
+            aria-hidden="true"
+          >
+            ⏳
+          </span>
+
+          <div>
+            <strong id="tituloStatusNotificacoes">
+              Verificando as notificações...
+            </strong>
+
+            <p id="textoStatusNotificacoes">
+              Aguarde enquanto verificamos a permissão
+              deste navegador.
+            </p>
+          </div>
+        </div>
+
+        <div class="acoes-configuracao">
+          <button
+            type="button"
+            id="btnAtivarNotificacoes"
+            class="btn"
+          >
+            Ativar notificações
+          </button>
+
+          <button
+            type="button"
+            id="btnVerificarNotificacoes"
+            class="btn-secundario-configuracoes"
+          >
+            Verificar novamente
+          </button>
+        </div>
+
+        <div
+          id="instrucoesNotificacoes"
+          class="instrucoes-notificacoes"
+          style="display: none;"
+        >
+          <h3>
+            Como liberar as notificações
+          </h3>
+
+          <ol>
+            <li>
+              Clique no cadeado ou no ícone ao lado do endereço
+              do site.
+            </li>
+
+            <li>
+              Procure a opção <strong>Notificações</strong>.
+            </li>
+
+            <li>
+              Selecione <strong>Permitir</strong>.
+            </li>
+
+            <li>
+              Volte para esta página e clique em
+              <strong>Verificar novamente</strong>.
+            </li>
+          </ol>
+        </div>
+
+        <p
+          style="
+            margin-top: 16px;
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            opacity: 0.82;
+          "
+        >
+          A permissão de notificações é definida separadamente
+          em cada celular, computador e navegador.
+        </p>
+      </section>
+
+      <!-- =======================================
+           CARD 4 — ALTERAR SENHA
+      ======================================== -->
+      <section
+        class="card card-configuracao card-configuracao-largo"
+      >
+        <h2>🔒 Alterar senha</h2>
+
+        <p>
+          Crie uma nova senha para entrar no sistema Beehive.
+        </p>
+
+        <form
+          id="formAlterarSenha"
+          class="form form-configuracoes"
+          novalidate
+        >
+          <label for="novaSenha">
+            Nova senha
+
+            <div class="campo-senha">
+              <input
+                type="password"
+                id="novaSenha"
+                name="novaSenha"
+                minlength="8"
+                maxlength="72"
+                autocomplete="new-password"
+                placeholder="Digite a nova senha"
+                required
+              />
+
+              <button
+                type="button"
+                class="btn-mostrar-senha"
+                data-campo-senha="novaSenha"
+                aria-label="Mostrar nova senha"
+                title="Mostrar ou esconder senha"
+              >
+                👁️
+              </button>
+            </div>
+          </label>
+
+          <div>
+            <div class="barra-forca-senha">
+              <div
+                id="preenchimentoForcaSenha"
+                class="preenchimento-forca-senha"
+              ></div>
+            </div>
+
+            <p
+              id="textoForcaSenha"
+              class="texto-forca-senha"
+            >
+              Digite uma senha para verificar a segurança.
+            </p>
+          </div>
+
+          <label for="confirmarNovaSenha">
+            Confirmar nova senha
+
+            <div class="campo-senha">
+              <input
+                type="password"
+                id="confirmarNovaSenha"
+                name="confirmarNovaSenha"
+                minlength="8"
+                maxlength="72"
+                autocomplete="new-password"
+                placeholder="Digite novamente a nova senha"
+                required
+              />
+
+              <button
+                type="button"
+                class="btn-mostrar-senha"
+                data-campo-senha="confirmarNovaSenha"
+                aria-label="Mostrar confirmação da senha"
+                title="Mostrar ou esconder senha"
+              >
+                👁️
+              </button>
+            </div>
+          </label>
+
+          <ul class="requisitos-senha">
+            <li>A senha deve ter pelo menos 8 caracteres.</li>
+            <li>Evite usar seu nome ou uma senha muito fácil.</li>
+            <li>As duas senhas precisam ser iguais.</li>
+          </ul>
+
+          <div class="acoes-configuracao">
+            <button
+              type="submit"
+              id="btnAlterarSenha"
+              class="btn"
+            >
+              Salvar nova senha
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- =======================================
+           CARD 5 — SAIR
+      ======================================== -->
+      <section
+        class="card card-configuracao card-configuracao-largo"
+      >
+        <h2>🚪 Encerrar acesso</h2>
+
+        <p>
+          Use esta opção para sair com segurança da sua conta
+          neste aparelho.
+        </p>
+
+        <div class="acoes-configuracao">
+          <button
+            type="button"
+            id="btnSair"
+            class="btn-secundario-configuracoes btn-perigo-configuracoes"
+          >
+            Sair da minha conta
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script
+    type="module"
+    src="js/configuracoes-aluno.js"
+  ></script>
+
+</body>
+</html>
