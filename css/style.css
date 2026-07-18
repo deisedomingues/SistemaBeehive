@@ -5166,3 +5166,339 @@ body:has(.home-aluno-page) .overlay {
     font-size: 19px;
   }
 }
+/* =========================================================
+   HOME PROFESSOR — TOPO COM APARÊNCIA DE SITE
+========================================================= */
+
+/*
+  Faz somente a home do professor ocupar a tela como página,
+  sem alterar as outras telas do sistema.
+*/
+body:has(.home-professor-page) {
+  display: block;
+  padding: 0;
+  background-color: #fff8dc;
+  background-image: none;
+}
+
+/*
+  Remove o fundo decorativo antigo somente nesta home.
+*/
+body:has(.home-professor-page) .overlay {
+  display: none;
+}
+
+/*
+  Retira a aparência de caixa branca centralizada.
+*/
+.container.home-professor-page {
+  width: 100%;
+  max-width: 1180px;
+  min-height: 100vh;
+
+  margin: 0 auto;
+  padding: 0 32px 42px;
+
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+
+  text-align: left;
+}
+
+/* =========================================================
+   BARRA SUPERIOR
+========================================================= */
+
+.topo-site-professor {
+  min-height: 76px;
+
+  margin: 0 -32px 28px;
+  padding: 14px 32px;
+
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid #f1df9a;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.05);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+/* =========================================================
+   LOGO E MARCA
+========================================================= */
+
+.marca-topo-professor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-topo-professor {
+  display: block;
+
+  width: auto;
+  max-width: 74px;
+  max-height: 48px;
+
+  margin: 0;
+  object-fit: contain;
+}
+
+.marca-topo-texto-professor {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.marca-topo-texto-professor strong {
+  color: #2f2f2f;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.marca-topo-texto-professor span {
+  color: #777;
+  font-size: 12px;
+}
+
+/* =========================================================
+   BOTÃO DE CONFIGURAÇÕES
+========================================================= */
+
+.btn-configuracoes-professor-icone {
+  width: 44px;
+  height: 44px;
+
+  flex-shrink: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  background: #ffffff;
+  color: #5c4300;
+
+  border: 1px solid #f1bc32;
+  border-radius: 50%;
+
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+
+  text-decoration: none;
+  font-size: 21px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn-configuracoes-professor-icone:hover {
+  background: #fff5cc;
+  transform: rotate(25deg);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.1);
+}
+
+.btn-configuracoes-professor-icone:active {
+  transform: rotate(25deg) scale(0.96);
+}
+
+.btn-configuracoes-professor-icone:focus-visible {
+  outline: 3px solid rgba(241, 188, 50, 0.4);
+  outline-offset: 3px;
+}
+
+/* =========================================================
+   SAUDAÇÃO
+========================================================= */
+
+.cabecalho-site-professor {
+  margin-bottom: 18px;
+  padding: 0 4px;
+  text-align: left;
+}
+
+.cabecalho-site-professor .rotulo-admin {
+  margin-bottom: 7px;
+}
+
+.saudacao-titulo-professor {
+  margin: 0 0 7px;
+
+  color: #2f2f2f;
+
+  font-size: 25px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.subtitulo-site-professor {
+  margin: 0;
+
+  color: #666;
+
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/*
+  O JavaScript ainda utiliza este elemento,
+  mas ele não precisa aparecer visualmente.
+*/
+.titulo-professor-oculto {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  overflow: hidden;
+
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+
+  white-space: nowrap;
+}
+
+/*
+  Esconde o antigo cabeçalho, caso algum trecho antigo
+  permaneça no HTML por engano.
+*/
+.home-professor-page .topo-acoes-professor,
+.home-professor-page .logo-professor-centralizada,
+.home-professor-page .cabecalho-professor-central,
+.home-professor-page .saudacao-card-professor {
+  display: none;
+}
+
+/* =========================================================
+   SELETOR DE PERFIL
+========================================================= */
+
+.seletor-perfil-site-professor {
+  justify-content: flex-start;
+
+  margin: 0 0 20px;
+  padding: 14px 16px;
+
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #f1df9a;
+  border-radius: 14px;
+
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.04);
+
+  text-align: left;
+}
+
+.seletor-perfil-site-professor .select-seletor-inline {
+  width: 180px;
+  background: #ffffff;
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 768px) {
+  body:has(.home-professor-page) {
+    padding: 0;
+  }
+
+  .container.home-professor-page {
+    width: 100%;
+    padding: 0 18px 30px;
+  }
+
+  .topo-site-professor {
+    min-height: 68px;
+    margin: 0 -18px 22px;
+    padding: 12px 18px;
+  }
+
+  .logo-topo-professor {
+    max-width: 62px;
+    max-height: 42px;
+  }
+
+  .marca-topo-texto-professor strong {
+    font-size: 14px;
+  }
+
+  .marca-topo-texto-professor span {
+    font-size: 11px;
+  }
+
+  .btn-configuracoes-professor-icone {
+    width: 40px;
+    height: 40px;
+    font-size: 19px;
+  }
+
+  .cabecalho-site-professor {
+    margin-bottom: 16px;
+  }
+
+  .saudacao-titulo-professor {
+    font-size: 21px;
+  }
+
+  .subtitulo-site-professor {
+    font-size: 13px;
+  }
+
+  .seletor-perfil-site-professor {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+
+    padding: 13px;
+  }
+
+  .seletor-perfil-site-professor .select-seletor-inline {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   CELULAR
+========================================================= */
+
+@media (max-width: 480px) {
+  .container.home-professor-page {
+    padding: 0 14px 26px;
+  }
+
+  .topo-site-professor {
+    margin: 0 -14px 18px;
+    padding: 10px 14px;
+  }
+
+  .marca-topo-professor {
+    gap: 8px;
+  }
+
+  .logo-topo-professor {
+    max-width: 52px;
+    max-height: 38px;
+  }
+
+  .marca-topo-texto-professor span {
+    display: none;
+  }
+
+  .btn-configuracoes-professor-icone {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+  }
+
+  .saudacao-titulo-professor {
+    font-size: 19px;
+  }
+}

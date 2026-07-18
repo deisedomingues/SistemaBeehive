@@ -2,113 +2,218 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+
   <title>Beehive | Início</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link
+    rel="stylesheet"
+    href="css/style.css?v=2"
+  />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 </head>
+
 <body>
 
   <div class="overlay"></div>
 
   <main class="container home-professor-page">
 
-    <div class="topo-acoes-professor">
-      <button id="btnSair" class="btn-sair-admin" type="button">
-        Sair
-      </button>
-    </div>
+    <!-- =======================================
+         TOPO DA PÁGINA
+    ======================================== -->
+    <header class="topo-site-professor">
 
-    <img
-      src="images/logo.png"
-      alt="Beehive Escola de Idiomas"
-      class="logo logo-professor-centralizada"
-    >
-
-    <section class="cabecalho-professor-central">
-      <h1 id="tituloProfessor">Bem-vindo(a)</h1>
-
-      <div class="saudacao-card saudacao-card-professor">
-        <div class="saudacao-card-texto">
-          <p id="saudacao" class="saudacao saudacao-professor"></p>
-
-          <p class="subtitulo-admin subtitulo-professor">
-            Escolha uma opção para continuar no sistema.
-          </p>
-        </div>
-
+      <div class="marca-topo-professor">
         <img
-          src="images/AbelhinhaBranca.png"
-          alt="Abelhinha"
-          class="icone-saudacao-professor"
+          src="images/logo.png"
+          alt="Beehive Escola de Idiomas"
+          class="logo-topo-professor"
         >
+
+        <div class="marca-topo-texto-professor">
+          <strong>Beehive</strong>
+          <span>Escola de Idiomas</span>
+        </div>
       </div>
+
+      <a
+        href="configuracoes-professor.html"
+        class="btn-configuracoes-professor-icone"
+        aria-label="Abrir configurações"
+        title="Configurações"
+      >
+        ⚙️
+      </a>
+
+    </header>
+
+    <!-- =======================================
+         SAUDAÇÃO
+    ======================================== -->
+    <section class="cabecalho-site-professor">
+
+      <p class="rotulo-admin">
+        Área do professor
+      </p>
+
+      <h1
+        id="saudacao"
+        class="saudacao-titulo-professor"
+      >
+        Olá!
+      </h1>
+
+      <p class="subtitulo-site-professor">
+        Escolha uma opção para continuar no sistema.
+      </p>
+
     </section>
 
-    <section class="seletor-perfil-inline">
-      <label for="selectPerfilVisualizacao" class="label-seletor-inline">
+    <!--
+      Este elemento continua no HTML porque o JavaScript
+      atual utiliza o id tituloProfessor.
+      Ele ficará visualmente escondido pelo CSS.
+    -->
+    <h2
+      id="tituloProfessor"
+      class="titulo-professor-oculto"
+    >
+      Bem-vindo(a)
+    </h2>
+
+    <!-- =======================================
+         SELETOR DE PERFIL
+    ======================================== -->
+    <section class="seletor-perfil-inline seletor-perfil-site-professor">
+
+      <label
+        for="selectPerfilVisualizacao"
+        class="label-seletor-inline"
+      >
         Visualizar como:
       </label>
 
-      <select id="selectPerfilVisualizacao" class="select-seletor-inline">
-        <option value="professor" selected>Professor</option>
-        <option value="aluno" id="optionAluno">Aluno</option>
+      <select
+        id="selectPerfilVisualizacao"
+        class="select-seletor-inline"
+      >
+        <option
+          value="professor"
+          selected
+        >
+          Professor
+        </option>
+
+        <option
+          value="aluno"
+          id="optionAluno"
+        >
+          Aluno
+        </option>
       </select>
+
     </section>
 
-    <p id="infoPerfilAluno" class="info-perfil-aluno-inline"></p>
+    <p
+      id="infoPerfilAluno"
+      class="info-perfil-aluno-inline"
+    ></p>
 
-    <section id="painelProfessorCards" class="painel-professor-cards">
+    <!-- =======================================
+         CARDS DO PROFESSOR
+    ======================================== -->
+    <section
+      id="painelProfessorCards"
+      class="painel-professor-cards"
+    >
 
-     
-
-      <a href="registrar-aula.html" class="card-admin-link">
+      <!-- REGISTRAR AULA -->
+      <a
+        href="registrar-aula.html"
+        class="card-admin-link"
+      >
         <article class="card-admin card-professor">
-          <div class="card-admin-icone">📝</div>
+
+          <div class="card-admin-icone">
+            📝
+          </div>
 
           <div class="card-admin-conteudo">
             <h2>Registrar aula</h2>
+
             <p>
               Lance presença, ausência, cancelamento e demais informações da aula.
             </p>
           </div>
+
         </article>
       </a>
 
-      <a href="agenda-professor.html" class="card-admin-link">
+      <!-- MINHA AGENDA -->
+      <a
+        href="agenda-professor.html"
+        class="card-admin-link"
+      >
         <article class="card-admin card-professor">
-          <div class="card-admin-icone">📅</div>
+
+          <div class="card-admin-icone">
+            📅
+          </div>
 
           <div class="card-admin-conteudo">
             <h2>Minha agenda</h2>
+
             <p>
               Veja seus alunos de hoje e os próximos horários da semana.
             </p>
           </div>
+
         </article>
       </a>
 
-       <a href="notificacao-professor.html" class="card-admin-link">
+      <!-- NOTIFICAÇÕES -->
+      <a
+        href="notificacao-professor.html"
+        class="card-admin-link"
+      >
         <article class="card-admin card-professor">
-          <div class="card-admin-icone">🔔</div>
+
+          <div class="card-admin-icone">
+            🔔
+          </div>
 
           <div class="card-admin-conteudo">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <h2 style="margin:0;">Notificações</h2>
+
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+              "
+            >
+              <h2 style="margin: 0;">
+                Notificações
+              </h2>
 
               <span
                 id="badgeNotificacoesProfessor"
                 style="
-                  display:none;
-                  min-width:22px;
-                  height:22px;
-                  padding:0 7px;
-                  border-radius:999px;
-                  background:#c62828;
-                  color:white;
-                  font-size:12px;
-                  font-weight:bold;
-                  align-items:center;
-                  justify-content:center;
+                  display: none;
+                  min-width: 22px;
+                  height: 22px;
+                  padding: 0 7px;
+                  border-radius: 999px;
+                  background: #c62828;
+                  color: white;
+                  font-size: 12px;
+                  font-weight: bold;
+                  align-items: center;
+                  justify-content: center;
                 "
               >
                 0
@@ -116,47 +221,75 @@
             </div>
 
             <p id="textoCardNotificacoesProfessor">
-               Veja novos agendamentos e avaliações informadas como realizadas pelos alunos.
+              Veja novos agendamentos e avaliações informadas como realizadas pelos alunos.
             </p>
+
           </div>
+
         </article>
       </a>
 
-      <a href="resumo-professor.html" class="card-admin-link">
+      <!-- RESUMO -->
+      <a
+        href="resumo-professor.html"
+        class="card-admin-link"
+      >
         <article class="card-admin card-professor">
-          <div class="card-admin-icone">📊</div>
+
+          <div class="card-admin-icone">
+            📊
+          </div>
 
           <div class="card-admin-conteudo">
             <h2>Resumo</h2>
+
             <p>
               Visualize os diários e informações gerais dos alunos.
             </p>
           </div>
+
         </article>
       </a>
 
-      <a href="eventos-professor.html" class="card-admin-link">
+      <!-- EVENTOS -->
+      <a
+        href="eventos-professor.html"
+        class="card-admin-link"
+      >
         <article class="card-admin card-professor">
-          <div class="card-admin-icone">🎉</div>
+
+          <div class="card-admin-icone">
+            🎉
+          </div>
 
           <div class="card-admin-conteudo">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <h2 style="margin:0;">Eventos</h2>
+
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+              "
+            >
+              <h2 style="margin: 0;">
+                Eventos
+              </h2>
 
               <span
                 id="badgeEventosProfessor"
                 style="
-                  display:none;
-                  min-width:22px;
-                  height:22px;
-                  padding:0 7px;
-                  border-radius:999px;
-                  background:#c62828;
-                  color:white;
-                  font-size:12px;
-                  font-weight:bold;
-                  align-items:center;
-                  justify-content:center;
+                  display: none;
+                  min-width: 22px;
+                  height: 22px;
+                  padding: 0 7px;
+                  border-radius: 999px;
+                  background: #c62828;
+                  color: white;
+                  font-size: 12px;
+                  font-weight: bold;
+                  align-items: center;
+                  justify-content: center;
                 "
               >
                 0
@@ -166,42 +299,57 @@
             <p id="textoCardEventosProfessor">
               Veja os eventos em que você está como professor responsável ou professor de apoio.
             </p>
+
           </div>
+
         </article>
       </a>
 
+      <!-- CALENDÁRIO -->
       <a
         href="https://drive.google.com/file/d/1ajIvVg2S1OTMIvjNYyVqoZR4tvJQioc9/view?usp=drive_link"
         class="card-admin-link"
         target="_blank"
         rel="noopener noreferrer"
       >
-        <article class="card-admin card-aluno">
-          <div class="card-admin-icone">🗓️</div>
+        <article class="card-admin card-professor">
+
+          <div class="card-admin-icone">
+            🗓️
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Calendário anual</h2>
+
             <p>
               Consulte o calendário anual da escola com datas importantes.
             </p>
           </div>
+
         </article>
       </a>
 
+      <!-- MANUAL -->
       <a
-        href="docs/Manual do Professor 2026.pdf"
+        href="docs/Manual%20do%20Professor%202026.pdf"
         class="card-admin-link"
         target="_blank"
         rel="noopener noreferrer"
       >
         <article class="card-admin card-professor">
-          <div class="card-admin-icone">📘</div>
+
+          <div class="card-admin-icone">
+            📘
+          </div>
 
           <div class="card-admin-conteudo">
             <h2>Manual do professor</h2>
+
             <p>
               Consulte o manual com orientações e regras importantes da Beehive.
             </p>
           </div>
+
         </article>
       </a>
 
@@ -209,6 +357,10 @@
 
   </main>
 
-  <script type="module" src="js/home-professor.js"></script>
+  <script
+    type="module"
+    src="js/home-professor.js?v=2"
+  ></script>
+
 </body>
 </html>
