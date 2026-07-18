@@ -4876,3 +4876,293 @@ body:has(.home-aluno-page) .overlay {
     font-size: 19px;
   }
 }
+/* =========================================================
+   HOME ALUNO — TOPO COM APARÊNCIA DE SITE
+========================================================= */
+
+/*
+  Faz somente a home do aluno ocupar a tela como uma página,
+  sem alterar login, páginas administrativas ou relatórios.
+*/
+body:has(.home-aluno-page) {
+  display: block;
+  padding: 0;
+  background-color: #fff8dc;
+  background-image: none;
+}
+
+/*
+  O fundo decorativo antigo não será exibido nesta home.
+*/
+body:has(.home-aluno-page) .overlay {
+  display: none;
+}
+
+/*
+  Retira da home a aparência de uma caixa branca flutuante.
+*/
+.container.home-aluno-page {
+  width: 100%;
+  max-width: 1180px;
+  min-height: 100vh;
+
+  margin: 0 auto;
+  padding: 0 32px 42px;
+
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+
+  text-align: left;
+}
+
+/* =========================================================
+   BARRA SUPERIOR
+========================================================= */
+
+.topo-site-aluno {
+  min-height: 76px;
+
+  margin: 0 -32px 28px;
+  padding: 14px 32px;
+
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid #f1df9a;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.05);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+/* =========================================================
+   MARCA E LOGO
+========================================================= */
+
+.marca-topo-aluno {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-topo-aluno {
+  display: block;
+
+  width: auto;
+  max-width: 74px;
+  max-height: 48px;
+
+  margin: 0;
+  object-fit: contain;
+}
+
+.marca-topo-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.marca-topo-texto strong {
+  color: #2f2f2f;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.marca-topo-texto span {
+  color: #777;
+  font-size: 12px;
+}
+
+/* =========================================================
+   BOTÃO DE CONFIGURAÇÕES
+========================================================= */
+
+.btn-configuracoes-icone {
+  width: 44px;
+  height: 44px;
+
+  flex-shrink: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  background: #ffffff;
+  color: #5c4300;
+
+  border: 1px solid #f1bc32;
+  border-radius: 50%;
+
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+
+  text-decoration: none;
+  font-size: 21px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn-configuracoes-icone:hover {
+  background: #fff5cc;
+  transform: rotate(25deg);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.1);
+}
+
+.btn-configuracoes-icone:active {
+  transform: rotate(25deg) scale(0.96);
+}
+
+.btn-configuracoes-icone:focus-visible {
+  outline: 3px solid rgba(241, 188, 50, 0.4);
+  outline-offset: 3px;
+}
+
+/* =========================================================
+   SAUDAÇÃO COMPACTA
+========================================================= */
+
+.cabecalho-site-aluno {
+  margin-bottom: 22px;
+  padding: 0 4px;
+  text-align: left;
+}
+
+.cabecalho-site-aluno .rotulo-admin {
+  margin-bottom: 7px;
+}
+
+.saudacao-titulo-aluno {
+  margin: 0 0 7px;
+
+  color: #2f2f2f;
+
+  font-size: 25px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.subtitulo-site-aluno {
+  margin: 0;
+
+  color: #666;
+
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/*
+  Esconde o antigo cabeçalho caso algum trecho antigo
+  ainda tenha permanecido no HTML.
+*/
+.home-aluno-page .logo-aluno-centralizada,
+.home-aluno-page .cabecalho-aluno-central,
+.home-aluno-page .saudacao-card {
+  display: none;
+}
+
+/* =========================================================
+   CURSO SELECIONADO
+========================================================= */
+
+.home-aluno-page #blocoCursoAtual {
+  margin-top: 0;
+  margin-bottom: 18px;
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 768px) {
+  body:has(.home-aluno-page) {
+    padding: 0;
+  }
+
+  .container.home-aluno-page {
+    width: 100%;
+    padding: 0 18px 30px;
+  }
+
+  .topo-site-aluno {
+    min-height: 68px;
+    margin: 0 -18px 22px;
+    padding: 12px 18px;
+  }
+
+  .logo-topo-aluno {
+    max-width: 62px;
+    max-height: 42px;
+  }
+
+  .marca-topo-texto strong {
+    font-size: 14px;
+  }
+
+  .marca-topo-texto span {
+    font-size: 11px;
+  }
+
+  .btn-configuracoes-icone {
+    width: 40px;
+    height: 40px;
+    font-size: 19px;
+  }
+
+  .cabecalho-site-aluno {
+    margin-bottom: 18px;
+  }
+
+  .saudacao-titulo-aluno {
+    font-size: 21px;
+  }
+
+  .subtitulo-site-aluno {
+    font-size: 13px;
+  }
+}
+
+/* =========================================================
+   CELULAR
+========================================================= */
+
+@media (max-width: 480px) {
+  .container.home-aluno-page {
+    padding: 0 14px 26px;
+  }
+
+  .topo-site-aluno {
+    margin: 0 -14px 18px;
+    padding: 10px 14px;
+  }
+
+  .marca-topo-aluno {
+    gap: 8px;
+  }
+
+  .logo-topo-aluno {
+    max-width: 52px;
+    max-height: 38px;
+  }
+
+  .marca-topo-texto span {
+    display: none;
+  }
+
+  .btn-configuracoes-icone {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+  }
+
+  .saudacao-titulo-aluno {
+    font-size: 19px;
+  }
+}

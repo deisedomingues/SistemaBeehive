@@ -1603,6 +1603,10 @@ if (linkEventos) {
   );
 }
 
+/*
+  O botão Sair não aparece mais na home.
+  Esta verificação evita erro caso ele não exista.
+*/
 if (btnSair) {
   btnSair.addEventListener("click", () => {
     localStorage.removeItem("alunoId");
