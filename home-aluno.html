@@ -22,7 +22,24 @@
 
   <main class="container home-aluno-page">
 
-    <div class="topo-acoes-aluno">
+    <!-- =======================================
+         TOPO DA PÁGINA
+    ======================================== -->
+    <header class="topo-site-aluno">
+
+      <div class="marca-topo-aluno">
+        <img
+          src="images/logo.png"
+          alt="Beehive Escola de Idiomas"
+          class="logo-topo-aluno"
+        >
+
+        <div class="marca-topo-texto">
+          <strong>Beehive</strong>
+          <span>Escola de Idiomas</span>
+        </div>
+      </div>
+
       <button
         id="btnSair"
         class="btn-sair-admin"
@@ -30,43 +47,34 @@
       >
         Sair
       </button>
-    </div>
 
-    <img
-      src="images/logo.png"
-      alt="Beehive Escola de Idiomas"
-      class="logo logo-aluno-centralizada"
-    >
+    </header>
 
-    <section class="cabecalho-aluno-central">
+    <!-- =======================================
+         SAUDAÇÃO
+    ======================================== -->
+    <section class="cabecalho-site-aluno">
+
       <p class="rotulo-admin">
         Área do aluno
       </p>
 
-      <h1>Bem-vindo(a)!</h1>
+      <h1
+        id="saudacao"
+        class="saudacao-titulo-aluno"
+      >
+        Olá!
+      </h1>
 
-      <div class="saudacao-card">
-        <div class="saudacao-card-texto">
-          <p
-            id="saudacao"
-            class="saudacao saudacao-aluno"
-          >
-            Olá!
-          </p>
+      <p class="subtitulo-site-aluno">
+        Escolha uma opção para continuar na sua área.
+      </p>
 
-          <p class="subtitulo-admin subtitulo-aluno">
-            Escolha uma opção para continuar na sua área.
-          </p>
-        </div>
-
-        <img
-          src="images/AbelhinhaBranca.png"
-          alt="Abelhinha"
-          class="icone-saudacao-aluno"
-        >
-      </div>
     </section>
 
+    <!-- =======================================
+         CURSO SELECIONADO
+    ======================================== -->
     <section
       id="blocoCursoAtual"
       class="card"
@@ -105,6 +113,9 @@
       </label>
     </section>
 
+    <!-- =======================================
+         CARDS DA ÁREA DO ALUNO
+    ======================================== -->
     <section class="painel-aluno-cards">
 
       <!-- AULA AO VIVO -->
@@ -180,6 +191,7 @@
         class="card-admin-link"
       >
         <article class="card-admin card-aluno card-avaliacoes-aluno">
+
           <span
             id="badgeAvaliacoes"
             class="badge-eventos"
@@ -208,6 +220,7 @@
         class="card-admin-link card-eventos-link"
       >
         <article class="card-admin card-aluno card-eventos-aluno">
+
           <span
             id="badgeEventos"
             class="badge-eventos"
@@ -276,6 +289,7 @@
         class="card-admin-link"
       >
         <article class="card-admin card-aluno card-comunicados-aluno">
+
           <span
             id="badgeComunicados"
             class="badge-eventos"
@@ -320,7 +334,7 @@
         </article>
       </a>
 
-      <!-- CALENDÁRIO -->
+      <!-- CALENDÁRIO ANUAL -->
       <a
         href="https://drive.google.com/file/d/1ajIvVg2S1OTMIvjNYyVqoZR4tvJQioc9/view?usp=drive_link"
         class="card-admin-link"
