@@ -2,9 +2,18 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+
   <title>Beehive | Área do Aluno</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 </head>
 
 <body>
@@ -14,7 +23,11 @@
   <main class="container home-aluno-page">
 
     <div class="topo-acoes-aluno">
-      <button id="btnSair" class="btn-sair-admin" type="button">
+      <button
+        id="btnSair"
+        class="btn-sair-admin"
+        type="button"
+      >
         Sair
       </button>
     </div>
@@ -26,12 +39,21 @@
     >
 
     <section class="cabecalho-aluno-central">
-      <p class="rotulo-admin">Área do aluno</p>
+      <p class="rotulo-admin">
+        Área do aluno
+      </p>
+
       <h1>Bem-vindo(a)!</h1>
 
       <div class="saudacao-card">
         <div class="saudacao-card-texto">
-          <p id="saudacao" class="saudacao saudacao-aluno">Olá!</p>
+          <p
+            id="saudacao"
+            class="saudacao saudacao-aluno"
+          >
+            Olá!
+          </p>
+
           <p class="subtitulo-admin subtitulo-aluno">
             Escolha uma opção para continuar na sua área.
           </p>
@@ -50,11 +72,17 @@
       class="card"
       style="margin-bottom: 18px; display: none;"
     >
-      <h2 style="margin-bottom: 10px;">Curso selecionado</h2>
+      <h2 style="margin-bottom: 10px;">
+        Curso selecionado
+      </h2>
 
       <p
         id="textoCursoAtual"
-        style="margin-top: 0; margin-bottom: 12px; opacity: 0.9;"
+        style="
+          margin-top: 0;
+          margin-bottom: 12px;
+          opacity: 0.9;
+        "
       >
         Carregando seus cursos...
       </p>
@@ -65,19 +93,35 @@
         style="display: none;"
       >
         Escolha o curso que deseja visualizar
-        <select id="selectMatricula" style="margin-top: 6px;">
-          <option value="">Selecione</option>
+
+        <select
+          id="selectMatricula"
+          style="margin-top: 6px;"
+        >
+          <option value="">
+            Selecione
+          </option>
         </select>
       </label>
     </section>
 
     <section class="painel-aluno-cards">
 
-      <a id="btnZoom" class="card-admin-link" target="_blank" rel="noopener noreferrer">
+      <!-- AULA AO VIVO -->
+      <a
+        id="btnZoom"
+        class="card-admin-link"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">🎓</div>
+          <div class="card-admin-icone">
+            🎓
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Entrar na aula ao vivo</h2>
+
             <p id="textoCardZoom">
               Acesse rapidamente o link da sua aula online.
             </p>
@@ -85,11 +129,21 @@
         </article>
       </a>
 
-      <a id="btnYoutube" class="card-admin-link" target="_blank" rel="noopener noreferrer">
+      <!-- AULAS GRAVADAS -->
+      <a
+        id="btnYoutube"
+        class="card-admin-link"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">🎥</div>
+          <div class="card-admin-icone">
+            🎥
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Assistir aulas gravadas</h2>
+
             <p id="textoCardYoutube">
               Veja ou reveja as aulas disponíveis para seu curso.
             </p>
@@ -97,6 +151,7 @@
         </article>
       </a>
 
+      <!-- MATERIAL DE ESTUDO -->
       <a
         id="btnMaterialEstudo"
         class="card-admin-link"
@@ -104,9 +159,13 @@
         rel="noopener noreferrer"
       >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">📚</div>
+          <div class="card-admin-icone">
+            📚
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Ver material de estudo</h2>
+
             <p id="textoCardMaterialEstudo">
               Acesse livros, workbooks e materiais do seu módulo.
             </p>
@@ -114,17 +173,28 @@
         </article>
       </a>
 
+      <!-- AVALIAÇÕES -->
       <a
         id="btnAvaliacoes"
         href="avaliacoes-aluno.html"
         class="card-admin-link"
       >
         <article class="card-admin card-aluno card-avaliacoes-aluno">
-          <span id="badgeAvaliacoes" class="badge-eventos" style="display:none;">0</span>
+          <span
+            id="badgeAvaliacoes"
+            class="badge-eventos"
+            style="display: none;"
+          >
+            0
+          </span>
 
-          <div class="card-admin-icone">📝</div>
+          <div class="card-admin-icone">
+            📝
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Avaliações</h2>
+
             <p id="textoAvaliacoesHome">
               Você não possui avaliações pendentes no momento.
             </p>
@@ -132,13 +202,27 @@
         </article>
       </a>
 
-      <a href="evento-confirmacao.html" class="card-admin-link card-eventos-link">
+      <!-- EVENTOS -->
+      <a
+        href="evento-confirmacao.html"
+        class="card-admin-link card-eventos-link"
+      >
         <article class="card-admin card-aluno card-eventos-aluno">
-          <span id="badgeEventos" class="badge-eventos" style="display:none;">0</span>
+          <span
+            id="badgeEventos"
+            class="badge-eventos"
+            style="display: none;"
+          >
+            0
+          </span>
 
-          <div class="card-admin-icone">🎈</div>
+          <div class="card-admin-icone">
+            🎈
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Eventos</h2>
+
             <p id="textoEventosHome">
               Consulte os eventos da escola e confirme sua participação.
             </p>
@@ -146,13 +230,19 @@
         </article>
       </a>
 
-    
-
-      <a href="agendar_reposicao.html" class="card-admin-link">
+      <!-- AGENDAMENTOS -->
+      <a
+        href="agendar_reposicao.html"
+        class="card-admin-link"
+      >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">📅</div>
+          <div class="card-admin-icone">
+            📅
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Agendamentos</h2>
+
             <p id="textoCardReposicao">
               Agende reposições, plantões de dúvidas ou aulas instrumentais.
             </p>
@@ -160,11 +250,19 @@
         </article>
       </a>
 
-      <a href="painel_academico.html" class="card-admin-link">
+      <!-- PAINEL ACADÊMICO -->
+      <a
+        href="painel_academico.html"
+        class="card-admin-link"
+      >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">📊</div>
+          <div class="card-admin-icone">
+            📊
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Meu painel acadêmico</h2>
+
             <p id="textoCardPainel">
               Acompanhe frequência, histórico e informações da sua jornada.
             </p>
@@ -172,13 +270,27 @@
         </article>
       </a>
 
-      <a href="comunicados.html" class="card-admin-link">
+      <!-- COMUNICADOS -->
+      <a
+        href="comunicados.html"
+        class="card-admin-link"
+      >
         <article class="card-admin card-aluno card-comunicados-aluno">
-          <span id="badgeComunicados" class="badge-eventos" style="display:none;">0</span>
+          <span
+            id="badgeComunicados"
+            class="badge-eventos"
+            style="display: none;"
+          >
+            0
+          </span>
 
-          <div class="card-admin-icone">📢</div>
+          <div class="card-admin-icone">
+            📢
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Comunicados</h2>
+
             <p id="textoComunicadosHome">
               Veja os comunicados importantes da escola.
             </p>
@@ -186,16 +298,21 @@
         </article>
       </a>
 
+      <!-- MANUAL DO ALUNO -->
       <a
-       href="docs/Manual%20do%20Aluno%202026.pdf"
+        href="docs/Manual%20do%20Aluno%202026.pdf"
         class="card-admin-link"
         target="_blank"
         rel="noopener noreferrer"
       >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">📘</div>
+          <div class="card-admin-icone">
+            📘
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Manual do aluno</h2>
+
             <p>
               Consulte o manual com orientações importantes sobre o seu curso.
             </p>
@@ -203,6 +320,7 @@
         </article>
       </a>
 
+      <!-- CALENDÁRIO -->
       <a
         href="https://drive.google.com/file/d/1ajIvVg2S1OTMIvjNYyVqoZR4tvJQioc9/view?usp=drive_link"
         class="card-admin-link"
@@ -210,9 +328,13 @@
         rel="noopener noreferrer"
       >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">🗓️</div>
+          <div class="card-admin-icone">
+            🗓️
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Calendário anual</h2>
+
             <p>
               Consulte o calendário anual da escola com datas importantes.
             </p>
@@ -220,30 +342,63 @@
         </article>
       </a>
 
-      <!--<a
+      <!-- CONFIGURAÇÕES -->
+      <a
+        href="configuracoes-aluno.html"
+        class="card-admin-link"
+      >
+        <article class="card-admin card-aluno">
+          <div class="card-admin-icone">
+            ⚙️
+          </div>
+
+          <div class="card-admin-conteudo">
+            <h2>Configurações</h2>
+
+            <p>
+              Altere sua senha, ative notificações e consulte seus dados.
+            </p>
+          </div>
+        </article>
+      </a>
+
+      <!--
+      <a
         href="https://www.survio.com/survey/d/A2I2P1Z5F1I8Q1P4S"
         class="card-admin-link"
         target="_blank"
         rel="noopener noreferrer"
       >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">💬</div>
+          <div class="card-admin-icone">
+            💬
+          </div>
+
           <div class="card-admin-conteudo">
             <h2>Sua voz na Beehive</h2>
+
             <p>
               Conte sua experiência e envie sugestões de forma anônima.
               Sua opinião ajuda a melhorar a escola.
             </p>
           </div>
         </article>
-      </a>-->
+      </a>
+      -->
 
     </section>
 
   </main>
 
-  <script type="module" src="js/home-aluno.js"></script>
-  <script type="module" src="js/push-notificacoes.js"></script>
+  <script
+    type="module"
+    src="js/home-aluno.js"
+  ></script>
+
+  <script
+    type="module"
+    src="js/push-notificacoes.js"
+  ></script>
 
 </body>
 </html>
