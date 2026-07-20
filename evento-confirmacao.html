@@ -12,6 +12,7 @@
 
   <main class="container container-eventos-admin">
     <h1 style="margin-bottom:8px;">Eventos da Escola</h1>
+
     <p style="margin-bottom:18px; opacity:0.9;">
       Confira os eventos disponíveis para você e confirme presença.
     </p>
@@ -19,27 +20,52 @@
     <div id="msg" style="display:none; margin-bottom:12px;"></div>
 
     <section class="card" style="margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div
+        style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:12px;
+          flex-wrap:wrap;
+        "
+      >
         <div>
           <h2 style="margin-bottom:6px;">Central de eventos</h2>
+
           <p style="margin:0; opacity:0.85;">
-            Aqui você visualiza os eventos disponíveis para o curso selecionado e pode confirmar sua presença.
+            Aqui você visualiza os eventos disponíveis para o curso
+            selecionado e pode confirmar sua presença.
           </p>
         </div>
       </div>
     </section>
 
     <!-- CURSO SELECIONADO -->
-    <section id="blocoCursoEventos" class="card" style="margin-bottom:16px; display:none;">
+    <section
+      id="blocoCursoEventos"
+      class="card"
+      style="margin-bottom:16px; display:none;"
+    >
       <h2 style="margin-bottom:8px;">Curso selecionado</h2>
 
-      <p id="textoCursoEventos" style="margin:0 0 12px 0; opacity:0.9;">
+      <p
+        id="textoCursoEventos"
+        style="margin:0 0 12px 0; opacity:0.9;"
+      >
         Carregando curso...
       </p>
 
-      <label id="labelSelectMatriculaEvento" for="selectMatriculaEvento" style="display:none;">
+      <label
+        id="labelSelectMatriculaEvento"
+        for="selectMatriculaEvento"
+        style="display:none;"
+      >
         Escolha o curso que deseja visualizar
-        <select id="selectMatriculaEvento" style="margin-top:6px;">
+
+        <select
+          id="selectMatriculaEvento"
+          style="margin-top:6px;"
+        >
           <option value="">Selecione</option>
         </select>
       </label>
@@ -48,7 +74,12 @@
     <section class="secao-eventos-admin">
       <div class="topo-secao-eventos-admin">
         <h2>Eventos disponíveis para você</h2>
-        <p>Os eventos abaixo seguem o curso selecionado na sua área do aluno. Abra o link para participar on-line e confirme sua presença.</p>
+
+        <p>
+          Os eventos abaixo seguem o curso selecionado na sua área do aluno.
+          Os eventos do dia permanecem disponíveis para que você possa
+          acessar o link, mesmo depois do horário de início.
+        </p>
       </div>
 
       <div id="listaEventos" class="grid-eventos-admin">
@@ -58,9 +89,18 @@
       </div>
     </section>
 
-    <button type="button" id="btnVoltarEventos" class="btn-voltar">← Voltar</button>
+    <button
+      type="button"
+      id="btnVoltarEventos"
+      class="btn-voltar"
+    >
+      ← Voltar
+    </button>
   </main>
 
-  <script type="module" src="js/evento-confirmacao.js"></script>
+  <script
+    type="module"
+    src="js/evento-confirmacao.js"
+  ></script>
 </body>
 </html>

@@ -6,10 +6,21 @@ await exigirAlunoOuProfessorFuncionario();
 const msg = document.getElementById("msg");
 const listaEventos = document.getElementById("listaEventos");
 
-const blocoCursoEventos = document.getElementById("blocoCursoEventos");
-const textoCursoEventos = document.getElementById("textoCursoEventos");
-const labelSelectMatriculaEvento = document.getElementById("labelSelectMatriculaEvento");
-const selectMatriculaEvento = document.getElementById("selectMatriculaEvento");
+const blocoCursoEventos = document.getElementById(
+  "blocoCursoEventos"
+);
+
+const textoCursoEventos = document.getElementById(
+  "textoCursoEventos"
+);
+
+const labelSelectMatriculaEvento = document.getElementById(
+  "labelSelectMatriculaEvento"
+);
+
+const selectMatriculaEvento = document.getElementById(
+  "selectMatriculaEvento"
+);
 
 let alunoId = null;
 let matriculasAtivas = [];
@@ -22,7 +33,10 @@ let convitesMap = new Map();
    BOTÃO VOLTAR
 ========================================================= */
 function configurarBotaoVoltar() {
-  const btnVoltar = document.getElementById("btnVoltarEventos");
+  const btnVoltar = document.getElementById(
+    "btnVoltarEventos"
+  );
+
   if (!btnVoltar) return;
 
   btnVoltar.addEventListener("click", () => {
@@ -67,6 +81,7 @@ function mostrarMensagem(texto, tipo = "sucesso") {
 
 function esconderMensagem() {
   if (!msg) return;
+
   msg.style.display = "none";
   msg.textContent = "";
 }
@@ -85,12 +100,15 @@ function escaparHtml(texto) {
 
 function formatarData(dataStr) {
   if (!dataStr) return "-";
+
   const [ano, mes, dia] = dataStr.split("-");
+
   return `${dia}/${mes}/${ano}`;
 }
 
 function formatarHora(horaStr) {
   if (!horaStr) return "-";
+
   return horaStr.slice(0, 5);
 }
 
@@ -109,22 +127,44 @@ function formatarDataHoraBR(dataHoraStr) {
 }
 
 function montarNomeCurso(matricula) {
-  const materia = matricula?.materia?.nome || "Curso";
-  const modulo = matricula?.modulo?.nome || "Módulo não informado";
+  const materia =
+    matricula?.materia?.nome ||
+    "Curso";
+
+  const modulo =
+    matricula?.modulo?.nome ||
+    "Módulo não informado";
+
   return `${materia} — ${modulo}`;
 }
 
 function salvarMatriculaSelecionada(matricula) {
   if (!matricula?.id) return;
 
-  localStorage.setItem("matriculaSelecionadaId", String(matricula.id));
-  localStorage.setItem("materiaSelecionadaId", String(matricula.materia_id || ""));
-  localStorage.setItem("moduloSelecionadoId", String(matricula.modulo_id || ""));
-  localStorage.setItem("nomeCursoSelecionado", montarNomeCurso(matricula));
+  localStorage.setItem(
+    "matriculaSelecionadaId",
+    String(matricula.id)
+  );
+
+  localStorage.setItem(
+    "materiaSelecionadaId",
+    String(matricula.materia_id || "")
+  );
+
+  localStorage.setItem(
+    "moduloSelecionadoId",
+    String(matricula.modulo_id || "")
+  );
+
+  localStorage.setItem(
+    "nomeCursoSelecionado",
+    montarNomeCurso(matricula)
+  );
 }
 
 /* =========================================================
    IDENTIFICAR ALUNO LOGADO
+
    Professor também pode ser aluno sem outro login.
 ========================================================= */
 async function obterAlunoIdLogado() {
@@ -136,41 +176,65 @@ async function obterAlunoIdLogado() {
   } = await supabase.auth.getUser();
 
   if (erroUser) {
-    console.error("Erro ao obter usuário logado:", erroUser);
+    console.error(
+      "Erro ao obter usuário logado:",
+      erroUser
+    );
   }
 
-  const emailLogado = user?.email ? String(user.email).trim() : "";
+  const emailLogado = user?.email
+    ? String(user.email).trim()
+    : "";
 
   /*
-    Primeiro tenta achar na tabela aluno pelo e-mail do login.
-    Isso resolve o caso do professor que também é aluno.
-    Não cria novo usuário no Authentication.
+    Primeiro tenta achar na tabela aluno pelo e-mail
+    usado no login.
+
+    Isso resolve o caso do professor que também é aluno,
+    sem precisar criar outro usuário no Authentication.
   */
   if (emailLogado) {
-    const { data: alunoPorEmail, error } = await supabase
+    const {
+      data: alunoPorEmail,
+      error
+    } = await supabase
       .from("aluno")
       .select("id")
       .ilike("email", emailLogado)
       .maybeSingle();
 
     if (!error && alunoPorEmail?.id) {
-      localStorage.setItem("alunoId", String(alunoPorEmail.id));
-      localStorage.setItem("aluno_id", String(alunoPorEmail.id));
+      localStorage.setItem(
+        "alunoId",
+        String(alunoPorEmail.id)
+      );
+
+      localStorage.setItem(
+        "aluno_id",
+        String(alunoPorEmail.id)
+      );
 
       if (role === "professor") {
-        localStorage.setItem("alunoIdVisualizacao", String(alunoPorEmail.id));
+        localStorage.setItem(
+          "alunoIdVisualizacao",
+          String(alunoPorEmail.id)
+        );
       }
 
       return Number(alunoPorEmail.id);
     }
 
     if (error) {
-      console.warn("Não foi possível buscar aluno pelo e-mail:", error);
+      console.warn(
+        "Não foi possível buscar aluno pelo e-mail:",
+        error
+      );
     }
   }
 
   /*
-    Depois tenta IDs já salvos no navegador.
+    Depois tenta os IDs que já estejam salvos
+    no navegador.
   */
   const alunoIdLocal =
     localStorage.getItem("alunoId") ||
@@ -185,14 +249,24 @@ async function obterAlunoIdLogado() {
   }
 
   /*
-    Por último, se for professor visualizando como aluno.
+    Por último, tenta o ID salvo para professor
+    que também está cadastrado como aluno.
   */
   if (role === "professor") {
-    const alunoIdVisualizacao = localStorage.getItem("alunoIdVisualizacao");
+    const alunoIdVisualizacao =
+      localStorage.getItem("alunoIdVisualizacao");
 
     if (alunoIdVisualizacao) {
-      localStorage.setItem("alunoId", alunoIdVisualizacao);
-      localStorage.setItem("aluno_id", alunoIdVisualizacao);
+      localStorage.setItem(
+        "alunoId",
+        alunoIdVisualizacao
+      );
+
+      localStorage.setItem(
+        "aluno_id",
+        alunoIdVisualizacao
+      );
+
       return Number(alunoIdVisualizacao);
     }
   }
@@ -204,14 +278,28 @@ async function obterAlunoIdLogado() {
    EVENTOS - REGRAS
 ========================================================= */
 function eventoJaConfirmado(eventoId) {
-  return confirmacoesSet.has(Number(eventoId));
+  return confirmacoesSet.has(
+    Number(eventoId)
+  );
 }
 
 function obterRotuloPublico(evento) {
-  if (evento.publico_alvo === "todos") return "Todos os alunos";
-  if (evento.publico_alvo === "materia") return "Somente este curso";
-  if (evento.publico_alvo === "modulo_exato") return "Somente este módulo";
-  if (evento.publico_alvo === "modulo_a_partir") return "A partir deste módulo";
+  if (evento.publico_alvo === "todos") {
+    return "Todos os alunos";
+  }
+
+  if (evento.publico_alvo === "materia") {
+    return "Somente este curso";
+  }
+
+  if (evento.publico_alvo === "modulo_exato") {
+    return "Somente este módulo";
+  }
+
+  if (evento.publico_alvo === "modulo_a_partir") {
+    return "A partir deste módulo";
+  }
+
   return "-";
 }
 
@@ -220,30 +308,53 @@ function obterPublicoDetalhado(evento) {
     return "Disponível para todos os alunos da escola";
   }
 
-  if (evento.publico_alvo === "materia" && evento.materia?.nome) {
-    return `${obterRotuloPublico(evento)} • ${evento.materia.nome}`;
+  if (
+    evento.publico_alvo === "materia" &&
+    evento.materia?.nome
+  ) {
+    return (
+      `${obterRotuloPublico(evento)} • ` +
+      `${evento.materia.nome}`
+    );
   }
 
   if (
-    (evento.publico_alvo === "modulo_exato" || evento.publico_alvo === "modulo_a_partir") &&
+    (
+      evento.publico_alvo === "modulo_exato" ||
+      evento.publico_alvo === "modulo_a_partir"
+    ) &&
     evento.modulo?.nome
   ) {
-    return `${obterRotuloPublico(evento)} • ${evento.materia?.nome || "Curso"} — ${evento.modulo.nome}`;
+    return (
+      `${obterRotuloPublico(evento)} • ` +
+      `${evento.materia?.nome || "Curso"} — ` +
+      `${evento.modulo.nome}`
+    );
   }
 
   return obterRotuloPublico(evento);
 }
 
 function eventoPrazoConfirmacaoVencido(evento) {
-  if (!evento?.limite_confirmacao) return false;
-  return new Date(evento.limite_confirmacao) < new Date();
+  if (!evento?.limite_confirmacao) {
+    return false;
+  }
+
+  return (
+    new Date(evento.limite_confirmacao) <
+    new Date()
+  );
 }
 
 function ehUltimoDiaConfirmacao(evento) {
-  if (!evento?.limite_confirmacao) return false;
+  if (!evento?.limite_confirmacao) {
+    return false;
+  }
 
   const hoje = new Date();
-  const limite = new Date(evento.limite_confirmacao);
+  const limite = new Date(
+    evento.limite_confirmacao
+  );
 
   return (
     hoje.getFullYear() === limite.getFullYear() &&
@@ -253,52 +364,114 @@ function ehUltimoDiaConfirmacao(evento) {
   );
 }
 
-function eventoJaAconteceu(evento) {
-  if (!evento?.data_evento || !evento?.hora_evento) return false;
+/*
+  ALTERAÇÃO PRINCIPAL:
 
-  const dataHoraEvento = new Date(`${evento.data_evento}T${evento.hora_evento}`);
-  return dataHoraEvento < new Date();
+  Antes, o evento desaparecia assim que o horário
+  de início passava.
+
+  Agora, ele permanece visível durante todo o dia
+  do evento e só desaparece no dia seguinte.
+*/
+function eventoJaAconteceu(evento) {
+  if (!evento?.data_evento) {
+    return false;
+  }
+
+  /*
+    Exemplo:
+
+    Evento em 20/07/2026 às 18h.
+
+    Ele permanece disponível até:
+    20/07/2026 às 23h59min59s.
+
+    Só deixa de aparecer a partir de:
+    21/07/2026.
+  */
+  const fimDoDiaDoEvento = new Date(
+    `${evento.data_evento}T23:59:59.999`
+  );
+
+  return new Date() > fimDoDiaDoEvento;
 }
 
-function eventoCondizComMatricula(evento, matricula) {
-  if (!evento?.ativo) return false;
-  if (!matricula) return false;
-  if (eventoJaAconteceu(evento)) return false;
+function eventoCondizComMatricula(
+  evento,
+  matricula
+) {
+  if (!evento?.ativo) {
+    return false;
+  }
+
+  if (!matricula) {
+    return false;
+  }
+
+  if (eventoJaAconteceu(evento)) {
+    return false;
+  }
 
   if (evento.publico_alvo === "todos") {
     return true;
   }
 
   if (evento.publico_alvo === "materia") {
-    return Number(matricula.materia_id) === Number(evento.materia_id);
+    return (
+      Number(matricula.materia_id) ===
+      Number(evento.materia_id)
+    );
   }
 
   if (evento.publico_alvo === "modulo_exato") {
     return (
-      Number(matricula.materia_id) === Number(evento.materia_id) &&
-      Number(matricula.modulo_id) === Number(evento.modulo_id)
+      Number(matricula.materia_id) ===
+        Number(evento.materia_id) &&
+      Number(matricula.modulo_id) ===
+        Number(evento.modulo_id)
     );
   }
 
-  if (evento.publico_alvo === "modulo_a_partir") {
-    const mesmaMateria = Number(matricula.materia_id) === Number(evento.materia_id);
+  if (
+    evento.publico_alvo ===
+    "modulo_a_partir"
+  ) {
+    const mesmaMateria =
+      Number(matricula.materia_id) ===
+      Number(evento.materia_id);
 
-    const ordemAluno = matricula.modulo?.ordem ?? null;
-    const ordemEvento = evento.modulo?.ordem ?? null;
+    const ordemAluno =
+      matricula.modulo?.ordem ?? null;
 
-    if (!mesmaMateria || ordemAluno === null || ordemEvento === null) {
+    const ordemEvento =
+      evento.modulo?.ordem ?? null;
+
+    if (
+      !mesmaMateria ||
+      ordemAluno === null ||
+      ordemEvento === null
+    ) {
       return false;
     }
 
-    return Number(ordemAluno) >= Number(ordemEvento);
+    return (
+      Number(ordemAluno) >=
+      Number(ordemEvento)
+    );
   }
 
   return false;
 }
 
-function eventoDisponivelParaAlgumaMatricula(evento) {
-  return matriculasAtivas.some((matricula) =>
-    eventoCondizComMatricula(evento, matricula)
+function eventoDisponivelParaAlgumaMatricula(
+  evento
+) {
+  return matriculasAtivas.some(
+    (matricula) =>
+      eventoCondizComMatricula(
+        evento,
+        matricula
+      )
   );
 }
 
@@ -306,10 +479,18 @@ function eventoDisponivelParaAlgumaMatricula(evento) {
    LINKS
 ========================================================= */
 function normalizarLink(link) {
-  const valor = String(link || "").trim();
-  if (!valor) return "";
+  const valor = String(
+    link || ""
+  ).trim();
 
-  if (valor.startsWith("http://") || valor.startsWith("https://")) {
+  if (!valor) {
+    return "";
+  }
+
+  if (
+    valor.startsWith("http://") ||
+    valor.startsWith("https://")
+  ) {
     return valor;
   }
 
@@ -317,7 +498,8 @@ function normalizarLink(link) {
 }
 
 function obterHtmlLinkParticipacao(link) {
-  const linkNormalizado = normalizarLink(link);
+  const linkNormalizado =
+    normalizarLink(link);
 
   if (!linkNormalizado) {
     return `
@@ -331,13 +513,25 @@ function obterHtmlLinkParticipacao(link) {
   return `
     <div class="bloco-detalhe-evento">
       <strong>Link para participação</strong>
-      <p style="word-break:break-word; margin-bottom:10px;">${escaparHtml(linkNormalizado)}</p>
+
+      <p
+        style="
+          word-break:break-word;
+          margin-bottom:10px;
+        "
+      >
+        ${escaparHtml(linkNormalizado)}
+      </p>
+
       <a
         href="${escaparHtml(linkNormalizado)}"
         target="_blank"
         rel="noopener noreferrer"
         class="btn"
-        style="display:inline-block; text-decoration:none;"
+        style="
+          display:inline-block;
+          text-decoration:none;
+        "
       >
         Acessar evento
       </a>
@@ -346,24 +540,60 @@ function obterHtmlLinkParticipacao(link) {
 }
 
 function formatarDataGoogle(data) {
-  return data.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  return (
+    data
+      .toISOString()
+      .replace(/[-:]/g, "")
+      .split(".")[0] + "Z"
+  );
 }
 
 function criarLinkGoogleAgenda(evento) {
-  if (!evento?.data_evento || !evento?.hora_evento) return "#";
+  if (
+    !evento?.data_evento ||
+    !evento?.hora_evento
+  ) {
+    return "#";
+  }
 
-  const inicio = new Date(`${evento.data_evento}T${evento.hora_evento}`);
-  const fim = new Date(inicio.getTime() + 60 * 60 * 1000);
+  const inicio = new Date(
+    `${evento.data_evento}T${evento.hora_evento}`
+  );
 
-  const titulo = encodeURIComponent(evento.titulo || "Evento Beehive");
-  const descricao = encodeURIComponent(evento.descricao || "");
-  const local = encodeURIComponent(evento.local || "");
+  const fim = new Date(
+    inicio.getTime() +
+    60 * 60 * 1000
+  );
 
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${formatarDataGoogle(inicio)}/${formatarDataGoogle(fim)}&details=${descricao}&location=${local}`;
+  const titulo = encodeURIComponent(
+    evento.titulo ||
+    "Evento Beehive"
+  );
+
+  const descricao = encodeURIComponent(
+    evento.descricao ||
+    ""
+  );
+
+  const local = encodeURIComponent(
+    evento.local ||
+    ""
+  );
+
+  return (
+    "https://calendar.google.com/calendar/render" +
+    `?action=TEMPLATE` +
+    `&text=${titulo}` +
+    `&dates=${formatarDataGoogle(inicio)}` +
+    `/${formatarDataGoogle(fim)}` +
+    `&details=${descricao}` +
+    `&location=${local}`
+  );
 }
 
 function obterBotaoGoogleAgenda(evento) {
-  const linkAgenda = criarLinkGoogleAgenda(evento);
+  const linkAgenda =
+    criarLinkGoogleAgenda(evento);
 
   return `
     <a
@@ -381,7 +611,10 @@ function obterBotaoGoogleAgenda(evento) {
    MATRÍCULAS
 ========================================================= */
 async function carregarMatriculasAtivas() {
-  const { data, error } = await supabase
+  const {
+    data,
+    error
+  } = await supabase
     .from("matricula")
     .select(`
       id,
@@ -389,12 +622,14 @@ async function carregarMatriculasAtivas() {
       materia_id,
       modulo_id,
       ativa,
+
       modulo:modulo_id (
         id,
         nome,
         ordem,
         materia_id
       ),
+
       materia:materia_id (
         id,
         nome
@@ -402,12 +637,23 @@ async function carregarMatriculasAtivas() {
     `)
     .eq("aluno_id", alunoId)
     .eq("ativa", true)
-    .order("id", { ascending: true });
+    .order("id", {
+      ascending: true
+    });
 
   if (error) {
-    console.error("Erro ao carregar matrículas do aluno:", error);
-    mostrarMensagem("Erro ao carregar os cursos do aluno.", "erro");
+    console.error(
+      "Erro ao carregar matrículas do aluno:",
+      error
+    );
+
+    mostrarMensagem(
+      "Erro ao carregar os cursos do aluno.",
+      "erro"
+    );
+
     matriculasAtivas = [];
+
     return;
   }
 
@@ -424,32 +670,60 @@ function preencherSelectMatriculas() {
     return;
   }
 
-  blocoCursoEventos.style.display = "block";
-  selectMatriculaEvento.innerHTML = "";
+  blocoCursoEventos.style.display =
+    "block";
 
-  const optionTodos = document.createElement("option");
+  selectMatriculaEvento.innerHTML =
+    "";
+
+  const optionTodos =
+    document.createElement("option");
+
   optionTodos.value = "todos";
-  optionTodos.textContent = "Todos os meus cursos";
-  selectMatriculaEvento.appendChild(optionTodos);
 
-  matriculasAtivas.forEach((matricula) => {
-    const option = document.createElement("option");
-    option.value = String(matricula.id);
-    option.textContent = montarNomeCurso(matricula);
-    selectMatriculaEvento.appendChild(option);
-  });
+  optionTodos.textContent =
+    "Todos os meus cursos";
+
+  selectMatriculaEvento.appendChild(
+    optionTodos
+  );
+
+  matriculasAtivas.forEach(
+    (matricula) => {
+      const option =
+        document.createElement("option");
+
+      option.value =
+        String(matricula.id);
+
+      option.textContent =
+        montarNomeCurso(matricula);
+
+      selectMatriculaEvento.appendChild(
+        option
+      );
+    }
+  );
 
   labelSelectMatriculaEvento.style.display =
-    matriculasAtivas.length > 1 ? "block" : "none";
+    matriculasAtivas.length > 1
+      ? "block"
+      : "none";
 
   if (matriculaSelecionada?.id) {
-    selectMatriculaEvento.value = String(matriculaSelecionada.id);
+    selectMatriculaEvento.value =
+      String(matriculaSelecionada.id);
+
     textoCursoEventos.textContent =
-      `Você está visualizando os eventos do curso ${montarNomeCurso(matriculaSelecionada)}.`;
+      `Você está visualizando os eventos do curso ` +
+      `${montarNomeCurso(matriculaSelecionada)}.`;
   } else {
-    selectMatriculaEvento.value = "todos";
+    selectMatriculaEvento.value =
+      "todos";
+
     textoCursoEventos.textContent =
-      "Você está visualizando os eventos disponíveis para todos os seus cursos.";
+      "Você está visualizando os eventos disponíveis " +
+      "para todos os seus cursos.";
   }
 }
 
@@ -457,7 +731,10 @@ function preencherSelectMatriculas() {
    BANCO DE DADOS - EVENTOS
 ========================================================= */
 async function carregarEventosDisponiveis() {
-  const { data, error } = await supabase
+  const {
+    data,
+    error
+  } = await supabase
     .from("evento")
     .select(`
       id,
@@ -472,157 +749,284 @@ async function carregarEventosDisponiveis() {
       modulo_id,
       limite_confirmacao,
       ativo,
+
       modulo:modulo_id (
         id,
         nome,
         ordem,
         materia_id
       ),
+
       materia:materia_id (
         id,
         nome
       )
     `)
     .eq("ativo", true)
-    .order("data_evento", { ascending: true })
-    .order("hora_evento", { ascending: true });
+    .order("data_evento", {
+      ascending: true
+    })
+    .order("hora_evento", {
+      ascending: true
+    });
 
   if (error) {
-    console.error("Erro ao carregar eventos:", error);
-    mostrarMensagem("Erro ao carregar os eventos.", "erro");
+    console.error(
+      "Erro ao carregar eventos:",
+      error
+    );
+
+    mostrarMensagem(
+      "Erro ao carregar os eventos.",
+      "erro"
+    );
+
     eventosDisponiveis = [];
+
     return;
   }
 
   const lista = data || [];
 
   if (matriculaSelecionada) {
-    eventosDisponiveis = lista.filter((evento) =>
-      eventoCondizComMatricula(evento, matriculaSelecionada)
-    );
+    eventosDisponiveis =
+      lista.filter(
+        (evento) =>
+          eventoCondizComMatricula(
+            evento,
+            matriculaSelecionada
+          )
+      );
   } else {
-    eventosDisponiveis = lista.filter(eventoDisponivelParaAlgumaMatricula);
+    eventosDisponiveis =
+      lista.filter(
+        eventoDisponivelParaAlgumaMatricula
+      );
   }
 }
 
 async function sincronizarConvitesDoAluno() {
   convitesMap = new Map();
 
-  if (!eventosDisponiveis.length || !alunoId) return;
+  if (
+    !eventosDisponiveis.length ||
+    !alunoId
+  ) {
+    return;
+  }
 
-  const idsEventos = eventosDisponiveis.map((evento) => evento.id);
+  const idsEventos =
+    eventosDisponiveis.map(
+      (evento) => evento.id
+    );
 
-  const { data: convitesExistentes, error: erroBusca } = await supabase
+  const {
+    data: convitesExistentes,
+    error: erroBusca
+  } = await supabase
     .from("evento_convite_aluno")
-    .select("id, evento_id, visualizado, visualizado_em")
+    .select(
+      "id, evento_id, visualizado, visualizado_em"
+    )
     .eq("aluno_id", alunoId)
     .in("evento_id", idsEventos);
 
   if (erroBusca) {
-    console.error("Erro ao buscar convites existentes do aluno:", erroBusca);
+    console.error(
+      "Erro ao buscar convites existentes do aluno:",
+      erroBusca
+    );
+
     return;
   }
 
   const idsComConvite = new Set(
-    (convitesExistentes || []).map((item) => Number(item.evento_id))
+    (convitesExistentes || []).map(
+      (item) =>
+        Number(item.evento_id)
+    )
   );
 
-  const convitesFaltantes = idsEventos
-    .filter((eventoId) => !idsComConvite.has(Number(eventoId)))
-    .map((eventoId) => ({
-      evento_id: Number(eventoId),
-      aluno_id: Number(alunoId)
-    }));
+  const convitesFaltantes =
+    idsEventos
+      .filter(
+        (eventoId) =>
+          !idsComConvite.has(
+            Number(eventoId)
+          )
+      )
+      .map(
+        (eventoId) => ({
+          evento_id: Number(eventoId),
+          aluno_id: Number(alunoId)
+        })
+      );
 
   if (convitesFaltantes.length) {
-    const { error: erroUpsert } = await supabase
+    const {
+      error: erroUpsert
+    } = await supabase
       .from("evento_convite_aluno")
-      .upsert(convitesFaltantes, {
-        onConflict: "evento_id,aluno_id",
-        ignoreDuplicates: true
-      });
+      .upsert(
+        convitesFaltantes,
+        {
+          onConflict:
+            "evento_id,aluno_id",
+
+          ignoreDuplicates: true
+        }
+      );
 
     if (erroUpsert) {
-      console.error("Erro ao criar convites faltantes do aluno:", erroUpsert);
+      console.error(
+        "Erro ao criar convites faltantes do aluno:",
+        erroUpsert
+      );
     }
   }
 
-  const { data: convitesAtualizados, error: erroAtualizados } = await supabase
+  const {
+    data: convitesAtualizados,
+    error: erroAtualizados
+  } = await supabase
     .from("evento_convite_aluno")
-    .select("id, evento_id, visualizado, visualizado_em")
+    .select(
+      "id, evento_id, visualizado, visualizado_em"
+    )
     .eq("aluno_id", alunoId)
     .in("evento_id", idsEventos);
 
   if (erroAtualizados) {
-    console.error("Erro ao recarregar convites do aluno:", erroAtualizados);
+    console.error(
+      "Erro ao recarregar convites do aluno:",
+      erroAtualizados
+    );
+
     return;
   }
 
-  (convitesAtualizados || []).forEach((convite) => {
-    convitesMap.set(Number(convite.evento_id), convite);
-  });
+  (convitesAtualizados || []).forEach(
+    (convite) => {
+      convitesMap.set(
+        Number(convite.evento_id),
+        convite
+      );
+    }
+  );
 }
 
 async function carregarConfirmacoesDoAluno() {
   confirmacoesSet = new Set();
 
-  if (!eventosDisponiveis.length || !alunoId) return;
+  if (
+    !eventosDisponiveis.length ||
+    !alunoId
+  ) {
+    return;
+  }
 
-  const idsEventos = eventosDisponiveis.map((evento) => evento.id);
+  const idsEventos =
+    eventosDisponiveis.map(
+      (evento) => evento.id
+    );
 
-  const { data, error } = await supabase
+  const {
+    data,
+    error
+  } = await supabase
     .from("evento_confirmacao")
     .select("evento_id")
     .eq("aluno_id", alunoId)
     .in("evento_id", idsEventos);
 
   if (error) {
-    console.error("Erro ao carregar confirmações do aluno:", error);
+    console.error(
+      "Erro ao carregar confirmações do aluno:",
+      error
+    );
+
     mostrarMensagem(
-      "Os eventos foram carregados, mas houve erro ao verificar suas confirmações.",
+      "Os eventos foram carregados, mas houve erro " +
+      "ao verificar suas confirmações.",
       "erro"
     );
+
     return;
   }
 
-  (data || []).forEach((item) => {
-    confirmacoesSet.add(Number(item.evento_id));
-  });
+  (data || []).forEach(
+    (item) => {
+      confirmacoesSet.add(
+        Number(item.evento_id)
+      );
+    }
+  );
 }
 
 async function marcarConvitesComoVisualizados() {
-  const idsNaoVisualizados = Array.from(convitesMap.values())
-    .filter((convite) => !convite.visualizado)
-    .map((convite) => convite.id);
+  const idsNaoVisualizados =
+    Array.from(convitesMap.values())
+      .filter(
+        (convite) =>
+          !convite.visualizado
+      )
+      .map(
+        (convite) =>
+          convite.id
+      );
 
-  if (!idsNaoVisualizados.length) return;
+  if (!idsNaoVisualizados.length) {
+    return;
+  }
 
-  const agoraIso = new Date().toISOString();
+  const agoraIso =
+    new Date().toISOString();
 
-  const { error } = await supabase
+  const {
+    error
+  } = await supabase
     .from("evento_convite_aluno")
     .update({
       visualizado: true,
       visualizado_em: agoraIso
     })
-    .in("id", idsNaoVisualizados);
+    .in(
+      "id",
+      idsNaoVisualizados
+    );
 
   if (error) {
-    console.error("Erro ao marcar convites como visualizados:", error);
+    console.error(
+      "Erro ao marcar convites como visualizados:",
+      error
+    );
+
     return;
   }
 
-  idsNaoVisualizados.forEach((idConvite) => {
-    for (const [eventoId, convite] of convitesMap.entries()) {
-      if (convite.id === idConvite) {
-        convitesMap.set(eventoId, {
-          ...convite,
-          visualizado: true,
-          visualizado_em: agoraIso
-        });
+  idsNaoVisualizados.forEach(
+    (idConvite) => {
+      for (
+        const [
+          eventoId,
+          convite
+        ] of convitesMap.entries()
+      ) {
+        if (
+          convite.id === idConvite
+        ) {
+          convitesMap.set(
+            eventoId,
+            {
+              ...convite,
+              visualizado: true,
+              visualizado_em: agoraIso
+            }
+          );
+        }
       }
     }
-  });
+  );
 }
 
 /* =========================================================
@@ -631,27 +1035,48 @@ async function marcarConvitesComoVisualizados() {
 async function confirmarPresenca(eventoId) {
   esconderMensagem();
 
-  const evento = eventosDisponiveis.find(
-    (item) => Number(item.id) === Number(eventoId)
-  );
+  const evento =
+    eventosDisponiveis.find(
+      (item) =>
+        Number(item.id) ===
+        Number(eventoId)
+    );
 
   if (!evento) {
-    mostrarMensagem("Evento não encontrado.", "erro");
+    mostrarMensagem(
+      "Evento não encontrado.",
+      "erro"
+    );
+
     return;
   }
 
   if (eventoJaConfirmado(eventoId)) {
-    mostrarMensagem("Você já confirmou presença neste evento.");
+    mostrarMensagem(
+      "Você já confirmou presença neste evento."
+    );
+
     return;
   }
 
-  if (eventoPrazoConfirmacaoVencido(evento)) {
-    mostrarMensagem("O prazo de confirmação deste evento já foi encerrado.", "erro");
+  if (
+    eventoPrazoConfirmacaoVencido(
+      evento
+    )
+  ) {
+    mostrarMensagem(
+      "O prazo de confirmação deste evento já foi encerrado.",
+      "erro"
+    );
+
     renderizarEventos();
+
     return;
   }
 
-  const { error } = await supabase
+  const {
+    error
+  } = await supabase
     .from("evento_confirmacao")
     .insert([
       {
@@ -661,179 +1086,459 @@ async function confirmarPresenca(eventoId) {
     ]);
 
   if (error) {
-    console.error("Erro ao confirmar presença:", error);
+    console.error(
+      "Erro ao confirmar presença:",
+      error
+    );
 
-    if (String(error.message || "").toLowerCase().includes("duplicate")) {
-      confirmacoesSet.add(Number(eventoId));
+    if (
+      String(
+        error.message || ""
+      )
+        .toLowerCase()
+        .includes("duplicate")
+    ) {
+      confirmacoesSet.add(
+        Number(eventoId)
+      );
+
       renderizarEventos();
-      mostrarMensagem("Sua presença já estava confirmada.");
+
+      mostrarMensagem(
+        "Sua presença já estava confirmada."
+      );
+
       return;
     }
 
-    mostrarMensagem("Não foi possível confirmar sua presença.", "erro");
+    mostrarMensagem(
+      "Não foi possível confirmar sua presença.",
+      "erro"
+    );
+
     return;
   }
 
-  confirmacoesSet.add(Number(eventoId));
+  confirmacoesSet.add(
+    Number(eventoId)
+  );
+
   renderizarEventos();
-  mostrarMensagem("✅ Presença confirmada com sucesso!");
+
+  mostrarMensagem(
+    "✅ Presença confirmada com sucesso!"
+  );
 }
 
 /* =========================================================
    INTERFACE
 ========================================================= */
 function adicionarEventosDeInterface() {
-  document.querySelectorAll(".btn-confirmar-evento").forEach((botao) => {
-    botao.addEventListener("click", async () => {
-      const eventoId = Number(botao.dataset.eventoId);
-      await confirmarPresenca(eventoId);
-    });
-  });
+  document
+    .querySelectorAll(
+      ".btn-confirmar-evento"
+    )
+    .forEach(
+      (botao) => {
+        botao.addEventListener(
+          "click",
+          async () => {
+            const eventoId =
+              Number(
+                botao.dataset.eventoId
+              );
 
-  document.querySelectorAll(".detalhes-evento-box").forEach((details) => {
-    const summary = details.querySelector("summary");
-    const texto = summary?.querySelector(".texto-toggle-detalhes");
-    const verMenos = details.querySelector(".link-ver-menos");
-
-    function atualizarRotulo() {
-      if (texto) {
-        texto.textContent = details.open ? "Ver menos" : "Ver mais";
+            await confirmarPresenca(
+              eventoId
+            );
+          }
+        );
       }
-    }
+    );
 
-    atualizarRotulo();
-    details.addEventListener("toggle", atualizarRotulo);
+  document
+    .querySelectorAll(
+      ".detalhes-evento-box"
+    )
+    .forEach(
+      (details) => {
+        const summary =
+          details.querySelector(
+            "summary"
+          );
 
-    if (verMenos) {
-      verMenos.addEventListener("click", () => {
-        details.open = false;
-      });
-    }
-  });
+        const texto =
+          summary?.querySelector(
+            ".texto-toggle-detalhes"
+          );
+
+        const verMenos =
+          details.querySelector(
+            ".link-ver-menos"
+          );
+
+        function atualizarRotulo() {
+          if (texto) {
+            texto.textContent =
+              details.open
+                ? "Ver menos"
+                : "Ver mais";
+          }
+        }
+
+        atualizarRotulo();
+
+        details.addEventListener(
+          "toggle",
+          atualizarRotulo
+        );
+
+        if (verMenos) {
+          verMenos.addEventListener(
+            "click",
+            () => {
+              details.open = false;
+            }
+          );
+        }
+      }
+    );
 }
 
 function renderizarEventos() {
-  if (!listaEventos) return;
+  if (!listaEventos) {
+    return;
+  }
 
   if (!eventosDisponiveis.length) {
     listaEventos.innerHTML = `
       <div class="card">
         <p style="margin:0;">
-          No momento não há eventos disponíveis para o curso selecionado.
+          No momento não há eventos disponíveis
+          para o curso selecionado.
         </p>
       </div>
     `;
+
     return;
   }
 
-  listaEventos.innerHTML = eventosDisponiveis.map((evento) => {
-    const confirmado = eventoJaConfirmado(evento.id);
-    const prazoVencido = eventoPrazoConfirmacaoVencido(evento);
-    const ultimoDia = ehUltimoDiaConfirmacao(evento);
-    const publicoDetalhe = obterPublicoDetalhado(evento);
-    const blocoLinkParticipacao = obterHtmlLinkParticipacao(evento.local);
+  listaEventos.innerHTML =
+    eventosDisponiveis
+      .map(
+        (evento) => {
+          const confirmado =
+            eventoJaConfirmado(
+              evento.id
+            );
 
-    let badgeStatus = "";
-    let statusInfo = "";
-    let botaoHtml = "";
+          const prazoVencido =
+            eventoPrazoConfirmacaoVencido(
+              evento
+            );
 
-    if (confirmado) {
-      badgeStatus = `<span class="badge-evento badge-evento-confirmado">Confirmado</span>`;
-      statusInfo = `
-        <div class="mini-card-evento">
-          <strong>Situação</strong>
-          <p style="font-size:16px; margin-top:6px;">Sua presença já foi confirmada</p>
-        </div>
-      `;
-      botaoHtml = `
-        <button type="button" class="btn btn-evento-aluno-confirmado" disabled>
-          Presença confirmada
-        </button>
-      `;
-    } else if (prazoVencido) {
-      badgeStatus = `<span class="badge-evento badge-evento-encerrado">Prazo encerrado</span>`;
-      statusInfo = `
-        <div class="mini-card-evento">
-          <strong>Situação</strong>
-          <p style="font-size:16px; margin-top:6px;">O prazo de confirmação terminou</p>
-        </div>
-      `;
-      botaoHtml = `
-        <button type="button" class="btn btn-evento-aluno-encerrado" disabled>
-          Prazo encerrado
-        </button>
-      `;
-    } else {
-      badgeStatus = ultimoDia
-        ? `<span class="badge-evento badge-ultimo-dia">Último dia para se inscrever</span>`
-        : `<span class="badge-evento badge-evento-disponivel">Disponível</span>`;
+          const ultimoDia =
+            ehUltimoDiaConfirmacao(
+              evento
+            );
 
-      statusInfo = `
-        <div class="mini-card-evento">
-          <strong>Situação</strong>
-          <p style="font-size:16px; margin-top:6px;">Aguardando sua confirmação</p>
-        </div>
-      `;
-      botaoHtml = `
-        <button type="button" class="btn btn-confirmar-evento" data-evento-id="${evento.id}">
-          Confirmar presença
-        </button>
-      `;
-    }
+          const publicoDetalhe =
+            obterPublicoDetalhado(
+              evento
+            );
 
-    return `
-      <article class="card card-evento-compacto card-evento-admin-futuro evento-visual-ativo">
-        <div class="topo-card-evento-compacto">
-          <div>
-            <h2>${escaparHtml(evento.titulo || "-")}</h2>
-            <p class="meta-evento-compacto">
-              ${escaparHtml(evento.tipo_evento || "Evento")} •
-              ${formatarData(evento.data_evento)} às ${formatarHora(evento.hora_evento)}
-            </p>
-          </div>
+          const blocoLinkParticipacao =
+            obterHtmlLinkParticipacao(
+              evento.local
+            );
 
-          <div class="topo-evento-acoes">
-            ${badgeStatus}
-            ${confirmado ? obterBotaoGoogleAgenda(evento) : ""}
-          </div>
-        </div>
+          let badgeStatus = "";
+          let statusInfo = "";
+          let botaoHtml = "";
 
-        ${statusInfo}
+          if (confirmado) {
+            badgeStatus = `
+              <span
+                class="
+                  badge-evento
+                  badge-evento-confirmado
+                "
+              >
+                Confirmado
+              </span>
+            `;
 
-        <details class="detalhes-evento-box">
-          <summary>
-            <span class="texto-toggle-detalhes">Ver mais</span>
-          </summary>
+            statusInfo = `
+              <div class="mini-card-evento">
+                <strong>Situação</strong>
 
-          <div class="conteudo-detalhes-evento">
-            <div class="detalhes-evento-grid">
-              ${blocoLinkParticipacao}
+                <p
+                  style="
+                    font-size:16px;
+                    margin-top:6px;
+                  "
+                >
+                  Sua presença já foi confirmada
+                </p>
+              </div>
+            `;
 
-              <div class="bloco-detalhe-evento">
-                <strong>Público</strong>
-                <p>${escaparHtml(publicoDetalhe)}</p>
+            botaoHtml = `
+              <button
+                type="button"
+                class="
+                  btn
+                  btn-evento-aluno-confirmado
+                "
+                disabled
+              >
+                Presença confirmada
+              </button>
+            `;
+          } else if (prazoVencido) {
+            badgeStatus = `
+              <span
+                class="
+                  badge-evento
+                  badge-evento-encerrado
+                "
+              >
+                Prazo encerrado
+              </span>
+            `;
+
+            statusInfo = `
+              <div class="mini-card-evento">
+                <strong>Situação</strong>
+
+                <p
+                  style="
+                    font-size:16px;
+                    margin-top:6px;
+                  "
+                >
+                  O prazo de confirmação terminou
+                </p>
+              </div>
+            `;
+
+            botaoHtml = `
+              <button
+                type="button"
+                class="
+                  btn
+                  btn-evento-aluno-encerrado
+                "
+                disabled
+              >
+                Prazo encerrado
+              </button>
+            `;
+          } else {
+            badgeStatus = ultimoDia
+              ? `
+                <span
+                  class="
+                    badge-evento
+                    badge-ultimo-dia
+                  "
+                >
+                  Último dia para se inscrever
+                </span>
+              `
+              : `
+                <span
+                  class="
+                    badge-evento
+                    badge-evento-disponivel
+                  "
+                >
+                  Disponível
+                </span>
+              `;
+
+            statusInfo = `
+              <div class="mini-card-evento">
+                <strong>Situação</strong>
+
+                <p
+                  style="
+                    font-size:16px;
+                    margin-top:6px;
+                  "
+                >
+                  Aguardando sua confirmação
+                </p>
+              </div>
+            `;
+
+            botaoHtml = `
+              <button
+                type="button"
+                class="
+                  btn
+                  btn-confirmar-evento
+                "
+                data-evento-id="${evento.id}"
+              >
+                Confirmar presença
+              </button>
+            `;
+          }
+
+          return `
+            <article
+              class="
+                card
+                card-evento-compacto
+                card-evento-admin-futuro
+                evento-visual-ativo
+              "
+            >
+              <div
+                class="
+                  topo-card-evento-compacto
+                "
+              >
+                <div>
+                  <h2>
+                    ${escaparHtml(
+                      evento.titulo || "-"
+                    )}
+                  </h2>
+
+                  <p
+                    class="
+                      meta-evento-compacto
+                    "
+                  >
+                    ${escaparHtml(
+                      evento.tipo_evento ||
+                      "Evento"
+                    )}
+                    •
+
+                    ${formatarData(
+                      evento.data_evento
+                    )}
+
+                    às
+
+                    ${formatarHora(
+                      evento.hora_evento
+                    )}
+                  </p>
+                </div>
+
+                <div
+                  class="topo-evento-acoes"
+                >
+                  ${badgeStatus}
+
+                  ${
+                    confirmado
+                      ? obterBotaoGoogleAgenda(
+                          evento
+                        )
+                      : ""
+                  }
+                </div>
               </div>
 
-              <div class="bloco-detalhe-evento">
-                <strong>Confirmar até</strong>
-                <p>${formatarDataHoraBR(evento.limite_confirmacao)}</p>
-              </div>
-            </div>
+              ${statusInfo}
 
-            <div class="bloco-detalhe-evento">
-              <strong>Descrição</strong>
-              <p>${escaparHtml(evento.descricao || "Sem descrição informada.")}</p>
-            </div>
+              <details
+                class="detalhes-evento-box"
+              >
+                <summary>
+                  <span
+                    class="
+                      texto-toggle-detalhes
+                    "
+                  >
+                    Ver mais
+                  </span>
+                </summary>
 
-            <div class="acoes-evento-detalhe">
-              ${botaoHtml}
-              <button type="button" class="link-ver-menos">Ver menos</button>
-            </div>
-          </div>
-        </details>
-      </article>
-    `;
-  }).join("");
+                <div
+                  class="
+                    conteudo-detalhes-evento
+                  "
+                >
+                  <div
+                    class="
+                      detalhes-evento-grid
+                    "
+                  >
+                    ${blocoLinkParticipacao}
+
+                    <div
+                      class="
+                        bloco-detalhe-evento
+                      "
+                    >
+                      <strong>Público</strong>
+
+                      <p>
+                        ${escaparHtml(
+                          publicoDetalhe
+                        )}
+                      </p>
+                    </div>
+
+                    <div
+                      class="
+                        bloco-detalhe-evento
+                      "
+                    >
+                      <strong>
+                        Confirmar até
+                      </strong>
+
+                      <p>
+                        ${formatarDataHoraBR(
+                          evento.limite_confirmacao
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    class="
+                      bloco-detalhe-evento
+                    "
+                  >
+                    <strong>Descrição</strong>
+
+                    <p>
+                      ${escaparHtml(
+                        evento.descricao ||
+                        "Sem descrição informada."
+                      )}
+                    </p>
+                  </div>
+
+                  <div
+                    class="
+                      acoes-evento-detalhe
+                    "
+                  >
+                    ${botaoHtml}
+
+                    <button
+                      type="button"
+                      class="link-ver-menos"
+                    >
+                      Ver menos
+                    </button>
+                  </div>
+                </div>
+              </details>
+            </article>
+          `;
+        }
+      )
+      .join("");
 
   adicionarEventosDeInterface();
 }
@@ -847,28 +1552,36 @@ async function recarregarTelaEventosPorCurso() {
   preencherSelectMatriculas();
 
   await carregarEventosDisponiveis();
+
   await sincronizarConvitesDoAluno();
+
   await carregarConfirmacoesDoAluno();
 
   renderizarEventos();
+
   await marcarConvitesComoVisualizados();
 }
 
 async function iniciarTela() {
   esconderMensagem();
 
-  alunoId = await obterAlunoIdLogado();
+  alunoId =
+    await obterAlunoIdLogado();
 
   if (!alunoId) {
     mostrarMensagem(
-      "Não foi possível identificar este usuário como aluno. Se for professor e também aluno, cadastre-o na tabela de alunos usando o mesmo e-mail do login.",
+      "Não foi possível identificar este usuário como aluno. " +
+      "Se for professor e também aluno, cadastre-o na tabela " +
+      "de alunos usando o mesmo e-mail do login.",
       "erro"
     );
 
     if (listaEventos) {
       listaEventos.innerHTML = `
         <div class="card">
-          <p style="margin:0;">Não foi possível carregar os eventos.</p>
+          <p style="margin:0;">
+            Não foi possível carregar os eventos.
+          </p>
         </div>
       `;
     }
@@ -879,16 +1592,23 @@ async function iniciarTela() {
   await carregarMatriculasAtivas();
 
   if (!matriculasAtivas.length) {
-    if (blocoCursoEventos) blocoCursoEventos.style.display = "block";
+    if (blocoCursoEventos) {
+      blocoCursoEventos.style.display =
+        "block";
+    }
 
     if (textoCursoEventos) {
-      textoCursoEventos.textContent = "Você não possui matrícula ativa no momento.";
+      textoCursoEventos.textContent =
+        "Você não possui matrícula ativa no momento.";
     }
 
     if (listaEventos) {
       listaEventos.innerHTML = `
         <div class="card">
-          <p style="margin:0;">Você não possui curso ativo para visualizar eventos.</p>
+          <p style="margin:0;">
+            Você não possui curso ativo para
+            visualizar eventos.
+          </p>
         </div>
       `;
     }
@@ -897,9 +1617,13 @@ async function iniciarTela() {
   }
 
   matriculaSelecionada = null;
-  localStorage.removeItem("matriculaSelecionadaId");
+
+  localStorage.removeItem(
+    "matriculaSelecionadaId"
+  );
 
   preencherSelectMatriculas();
+
   await recarregarTelaEventosPorCurso();
 }
 
@@ -907,30 +1631,50 @@ async function iniciarTela() {
    TROCA DE CURSO
 ========================================================= */
 if (selectMatriculaEvento) {
-  selectMatriculaEvento.addEventListener("change", async () => {
-    const idSelecionado = selectMatriculaEvento.value;
+  selectMatriculaEvento.addEventListener(
+    "change",
+    async () => {
+      const idSelecionado =
+        selectMatriculaEvento.value;
 
-    if (idSelecionado === "todos") {
-      matriculaSelecionada = null;
-      localStorage.removeItem("matriculaSelecionadaId");
+      if (idSelecionado === "todos") {
+        matriculaSelecionada = null;
+
+        localStorage.removeItem(
+          "matriculaSelecionadaId"
+        );
+
+        await recarregarTelaEventosPorCurso();
+
+        return;
+      }
+
+      const encontrada =
+        matriculasAtivas.find(
+          (matricula) =>
+            String(matricula.id) ===
+            String(idSelecionado)
+        );
+
+      if (!encontrada) {
+        return;
+      }
+
+      matriculaSelecionada =
+        encontrada;
+
+      salvarMatriculaSelecionada(
+        matriculaSelecionada
+      );
+
       await recarregarTelaEventosPorCurso();
-      return;
     }
-
-    const encontrada = matriculasAtivas.find(
-      (m) => String(m.id) === String(idSelecionado)
-    );
-
-    if (!encontrada) return;
-
-    matriculaSelecionada = encontrada;
-    salvarMatriculaSelecionada(matriculaSelecionada);
-    await recarregarTelaEventosPorCurso();
-  });
+  );
 }
 
 /* =========================================================
    EXECUÇÃO
 ========================================================= */
 configurarBotaoVoltar();
+
 await iniciarTela();
