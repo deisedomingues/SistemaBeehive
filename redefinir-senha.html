@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
 
-  <title>Beehive | Login</title>
+  <title>Beehive | Criar nova senha</title>
 
   <link
     rel="stylesheet"
@@ -18,10 +18,8 @@
 
 <body>
 
-  <!-- camada de fundo -->
   <div class="overlay"></div>
 
-  <!-- abelhinhas decorativas -->
   <img
     src="images/AbelhinhaAmarela.png"
     alt=""
@@ -36,113 +34,133 @@
 
   <main class="container">
 
-    <!-- logo -->
     <img
       src="images/logo.png"
       alt="Beehive Escola de Idiomas"
       class="logo"
     >
 
-    <!-- mensagem de boas-vindas -->
     <h1
       style="
         font-size: 20px;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
       "
     >
-      Seja bem-vindo(a)!
+      Criar nova senha
     </h1>
 
     <p
+      id="textoOrientacao"
       style="
         font-size: 14px;
         margin-bottom: 18px;
         color: #333;
+        line-height: 1.5;
       "
     >
-      Faça login para continuar
+      Digite e confirme a sua nova senha.
     </p>
 
-    <!-- mensagem do sistema -->
     <div
       id="msg"
       style="
         display: none;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
         padding: 10px;
         border-radius: 8px;
+        font-size: 14px;
       "
     ></div>
 
-    <!-- formulário -->
+    <div
+      id="carregandoLink"
+      style="
+        display: block;
+        margin-bottom: 16px;
+        font-size: 14px;
+        text-align: center;
+      "
+    >
+      Validando o link de recuperação...
+    </div>
+
     <form
       class="form"
-      id="form-login"
+      id="form-nova-senha"
+      style="display: none;"
     >
 
       <label style="margin-bottom: 10px;">
-        E-mail
-
-        <input
-          type="email"
-          id="email"
-          required
-          autocomplete="email"
-          placeholder="Digite seu e-mail"
-          style="padding: 10px;"
-        >
-      </label>
-
-      <label style="margin-bottom: 6px;">
-        Senha
+        Nova senha
 
         <input
           type="password"
-          id="senha"
+          id="novaSenha"
           required
-          autocomplete="current-password"
-          placeholder="Digite sua senha"
+          minlength="8"
+          autocomplete="new-password"
+          placeholder="Digite a nova senha"
           style="padding: 10px;"
         >
       </label>
 
-      <!-- recuperação de senha -->
-      <div
+      <label style="margin-bottom: 8px;">
+        Confirmar nova senha
+
+        <input
+          type="password"
+          id="confirmarSenha"
+          required
+          minlength="8"
+          autocomplete="new-password"
+          placeholder="Digite novamente"
+          style="padding: 10px;"
+        >
+      </label>
+
+      <p
         style="
-          display: flex;
-          justify-content: flex-end;
+          font-size: 12px;
+          color: #555;
           margin-bottom: 16px;
+          line-height: 1.4;
         "
       >
-        <a
-          href="esqueci-senha.html"
-          style="
-            font-size: 13px;
-            color: #5f5534;
-            font-weight: 600;
-            text-decoration: underline;
-          "
-        >
-          Esqueci minha senha
-        </a>
-      </div>
+        A senha deve possuir pelo menos 8 caracteres.
+      </p>
 
       <button
         type="submit"
         class="btn"
-        id="btnEntrar"
+        id="btnSalvar"
         style="padding: 12px;"
       >
-        Entrar
+        Salvar nova senha
       </button>
 
     </form>
+
+    <a
+      href="index.html"
+      id="btnVoltarLogin"
+      style="
+        display: none;
+        margin-top: 16px;
+        font-size: 14px;
+        color: #5f5534;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: underline;
+      "
+    >
+      Ir para o login
+    </a>
 
   </main>
 
   <script
     type="module"
-    src="js/login.js"
+    src="js/redefinir-senha.js"
   ></script>
 
 </body>

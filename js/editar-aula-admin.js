@@ -534,63 +534,144 @@ function validarStatus({
 
 async function buscarAulasPendentes(
   matriculaId,
-  aulaOriginalAtual = null
+  aulaOriginalAtual = null,
+  aulaEmEdicaoId = null
 ) {
   if (!matriculaId) {
     return [];
   }
 
-  const { data, error } = await supabase
-    .from("aula")
-    .select(`
-      id,
-      data_aula,
-      status,
-      justificativa,
-      aula_gravada,
-      precisa_reposicao
-    `)
-    .eq("matricula_id", Number(matriculaId))
-    .in("status", [
-      STATUS.AUSENTE,
-      STATUS.CANCELADA,
-      STATUS.TRANCADA
-    ])
-    .order("data_aula", {
-      ascending: true
-    });
+  /*
+    Buscamos, em paralelo:
 
-  if (error) {
+    1) as aulas que podem gerar reposição;
+    2) as reposições já registradas para esta matrícula.
+
+    Assim, uma aula original que já foi vinculada a uma
+    reposição deixa de aparecer como pendente.
+
+    Exceção:
+    ao editar uma aula que já é uma reposição, mantemos no
+    seletor a aula original atualmente vinculada.
+  */
+  const [
+    resultadoPendentes,
+    resultadoReposicoes
+  ] = await Promise.all([
+    supabase
+      .from("aula")
+      .select(`
+        id,
+        data_aula,
+        status,
+        justificativa,
+        aula_gravada,
+        precisa_reposicao
+      `)
+      .eq("matricula_id", Number(matriculaId))
+      .in("status", [
+        STATUS.AUSENTE,
+        STATUS.CANCELADA,
+        STATUS.TRANCADA
+      ])
+      .order("data_aula", {
+        ascending: true
+      }),
+
+    supabase
+      .from("aula")
+      .select(`
+        id,
+        aula_original_id
+      `)
+      .eq("matricula_id", Number(matriculaId))
+      .eq("status", STATUS.REPOSICAO)
+      .not("aula_original_id", "is", null)
+  ]);
+
+  if (resultadoPendentes.error) {
     console.error(
       "Erro ao buscar aulas pendentes:",
-      error
+      resultadoPendentes.error
     );
 
     return [];
   }
 
-  return (data || []).filter((aula) => {
-    const ehAtual =
-      Number(aula.id) ===
-      Number(aulaOriginalAtual);
-
-    if (ehAtual) {
-      return true;
-    }
-
-    if (aula.precisa_reposicao !== true) {
-      return false;
-    }
-
-    if (aula.status === STATUS.AUSENTE) {
-      return aula.aula_gravada === false;
-    }
-
-    return (
-      aula.status === STATUS.CANCELADA ||
-      aula.status === STATUS.TRANCADA
+  if (resultadoReposicoes.error) {
+    console.error(
+      "Erro ao verificar reposições já realizadas:",
+      resultadoReposicoes.error
     );
-  });
+
+    return [];
+  }
+
+  const idsJaRepostos = new Set(
+    (resultadoReposicoes.data || [])
+      .filter((reposicao) => {
+        /*
+          Ignoramos somente a própria reposição que está
+          sendo editada. Isso permite manter a aula original
+          atual disponível no seletor.
+        */
+        return (
+          Number(reposicao.id) !==
+          Number(aulaEmEdicaoId)
+        );
+      })
+      .map((reposicao) =>
+        Number(reposicao.aula_original_id)
+      )
+      .filter((id) =>
+        Number.isFinite(id) && id > 0
+      )
+  );
+
+  return (resultadoPendentes.data || [])
+    .filter((aula) => {
+      const aulaIdNumerico =
+        Number(aula.id);
+
+      const ehOriginalAtual =
+        aulaOriginalAtual &&
+        aulaIdNumerico ===
+          Number(aulaOriginalAtual);
+
+      /*
+        A própria aula em edição nunca pode ser escolhida
+        como aula original de si mesma.
+      */
+      const ehAPropriaAula =
+        aulaEmEdicaoId &&
+        aulaIdNumerico ===
+          Number(aulaEmEdicaoId);
+
+      if (ehAPropriaAula) {
+        return false;
+      }
+
+      if (ehOriginalAtual) {
+        return true;
+      }
+
+      if (idsJaRepostos.has(aulaIdNumerico)) {
+        return false;
+      }
+
+      if (aula.precisa_reposicao !== true) {
+        return false;
+      }
+
+      if (aula.status === STATUS.AUSENTE) {
+        return aula.aula_gravada === false;
+      }
+
+      return (
+        aula.status === STATUS.CANCELADA ||
+        aula.status === STATUS.TRANCADA
+      );
+    });
 }
 
 function textoAulaPendente(aula) {
@@ -612,7 +693,8 @@ function textoAulaPendente(aula) {
 async function preencherSelectAulasPendentes({
   select,
   matriculaId,
-  aulaOriginalAtual = null
+  aulaOriginalAtual = null,
+  aulaEmEdicaoId = null
 }) {
   if (!select) {
     return;
@@ -626,7 +708,8 @@ async function preencherSelectAulasPendentes({
 
   const aulas = await buscarAulasPendentes(
     matriculaId,
-    aulaOriginalAtual
+    aulaOriginalAtual,
+    aulaEmEdicaoId
   );
 
   if (!aulas.length) {
@@ -661,7 +744,6 @@ async function preencherSelectAulasPendentes({
       String(aulaOriginalAtual);
   }
 }
-
 /* =====================================================
    8. BUSCAR AULA INDIVIDUAL
 ===================================================== */
@@ -1011,7 +1093,9 @@ async function atualizarCamposIndividual({
       select: aulaOriginalIndividual,
       matriculaId: aulaAtual.matricula_id,
       aulaOriginalAtual:
-        aulaAtual.aula_original_id
+        aulaAtual.aula_original_id,
+      aulaEmEdicaoId:
+        aulaAtual.id
     });
   } else {
     aulaOriginalIndividual.innerHTML = `
@@ -1294,7 +1378,6 @@ async function carregarAulaColetiva() {
 
   return true;
 }
-
 /* =====================================================
    13. PREENCHER AULA COLETIVA
 ===================================================== */
@@ -1838,11 +1921,12 @@ async function carregarSelectsReposicaoColetivos() {
       matriculaId:
         aluno.matriculaId,
       aulaOriginalAtual:
-        aluno.aulaOriginalId
+        aluno.aulaOriginalId,
+      aulaEmEdicaoId:
+        aluno.id
     });
   }
 }
-
 /* =====================================================
    17. SALVAR AULA COLETIVA
 ===================================================== */

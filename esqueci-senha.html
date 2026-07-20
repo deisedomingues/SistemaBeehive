@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
 
-  <title>Beehive | Login</title>
+  <title>Beehive | Recuperar senha</title>
 
   <link
     rel="stylesheet"
@@ -18,10 +18,8 @@
 
 <body>
 
-  <!-- camada de fundo -->
   <div class="overlay"></div>
 
-  <!-- abelhinhas decorativas -->
   <img
     src="images/AbelhinhaAmarela.png"
     alt=""
@@ -36,21 +34,19 @@
 
   <main class="container">
 
-    <!-- logo -->
     <img
       src="images/logo.png"
       alt="Beehive Escola de Idiomas"
       class="logo"
     >
 
-    <!-- mensagem de boas-vindas -->
     <h1
       style="
         font-size: 20px;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
       "
     >
-      Seja bem-vindo(a)!
+      Esqueci minha senha
     </h1>
 
     <p
@@ -58,29 +54,30 @@
         font-size: 14px;
         margin-bottom: 18px;
         color: #333;
+        line-height: 1.5;
       "
     >
-      Faça login para continuar
+      Informe o e-mail utilizado no Beehive.
+      Enviaremos um link para você criar uma nova senha.
     </p>
 
-    <!-- mensagem do sistema -->
     <div
       id="msg"
       style="
         display: none;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
         padding: 10px;
         border-radius: 8px;
+        font-size: 14px;
       "
     ></div>
 
-    <!-- formulário -->
     <form
       class="form"
-      id="form-login"
+      id="form-recuperar-senha"
     >
 
-      <label style="margin-bottom: 10px;">
+      <label style="margin-bottom: 16px;">
         E-mail
 
         <input
@@ -93,48 +90,29 @@
         >
       </label>
 
-      <label style="margin-bottom: 6px;">
-        Senha
-
-        <input
-          type="password"
-          id="senha"
-          required
-          autocomplete="current-password"
-          placeholder="Digite sua senha"
-          style="padding: 10px;"
-        >
-      </label>
-
-      <!-- recuperação de senha -->
-      <div
-        style="
-          display: flex;
-          justify-content: flex-end;
-          margin-bottom: 16px;
-        "
-      >
-        <a
-          href="esqueci-senha.html"
-          style="
-            font-size: 13px;
-            color: #5f5534;
-            font-weight: 600;
-            text-decoration: underline;
-          "
-        >
-          Esqueci minha senha
-        </a>
-      </div>
-
       <button
         type="submit"
         class="btn"
-        id="btnEntrar"
+        id="btnEnviar"
         style="padding: 12px;"
       >
-        Entrar
+        Enviar link
       </button>
+
+      <a
+        href="index.html"
+        style="
+          display: block;
+          margin-top: 16px;
+          font-size: 14px;
+          color: #5f5534;
+          font-weight: 600;
+          text-align: center;
+          text-decoration: underline;
+        "
+      >
+        Voltar para o login
+      </a>
 
     </form>
 
@@ -142,7 +120,7 @@
 
   <script
     type="module"
-    src="js/login.js"
+    src="js/esqueci-senha.js"
   ></script>
 
 </body>
