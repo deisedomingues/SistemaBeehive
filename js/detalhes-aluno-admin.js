@@ -26,8 +26,12 @@ const cTrancada = document.getElementById("cTrancada");
 const cEventos = document.getElementById("cEventos");
 
 const listaNotas = document.getElementById("listaNotas");
-const listaReposicoesPendentes = document.getElementById("listaReposicoesPendentes");
-const totalReposicoesPendentes = document.getElementById("totalReposicoesPendentes");
+const listaReposicoesPendentes = document.getElementById(
+  "listaReposicoesPendentes"
+);
+const totalReposicoesPendentes = document.getElementById(
+  "totalReposicoesPendentes"
+);
 
 const mediaGeral = document.getElementById("mediaGeral");
 const totalNotas = document.getElementById("totalNotas");
@@ -35,14 +39,18 @@ const mediaPorModulo = document.getElementById("mediaPorModulo");
 
 const pacoteSituacao = document.getElementById("pacoteSituacao");
 const pacoteAulasUsadas = document.getElementById("pacoteAulasUsadas");
-const pacoteAulasRestantes = document.getElementById("pacoteAulasRestantes");
+const pacoteAulasRestantes = document.getElementById(
+  "pacoteAulasRestantes"
+);
 const pacoteInicio = document.getElementById("pacoteInicio");
 const pacoteAlerta = document.getElementById("pacoteAlerta");
 const listaPacotesAluno = document.getElementById("listaPacotesAluno");
 const boxAcoesPacote = document.getElementById("boxAcoesPacote");
 const btnEncerrarPacote = document.getElementById("btnEncerrarPacote");
 const btnVerAulasPacote = document.getElementById("btnVerAulasPacote");
-const btnFecharAulasPacote = document.getElementById("btnFecharAulasPacote");
+const btnFecharAulasPacote = document.getElementById(
+  "btnFecharAulasPacote"
+);
 const boxAulasPacote = document.getElementById("boxAulasPacote");
 const listaAulasPacote = document.getElementById("listaAulasPacote");
 const tituloAulasPacote = document.getElementById("tituloAulasPacote");
@@ -117,12 +125,19 @@ function hojeISO() {
   const ano = hoje.getFullYear();
   const mes = String(hoje.getMonth() + 1).padStart(2, "0");
   const dia = String(hoje.getDate()).padStart(2, "0");
+
   return `${ano}-${mes}-${dia}`;
 }
 
 function formatarDataBR(dataISO) {
   if (!dataISO) return "-";
+
   const [yyyy, mm, dd] = String(dataISO).split("-");
+
+  if (!yyyy || !mm || !dd) {
+    return String(dataISO);
+  }
+
   return `${dd}/${mm}/${yyyy}`;
 }
 
@@ -130,11 +145,14 @@ function ultimoDiaDoMesISO(dataISO) {
   if (!dataISO) return "";
 
   const [ano, mes] = String(dataISO).split("-").map(Number);
+
   if (!ano || !mes) return "";
 
   const ultimoDia = new Date(ano, mes, 0).getDate();
 
-  return `${ano}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
+  return `${ano}-${String(mes).padStart(2, "0")}-${String(
+    ultimoDia
+  ).padStart(2, "0")}`;
 }
 
 function escaparHtml(texto) {
@@ -156,6 +174,7 @@ function normalizarTexto(valor) {
 
 function textoParte(parte) {
   if (!parte) return "Não informada";
+
   return `Parte ${parte}`;
 }
 
@@ -174,7 +193,51 @@ function aulaEhReposicao(aula) {
 }
 
 function aulaTemOrigemVinculada(aula) {
-  return !!aula?.aula_original_id;
+  return Boolean(aula?.aula_original_id);
+}
+
+/*
+  Localiza, dentro do histórico carregado, a aula original
+  relacionada a uma reposição.
+*/
+function encontrarAulaOriginal(aulaReposicao) {
+  if (!aulaReposicao?.aula_original_id) {
+    return null;
+  }
+
+  return (
+    todasAulas.find(
+      (aula) =>
+        Number(aula.id) === Number(aulaReposicao.aula_original_id)
+    ) || null
+  );
+}
+
+/*
+  Monta o texto exibido na linha da reposição.
+
+  Exemplo:
+  Aula original: 10/07/2026, com status Ausente
+*/
+function textoAulaOriginal(aulaReposicao) {
+  if (!aulaEhReposicao(aulaReposicao)) {
+    return "";
+  }
+
+  if (!aulaReposicao?.aula_original_id) {
+    return "Aula original: não vinculada";
+  }
+
+  const aulaOriginal = encontrarAulaOriginal(aulaReposicao);
+
+  if (!aulaOriginal) {
+    return "Aula original: registro vinculado não encontrado";
+  }
+
+  const dataOriginal = formatarDataBR(aulaOriginal.data_aula);
+  const statusOriginal = aulaOriginal.status || "não informado";
+
+  return `Aula original: ${dataOriginal}, com status ${statusOriginal}`;
 }
 
 // ===============================
@@ -212,7 +275,11 @@ function aulaPodeGerarReposicaoPendente(aula) {
 
   return (
     aula?.precisa_reposicao === true &&
-    (status === "ausente" || status === "cancelada" || status === "trancada")
+    (
+      status === "ausente" ||
+      status === "cancelada" ||
+      status === "trancada"
+    )
   );
 }
 
@@ -222,7 +289,8 @@ function aulaJaFoiReposta(aulaOriginal, aulas) {
   return aulas.some((aula) => {
     return (
       normalizarTexto(aula?.status) === "reposicao" &&
-      Number(aula?.aula_original_id || 0) === Number(aulaOriginal.id)
+      Number(aula?.aula_original_id || 0) ===
+        Number(aulaOriginal.id)
     );
   });
 }
@@ -263,7 +331,9 @@ function obterSituacaoCobrancaReposicao(aula) {
 
   if (status === "ausente") {
     const limiteGratuito = ultimoDiaDoMesISO(aula?.data_aula);
-    const aindaNoMesmoMes = limiteGratuito ? hoje <= limiteGratuito : false;
+    const aindaNoMesmoMes = limiteGratuito
+      ? hoje <= limiteGratuito
+      : false;
 
     if (aindaNoMesmoMes) {
       return {
@@ -318,7 +388,9 @@ function obterAulasDoPeriodoDoPacote(pacote) {
 }
 
 function obterAulasConsumidasNoPacote(pacote) {
-  return obterAulasDoPeriodoDoPacote(pacote).filter((aula) => aulaConsomePacote(aula));
+  return obterAulasDoPeriodoDoPacote(pacote).filter((aula) =>
+    aulaConsomePacote(aula)
+  );
 }
 
 function contarAulasUsadasNoPacote(pacote) {
@@ -367,8 +439,11 @@ async function carregarCabecalho() {
   dadosCabecalho = data;
 
   tituloAluno.textContent = data.aluno?.nome || "Aluno";
+
   subtituloAluno.textContent =
-    `${data.materia?.nome || ""} — ${data.modulo?.nome || ""} — Prof(a). ${data.professor?.nome || ""}`;
+    `${data.materia?.nome || ""} — ` +
+    `${data.modulo?.nome || ""} — ` +
+    `Prof(a). ${data.professor?.nome || ""}`;
 
   await carregarModulosDaMatricula(matriculaId);
 
@@ -379,7 +454,7 @@ async function carregarCabecalho() {
 // FILTRO DE MÓDULO DAS AULAS
 // ===============================
 
-async function carregarModulosDaMatricula(matriculaId) {
+async function carregarModulosDaMatricula(matriculaIdAtual) {
   if (!filtroModuloAula) return;
 
   const { data, error } = await supabase
@@ -390,7 +465,7 @@ async function carregarModulosDaMatricula(matriculaId) {
         nome
       )
     `)
-    .eq("matricula_id", matriculaId)
+    .eq("matricula_id", matriculaIdAtual)
     .not("modulo_id", "is", null);
 
   if (error) {
@@ -411,18 +486,21 @@ async function carregarModulosDaMatricula(matriculaId) {
     }
   });
 
-  filtroModuloAula.innerHTML = `<option value="">Todos</option>`;
+  filtroModuloAula.innerHTML = `
+    <option value="">Todos</option>
+  `;
 
   Array.from(mapa.values())
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
     .forEach((modulo) => {
       const option = document.createElement("option");
+
       option.value = String(modulo.id);
       option.textContent = modulo.nome;
+
       filtroModuloAula.appendChild(option);
     });
 }
-
 // ===============================
 // AULAS
 // ===============================
@@ -468,11 +546,16 @@ function preencherContadores(aulas) {
   let c = 0;
   let t = 0;
 
-  aulas.forEach((x) => {
-    if (x.status === STATUS.PRESENTE) p++;
-    else if (x.status === STATUS.AUSENTE) a++;
-    else if (x.status === STATUS.CANCELADA) c++;
-    else if (x.status === STATUS.TRANCADA) t++;
+  aulas.forEach((aula) => {
+    if (aula.status === STATUS.PRESENTE) {
+      p++;
+    } else if (aula.status === STATUS.AUSENTE) {
+      a++;
+    } else if (aula.status === STATUS.CANCELADA) {
+      c++;
+    } else if (aula.status === STATUS.TRANCADA) {
+      t++;
+    }
   });
 
   cPresente.textContent = p;
@@ -490,7 +573,10 @@ function atualizarBotaoExpandirAulas(totalAulas) {
   }
 
   boxExpandirAulas.style.display = "block";
-  btnExpandirAulas.textContent = aulasExpandido ? "Ver menos aulas" : "Ver mais aulas";
+
+  btnExpandirAulas.textContent = aulasExpandido
+    ? "Ver menos aulas"
+    : "Ver mais aulas";
 }
 
 function obterAulasFiltradas() {
@@ -501,8 +587,46 @@ function obterAulasFiltradas() {
   }
 
   return todasAulas.filter(
-    (aula) => String(aula.modulo_id || "") === String(moduloSelecionado)
+    (aula) =>
+      String(aula.modulo_id || "") === String(moduloSelecionado)
   );
+}
+
+function abrirEdicaoDaAula(aulaId) {
+  if (!aulaId) {
+    mostrarMensagem(
+      "Não foi possível identificar a aula selecionada.",
+      false
+    );
+    return;
+  }
+
+  /*
+    As chaves abaixo deixam o redirecionamento compatível
+    com diferentes versões da página editar-aula-admin.
+  */
+  localStorage.setItem(
+    "aulaSelecionadaAdmin",
+    String(aulaId)
+  );
+
+  localStorage.setItem(
+    "aulaSelecionada",
+    String(aulaId)
+  );
+
+  localStorage.setItem(
+    "aulaIdSelecionada",
+    String(aulaId)
+  );
+
+  localStorage.setItem(
+    "aulaSelecionadaId",
+    String(aulaId)
+  );
+
+  window.location.href =
+    `editar-aula-admin.html?id=${encodeURIComponent(aulaId)}`;
 }
 
 function renderAulas(aulasOriginais) {
@@ -514,11 +638,15 @@ function renderAulas(aulasOriginais) {
     return;
   }
 
-  const aulasParaMostrar = aulasExpandido ? aulasOriginais : aulasOriginais.slice(0, 3);
+  const aulasParaMostrar = aulasExpandido
+    ? aulasOriginais
+    : aulasOriginais.slice(0, 3);
+
   const totalAulasFiltradas = aulasOriginais.length;
 
   aulasParaMostrar.forEach((x, index) => {
     const li = document.createElement("li");
+
     li.style.listStyle = "none";
     li.style.marginBottom = "0";
     li.style.padding = "10px 0";
@@ -530,20 +658,34 @@ function renderAulas(aulasOriginais) {
     const status = x.status || "-";
     const parte = textoParte(x.parte);
     const justificativa = x.justificativa?.trim() || "";
-    const conteudo = x.conteudo?.trim() || "Sem conteúdo informado";
-    const licao = x.licao_casa?.trim() || "Sem lição";
+    const conteudo =
+      x.conteudo?.trim() || "Sem conteúdo informado";
+    const licao =
+      x.licao_casa?.trim() || "Sem lição";
     const gravada = textoAulaGravada(x);
-    const nomeModulo = x.modulo?.nome || "Sem módulo";
+    const nomeModulo =
+      x.modulo?.nome || "Sem módulo";
 
     const infosNormais = [
       `Prof(a). ${professor}`,
       `Módulo: ${nomeModulo}`,
-      `Status: ${status}`,
-      `Parte: ${parte}`
+      `Status: ${status}`
     ];
 
+    /*
+      Quando a aula for uma reposição, mostramos os dados
+      da aula original logo depois do status da reposição.
+    */
+    if (aulaEhReposicao(x)) {
+      infosNormais.push(textoAulaOriginal(x));
+    }
+
+    infosNormais.push(`Parte: ${parte}`);
+
     if (justificativa) {
-      infosNormais.push(`Justificativa: ${justificativa}`);
+      infosNormais.push(
+        `Justificativa: ${justificativa}`
+      );
     }
 
     if (
@@ -553,18 +695,29 @@ function renderAulas(aulasOriginais) {
       x.status === STATUS.AULA_INSTRUMENTAL ||
       x.status === STATUS.PLANTAO_DUVIDAS
     ) {
-      infosNormais.push(`Aula gravada: ${gravada}`);
+      infosNormais.push(
+        `Aula gravada: ${gravada}`
+      );
     }
 
-    if (x.status === STATUS.AUSENTE && x.precisa_reposicao) {
+    if (
+      x.status === STATUS.AUSENTE &&
+      x.precisa_reposicao
+    ) {
       infosNormais.push("Solicitou reposição");
     }
 
-    if (x.status === STATUS.CANCELADA && x.precisa_reposicao) {
+    if (
+      x.status === STATUS.CANCELADA &&
+      x.precisa_reposicao
+    ) {
       infosNormais.push("Solicitou reposição");
     }
 
-    if (x.status === STATUS.TRANCADA && x.precisa_reposicao) {
+    if (
+      x.status === STATUS.TRANCADA &&
+      x.precisa_reposicao
+    ) {
       infosNormais.push("Solicitou reposição");
     }
 
@@ -577,8 +730,10 @@ function renderAulas(aulasOriginais) {
 
       infosNormais.push("Não conta no pacote");
     } else if (
-      normalizarTexto(x.status) === "aula instrumental" ||
-      normalizarTexto(x.status) === "plantao de duvidas"
+      normalizarTexto(x.status) ===
+        "aula instrumental" ||
+      normalizarTexto(x.status) ===
+        "plantao de duvidas"
     ) {
       infosNormais.push("Não conta no pacote");
     } else if (aulaConsomePacote(x)) {
@@ -593,7 +748,13 @@ function renderAulas(aulasOriginais) {
       <div class="item-historico-flex">
         <div class="item-historico-linha">
           <div class="item-historico-topo-compacto">
-            ${escaparHtml(`Aula ${numeroAula}`)} • ${escaparHtml(dataBR)} - ${escaparHtml(conteudo)} - ${escaparHtml(licao)}
+            ${escaparHtml(`Aula ${numeroAula}`)}
+            •
+            ${escaparHtml(dataBR)}
+            -
+            ${escaparHtml(conteudo)}
+            -
+            ${escaparHtml(licao)}
           </div>
 
           <div class="item-historico-detalhes">
@@ -601,7 +762,36 @@ function renderAulas(aulasOriginais) {
           </div>
         </div>
 
-        <div class="item-historico-acoes">
+        <div
+          class="item-historico-acoes"
+          style="
+            display:flex;
+            align-items:center;
+            justify-content:flex-end;
+            gap:8px;
+            flex-wrap:wrap;
+          "
+        >
+          <button
+            type="button"
+            data-aula-id="${x.id}"
+            class="btn-editar-aula-admin"
+            title="Editar aula"
+            style="
+              padding:8px 12px;
+              background:#ffc928;
+              color:#111111;
+              border:none;
+              border-radius:10px;
+              font-weight:700;
+              font-size:12px;
+              cursor:pointer;
+              white-space:nowrap;
+            "
+          >
+            Editar aula
+          </button>
+
           <button
             type="button"
             data-aula-id="${x.id}"
@@ -617,33 +807,67 @@ function renderAulas(aulasOriginais) {
     listaAulas.appendChild(li);
   });
 
-  atualizarBotaoExpandirAulas(aulasOriginais.length);
+  atualizarBotaoExpandirAulas(
+    aulasOriginais.length
+  );
 
-  document.querySelectorAll(".btn-excluir-aula-admin").forEach((btn) => {
-    btn.onclick = async () => {
-      const aulaId = Number(btn.dataset.aulaId);
+  document
+    .querySelectorAll(".btn-editar-aula-admin")
+    .forEach((btn) => {
+      btn.onclick = () => {
+        const aulaId = Number(
+          btn.dataset.aulaId
+        );
 
-      if (!confirm("Excluir esta aula?")) return;
+        abrirEdicaoDaAula(aulaId);
+      };
+    });
 
-      const { error } = await supabase
-        .from("aula")
-        .delete()
-        .eq("id", aulaId);
+  document
+    .querySelectorAll(".btn-excluir-aula-admin")
+    .forEach((btn) => {
+      btn.onclick = async () => {
+        const aulaId = Number(
+          btn.dataset.aulaId
+        );
 
-      if (error) {
-        console.error(error);
-        mostrarMensagem("Erro ao excluir aula", false);
-        return;
-      }
+        if (!aulaId) {
+          mostrarMensagem(
+            "Não foi possível identificar a aula.",
+            false
+          );
+          return;
+        }
 
-      mostrarMensagem("Aula excluída");
-      await init();
-    };
-  });
+        if (!confirm("Excluir esta aula?")) {
+          return;
+        }
+
+        const { error } = await supabase
+          .from("aula")
+          .delete()
+          .eq("id", aulaId);
+
+        if (error) {
+          console.error(error);
+          mostrarMensagem(
+            "Erro ao excluir aula",
+            false
+          );
+          return;
+        }
+
+        mostrarMensagem("Aula excluída");
+
+        await init();
+      };
+    });
 }
 
 function atualizarRenderAulas() {
-  const aulasFiltradas = obterAulasFiltradas();
+  const aulasFiltradas =
+    obterAulasFiltradas();
+
   renderAulas(aulasFiltradas);
 }
 
@@ -651,10 +875,14 @@ function atualizarRenderAulas() {
 // PACOTES DE AULAS
 // ===============================
 
-async function carregarPacotesDoAluno(alunoId, materiaId) {
+async function carregarPacotesDoAluno(
+  alunoId,
+  materiaId
+) {
   if (!alunoId || !materiaId) {
     pacotesAluno = [];
     pacoteAtivoAtual = null;
+
     renderPacotesAluno();
     return;
   }
@@ -674,27 +902,43 @@ async function carregarPacotesDoAluno(alunoId, materiaId) {
     `)
     .eq("aluno_id", alunoId)
     .eq("materia_id", materiaId)
-    .order("data_inicio", { ascending: false })
-    .order("id", { ascending: false });
+    .order("data_inicio", {
+      ascending: false
+    })
+    .order("id", {
+      ascending: false
+    });
 
   if (error) {
     console.error(error);
-    mostrarMensagem("Erro ao carregar pacotes do aluno", false);
+
+    mostrarMensagem(
+      "Erro ao carregar pacotes do aluno",
+      false
+    );
+
     pacotesAluno = [];
     pacoteAtivoAtual = null;
+
     renderPacotesAluno();
     return;
   }
 
   pacotesAluno = data || [];
-  pacoteAtivoAtual = pacotesAluno.find((p) => p.status === "Ativo") || null;
+
+  pacoteAtivoAtual =
+    pacotesAluno.find(
+      (pacote) => pacote.status === "Ativo"
+    ) || null;
 
   renderPacotesAluno();
 }
 
 function renderPacotesAluno() {
   if (!pacotesAluno.length) {
-    pacoteSituacao.textContent = "Sem pacote ativo";
+    pacoteSituacao.textContent =
+      "Sem pacote ativo";
+
     pacoteSituacao.style.color = "#b71c1c";
 
     pacoteAulasUsadas.textContent = "-";
@@ -702,22 +946,30 @@ function renderPacotesAluno() {
     pacoteInicio.textContent = "-";
 
     pacoteAlerta.style.display = "block";
-    pacoteAlerta.style.backgroundColor = "#ffebee";
+    pacoteAlerta.style.backgroundColor =
+      "#ffebee";
     pacoteAlerta.style.color = "#b71c1c";
+
     pacoteAlerta.textContent =
       "Nenhum pacote foi cadastrado para este aluno neste curso.";
 
     boxAcoesPacote.style.display = "none";
+
     esconderAulasDoPacote();
 
-    listaPacotesAluno.innerHTML =
-      `<p style="font-size:13px; opacity:0.85;">Nenhum pacote cadastrado ainda.</p>`;
+    listaPacotesAluno.innerHTML = `
+      <p style="font-size:13px; opacity:0.85;">
+        Nenhum pacote cadastrado ainda.
+      </p>
+    `;
 
     return;
   }
 
   if (!pacoteAtivoAtual) {
-    pacoteSituacao.textContent = "Sem pacote ativo";
+    pacoteSituacao.textContent =
+      "Sem pacote ativo";
+
     pacoteSituacao.style.color = "#b71c1c";
 
     pacoteAulasUsadas.textContent = "-";
@@ -725,137 +977,272 @@ function renderPacotesAluno() {
     pacoteInicio.textContent = "-";
 
     pacoteAlerta.style.display = "block";
-    pacoteAlerta.style.backgroundColor = "#fff4cc";
+    pacoteAlerta.style.backgroundColor =
+      "#fff4cc";
     pacoteAlerta.style.color = "#7a4b00";
+
     pacoteAlerta.textContent =
       "Este aluno possui histórico de pacotes, mas nenhum pacote ativo para este curso.";
 
     boxAcoesPacote.style.display = "none";
+
     esconderAulasDoPacote();
   } else {
-    const usadas = contarAulasUsadasNoPacote(pacoteAtivoAtual);
-    const total = Number(pacoteAtivoAtual.quantidade_aulas || 36);
-    const restantes = Math.max(0, total - usadas);
+    const usadas =
+      contarAulasUsadasNoPacote(
+        pacoteAtivoAtual
+      );
 
-    pacoteAulasUsadas.textContent = `${usadas} / ${total}`;
-    pacoteAulasRestantes.textContent = String(restantes);
-    pacoteInicio.textContent = formatarDataBR(pacoteAtivoAtual.data_inicio);
+    const total = Number(
+      pacoteAtivoAtual.quantidade_aulas || 36
+    );
+
+    const restantes = Math.max(
+      0,
+      total - usadas
+    );
+
+    pacoteAulasUsadas.textContent =
+      `${usadas} / ${total}`;
+
+    pacoteAulasRestantes.textContent =
+      String(restantes);
+
+    pacoteInicio.textContent =
+      formatarDataBR(
+        pacoteAtivoAtual.data_inicio
+      );
 
     boxAcoesPacote.style.display = "flex";
 
     if (usadas >= total) {
-      pacoteSituacao.textContent = "Renovação necessária";
-      pacoteSituacao.style.color = "#b71c1c";
+      pacoteSituacao.textContent =
+        "Renovação necessária";
 
-      pacoteAlerta.style.display = "block";
-      pacoteAlerta.style.backgroundColor = "#ffebee";
-      pacoteAlerta.style.color = "#b71c1c";
+      pacoteSituacao.style.color =
+        "#b71c1c";
+
+      pacoteAlerta.style.display =
+        "block";
+
+      pacoteAlerta.style.backgroundColor =
+        "#ffebee";
+
+      pacoteAlerta.style.color =
+        "#b71c1c";
+
       pacoteAlerta.textContent =
         "O pacote atingiu a quantidade de aulas contratadas. Verifique a renovação com o aluno.";
     } else if (restantes <= 3) {
-      pacoteSituacao.textContent = "Próximo da renovação";
-      pacoteSituacao.style.color = "#7a4b00";
+      pacoteSituacao.textContent =
+        "Próximo da renovação";
 
-      pacoteAlerta.style.display = "block";
-      pacoteAlerta.style.backgroundColor = "#fff4cc";
-      pacoteAlerta.style.color = "#7a4b00";
+      pacoteSituacao.style.color =
+        "#7a4b00";
+
+      pacoteAlerta.style.display =
+        "block";
+
+      pacoteAlerta.style.backgroundColor =
+        "#fff4cc";
+
+      pacoteAlerta.style.color =
+        "#7a4b00";
+
       pacoteAlerta.textContent =
         `Atenção: faltam apenas ${restantes} aula(s) para acabar o pacote.`;
     } else {
-      pacoteSituacao.textContent = "Em andamento";
-      pacoteSituacao.style.color = "#1b5e20";
+      pacoteSituacao.textContent =
+        "Em andamento";
 
-      pacoteAlerta.style.display = "block";
-      pacoteAlerta.style.backgroundColor = "#e8f5e9";
-      pacoteAlerta.style.color = "#1b5e20";
+      pacoteSituacao.style.color =
+        "#1b5e20";
+
+      pacoteAlerta.style.display =
+        "block";
+
+      pacoteAlerta.style.backgroundColor =
+        "#e8f5e9";
+
+      pacoteAlerta.style.color =
+        "#1b5e20";
+
       pacoteAlerta.textContent =
         `Pacote ativo em andamento. Ainda restam ${restantes} aula(s).`;
     }
 
-    if (aulasPacoteExpandido && pacoteSelecionadoParaAulas) {
-      renderAulasDoPacote(pacoteSelecionadoParaAulas);
+    if (
+      aulasPacoteExpandido &&
+      pacoteSelecionadoParaAulas
+    ) {
+      renderAulasDoPacote(
+        pacoteSelecionadoParaAulas
+      );
     }
   }
 
   renderHistoricoPacotes();
 }
-
 function renderHistoricoPacotes() {
   if (!pacotesAluno.length) {
-    listaPacotesAluno.innerHTML =
-      `<p style="font-size:13px; opacity:0.85;">Nenhum pacote cadastrado ainda.</p>`;
+    listaPacotesAluno.innerHTML = `
+      <p style="font-size:13px; opacity:0.85;">
+        Nenhum pacote cadastrado ainda.
+      </p>
+    `;
+
     return;
   }
 
-  listaPacotesAluno.innerHTML = pacotesAluno.map((pacote) => {
-    const usadas = contarAulasUsadasNoPacote(pacote);
-    const total = Number(pacote.quantidade_aulas || 36);
-    const restantes = Math.max(0, total - usadas);
+  listaPacotesAluno.innerHTML =
+    pacotesAluno
+      .map((pacote) => {
+        const usadas =
+          contarAulasUsadasNoPacote(
+            pacote
+          );
 
-    const statusCor =
-      pacote.status === "Ativo"
-        ? "#1b5e20"
-        : pacote.status === "Encerrado"
-          ? "#555"
-          : "#b71c1c";
+        const total = Number(
+          pacote.quantidade_aulas || 36
+        );
 
-    return `
-      <div class="card-pacote-historico">
-        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <strong>
-            ${escaparHtml(pacote.status === "Ativo" ? "Pacote ativo" : "Pacote")}
-          </strong>
+        const restantes = Math.max(
+          0,
+          total - usadas
+        );
 
-          <span style="font-size:12px; font-weight:700; color:${statusCor};">
-            ${escaparHtml(pacote.status || "-")}
-          </span>
-        </div>
+        const statusCor =
+          pacote.status === "Ativo"
+            ? "#1b5e20"
+            : pacote.status === "Encerrado"
+              ? "#555"
+              : "#b71c1c";
 
-        <div style="font-size:13px; margin-top:4px;">
-          Aulas usadas: <b>${usadas} / ${total}</b>
-          ${
-            pacote.status === "Ativo"
-              ? ` • Restantes: <b>${restantes}</b>`
-              : ""
-          }
-        </div>
+        return `
+          <div class="card-pacote-historico">
+            <div
+              style="
+                display:flex;
+                justify-content:space-between;
+                gap:10px;
+                flex-wrap:wrap;
+              "
+            >
+              <strong>
+                ${escaparHtml(
+                  pacote.status === "Ativo"
+                    ? "Pacote ativo"
+                    : "Pacote"
+                )}
+              </strong>
 
-        <div style="font-size:12px; opacity:0.85; margin-top:4px;">
-          Início: ${formatarDataBR(pacote.data_inicio)}
-          ${
-            pacote.data_fim
-              ? ` • Fim: ${formatarDataBR(pacote.data_fim)}`
-              : " • Fim: em aberto"
-          }
-        </div>
+              <span
+                style="
+                  font-size:12px;
+                  font-weight:700;
+                  color:${statusCor};
+                "
+              >
+                ${escaparHtml(
+                  pacote.status || "-"
+                )}
+              </span>
+            </div>
 
-        ${
-          pacote.observacao
-            ? `<div style="font-size:12px; opacity:0.85; margin-top:4px;">
-                Obs: ${escaparHtml(pacote.observacao)}
-              </div>`
-            : ""
-        }
+            <div
+              style="
+                font-size:13px;
+                margin-top:4px;
+              "
+            >
+              Aulas usadas:
+              <b>${usadas} / ${total}</b>
 
-        <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-          <button
-            type="button"
-            class="btn-cinza-pacote btn-ver-aulas-historico-pacote"
-            data-pacote-id="${pacote.id}"
-          >
-            Ver aulas
-          </button>
-        </div>
-      </div>
-    `;
-  }).join("");
+              ${
+                pacote.status === "Ativo"
+                  ? ` • Restantes: <b>${restantes}</b>`
+                  : ""
+              }
+            </div>
 
-  document.querySelectorAll(".btn-ver-aulas-historico-pacote").forEach((btn) => {
-    btn.onclick = () => {
-      const pacoteId = Number(btn.dataset.pacoteId);
-      visualizarAulasDeUmPacote(pacoteId);
-    };
-  });
+            <div
+              style="
+                font-size:12px;
+                opacity:0.85;
+                margin-top:4px;
+              "
+            >
+              Início:
+              ${formatarDataBR(
+                pacote.data_inicio
+              )}
+
+              ${
+                pacote.data_fim
+                  ? ` • Fim: ${formatarDataBR(
+                      pacote.data_fim
+                    )}`
+                  : " • Fim: em aberto"
+              }
+            </div>
+
+            ${
+              pacote.observacao
+                ? `
+                  <div
+                    style="
+                      font-size:12px;
+                      opacity:0.85;
+                      margin-top:4px;
+                    "
+                  >
+                    Obs:
+                    ${escaparHtml(
+                      pacote.observacao
+                    )}
+                  </div>
+                `
+                : ""
+            }
+
+            <div
+              style="
+                display:flex;
+                justify-content:flex-end;
+                margin-top:10px;
+              "
+            >
+              <button
+                type="button"
+                class="
+                  btn-cinza-pacote
+                  btn-ver-aulas-historico-pacote
+                "
+                data-pacote-id="${pacote.id}"
+              >
+                Ver aulas
+              </button>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+
+  document
+    .querySelectorAll(
+      ".btn-ver-aulas-historico-pacote"
+    )
+    .forEach((btn) => {
+      btn.onclick = () => {
+        const pacoteId = Number(
+          btn.dataset.pacoteId
+        );
+
+        visualizarAulasDeUmPacote(
+          pacoteId
+        );
+      };
+    });
 }
 
 function esconderAulasDoPacote() {
@@ -867,11 +1254,13 @@ function esconderAulasDoPacote() {
   }
 
   if (btnVerAulasPacote) {
-    btnVerAulasPacote.textContent = "Ver aulas do pacote ativo";
+    btnVerAulasPacote.textContent =
+      "Ver aulas do pacote ativo";
   }
 
   if (tituloAulasPacote) {
-    tituloAulasPacote.textContent = "Aulas do pacote";
+    tituloAulasPacote.textContent =
+      "Aulas do pacote";
   }
 
   if (listaAulasPacote) {
@@ -881,27 +1270,44 @@ function esconderAulasDoPacote() {
 
 function alternarAulasDoPacote() {
   if (!pacoteAtivoAtual) {
-    mostrarMensagem("Não há pacote ativo para listar aulas.", false);
+    mostrarMensagem(
+      "Não há pacote ativo para listar aulas.",
+      false
+    );
+
     return;
   }
 
   if (
     aulasPacoteExpandido &&
     pacoteSelecionadoParaAulas &&
-    Number(pacoteSelecionadoParaAulas.id) === Number(pacoteAtivoAtual.id)
+    Number(
+      pacoteSelecionadoParaAulas.id
+    ) === Number(pacoteAtivoAtual.id)
   ) {
     esconderAulasDoPacote();
     return;
   }
 
-  visualizarAulasDeUmPacote(pacoteAtivoAtual.id);
+  visualizarAulasDeUmPacote(
+    pacoteAtivoAtual.id
+  );
 }
 
-function visualizarAulasDeUmPacote(pacoteId) {
-  const pacote = pacotesAluno.find((item) => Number(item.id) === Number(pacoteId));
+function visualizarAulasDeUmPacote(
+  pacoteId
+) {
+  const pacote = pacotesAluno.find(
+    (item) =>
+      Number(item.id) === Number(pacoteId)
+  );
 
   if (!pacote) {
-    mostrarMensagem("Pacote não encontrado.", false);
+    mostrarMensagem(
+      "Pacote não encontrado.",
+      false
+    );
+
     return;
   }
 
@@ -911,97 +1317,220 @@ function visualizarAulasDeUmPacote(pacoteId) {
   renderAulasDoPacote(pacote);
 
   if (boxAulasPacote) {
-    boxAulasPacote.style.display = "block";
-    boxAulasPacote.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    boxAulasPacote.style.display =
+      "block";
+
+    boxAulasPacote.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest"
+    });
   }
 
   if (btnVerAulasPacote) {
     btnVerAulasPacote.textContent =
-      Number(pacote.id) === Number(pacoteAtivoAtual?.id)
+      Number(pacote.id) ===
+      Number(pacoteAtivoAtual?.id)
         ? "Ocultar aulas do pacote"
         : "Ver aulas do pacote ativo";
   }
 }
 
-function renderAulasDoPacote(pacote = pacoteSelecionadoParaAulas || pacoteAtivoAtual) {
-  if (!pacote || !listaAulasPacote) return;
-
-  const aulasDoPeriodo = obterAulasDoPeriodoDoPacote(pacote);
-  const aulasQueContam = aulasDoPeriodo.filter((aula) => aulaConsomePacote(aula)).length;
-  const total = Number(pacote.quantidade_aulas || 36);
-
-  if (tituloAulasPacote) {
-    tituloAulasPacote.textContent =
-      `Aulas do pacote iniciado em ${formatarDataBR(pacote.data_inicio)} (${aulasQueContam}/${total})`;
-  }
-
-  if (!aulasDoPeriodo.length) {
-    listaAulasPacote.innerHTML =
-      `<p style="font-size:13px; opacity:0.85;">Nenhuma aula encontrada dentro do período deste pacote.</p>`;
+function renderAulasDoPacote(
+  pacote =
+    pacoteSelecionadoParaAulas ||
+    pacoteAtivoAtual
+) {
+  if (!pacote || !listaAulasPacote) {
     return;
   }
 
-  listaAulasPacote.innerHTML = aulasDoPeriodo.map((aula, index) => {
-    const contaNoPacote = aulaConsomePacote(aula);
-    const dataBR = formatarDataBR(aula.data_aula);
-    const modulo = aula.modulo?.nome || "Sem módulo";
-    const professor = aula.professor?.nome || "Professor";
-    const conteudo = aula.conteudo?.trim() || "Sem conteúdo informado";
-    const status = aula.status || "-";
-    const parte = textoParte(aula.parte);
-    const justificativa = aula.justificativa?.trim() || "";
+  const aulasDoPeriodo =
+    obterAulasDoPeriodoDoPacote(pacote);
 
-    let textoBadge = "";
-    let classeBadge = "";
+  const aulasQueContam =
+    aulasDoPeriodo.filter((aula) =>
+      aulaConsomePacote(aula)
+    ).length;
 
-    if (contaNoPacote) {
-      textoBadge = "Conta no pacote";
-      classeBadge = "badge-conta-pacote";
-    } else if (normalizarTexto(aula.status) === "reposicao") {
-      textoBadge = "Reposição não conta";
-      classeBadge = "badge-nao-conta-pacote";
-    }
+  const total = Number(
+    pacote.quantidade_aulas || 36
+  );
 
-    return `
-      <div style="padding:10px 0; border-bottom:1px solid #e6dfcf;">
-        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-          <strong>${index + 1}. ${escaparHtml(dataBR)} — ${escaparHtml(status)}</strong>
+  if (tituloAulasPacote) {
+    tituloAulasPacote.textContent =
+      `Aulas do pacote iniciado em ` +
+      `${formatarDataBR(
+        pacote.data_inicio
+      )} (${aulasQueContam}/${total})`;
+  }
 
-          ${
-            textoBadge
-              ? `<span class="badge-pacote ${classeBadge}">
-                  ${escaparHtml(textoBadge)}
-                </span>`
-              : ""
-          }
-        </div>
-
-        <div style="font-size:13px; margin-top:4px;">
-          ${escaparHtml(modulo)} • ${escaparHtml(parte)} • Prof(a). ${escaparHtml(professor)}
-        </div>
-
-        <div style="font-size:12px; opacity:0.85; margin-top:4px;">
-          Conteúdo: ${escaparHtml(conteudo)}
-        </div>
-
-        ${
-          justificativa
-            ? `<div style="font-size:12px; opacity:0.85; margin-top:4px;">
-                Justificativa: ${escaparHtml(justificativa)}
-              </div>`
-            : ""
-        }
-
-        ${
-          aula.precisa_reposicao
-            ? `<div style="font-size:12px; opacity:0.85; margin-top:4px;">
-                Solicitou reposição
-              </div>`
-            : ""
-        }
-      </div>
+  if (!aulasDoPeriodo.length) {
+    listaAulasPacote.innerHTML = `
+      <p style="font-size:13px; opacity:0.85;">
+        Nenhuma aula encontrada dentro do período deste pacote.
+      </p>
     `;
-  }).join("");
+
+    return;
+  }
+
+  listaAulasPacote.innerHTML =
+    aulasDoPeriodo
+      .map((aula, index) => {
+        const contaNoPacote =
+          aulaConsomePacote(aula);
+
+        const dataBR =
+          formatarDataBR(
+            aula.data_aula
+          );
+
+        const modulo =
+          aula.modulo?.nome ||
+          "Sem módulo";
+
+        const professor =
+          aula.professor?.nome ||
+          "Professor";
+
+        const conteudo =
+          aula.conteudo?.trim() ||
+          "Sem conteúdo informado";
+
+        const status =
+          aula.status || "-";
+
+        const parte =
+          textoParte(aula.parte);
+
+        const justificativa =
+          aula.justificativa?.trim() ||
+          "";
+
+        let textoBadge = "";
+        let classeBadge = "";
+
+        if (contaNoPacote) {
+          textoBadge =
+            "Conta no pacote";
+
+          classeBadge =
+            "badge-conta-pacote";
+        } else if (
+          normalizarTexto(
+            aula.status
+          ) === "reposicao"
+        ) {
+          textoBadge =
+            "Reposição não conta";
+
+          classeBadge =
+            "badge-nao-conta-pacote";
+        }
+
+        return `
+          <div
+            style="
+              padding:10px 0;
+              border-bottom:1px solid #e6dfcf;
+            "
+          >
+            <div
+              style="
+                display:flex;
+                justify-content:space-between;
+                gap:10px;
+                flex-wrap:wrap;
+              "
+            >
+              <strong>
+                ${index + 1}.
+                ${escaparHtml(dataBR)}
+                —
+                ${escaparHtml(status)}
+              </strong>
+
+              ${
+                textoBadge
+                  ? `
+                    <span
+                      class="
+                        badge-pacote
+                        ${classeBadge}
+                      "
+                    >
+                      ${escaparHtml(
+                        textoBadge
+                      )}
+                    </span>
+                  `
+                  : ""
+              }
+            </div>
+
+            <div
+              style="
+                font-size:13px;
+                margin-top:4px;
+              "
+            >
+              ${escaparHtml(modulo)}
+              •
+              ${escaparHtml(parte)}
+              •
+              Prof(a).
+              ${escaparHtml(professor)}
+            </div>
+
+            <div
+              style="
+                font-size:12px;
+                opacity:0.85;
+                margin-top:4px;
+              "
+            >
+              Conteúdo:
+              ${escaparHtml(conteudo)}
+            </div>
+
+            ${
+              justificativa
+                ? `
+                  <div
+                    style="
+                      font-size:12px;
+                      opacity:0.85;
+                      margin-top:4px;
+                    "
+                  >
+                    Justificativa:
+                    ${escaparHtml(
+                      justificativa
+                    )}
+                  </div>
+                `
+                : ""
+            }
+
+            ${
+              aula.precisa_reposicao
+                ? `
+                  <div
+                    style="
+                      font-size:12px;
+                      opacity:0.85;
+                      margin-top:4px;
+                    "
+                  >
+                    Solicitou reposição
+                  </div>
+                `
+                : ""
+            }
+          </div>
+        `;
+      })
+      .join("");
 }
 
 // ===============================
@@ -1009,52 +1538,132 @@ function renderAulasDoPacote(pacote = pacoteSelecionadoParaAulas || pacoteAtivoA
 // ===============================
 
 function renderReposicoesPendentes(aulas) {
-  if (!listaReposicoesPendentes) return;
-
-  const reposicoesPendentes = obterReposicoesPendentes(aulas);
-
-  if (totalReposicoesPendentes) {
-    totalReposicoesPendentes.textContent = `${reposicoesPendentes.length} pendente(s)`;
-  }
-
-  if (!reposicoesPendentes.length) {
-    listaReposicoesPendentes.innerHTML =
-      `<p style="font-size:13px; opacity:0.85; margin:0;">Nenhuma reposição pendente para este aluno neste curso.</p>`;
+  if (!listaReposicoesPendentes) {
     return;
   }
 
-  listaReposicoesPendentes.innerHTML = reposicoesPendentes.map((aula) => {
-    const cobranca = obterSituacaoCobrancaReposicao(aula);
-    const dataBR = formatarDataBR(aula.data_aula);
-    const status = aula.status || "-";
-    const modulo = aula.modulo?.nome || "Sem módulo";
-    const professor = aula.professor?.nome || "Professor";
-    const parte = textoParte(aula.parte);
-    const justificativa = aula.justificativa?.trim() || "Sem motivo informado";
-    const classeBadge = cobranca.paga ? "badge-reposicao-paga" : "badge-reposicao-gratuita";
+  const reposicoesPendentes =
+    obterReposicoesPendentes(aulas);
 
-    return `
-      <div class="card-reposicao-pendente">
-        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;">
-          <div>
-            <strong>${escaparHtml(dataBR)} — ${escaparHtml(status)}</strong>
+  if (totalReposicoesPendentes) {
+    totalReposicoesPendentes.textContent =
+      `${reposicoesPendentes.length} pendente(s)`;
+  }
 
-            <div style="font-size:12px; opacity:0.85; margin-top:4px;">
-              ${escaparHtml(modulo)} • ${escaparHtml(parte)} • Prof(a). ${escaparHtml(professor)}
+  if (!reposicoesPendentes.length) {
+    listaReposicoesPendentes.innerHTML = `
+      <p
+        style="
+          font-size:13px;
+          opacity:0.85;
+          margin:0;
+        "
+      >
+        Nenhuma reposição pendente para este aluno neste curso.
+      </p>
+    `;
+
+    return;
+  }
+
+  listaReposicoesPendentes.innerHTML =
+    reposicoesPendentes
+      .map((aula) => {
+        const cobranca =
+          obterSituacaoCobrancaReposicao(
+            aula
+          );
+
+        const dataBR =
+          formatarDataBR(
+            aula.data_aula
+          );
+
+        const status =
+          aula.status || "-";
+
+        const modulo =
+          aula.modulo?.nome ||
+          "Sem módulo";
+
+        const professor =
+          aula.professor?.nome ||
+          "Professor";
+
+        const parte =
+          textoParte(aula.parte);
+
+        const justificativa =
+          aula.justificativa?.trim() ||
+          "Sem motivo informado";
+
+        const classeBadge =
+          cobranca.paga
+            ? "badge-reposicao-paga"
+            : "badge-reposicao-gratuita";
+
+        return `
+          <div class="card-reposicao-pendente">
+            <div
+              style="
+                display:flex;
+                justify-content:space-between;
+                gap:10px;
+                flex-wrap:wrap;
+                align-items:flex-start;
+              "
+            >
+              <div>
+                <strong>
+                  ${escaparHtml(dataBR)}
+                  —
+                  ${escaparHtml(status)}
+                </strong>
+
+                <div
+                  style="
+                    font-size:12px;
+                    opacity:0.85;
+                    margin-top:4px;
+                  "
+                >
+                  ${escaparHtml(modulo)}
+                  •
+                  ${escaparHtml(parte)}
+                  •
+                  Prof(a).
+                  ${escaparHtml(professor)}
+                </div>
+              </div>
+
+              <span
+                class="
+                  badge-pacote
+                  ${classeBadge}
+                "
+              >
+                ${escaparHtml(
+                  cobranca.texto
+                )}
+              </span>
+            </div>
+
+            <div
+              style="
+                font-size:12px;
+                opacity:0.9;
+                margin-top:6px;
+              "
+            >
+              Motivo/justificativa:
+              ${escaparHtml(
+                justificativa
+              )}
             </div>
           </div>
-
-          <span class="badge-pacote ${classeBadge}">
-            ${escaparHtml(cobranca.texto)}
-          </span>
-        </div>
-
-        <div style="font-size:12px; opacity:0.9; margin-top:6px;">
-          Motivo/justificativa: ${escaparHtml(justificativa)}
-        </div>
-      </div>
-    `;
-  }).join("");
+        `;
+      })
+      .join("");
 }
 
 // ===============================
@@ -1063,7 +1672,11 @@ function renderReposicoesPendentes(aulas) {
 
 async function encerrarPacoteAtivo() {
   if (!pacoteAtivoAtual) {
-    mostrarMensagem("Não há pacote ativo para encerrar.", false);
+    mostrarMensagem(
+      "Não há pacote ativo para encerrar.",
+      false
+    );
+
     return;
   }
 
@@ -1083,11 +1696,18 @@ async function encerrarPacoteAtivo() {
 
   if (error) {
     console.error(error);
-    mostrarMensagem("Erro ao encerrar pacote.", false);
+
+    mostrarMensagem(
+      "Erro ao encerrar pacote.",
+      false
+    );
+
     return;
   }
 
-  mostrarMensagem("Pacote encerrado com sucesso!");
+  mostrarMensagem(
+    "Pacote encerrado com sucesso!"
+  );
 
   esconderAulasDoPacote();
 
@@ -1096,12 +1716,13 @@ async function encerrarPacoteAtivo() {
     dadosCabecalho?.materia_id
   );
 }
-
 // ===============================
 // EVENTOS PARTICIPADOS
 // ===============================
 
-async function carregarQuantidadeEventosParticipados(alunoId) {
+async function carregarQuantidadeEventosParticipados(
+  alunoId
+) {
   if (!alunoId) {
     cEventos.textContent = "0";
     return;
@@ -1118,8 +1739,15 @@ async function carregarQuantidadeEventosParticipados(alunoId) {
     return;
   }
 
-  const eventosUnicos = new Set((data || []).map((item) => item.evento_id));
-  cEventos.textContent = String(eventosUnicos.size);
+  const eventosUnicos = new Set(
+    (data || []).map(
+      (item) => item.evento_id
+    )
+  );
+
+  cEventos.textContent = String(
+    eventosUnicos.size
+  );
 }
 
 // ===============================
@@ -1141,11 +1769,18 @@ async function carregarNotas() {
       )
     `)
     .eq("matricula_id", matriculaId)
-    .order("data", { ascending: false });
+    .order("data", {
+      ascending: false
+    });
 
   if (error) {
     console.error(error);
-    mostrarMensagem("Erro ao carregar notas", false);
+
+    mostrarMensagem(
+      "Erro ao carregar notas",
+      false
+    );
+
     return [];
   }
 
@@ -1156,42 +1791,73 @@ function renderNotas(notas) {
   limparLista(listaNotas);
 
   if (notas.length === 0) {
-    addLi(listaNotas, "Nenhuma nota registrada.");
+    addLi(
+      listaNotas,
+      "Nenhuma nota registrada."
+    );
+
     return;
   }
 
-  notas.forEach((n) => {
-    const li = document.createElement("li");
+  notas.forEach((nota) => {
+    const li =
+      document.createElement("li");
 
-    const dataBR = formatarDataBR(n.data);
-    const modulo = n.modulo?.nome || "Sem módulo";
-    const obs = n.observacao ? ` — ${n.observacao}` : "";
+    const dataBR =
+      formatarDataBR(nota.data);
 
-    const texto = `${dataBR} — ${n.tipo} — ${modulo} — ${n.valor}${obs}`;
+    const modulo =
+      nota.modulo?.nome ||
+      "Sem módulo";
 
-    const span = document.createElement("span");
+    const observacao = nota.observacao
+      ? ` — ${nota.observacao}`
+      : "";
+
+    const texto =
+      `${dataBR} — ` +
+      `${nota.tipo} — ` +
+      `${modulo} — ` +
+      `${nota.valor}` +
+      `${observacao}`;
+
+    const span =
+      document.createElement("span");
+
     span.textContent = texto;
 
-    const btnExcluir = document.createElement("button");
+    const btnExcluir =
+      document.createElement("button");
+
     btnExcluir.textContent = "🗑";
-    btnExcluir.style.marginLeft = "10px";
-    btnExcluir.style.cursor = "pointer";
+    btnExcluir.style.marginLeft =
+      "10px";
+    btnExcluir.style.cursor =
+      "pointer";
 
     btnExcluir.onclick = async () => {
-      if (!confirm("Excluir esta nota?")) return;
+      if (!confirm("Excluir esta nota?")) {
+        return;
+      }
 
       const { error } = await supabase
         .from("nota")
         .delete()
-        .eq("id", n.id);
+        .eq("id", nota.id);
 
       if (error) {
         console.error(error);
-        mostrarMensagem("Erro ao excluir nota", false);
+
+        mostrarMensagem(
+          "Erro ao excluir nota",
+          false
+        );
+
         return;
       }
 
       mostrarMensagem("Nota excluída");
+
       await init();
     };
 
@@ -1210,51 +1876,70 @@ function calcularMedias(notas) {
   if (notas.length === 0) {
     mediaGeral.textContent = "-";
     totalNotas.textContent = "0";
-    mediaPorModulo.textContent = "Nenhuma média";
+    mediaPorModulo.textContent =
+      "Nenhuma média";
+
     return;
   }
 
   let soma = 0;
 
-  notas.forEach((n) => {
-    soma += Number(n.valor) || 0;
+  notas.forEach((nota) => {
+    soma += Number(nota.valor) || 0;
   });
 
-  const media = soma / notas.length;
+  const media =
+    soma / notas.length;
 
-  mediaGeral.textContent = media.toFixed(2);
-  totalNotas.textContent = notas.length;
+  mediaGeral.textContent =
+    media.toFixed(2);
+
+  totalNotas.textContent =
+    String(notas.length);
 
   const modulos = {};
 
-  notas.forEach((n) => {
-    const nome = n.modulo?.nome || "Sem módulo";
+  notas.forEach((nota) => {
+    const nome =
+      nota.modulo?.nome ||
+      "Sem módulo";
 
     if (!modulos[nome]) {
       modulos[nome] = [];
     }
 
-    modulos[nome].push(Number(n.valor) || 0);
+    modulos[nome].push(
+      Number(nota.valor) || 0
+    );
   });
 
   mediaPorModulo.innerHTML = "";
 
-  Object.keys(modulos).forEach((m) => {
-    const lista = modulos[m];
+  Object.keys(modulos).forEach(
+    (nomeModulo) => {
+      const lista =
+        modulos[nomeModulo];
 
-    let somaModulo = 0;
+      let somaModulo = 0;
 
-    lista.forEach((v) => {
-      somaModulo += v;
-    });
+      lista.forEach((valor) => {
+        somaModulo += valor;
+      });
 
-    const mediaModulo = somaModulo / lista.length;
+      const mediaModulo =
+        somaModulo / lista.length;
 
-    const p = document.createElement("p");
-    p.textContent = `${m}: ${mediaModulo.toFixed(2)} (${lista.length} avaliações)`;
+      const p =
+        document.createElement("p");
 
-    mediaPorModulo.appendChild(p);
-  });
+      p.textContent =
+        `${nomeModulo}: ` +
+        `${mediaModulo.toFixed(2)} ` +
+        `(${lista.length} avaliações)`;
+
+      mediaPorModulo.appendChild(p);
+    }
+  );
 }
 
 // ===============================
@@ -1262,20 +1947,40 @@ function calcularMedias(notas) {
 // ===============================
 
 async function init() {
-  const cabecalho = await carregarCabecalho();
+  const cabecalho =
+    await carregarCabecalho();
+
   if (!cabecalho) return;
 
-  todasAulas = await carregarAulas();
+  /*
+    Primeiro carregamos todas as aulas.
+
+    Isso é importante porque a reposição precisa localizar
+    a aula original dentro da lista completa.
+  */
+  todasAulas =
+    await carregarAulas();
 
   preencherContadores(todasAulas);
-  renderReposicoesPendentes(todasAulas);
+
+  renderReposicoesPendentes(
+    todasAulas
+  );
+
   atualizarRenderAulas();
 
-  await carregarPacotesDoAluno(cabecalho.aluno_id, cabecalho.materia_id);
+  await carregarPacotesDoAluno(
+    cabecalho.aluno_id,
+    cabecalho.materia_id
+  );
 
-  await carregarQuantidadeEventosParticipados(cabecalho.aluno_id);
+  await carregarQuantidadeEventosParticipados(
+    cabecalho.aluno_id
+  );
 
-  const notas = await carregarNotas();
+  const notas =
+    await carregarNotas();
+
   renderNotas(notas);
   calcularMedias(notas);
 }
@@ -1284,20 +1989,38 @@ async function init() {
 // EVENTOS DA INTERFACE
 // ===============================
 
-btnExpandirAulas?.addEventListener("click", () => {
-  aulasExpandido = !aulasExpandido;
-  atualizarRenderAulas();
-});
+btnExpandirAulas?.addEventListener(
+  "click",
+  () => {
+    aulasExpandido =
+      !aulasExpandido;
 
-filtroModuloAula?.addEventListener("change", () => {
-  aulasExpandido = false;
-  atualizarRenderAulas();
-});
+    atualizarRenderAulas();
+  }
+);
 
-btnEncerrarPacote?.addEventListener("click", encerrarPacoteAtivo);
+filtroModuloAula?.addEventListener(
+  "change",
+  () => {
+    aulasExpandido = false;
 
-btnVerAulasPacote?.addEventListener("click", alternarAulasDoPacote);
+    atualizarRenderAulas();
+  }
+);
 
-btnFecharAulasPacote?.addEventListener("click", esconderAulasDoPacote);
+btnEncerrarPacote?.addEventListener(
+  "click",
+  encerrarPacoteAtivo
+);
+
+btnVerAulasPacote?.addEventListener(
+  "click",
+  alternarAulasDoPacote
+);
+
+btnFecharAulasPacote?.addEventListener(
+  "click",
+  esconderAulasDoPacote
+);
 
 init();
