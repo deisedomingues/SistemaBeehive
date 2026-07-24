@@ -254,16 +254,24 @@ function ehNotaDeAvaliacao(nota) {
     .join(" ");
 
   /*
-    Algumas notas são salvas como "Avaliação".
-    Outras podem ser salvas como "Progress Check 1",
-    "PC 1" etc.
+    Reconhece os nomes usados nas diferentes matérias.
 
-    Todas devem contar como avaliação para o card
-    e para a lista de pendências.
+    Inglês:
+    - Progress Check 1
+    - Progress Check 2
+    - PC 1
+    - Avaliação
+
+    Espanhol:
+    - Evaluación 1
+    - Evaluación 2
+    - Avaliação
   */
 
   return (
+    texto.includes("avaliacao") ||
     texto.includes("avalia") ||
+    texto.includes("evaluacion") ||
     texto.includes("progress check") ||
     texto.includes("progress") ||
     texto.includes("check") ||
@@ -280,6 +288,7 @@ function extrairNumeroAvaliacaoDeTexto(texto) {
 
   const padroes = [
     /progress\s*check\s*(\d+)/i,
+    /evaluacion\s*(\d+)/i,
     /avaliacao\s*(\d+)/i,
     /avalia\w*\s*(\d+)/i,
     /pc\s*(\d+)/i,
@@ -359,6 +368,22 @@ function obterMateriaIdCabecalho() {
       dadosCabecalho?.materia?.id ||
       0
   );
+}
+
+function obterNomeAvaliacaoPorMateria(numeroAvaliacao) {
+  const materia = normalizarTexto(
+    dadosCabecalho?.materia?.nome
+  );
+
+  if (materia === "espanhol") {
+    return `Evaluación ${numeroAvaliacao}`;
+  }
+
+  if (materia === "ingles") {
+    return `Progress Check ${numeroAvaliacao}`;
+  }
+
+  return `Avaliação ${numeroAvaliacao}`;
 }
 
 function aulaContaComoValida(aula) {
@@ -731,9 +756,13 @@ function atualizarBotaoEnviarAvaliacaoAluno() {
   } else {
     btnEnviarAvaliacaoAluno.disabled = false;
 
+    const nomeAvaliacao =
+      obterNomeAvaliacaoPorMateria(
+        dadosAvaliacao.numeroAvaliacao
+      );
+
     btnEnviarAvaliacaoAluno.textContent =
-      `Enviar Progress Check ` +
-      `${dadosAvaliacao.numeroAvaliacao}`;
+      `Enviar ${nomeAvaliacao}`;
   }
 
   const textoStatus =
@@ -928,9 +957,13 @@ function atualizarCardAulasValidasEAvaliacao() {
     String(resumo.totalAulasValidas);
 
   if (resumo.primeiraPendente) {
+    const nomeAvaliacao =
+      obterNomeAvaliacaoPorMateria(
+        resumo.primeiraPendente
+      );
+
     statusAvaliacaoPendente.textContent =
-      `Pendente: Progress Check ` +
-      `${resumo.primeiraPendente}`;
+      `Pendente: ${nomeAvaliacao}`;
 
     statusAvaliacaoPendente.style.color =
       "#b71c1c";
@@ -1248,7 +1281,6 @@ async function carregarObservacoesPedagogicas() {
       })
       .join("");
 }
-
 // ===============================
 // BLOCO DE AVALIAÇÕES ENVIADAS
 // ===============================
@@ -1362,15 +1394,38 @@ function tituloAvaliacaoAluno(avaliacao) {
   const tituloFormulario =
     avaliacao?.avaliacao_formulario?.titulo;
 
-  const numero =
-    avaliacao?.numero_avaliacao;
+  const numero = Number(
+    avaliacao?.numero_avaliacao || 0
+  );
+
+  /*
+    O título cadastrado na tabela avaliacao_formulario
+    sempre tem prioridade.
+
+    Exemplos:
+    - Progress Check 1
+    - Evaluación 1
+  */
 
   if (tituloFormulario) {
     return tituloFormulario;
   }
 
   if (numero) {
-    return `Progress Check ${numero}`;
+    const materia = normalizarTexto(
+      avaliacao?.materia?.nome ||
+      dadosCabecalho?.materia?.nome
+    );
+
+    if (materia === "espanhol") {
+      return `Evaluación ${numero}`;
+    }
+
+    if (materia === "ingles") {
+      return `Progress Check ${numero}`;
+    }
+
+    return `Avaliação ${numero}`;
   }
 
   return "Avaliação";
@@ -1521,6 +1576,7 @@ function renderAvaliacoesEnviadasAluno() {
     })
     .join("");
 }
+
 // ===============================
 // CABEÇALHO
 // ===============================
@@ -1556,6 +1612,7 @@ async function carregarCabecalho() {
 
   if (error || !data) {
     console.error(error);
+
     mostrarMensagem(
       "Erro ao carregar aluno",
       false
@@ -1571,7 +1628,6 @@ async function carregarCabecalho() {
 
   const nomeMateria =
     data.materia?.nome ||
-    data.modulo?.materia?.nome ||
     "-";
 
   const nomeModulo =
@@ -2869,7 +2925,6 @@ function calcularMediaGeral(notas) {
   mediaGeralEl.textContent =
     media.toFixed(2);
 }
-
 // ===============================
 // EVENTOS
 // ===============================
@@ -3147,8 +3202,21 @@ formNota.addEventListener(
     notaData.value =
       hojeISO();
 
-    notaTipo.value =
-      "Avaliação";
+    const materia =
+      normalizarTexto(
+        dadosCabecalho?.materia?.nome
+      );
+
+    if (materia === "espanhol") {
+      notaTipo.value =
+        "Evaluación";
+    } else if (materia === "ingles") {
+      notaTipo.value =
+        "Progress Check";
+    } else {
+      notaTipo.value =
+        "Avaliação";
+    }
 
     await carregarNotas();
 
@@ -3178,14 +3246,27 @@ async function init() {
   notaData.value =
     hojeISO();
 
-  notaTipo.value =
-    "Avaliação";
-
   const cab =
     await carregarCabecalho();
 
   if (!cab) {
     return;
+  }
+
+  const materia =
+    normalizarTexto(
+      dadosCabecalho?.materia?.nome
+    );
+
+  if (materia === "espanhol") {
+    notaTipo.value =
+      "Evaluación";
+  } else if (materia === "ingles") {
+    notaTipo.value =
+      "Progress Check";
+  } else {
+    notaTipo.value =
+      "Avaliação";
   }
 
   todasAulas =
