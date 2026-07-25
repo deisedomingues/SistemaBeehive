@@ -74,6 +74,39 @@
     </section>
 
     <!-- =======================================
+         SELETOR DE VISUALIZAÇÃO
+         Só aparece para professora-aluna
+    ======================================== -->
+    <section
+      id="blocoTrocarPerfil"
+      class="seletor-perfil-inline seletor-perfil-site-professor"
+      style="display: none;"
+    >
+      <label
+        for="selectPerfilVisualizacao"
+        class="label-seletor-inline"
+      >
+        Visualizar como:
+      </label>
+
+      <select
+        id="selectPerfilVisualizacao"
+        class="select-seletor-inline"
+      >
+        <option value="professor">
+          Professor
+        </option>
+
+        <option
+          value="aluno"
+          selected
+        >
+          Aluno
+        </option>
+      </select>
+    </section>
+
+    <!-- =======================================
          CURSO SELECIONADO
     ======================================== -->
     <section
@@ -119,7 +152,6 @@
     ======================================== -->
     <section class="painel-aluno-cards">
 
-      <!-- AULA AO VIVO -->
       <a
         id="btnZoom"
         class="card-admin-link"
@@ -127,9 +159,7 @@
         rel="noopener noreferrer"
       >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">
-            🎓
-          </div>
+          <div class="card-admin-icone">🎓</div>
 
           <div class="card-admin-conteudo">
             <h2>Entrar na aula ao vivo</h2>
@@ -141,7 +171,6 @@
         </article>
       </a>
 
-      <!-- AULAS GRAVADAS -->
       <a
         id="btnYoutube"
         class="card-admin-link"
@@ -149,9 +178,7 @@
         rel="noopener noreferrer"
       >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">
-            🎥
-          </div>
+          <div class="card-admin-icone">🎥</div>
 
           <div class="card-admin-conteudo">
             <h2>Assistir aulas gravadas</h2>
@@ -163,7 +190,6 @@
         </article>
       </a>
 
-      <!-- MATERIAL DE ESTUDO -->
       <a
         id="btnMaterialEstudo"
         class="card-admin-link"
@@ -171,9 +197,7 @@
         rel="noopener noreferrer"
       >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">
-            📚
-          </div>
+          <div class="card-admin-icone">📚</div>
 
           <div class="card-admin-conteudo">
             <h2>Ver material de estudo</h2>
@@ -185,14 +209,12 @@
         </article>
       </a>
 
-      <!-- AVALIAÇÕES -->
       <a
         id="btnAvaliacoes"
         href="avaliacoes-aluno.html"
         class="card-admin-link"
       >
         <article class="card-admin card-aluno card-avaliacoes-aluno">
-
           <span
             id="badgeAvaliacoes"
             class="badge-eventos"
@@ -201,9 +223,7 @@
             0
           </span>
 
-          <div class="card-admin-icone">
-            📝
-          </div>
+          <div class="card-admin-icone">📝</div>
 
           <div class="card-admin-conteudo">
             <h2>Avaliações</h2>
@@ -215,13 +235,11 @@
         </article>
       </a>
 
-      <!-- EVENTOS -->
       <a
         href="evento-confirmacao.html"
         class="card-admin-link card-eventos-link"
       >
         <article class="card-admin card-aluno card-eventos-aluno">
-
           <span
             id="badgeEventos"
             class="badge-eventos"
@@ -230,9 +248,7 @@
             0
           </span>
 
-          <div class="card-admin-icone">
-            🎈
-          </div>
+          <div class="card-admin-icone">🎈</div>
 
           <div class="card-admin-conteudo">
             <h2>Eventos</h2>
@@ -244,15 +260,12 @@
         </article>
       </a>
 
-      <!-- AGENDAMENTOS -->
       <a
         href="agendar_reposicao.html"
         class="card-admin-link"
       >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">
-            📅
-          </div>
+          <div class="card-admin-icone">📅</div>
 
           <div class="card-admin-conteudo">
             <h2>Agendamentos</h2>
@@ -264,15 +277,12 @@
         </article>
       </a>
 
-      <!-- PAINEL ACADÊMICO -->
       <a
         href="painel_academico.html"
         class="card-admin-link"
       >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">
-            📊
-          </div>
+          <div class="card-admin-icone">📊</div>
 
           <div class="card-admin-conteudo">
             <h2>Meu painel acadêmico</h2>
@@ -284,13 +294,11 @@
         </article>
       </a>
 
-      <!-- COMUNICADOS -->
       <a
         href="comunicados.html"
         class="card-admin-link"
       >
         <article class="card-admin card-aluno card-comunicados-aluno">
-
           <span
             id="badgeComunicados"
             class="badge-eventos"
@@ -299,9 +307,7 @@
             0
           </span>
 
-          <div class="card-admin-icone">
-            📢
-          </div>
+          <div class="card-admin-icone">📢</div>
 
           <div class="card-admin-conteudo">
             <h2>Comunicados</h2>
@@ -313,7 +319,6 @@
         </article>
       </a>
 
-      <!-- MANUAL DO ALUNO -->
       <a
         href="docs/Manual%20do%20Aluno%202026.pdf"
         class="card-admin-link"
@@ -321,9 +326,7 @@
         rel="noopener noreferrer"
       >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">
-            📘
-          </div>
+          <div class="card-admin-icone">📘</div>
 
           <div class="card-admin-conteudo">
             <h2>Manual do aluno</h2>
@@ -335,7 +338,6 @@
         </article>
       </a>
 
-      <!-- CALENDÁRIO ANUAL -->
       <a
         href="https://drive.google.com/file/d/1ajIvVg2S1OTMIvjNYyVqoZR4tvJQioc9/view?usp=drive_link"
         class="card-admin-link"
@@ -343,9 +345,7 @@
         rel="noopener noreferrer"
       >
         <article class="card-admin card-aluno">
-          <div class="card-admin-icone">
-            🗓️
-          </div>
+          <div class="card-admin-icone">🗓️</div>
 
           <div class="card-admin-conteudo">
             <h2>Calendário anual</h2>
@@ -356,30 +356,6 @@
           </div>
         </article>
       </a>
-
-      <!--
-      <a
-        href="https://www.survio.com/survey/d/A2I2P1Z5F1I8Q1P4S"
-        class="card-admin-link"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <article class="card-admin card-aluno">
-          <div class="card-admin-icone">
-            💬
-          </div>
-
-          <div class="card-admin-conteudo">
-            <h2>Sua voz na Beehive</h2>
-
-            <p>
-              Conte sua experiência e envie sugestões de forma anônima.
-              Sua opinião ajuda a melhorar a escola.
-            </p>
-          </div>
-        </article>
-      </a>
-      -->
 
     </section>
 

@@ -1,7 +1,14 @@
 import { supabase } from "./supabase.js";
 import { exigirAlunoOuProfessorFuncionario } from "./guard.js";
 
-await exigirAlunoOuProfessorFuncionario();
+const acessoAreaAluno =
+  await exigirAlunoOuProfessorFuncionario();
+
+if (!acessoAreaAluno) {
+  throw new Error(
+    "Não foi possível autorizar o acesso às avaliações do aluno."
+  );
+}
 
 /* =========================================================
    ELEMENTOS
@@ -18,10 +25,7 @@ const listaAvaliacoesRealizadas = document.getElementById("listaAvaliacoesRealiz
    CONTEXTO DO ALUNO
 ========================================================= */
 const alunoId =
-  localStorage.getItem("alunoIdVisualizacao") ||
-  localStorage.getItem("alunoId") ||
-  localStorage.getItem("aluno_id") ||
-  localStorage.getItem("idAluno");
+  Number(acessoAreaAluno.alunoIdEfetivo);
 
 const matriculaSelecionadaId =
   localStorage.getItem("matriculaSelecionadaId") ||
@@ -31,7 +35,9 @@ const nomeCursoSelecionado =
   localStorage.getItem("nomeCursoSelecionado") || "";
 
 if (!alunoId) {
-  window.location.href = "index.html";
+  throw new Error(
+    "Não foi possível identificar o aluno vinculado ao acesso atual."
+  );
 }
 
 /* =========================================================

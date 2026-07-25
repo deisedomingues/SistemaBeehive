@@ -1,11 +1,21 @@
 import { supabase } from "./supabase.js";
-import { exigirAluno } from "./guard.js";
+import { exigirAlunoOuProfessorFuncionario } from "./guard.js";
 
 /* =========================================
    PROTEÇÃO DA PÁGINA
 ========================================= */
 
-await exigirAluno();
+const acessoAreaAluno =
+  await exigirAlunoOuProfessorFuncionario();
+
+if (!acessoAreaAluno) {
+  throw new Error(
+    "Não foi possível autorizar o acesso às configurações do aluno."
+  );
+}
+
+const alunoId =
+  Number(acessoAreaAluno.alunoIdEfetivo);
 
 /* =========================================
    ELEMENTOS DA PÁGINA
@@ -71,22 +81,6 @@ const btnSair = document.getElementById("btnSair");
 const botoesMostrarSenha = document.querySelectorAll(
   "[data-campo-senha]"
 );
-
-/* =========================================
-   IDENTIFICAÇÃO DO ALUNO
-========================================= */
-
-const alunoId =
-  localStorage.getItem("alunoId") ||
-  localStorage.getItem("aluno_id") ||
-  localStorage.getItem("idAluno") ||
-  sessionStorage.getItem("alunoId") ||
-  sessionStorage.getItem("aluno_id") ||
-  sessionStorage.getItem("idAluno");
-
-if (!alunoId) {
-  window.location.href = "index.html";
-}
 
 /* =========================================
    MENSAGENS DA PÁGINA
@@ -913,6 +907,7 @@ function limparDadosLocaisDoAluno() {
     "alunoId",
     "aluno_id",
     "idAluno",
+    "alunoIdVisualizacao",
     "matriculaSelecionadaId",
     "materiaSelecionadaId",
     "moduloSelecionadoId",

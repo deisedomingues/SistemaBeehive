@@ -1,10 +1,13 @@
 import { supabase } from "./supabase.js";
 import { exigirAlunoOuProfessorFuncionario } from "./guard.js";
 
-try {
+const acessoAreaAluno =
   await exigirAlunoOuProfessorFuncionario();
-} catch (erro) {
-  console.error("Erro ao validar acesso ao painel acadêmico:", erro);
+
+if (!acessoAreaAluno) {
+  throw new Error(
+    "Não foi possível autorizar o acesso ao painel acadêmico."
+  );
 }
 
 /* =========================================================
@@ -73,7 +76,8 @@ const btnWhatsapp = document.getElementById("btnWhatsapp");
 /* =========================================================
    ESTADO
 ========================================================= */
-let alunoId = null;
+let alunoId =
+  Number(acessoAreaAluno.alunoIdEfetivo);
 let alunoAtual = null;
 let matriculasAtivas = [];
 let matriculaSelecionada = null;
@@ -251,15 +255,6 @@ function formatarNota(valor) {
   }
 
   return numero.toFixed(1).replace(".", ",");
-}
-
-function obterAlunoId() {
-  return (
-    localStorage.getItem("alunoIdVisualizacao") ||
-    localStorage.getItem("alunoId") ||
-    localStorage.getItem("aluno_id") ||
-    localStorage.getItem("idAluno")
-  );
 }
 
 function montarNomeCurso(matricula) {
@@ -1079,8 +1074,6 @@ if (btnExpandirReposicoes) {
 async function init() {
   limparMensagem();
   configurarContatoEscola();
-
-  alunoId = obterAlunoId();
 
   if (!alunoId) {
     mostrarMensagem("Não foi possível identificar o aluno logado.");

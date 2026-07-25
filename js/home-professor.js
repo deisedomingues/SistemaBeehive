@@ -797,7 +797,7 @@ selectPerfilVisualizacao?.addEventListener(
       );
 
       window.location.href =
-        "home-aluno-funcionario.html";
+        "home-aluno.html";
     }
   }
 );
@@ -843,7 +843,7 @@ btnAbrirPerfil?.addEventListener(
       );
 
       window.location.href =
-        "home-aluno-funcionario.html";
+        "home-aluno.html";
     }
   }
 );

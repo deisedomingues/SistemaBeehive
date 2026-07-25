@@ -1,7 +1,24 @@
 import { supabase } from "./supabase.js";
-import { exigirAluno } from "./guard.js";
+import {
+  exigirAlunoOuProfessorFuncionario
+} from "./guard.js";
 
-await exigirAluno();
+const acessoAreaAluno =
+  await exigirAlunoOuProfessorFuncionario();
+
+if (!acessoAreaAluno) {
+  throw new Error(
+    "Não foi possível autorizar o acesso à área do aluno."
+  );
+}
+
+const alunoId =
+  Number(acessoAreaAluno.alunoIdEfetivo);
+
+const professoraVisualizandoComoAluno =
+  Boolean(
+    acessoAreaAluno.visualizandoComoAluno
+  );
 
 const saudacao = document.getElementById("saudacao");
 const btnSair = document.getElementById("btnSair");
@@ -84,23 +101,75 @@ const selectMatricula = document.getElementById(
   "selectMatricula"
 );
 
+const blocoTrocarPerfil = document.getElementById(
+  "blocoTrocarPerfil"
+);
+
+const selectPerfilVisualizacao = document.getElementById(
+  "selectPerfilVisualizacao"
+);
+
 const linkEventos = document.querySelector(
   'a[href="evento-confirmacao.html"]'
 );
-
-const alunoId =
-  localStorage.getItem("alunoId") ||
-  localStorage.getItem("aluno_id") ||
-  localStorage.getItem("idAluno");
-
-if (!alunoId) {
-  window.location.href = "index.html";
-}
 
 let matriculasAtivas = [];
 let matriculaSelecionada = null;
 let eventosElegiveisAtuais = [];
 let totalParticipacoesEventos = 0;
+
+
+function configurarTrocaDePerfil() {
+  if (
+    !blocoTrocarPerfil ||
+    !selectPerfilVisualizacao
+  ) {
+    return;
+  }
+
+  if (!professoraVisualizandoComoAluno) {
+    blocoTrocarPerfil.style.display = "none";
+    return;
+  }
+
+  blocoTrocarPerfil.style.display = "flex";
+  selectPerfilVisualizacao.value = "aluno";
+
+  selectPerfilVisualizacao.addEventListener(
+    "change",
+    () => {
+      const perfilSelecionado =
+        selectPerfilVisualizacao.value;
+
+      if (perfilSelecionado !== "professor") {
+        return;
+      }
+
+      localStorage.removeItem(
+        "alunoIdVisualizacao"
+      );
+
+      localStorage.removeItem(
+        "matriculaSelecionadaId"
+      );
+
+      localStorage.removeItem(
+        "materiaSelecionadaId"
+      );
+
+      localStorage.removeItem(
+        "moduloSelecionadoId"
+      );
+
+      localStorage.removeItem(
+        "nomeCursoSelecionado"
+      );
+
+      window.location.href =
+        "home-professor.html";
+    }
+  );
+}
 
 function desabilitarCard(
   linkEl,
