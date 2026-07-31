@@ -19,8 +19,7 @@ const grupoAulaId =
   localStorage.getItem("grupoAulaSelecionadoEdicaoAdmin");
 
 const professorIdUrl =
-  params.get("professor_id") ||
-  localStorage.getItem("professorSelecionadoAdmin");
+  params.get("professor_id");
 
 const professorId = Number(professorIdUrl || 0);
 
@@ -289,25 +288,114 @@ function statusDesabilitaConteudo(status) {
   );
 }
 
-function voltarParaDetalhesProfessor() {
+function limparSelecaoTemporariaEdicao() {
   localStorage.removeItem(
     "grupoAulaSelecionadoEdicaoAdmin"
   );
 
-  if (professorId) {
-    localStorage.setItem(
-      "professorSelecionadoAdmin",
-      String(professorId)
+  localStorage.removeItem(
+    "aulaSelecionadaEdicaoAdmin"
+  );
+
+  localStorage.removeItem(
+    "aulaSelecionadaEdicao"
+  );
+}
+
+function obterUrlRetornoExplicita() {
+  const retorno =
+    params.get("return_url") ||
+    params.get("voltar_para");
+
+  if (!retorno) {
+    return null;
+  }
+
+  try {
+    const url = new URL(
+      retorno,
+      window.location.origin
     );
 
+    if (
+      url.origin !==
+      window.location.origin
+    ) {
+      return null;
+    }
+
+    return (
+      url.pathname +
+      url.search +
+      url.hash
+    );
+  } catch (error) {
+    console.warn(
+      "URL de retorno inválida:",
+      error
+    );
+
+    return null;
+  }
+}
+
+function voltarParaTelaAnterior() {
+  limparSelecaoTemporariaEdicao();
+
+  const urlRetorno =
+    obterUrlRetornoExplicita();
+
+  if (urlRetorno) {
     window.location.href =
-      `detalhes-professor-admin.html?id=${professorId}`;
+      urlRetorno;
+
+    return;
+  }
+
+  /*
+    Retorna exatamente para a tela que abriu a edição,
+    seja detalhes-aluno-admin ou detalhes-professor-admin.
+  */
+  if (window.history.length > 1) {
+    window.history.back();
+    return;
+  }
+
+  /*
+    Alternativa para acesso direto, favorito ou nova aba,
+    quando não existe uma página anterior no histórico.
+  */
+  const alunoId =
+    Number(
+      aulaAtual?.matricula?.aluno?.id ||
+      aulaAtual?.matricula?.aluno_id ||
+      params.get("aluno_id") ||
+      0
+    );
+
+  if (alunoId) {
+    window.location.href =
+      `detalhes-aluno-admin.html?id=${alunoId}`;
+
+    return;
+  }
+
+  const professorDaAulaId =
+    Number(
+      aulaAtual?.professor_id ||
+      professorId ||
+      0
+    );
+
+  if (professorDaAulaId) {
+    window.location.href =
+      `detalhes-professor-admin.html?id=${professorDaAulaId}`;
 
     return;
   }
 
   window.location.href =
-    "detalhes-professor-admin.html";
+    "home-admin.html";
 }
 
 function bloquearBotao(
@@ -527,7 +615,6 @@ function validarStatus({
 
   return null;
 }
-
 /* =====================================================
    7. BUSCAR AULAS PENDENTES
 ===================================================== */
@@ -744,6 +831,7 @@ async function preencherSelectAulasPendentes({
       String(aulaOriginalAtual);
   }
 }
+
 /* =====================================================
    8. BUSCAR AULA INDIVIDUAL
 ===================================================== */
@@ -819,18 +907,6 @@ async function carregarAulaIndividual() {
 
     mostrarMensagem(
       "Não foi possível carregar a aula.",
-      false
-    );
-
-    return false;
-  }
-
-  if (
-    professorId &&
-    Number(data.professor_id) !== professorId
-  ) {
-    mostrarMensagem(
-      "Esta aula não pertence ao professor selecionado.",
       false
     );
 
@@ -1105,7 +1181,6 @@ async function atualizarCamposIndividual({
     `;
   }
 }
-
 /* =====================================================
    11. SALVAR AULA INDIVIDUAL
 ===================================================== */
@@ -1250,7 +1325,7 @@ async function salvarAulaIndividual(event) {
   );
 
   setTimeout(() => {
-    voltarParaDetalhesProfessor();
+    voltarParaTelaAnterior();
   }, 1000);
 }
 
@@ -1325,13 +1400,6 @@ async function carregarAulaColetiva() {
       ascending: true
     });
 
-  if (professorId) {
-    query = query.eq(
-      "professor_id",
-      professorId
-    );
-  }
-
   const { data, error } = await query;
 
   if (error || !data?.length) {
@@ -1378,6 +1446,7 @@ async function carregarAulaColetiva() {
 
   return true;
 }
+
 /* =====================================================
    13. PREENCHER AULA COLETIVA
 ===================================================== */
@@ -1636,7 +1705,6 @@ function htmlRegraAutomaticaColetiva(
     </div>
   `;
 }
-
 /* =====================================================
    15. RENDERIZAR ALUNOS COLETIVOS
 ===================================================== */
@@ -1927,6 +1995,7 @@ async function carregarSelectsReposicaoColetivos() {
     });
   }
 }
+
 /* =====================================================
    17. SALVAR AULA COLETIVA
 ===================================================== */
@@ -2106,7 +2175,7 @@ async function salvarAulaColetiva(event) {
   );
 
   setTimeout(() => {
-    voltarParaDetalhesProfessor();
+    voltarParaTelaAnterior();
   }, 1000);
 }
 
@@ -2161,22 +2230,22 @@ formEditarAulaColetiva?.addEventListener(
 
 btnCancelarIndividual?.addEventListener(
   "click",
-  voltarParaDetalhesProfessor
+  voltarParaTelaAnterior
 );
 
 btnCancelarColetivo?.addEventListener(
   "click",
-  voltarParaDetalhesProfessor
+  voltarParaTelaAnterior
 );
 
 btnVoltarTopo?.addEventListener(
   "click",
-  voltarParaDetalhesProfessor
+  voltarParaTelaAnterior
 );
 
 btnVoltarRodape?.addEventListener(
   "click",
-  voltarParaDetalhesProfessor
+  voltarParaTelaAnterior
 );
 
 /* =====================================================
