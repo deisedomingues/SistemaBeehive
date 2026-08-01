@@ -25,6 +25,10 @@ const filtroAno = document.getElementById(
   "filtroAno"
 );
 
+const filtroMinutagem = document.getElementById(
+  "filtroMinutagem"
+);
+
 const btnBuscar = document.getElementById(
   "btnBuscar"
 );
@@ -632,6 +636,32 @@ function ordenarNomes(lista) {
   );
 }
 
+function aplicarFiltroMinutagem(itens) {
+  const tipoFiltro =
+    filtroMinutagem.value;
+
+  if (!tipoFiltro) {
+    return itens;
+  }
+
+  return itens.filter((item) => {
+    const possuiMinutagem =
+      normalizarDuracaoSegundos(
+        item.duracao_segundos_salva
+      ) !== null;
+
+    if (tipoFiltro === "sem") {
+      return !possuiMinutagem;
+    }
+
+    if (tipoFiltro === "com") {
+      return possuiMinutagem;
+    }
+
+    return true;
+  });
+}
+
 // ======================================================
 // AGRUPAMENTO
 // ======================================================
@@ -797,7 +827,6 @@ function criarItemBase({
       false
   };
 }
-
 function agruparAulasParaFinanceiro(
   aulas
 ) {
@@ -1600,7 +1629,6 @@ function renderItensFinanceiro() {
 
   atualizarResumo();
 }
-
 function adicionarEventosCamposDuracao() {
   document
     .querySelectorAll(
@@ -1983,9 +2011,14 @@ async function buscarAulas() {
         aulasProfessor
       );
 
-    itensFinanceiroCache =
+    const itensAgrupados =
       agruparAulasParaFinanceiro(
         aulasFiltradas
+      );
+
+    itensFinanceiroCache =
+      aplicarFiltroMinutagem(
+        itensAgrupados
       );
 
     renderItensFinanceiro();
@@ -2190,6 +2223,8 @@ function inicializarPagina() {
     String(
       hoje.getFullYear()
     );
+
+  filtroMinutagem.value = "";
 
   carregarProfessores();
 }
