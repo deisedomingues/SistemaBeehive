@@ -323,6 +323,8 @@ async function carregarReposicoes() {
       data,
       hora_inicio,
       hora_fim,
+      professor_id,
+      materia_id,
       professor:professor_id (nome),
       materia:materia_id (nome),
       reposicao_agendada (
@@ -358,23 +360,73 @@ async function carregarReposicoes() {
   const disponiveis = [];
   const escolhidas = [];
 
+  /*
+    Um professor pode ter o mesmo intervalo cadastrado para
+    matérias diferentes (ex.: Alexandra - Inglês / Espanhol).
+
+    Se QUALQUER um desses registros tiver um agendamento ativo,
+    todos os registros do mesmo professor/data/intervalo devem
+    ser considerados ocupados.
+
+    A matéria NÃO faz parte da chave de ocupação.
+  */
+  const horariosOcupados = new Set();
+
   (data || []).forEach((h) => {
     const agendamentoAtivo = (h.reposicao_agendada || []).find(
       (item) => item.cancelado === false
     );
 
+    if (!agendamentoAtivo) return;
+
+    const chaveHorario = [
+      h.professor_id,
+      h.data,
+      formatarHora(h.hora_inicio),
+      formatarHora(h.hora_fim)
+    ].join("|");
+
+    horariosOcupados.add(chaveHorario);
+  });
+
+  (data || []).forEach((h) => {
+    const agendamentoAtivo = (h.reposicao_agendada || []).find(
+      (item) => item.cancelado === false
+    );
+
+    const chaveHorario = [
+      h.professor_id,
+      h.data,
+      formatarHora(h.hora_inicio),
+      formatarHora(h.hora_fim)
+    ].join("|");
+
     if (agendamentoAtivo) {
-      const tipoAgendamento = normalizarTipoAgendamento(agendamentoAtivo.tipo_agendamento);
-      const alunoNome = agendamentoAtivo?.aluno?.nome || "Aluno não identificado";
-      const observacaoAluno = agendamentoAtivo?.observacao_aluno || "";
-      const dataAulaFaltada = agendamentoAtivo?.aula?.data_aula || "";
-      const statusAula = agendamentoAtivo?.aula?.status || "";
+      const tipoAgendamento = normalizarTipoAgendamento(
+        agendamentoAtivo.tipo_agendamento
+      );
+
+      const alunoNome =
+        agendamentoAtivo?.aluno?.nome || "Aluno não identificado";
+
+      const observacaoAluno =
+        agendamentoAtivo?.observacao_aluno || "";
+
+      const dataAulaFaltada =
+        agendamentoAtivo?.aula?.data_aula || "";
+
+      const statusAula =
+        agendamentoAtivo?.aula?.status || "";
 
       const geraCobranca =
         agendamentoAtivo.tem_custo === true ||
         (
           tipoAgendamento === "Reposição" &&
-          reposicaoGeraCobranca(statusAula, dataAulaFaltada, h.data)
+          reposicaoGeraCobranca(
+            statusAula,
+            dataAulaFaltada,
+            h.data
+          )
         );
 
       escolhidas.push({
@@ -387,16 +439,30 @@ async function carregarReposicoes() {
         geraCobranca,
         motivoCusto: agendamentoAtivo.motivo_custo || ""
       });
-    } else {
-      disponiveis.push(h);
+
+      return;
     }
+
+    /*
+      Mesmo que ESTE registro não tenha agendamento, ele não
+      pode aparecer como disponível se outro registro do mesmo
+      professor, na mesma data e no mesmo intervalo, já estiver
+      ocupado por outra matéria.
+    */
+    if (horariosOcupados.has(chaveHorario)) {
+      return;
+    }
+
+    disponiveis.push(h);
   });
 
   atualizarContadores(disponiveis.length, escolhidas.length);
 
   if (!disponiveis.length) {
     listaReposicoesDisponiveis.innerHTML = `
-      <p style="margin:0; opacity:0.8;">Nenhum horário disponível no momento.</p>
+      <p style="margin:0; opacity:0.8;">
+        Nenhum horário disponível no momento.
+      </p>
     `;
   } else {
     disponiveis.forEach((h) => {
@@ -407,7 +473,9 @@ async function carregarReposicoes() {
 
   if (!escolhidas.length) {
     listaReposicoesEscolhidas.innerHTML = `
-      <p style="margin:0; opacity:0.8;">Nenhum horário foi escolhido ainda.</p>
+      <p style="margin:0; opacity:0.8;">
+        Nenhum horário foi escolhido ainda.
+      </p>
     `;
   } else {
     escolhidas.forEach((item) => {
