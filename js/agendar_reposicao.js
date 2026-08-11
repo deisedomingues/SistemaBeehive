@@ -243,6 +243,19 @@ function formatarHora(hora) {
   return String(hora).slice(0, 5);
 }
 
+function horariosSeSobrepoem(inicioA, fimA, inicioB, fimB) {
+  const aInicio = formatarHora(inicioA);
+  const aFim = formatarHora(fimA);
+  const bInicio = formatarHora(inicioB);
+  const bFim = formatarHora(fimB);
+
+  if (!aInicio || !aFim || !bInicio || !bFim) {
+    return false;
+  }
+
+  return aInicio < bFim && aFim > bInicio;
+}
+
 function textoStatusBonito(status) {
   if (!status) return "Aula";
 
@@ -996,29 +1009,73 @@ async function buscarHorariosLivres() {
     return [];
   }
 
-  const idsHorarios = listaHorarios.map((h) => h.id);
-
-  const { data: agendamentos, error: errorAgendamentos } = await supabase
-    .from("reposicao_agendada")
-    .select("id, horario_reposicao_id, cancelado")
-    .in("horario_reposicao_id", idsHorarios)
-    .eq("cancelado", false);
-
-  if (errorAgendamentos) {
-    console.error("Erro ao buscar agendamentos dos horários:", errorAgendamentos);
-    throw errorAgendamentos;
-  }
-
-  const horariosOcupados = new Set(
-    (agendamentos || []).map((ag) => Number(ag.horario_reposicao_id))
-  );
-
   const professorIds = [
-    ...new Set(listaHorarios.map((h) => h.professor_id).filter(Boolean))
+    ...new Set(
+      listaHorarios
+        .map((h) => Number(h.professor_id))
+        .filter(Boolean)
+    )
   ];
 
+  let todosHorariosDosProfessores = [];
+
+  if (professorIds.length) {
+    const { data: horariosProfessores, error: errorHorariosProfessores } =
+      await supabase
+        .from("horarios_reposicao")
+        .select("id, data, hora_inicio, hora_fim, professor_id, materia_id")
+        .in("professor_id", professorIds)
+        .gte("data", hoje);
+
+    if (errorHorariosProfessores) {
+      console.error(
+        "Erro ao buscar horários gerais dos professores:",
+        errorHorariosProfessores
+      );
+      throw errorHorariosProfessores;
+    }
+
+    todosHorariosDosProfessores = horariosProfessores || [];
+  }
+
+  const idsTodosHorarios = todosHorariosDosProfessores
+    .map((h) => Number(h.id))
+    .filter(Boolean);
+
+  let agendamentosAtivos = [];
+
+  if (idsTodosHorarios.length) {
+    const { data: agendamentos, error: errorAgendamentos } = await supabase
+      .from("reposicao_agendada")
+      .select("id, horario_reposicao_id, cancelado")
+      .in("horario_reposicao_id", idsTodosHorarios)
+      .eq("cancelado", false);
+
+    if (errorAgendamentos) {
+      console.error(
+        "Erro ao buscar agendamentos dos professores:",
+        errorAgendamentos
+      );
+      throw errorAgendamentos;
+    }
+
+    agendamentosAtivos = agendamentos || [];
+  }
+
+  const idsHorariosOcupados = new Set(
+    agendamentosAtivos.map((ag) => Number(ag.horario_reposicao_id))
+  );
+
+  const horariosOcupadosDetalhados = todosHorariosDosProfessores.filter(
+    (h) => idsHorariosOcupados.has(Number(h.id))
+  );
+
   const materiaIds = [
-    ...new Set(listaHorarios.map((h) => h.materia_id).filter(Boolean))
+    ...new Set(
+      listaHorarios
+        .map((h) => Number(h.materia_id))
+        .filter(Boolean)
+    )
   ];
 
   let mapaProfessores = new Map();
@@ -1059,14 +1116,30 @@ async function buscarHorariosLivres() {
   const horariosLivres = listaHorarios
     .filter((horario) => {
       if (horario.disponivel === false) return false;
-      if (horariosOcupados.has(Number(horario.id))) return false;
       if (!podeAgendarHorario(horario.data)) return false;
+
+      const professorOcupado = horariosOcupadosDetalhados.some(
+        (ocupado) =>
+          Number(ocupado.professor_id) === Number(horario.professor_id) &&
+          ocupado.data === horario.data &&
+          horariosSeSobrepoem(
+            horario.hora_inicio,
+            horario.hora_fim,
+            ocupado.hora_inicio,
+            ocupado.hora_fim
+          )
+      );
+
+      if (professorOcupado) return false;
+
       return true;
     })
     .map((horario) => ({
       ...horario,
-      professor_nome: mapaProfessores.get(Number(horario.professor_id)) || "Não informado",
-      materia_nome: mapaMaterias.get(Number(horario.materia_id)) || "Não informado"
+      professor_nome:
+        mapaProfessores.get(Number(horario.professor_id)) || "Não informado",
+      materia_nome:
+        mapaMaterias.get(Number(horario.materia_id)) || "Não informado"
     }));
 
   return horariosLivres;
@@ -1220,7 +1293,7 @@ function ativarEscolhaHorario() {
 
         const { data: horarioAtual, error: erroHorario } = await supabase
           .from("horarios_reposicao")
-          .select("id, data, disponivel, professor_id, materia_id")
+          .select("id, data, hora_inicio, hora_fim, disponivel, professor_id, materia_id")
           .eq("id", horarioId)
           .maybeSingle();
 
@@ -1240,18 +1313,56 @@ function ativarEscolhaHorario() {
           return;
         }
 
-        const { data: horarioJaAgendado, error: erroHorarioJaAgendado } = await supabase
-          .from("reposicao_agendada")
-          .select("id")
-          .eq("horario_reposicao_id", horarioId)
-          .eq("cancelado", false);
+        const { data: horariosMesmoProfessorDia, error: erroHorariosProfessor } =
+          await supabase
+            .from("horarios_reposicao")
+            .select("id, data, hora_inicio, hora_fim, professor_id")
+            .eq("professor_id", horarioAtual.professor_id)
+            .eq("data", horarioAtual.data);
 
-        if (erroHorarioJaAgendado) {
-          throw erroHorarioJaAgendado;
+        if (erroHorariosProfessor) {
+          throw erroHorariosProfessor;
         }
 
-        if (horarioAtual.disponivel === false || horarioJaAgendado.length > 0) {
-          mostrarMensagem("Este horário não está mais disponível.", true);
+        const idsHorariosConflitantes = (horariosMesmoProfessorDia || [])
+          .filter((h) =>
+            horariosSeSobrepoem(
+              horarioAtual.hora_inicio,
+              horarioAtual.hora_fim,
+              h.hora_inicio,
+              h.hora_fim
+            )
+          )
+          .map((h) => Number(h.id))
+          .filter(Boolean);
+
+        let agendamentosConflitantes = [];
+
+        if (idsHorariosConflitantes.length) {
+          const {
+            data: conflitos,
+            error: erroConflitos
+          } = await supabase
+            .from("reposicao_agendada")
+            .select("id, horario_reposicao_id")
+            .in("horario_reposicao_id", idsHorariosConflitantes)
+            .eq("cancelado", false);
+
+          if (erroConflitos) {
+            throw erroConflitos;
+          }
+
+          agendamentosConflitantes = conflitos || [];
+        }
+
+        if (
+          horarioAtual.disponivel === false ||
+          agendamentosConflitantes.length > 0
+        ) {
+          mostrarMensagem(
+            "Este professor já possui outro agendamento neste horário.",
+            true
+          );
           await carregarTudo();
           return;
         }
