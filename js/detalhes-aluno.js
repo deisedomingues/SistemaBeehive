@@ -386,6 +386,116 @@ function obterNomeAvaliacaoPorMateria(numeroAvaliacao) {
   return `Avaliação ${numeroAvaliacao}`;
 }
 
+
+function obterNumeroAvaliacaoSugerido(moduloId) {
+  const modulo = Number(moduloId || 0);
+
+  if (!modulo) {
+    return null;
+  }
+
+  const avaliacaoAberta = (avaliacoesAluno || [])
+    .filter((avaliacao) => {
+      return (
+        Number(avaliacao.modulo_id || 0) === modulo &&
+        avaliacaoEstaAberta(avaliacao)
+      );
+    })
+    .sort((a, b) => {
+      return (
+        Number(a.numero_avaliacao || 0) -
+        Number(b.numero_avaliacao || 0)
+      );
+    })[0];
+
+  if (avaliacaoAberta?.numero_avaliacao) {
+    return Number(avaliacaoAberta.numero_avaliacao);
+  }
+
+  const notasDoModulo = (todasNotas || [])
+    .filter((nota) => {
+      return (
+        Number(nota.modulo_id || 0) === modulo &&
+        ehNotaDeAvaliacao(nota)
+      );
+    })
+    .sort((a, b) => {
+      const dataA = String(a.data || "");
+      const dataB = String(b.data || "");
+
+      if (dataA !== dataB) {
+        return dataA.localeCompare(dataB);
+      }
+
+      return Number(a.id || 0) - Number(b.id || 0);
+    });
+
+  const numerosEncontrados = new Set();
+
+  notasDoModulo.forEach((nota) => {
+    const numero =
+      extrairNumeroAvaliacaoDaNota(nota);
+
+    if (numero === 1 || numero === 2) {
+      numerosEncontrados.add(numero);
+    }
+  });
+
+  if (!numerosEncontrados.has(1)) {
+    return 1;
+  }
+
+  if (!numerosEncontrados.has(2)) {
+    return 2;
+  }
+
+  return null;
+}
+
+function atualizarTipoNotaAutomatico() {
+  if (!notaTipo || !notaModulo) {
+    return;
+  }
+
+  const moduloId = Number(
+    notaModulo.value ||
+    dadosCabecalho?.modulo_id ||
+    0
+  );
+
+  if (!moduloId) {
+    return;
+  }
+
+  const numero =
+    obterNumeroAvaliacaoSugerido(moduloId);
+
+  const materia =
+    normalizarTexto(
+      dadosCabecalho?.materia?.nome
+    );
+
+  if (!numero) {
+    notaTipo.value = "";
+    return;
+  }
+
+  if (materia === "espanhol") {
+    notaTipo.value =
+      `Evaluación ${numero}`;
+    return;
+  }
+
+  if (materia === "ingles") {
+    notaTipo.value =
+      `Progress Check ${numero}`;
+    return;
+  }
+
+  notaTipo.value =
+    `Avaliação ${numero}`;
+}
+
 function aulaContaComoValida(aula) {
   const status = normalizarTexto(aula?.status);
   const gravada = aula?.aula_gravada === true;
@@ -2842,6 +2952,8 @@ async function carregarNotas() {
   renderNotas(todasNotas);
 
   atualizarCardAulasValidasEAvaliacao();
+
+  atualizarTipoNotaAutomatico();
 }
 
 function renderNotas(notas) {
@@ -2973,6 +3085,13 @@ filtroModulo.addEventListener(
     calcularMediaGeral(
       filtradas
     );
+  }
+);
+
+notaModulo?.addEventListener(
+  "change",
+  () => {
+    atualizarTipoNotaAutomatico();
   }
 );
 
@@ -3164,30 +3283,22 @@ formNota.addEventListener(
       "Nota salva!"
     );
 
+    const moduloSelecionado =
+      moduloId;
+
     formNota.reset();
 
     notaData.value =
       hojeISO();
 
-    const materia =
-      normalizarTexto(
-        dadosCabecalho?.materia?.nome
-      );
-
-    if (materia === "espanhol") {
-      notaTipo.value =
-        "Evaluación";
-    } else if (materia === "ingles") {
-      notaTipo.value =
-        "Progress Check";
-    } else {
-      notaTipo.value =
-        "Avaliação";
-    }
+    notaModulo.value =
+      String(moduloSelecionado);
 
     await carregarNotas();
 
     await carregarAvaliacoesAluno();
+
+    atualizarTipoNotaAutomatico();
   }
 );
 
@@ -3220,22 +3331,6 @@ async function init() {
     return;
   }
 
-  const materia =
-    normalizarTexto(
-      dadosCabecalho?.materia?.nome
-    );
-
-  if (materia === "espanhol") {
-    notaTipo.value =
-      "Evaluación";
-  } else if (materia === "ingles") {
-    notaTipo.value =
-      "Progress Check";
-  } else {
-    notaTipo.value =
-      "Avaliação";
-  }
-
   todasAulas =
     await carregarAulas();
 
@@ -3254,6 +3349,8 @@ async function init() {
   await carregarEventosAluno();
 
   await carregarNotas();
+
+  atualizarTipoNotaAutomatico();
 }
 
 init();
