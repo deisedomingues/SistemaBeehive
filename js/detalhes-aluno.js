@@ -550,6 +550,21 @@ function obterResumoAvaliacoesModuloAtual() {
     if (numero) {
       numerosComNota.add(numero);
     } else {
+      /*
+        Mantemos compatibilidade com o histórico antigo.
+
+        Muitas notas antigas foram gravadas apenas como
+        "Avaliação", "Progress Check" ou "Evaluación",
+        sem indicar se eram a avaliação 1 ou 2.
+
+        Para DESCOBRIR qual avaliação já foi realizada no módulo,
+        essas notas continuam contando em ordem.
+
+        IMPORTANTE:
+        isso NÃO autoriza concluir automaticamente uma avaliação
+        enviada ao aluno. A conclusão de uma avaliação enviada
+        é tratada separadamente e exige número identificável.
+      */
       notasSemNumeroDisponiveis++;
     }
   });
@@ -578,14 +593,15 @@ function obterResumoAvaliacoesModuloAtual() {
     }
 
     /*
-      Fallback para notas antigas salvas
-      apenas como "Avaliação".
+      Compatibilidade com notas antigas sem número.
 
-      Se existe uma nota de avaliação sem número,
-      usamos essa nota para resolver a primeira
-      avaliação pendente da sequência.
+      Exemplo:
+      existe uma nota "Avaliação" no módulo, então ela resolve
+      a primeira avaliação ainda não resolvida da sequência.
+
+      Essa regra serve SOMENTE para calcular qual PC já aconteceu.
+      Ela não muda status de avaliacao_aluno para "Concluída".
     */
-
     if (notasSemNumeroDisponiveis > 0) {
       notasSemNumeroDisponiveis--;
       totalResolvidas++;
@@ -2208,9 +2224,7 @@ async function marcarAvaliacaoComoConcluidaAposNota(
     modulo_id: moduloId
   };
 
-  if (
-    !ehNotaDeAvaliacao(notaFake)
-  ) {
+  if (!ehNotaDeAvaliacao(notaFake)) {
     return;
   }
 
@@ -2227,51 +2241,46 @@ async function marcarAvaliacaoComoConcluidaAposNota(
       notaFake
     );
 
-  const avaliacoesAbertas =
-    avaliacoesAluno
-      .filter((avaliacao) => {
-        const mesmoModulo =
-          Number(
-            avaliacao.modulo_id || 0
-          ) === modulo;
+  /*
+    REGRA DE SEGURANÇA:
+    se o número da avaliação não puder ser identificado,
+    não concluímos nenhuma avaliação enviada.
 
-        return (
-          mesmoModulo &&
-          avaliacaoEstaAberta(
-            avaliacao
-          )
-        );
-      })
-      .sort((a, b) => {
-        const numeroA = Number(
-          a.numero_avaliacao || 0
-        );
+    Exemplo:
+    "Avaliação" -> não sabemos se é a 1 ou a 2.
+  */
+  if (!numeroNota) {
+    console.log(
+      "Nota de avaliação sem número. " +
+      "Nenhuma avaliação enviada será concluída automaticamente."
+    );
 
-        const numeroB = Number(
-          b.numero_avaliacao || 0
-        );
-
-        if (numeroA !== numeroB) {
-          return numeroA - numeroB;
-        }
-
-        return (
-          Number(a.id || 0) -
-          Number(b.id || 0)
-        );
-      });
+    return;
+  }
 
   const avaliacaoParaConcluir =
-    numeroNota
-      ? avaliacoesAbertas.find(
-          (avaliacao) =>
-            Number(
-              avaliacao.numero_avaliacao || 0
-            ) === numeroNota
-        ) || avaliacoesAbertas[0]
-      : avaliacoesAbertas[0];
+    avaliacoesAluno.find((avaliacao) => {
+      const mesmoModulo =
+        Number(avaliacao.modulo_id || 0) ===
+        modulo;
+
+      const mesmoNumero =
+        Number(avaliacao.numero_avaliacao || 0) ===
+        numeroNota;
+
+      return (
+        mesmoModulo &&
+        mesmoNumero &&
+        avaliacaoEstaAberta(avaliacao)
+      );
+    });
 
   if (!avaliacaoParaConcluir) {
+    console.log(
+      `Nenhuma avaliação aberta encontrada para ` +
+      `a avaliação ${numeroNota} no módulo ${modulo}.`
+    );
+
     return;
   }
 
@@ -2308,89 +2317,48 @@ async function sincronizarAvaliacoesConcluidasComNotas() {
     return;
   }
 
-  const numerosComNota =
-    new Set();
+  /*
+    Só entram aqui notas com número identificável.
+    Notas antigas chamadas apenas "Avaliação" são ignoradas
+    para conclusão automática.
+  */
+  const numerosComNota = new Set();
 
-  let notasSemNumeroDisponiveis = 0;
+  notasAvaliacao.forEach((nota) => {
+    const numero =
+      extrairNumeroAvaliacaoDaNota(nota);
 
-  notasAvaliacao.forEach(
-    (nota) => {
-      const numero =
-        extrairNumeroAvaliacaoDaNota(
-          nota
-        );
-
-      if (numero) {
-        numerosComNota.add(numero);
-      } else {
-        notasSemNumeroDisponiveis++;
-      }
+    if (numero) {
+      numerosComNota.add(numero);
     }
-  );
+  });
 
   const abertas =
-    avaliacoesAluno
-      .filter((avaliacao) => {
-        const mesmoModulo =
-          Number(
-            avaliacao.modulo_id || 0
-          ) === moduloAtual;
+    avaliacoesAluno.filter((avaliacao) => {
+      const mesmoModulo =
+        Number(avaliacao.modulo_id || 0) ===
+        moduloAtual;
 
-        return (
-          mesmoModulo &&
-          avaliacaoEstaAberta(
-            avaliacao
-          )
-        );
-      })
-      .sort((a, b) => {
-        const numeroA = Number(
-          a.numero_avaliacao || 0
-        );
-
-        const numeroB = Number(
-          b.numero_avaliacao || 0
-        );
-
-        if (numeroA !== numeroB) {
-          return numeroA - numeroB;
-        }
-
-        return (
-          Number(a.id || 0) -
-          Number(b.id || 0)
-        );
-      });
+      return (
+        mesmoModulo &&
+        avaliacaoEstaAberta(avaliacao)
+      );
+    });
 
   let alterou = false;
 
-  for (
-    const avaliacao of abertas
-  ) {
+  for (const avaliacao of abertas) {
     const numero = Number(
       avaliacao.numero_avaliacao || 0
     );
 
+    /*
+      Só conclui se existir nota da MESMA avaliação.
+    */
     if (
       numero &&
       numerosComNota.has(numero)
     ) {
-      const concluiu =
-        await concluirAvaliacaoNoBanco(
-          avaliacao
-        );
-
-      alterou =
-        alterou || concluiu;
-
-      continue;
-    }
-
-    if (
-      notasSemNumeroDisponiveis > 0
-    ) {
-      notasSemNumeroDisponiveis--;
-
       const concluiu =
         await concluirAvaliacaoNoBanco(
           avaliacao
@@ -2403,7 +2371,6 @@ async function sincronizarAvaliacoesConcluidasComNotas() {
 
   if (alterou) {
     renderAvaliacoesEnviadasAluno();
-
     atualizarCardAulasValidasEAvaliacao();
   }
 }
