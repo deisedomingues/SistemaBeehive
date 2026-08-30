@@ -61,14 +61,17 @@ async function carregarPerfilDoUsuario(userId) {
    3) SOMENTE ADMIN
 ================================ */
 export async function exigirAdmin() {
-  const user = await exigirLogin();
+  const user =
+    await exigirLogin();
 
   if (!user) {
     return null;
   }
 
   const perfil =
-    await carregarPerfilDoUsuario(user.id);
+    await carregarPerfilDoUsuario(
+      user.id
+    );
 
   if (!perfil) {
     return null;
@@ -80,11 +83,16 @@ export async function exigirAdmin() {
       perfil.role
     );
 
-    window.location.href = "index.html";
+    window.location.href =
+      "index.html";
+
     return null;
   }
 
-  localStorage.setItem("role", "admin");
+  localStorage.setItem(
+    "role",
+    "admin"
+  );
 
   return {
     ...perfil,
@@ -96,26 +104,33 @@ export async function exigirAdmin() {
    4) SOMENTE PROFESSOR
 ================================ */
 export async function exigirProfessor() {
-  const user = await exigirLogin();
+  const user =
+    await exigirLogin();
 
   if (!user) {
     return null;
   }
 
   const perfil =
-    await carregarPerfilDoUsuario(user.id);
+    await carregarPerfilDoUsuario(
+      user.id
+    );
 
   if (!perfil) {
     return null;
   }
 
-  if (perfil.role !== "professor") {
+  if (
+    perfil.role !== "professor"
+  ) {
     console.error(
       "Acesso negado para professor. Perfil atual:",
       perfil.role
     );
 
-    window.location.href = "index.html";
+    window.location.href =
+      "index.html";
+
     return null;
   }
 
@@ -139,14 +154,17 @@ export async function exigirProfessor() {
    5) PROFESSOR OU ADMIN
 ================================ */
 export async function exigirProfessorOuAdmin() {
-  const user = await exigirLogin();
+  const user =
+    await exigirLogin();
 
   if (!user) {
     return null;
   }
 
   const perfil =
-    await carregarPerfilDoUsuario(user.id);
+    await carregarPerfilDoUsuario(
+      user.id
+    );
 
   if (!perfil) {
     return null;
@@ -161,7 +179,9 @@ export async function exigirProfessorOuAdmin() {
       "Acesso permitido somente para professor ou admin."
     );
 
-    window.location.href = "index.html";
+    window.location.href =
+      "index.html";
+
     return null;
   }
 
@@ -170,7 +190,9 @@ export async function exigirProfessorOuAdmin() {
     perfil.role
   );
 
-  if (perfil.role === "professor") {
+  if (
+    perfil.role === "professor"
+  ) {
     localStorage.setItem(
       "professorId",
       perfil.professor_id || ""
@@ -187,26 +209,33 @@ export async function exigirProfessorOuAdmin() {
    6) SOMENTE ALUNO NORMAL
 ================================ */
 export async function exigirAluno() {
-  const user = await exigirLogin();
+  const user =
+    await exigirLogin();
 
   if (!user) {
     return null;
   }
 
   const perfil =
-    await carregarPerfilDoUsuario(user.id);
+    await carregarPerfilDoUsuario(
+      user.id
+    );
 
   if (!perfil) {
     return null;
   }
 
-  if (perfil.role !== "aluno") {
+  if (
+    perfil.role !== "aluno"
+  ) {
     console.error(
       "Acesso negado para aluno. Perfil atual:",
       perfil.role
     );
 
-    window.location.href = "index.html";
+    window.location.href =
+      "index.html";
+
     return null;
   }
 
@@ -215,9 +244,16 @@ export async function exigirAluno() {
       "O perfil de aluno não possui aluno_id."
     );
 
-    window.location.href = "index.html";
+    window.location.href =
+      "index.html";
+
     return null;
   }
+
+  const alunoIdEfetivo =
+    Number(
+      perfil.aluno_id
+    );
 
   localStorage.setItem(
     "role",
@@ -226,7 +262,9 @@ export async function exigirAluno() {
 
   localStorage.setItem(
     "alunoId",
-    String(perfil.aluno_id)
+    String(
+      alunoIdEfetivo
+    )
   );
 
   localStorage.removeItem(
@@ -236,15 +274,17 @@ export async function exigirAluno() {
   return {
     ...perfil,
     user,
-    alunoIdEfetivo:
-      Number(perfil.aluno_id),
-    visualizandoComoAluno: false
+
+    alunoIdEfetivo,
+
+    visualizandoComoAluno:
+      false
   };
 }
 
 /* ===============================
    7) LOCALIZAR CADASTRO DE ALUNO
-      DA PROFESSORA
+      DO PROFESSOR/FUNCIONÁRIO
 ================================ */
 async function buscarAlunoVinculadoAoProfessor(
   user
@@ -254,7 +294,9 @@ async function buscarAlunoVinculadoAoProfessor(
   }
 
   const emailUsuario =
-    String(user.email)
+    String(
+      user.email
+    )
       .trim()
       .toLowerCase();
 
@@ -276,7 +318,7 @@ async function buscarAlunoVinculadoAoProfessor(
 
   if (error) {
     console.error(
-      "Erro ao buscar cadastro de aluno da professora:",
+      "Erro ao buscar cadastro de aluno do professor:",
       error
     );
 
@@ -291,17 +333,26 @@ async function buscarAlunoVinculadoAoProfessor(
 
    Permite:
    - aluno comum;
-   - professora que também é aluna.
+   - professor que também é aluno.
+
+   IMPORTANTE:
+   Esta função deve ser usada nas páginas
+   que pertencem à área do aluno e também
+   podem ser acessadas pelo professor que
+   escolheu "Visualizar como aluno".
 ================================ */
 export async function exigirAlunoOuProfessorFuncionario() {
-  const user = await exigirLogin();
+  const user =
+    await exigirLogin();
 
   if (!user) {
     return null;
   }
 
   const perfil =
-    await carregarPerfilDoUsuario(user.id);
+    await carregarPerfilDoUsuario(
+      user.id
+    );
 
   if (!perfil) {
     return null;
@@ -310,18 +361,24 @@ export async function exigirAlunoOuProfessorFuncionario() {
   /* ===============================
      ALUNO COMUM
   ============================== */
-  if (perfil.role === "aluno") {
+  if (
+    perfil.role === "aluno"
+  ) {
     if (!perfil.aluno_id) {
       console.error(
         "O perfil de aluno não possui aluno_id."
       );
 
-      window.location.href = "index.html";
+      window.location.href =
+        "index.html";
+
       return null;
     }
 
     const alunoIdEfetivo =
-      Number(perfil.aluno_id);
+      Number(
+        perfil.aluno_id
+      );
 
     localStorage.setItem(
       "role",
@@ -330,7 +387,9 @@ export async function exigirAlunoOuProfessorFuncionario() {
 
     localStorage.setItem(
       "alunoId",
-      String(alunoIdEfetivo)
+      String(
+        alunoIdEfetivo
+      )
     );
 
     localStorage.removeItem(
@@ -339,25 +398,37 @@ export async function exigirAlunoOuProfessorFuncionario() {
 
     return {
       ...perfil,
+
       user,
+
       alunoIdEfetivo,
-      visualizandoComoAluno: false
+
+      visualizandoComoAluno:
+        false
     };
   }
 
   /* ===============================
-     PROFESSORA QUE TAMBÉM É ALUNA
+     PROFESSOR QUE TAMBÉM É ALUNO
   ============================== */
-  if (perfil.role === "professor") {
+  if (
+    perfil.role === "professor"
+  ) {
     if (!perfil.professor_id) {
       console.error(
         "O perfil de professor não possui professor_id."
       );
 
-      window.location.href = "index.html";
+      window.location.href =
+        "index.html";
+
       return null;
     }
 
+    /*
+      A identidade principal continua sendo
+      de professor.
+    */
     localStorage.setItem(
       "role",
       "professor"
@@ -365,16 +436,53 @@ export async function exigirAlunoOuProfessorFuncionario() {
 
     localStorage.setItem(
       "professorId",
-      String(perfil.professor_id)
+      String(
+        perfil.professor_id
+      )
     );
 
     /*
-      Não confiamos somente no alunoIdVisualizacao
-      salvo no navegador, porque o localStorage pode
-      ser alterado manualmente.
+      Primeiro verificamos se a home-professor
+      já informou qual aluno está sendo visualizado.
 
-      Procuramos novamente o aluno pelo e-mail da
-      pessoa autenticada.
+      Esse valor é salvo quando o professor
+      escolhe "Visualizar como aluno".
+    */
+    const alunoIdVisualizacao =
+      localStorage.getItem(
+        "alunoIdVisualizacao"
+      );
+
+    if (
+      alunoIdVisualizacao &&
+      Number.isFinite(
+        Number(
+          alunoIdVisualizacao
+        )
+      )
+    ) {
+      return {
+        ...perfil,
+
+        user,
+
+        alunoIdEfetivo:
+          Number(
+            alunoIdVisualizacao
+          ),
+
+        visualizandoComoAluno:
+          true
+      };
+    }
+
+    /*
+      Se por algum motivo o localStorage
+      ainda não tiver o ID, procuramos o
+      cadastro correspondente pelo e-mail.
+
+      Isso mantém compatibilidade com o
+      funcionamento antigo do Beehive.
     */
     const alunoVinculado =
       await buscarAlunoVinculadoAoProfessor(
@@ -383,7 +491,7 @@ export async function exigirAlunoOuProfessorFuncionario() {
 
     if (!alunoVinculado?.id) {
       console.error(
-        "Esta professora não possui cadastro correspondente na tabela aluno."
+        "Este professor não possui cadastro correspondente na tabela aluno."
       );
 
       localStorage.removeItem(
@@ -397,27 +505,28 @@ export async function exigirAlunoOuProfessorFuncionario() {
     }
 
     const alunoIdEfetivo =
-      Number(alunoVinculado.id);
+      Number(
+        alunoVinculado.id
+      );
 
     localStorage.setItem(
       "alunoIdVisualizacao",
-      String(alunoIdEfetivo)
+      String(
+        alunoIdEfetivo
+      )
     );
-
-    /*
-      Não sobrescrevemos alunoId.
-
-      alunoId representa o perfil de um aluno comum.
-      alunoIdVisualizacao representa uma professora
-      temporariamente visualizando sua área de aluna.
-    */
 
     return {
       ...perfil,
+
       user,
+
       alunoIdEfetivo,
+
       alunoVinculado,
-      visualizandoComoAluno: true
+
+      visualizandoComoAluno:
+        true
     };
   }
 
@@ -426,6 +535,8 @@ export async function exigirAlunoOuProfessorFuncionario() {
     perfil.role
   );
 
-  window.location.href = "index.html";
+  window.location.href =
+    "index.html";
+
   return null;
 }

@@ -1,29 +1,54 @@
 import { supabase } from "./supabase.js";
-import { exigirAluno } from "./guard.js";
+
+import {
+    exigirAlunoOuProfessorFuncionario
+} from "./guard.js";
 
 /* =====================================================
-   1) GARANTIR ACESSO DO ALUNO
+   1) GARANTIR ACESSO À ÁREA DO ALUNO
 ===================================================== */
 
-await exigirAluno();
+const acessoAluno =
+    await exigirAlunoOuProfessorFuncionario();
+
+if (!acessoAluno) {
+    throw new Error(
+        "Usuário sem acesso à área do aluno."
+    );
+}
+
+/*
+    Este é o ID REAL do aluno que deve
+    ser utilizado nesta página.
+
+    ALUNO COMUM:
+    → perfil.aluno_id
+
+    PROFESSOR VISUALIZANDO COMO ALUNO:
+    → alunoIdVisualizacao
+*/
+const alunoId =
+    Number(
+        acessoAluno.alunoIdEfetivo
+    );
 
 /* =====================================================
    2) ELEMENTOS
 ===================================================== */
 
-const listaProximasAulas = document.getElementById(
-    "listaProximasAulas"
-);
+const listaProximasAulas =
+    document.getElementById(
+        "listaProximasAulas"
+    );
 
-const msgAusencia = document.getElementById(
-    "msgAusencia"
-);
+const msgAusencia =
+    document.getElementById(
+        "msgAusencia"
+    );
 
 /* =====================================================
    3) ESTADO
 ===================================================== */
-
-let alunoId = null;
 
 let matriculasAtivas = [];
 
@@ -32,25 +57,18 @@ let horariosAtivos = [];
 let avisosExistentes = [];
 
 /*
-    Quantas próximas ocorrências vamos mostrar.
-
-    Não significa "próximos 8 dias".
-
-    Significa as próximas 8 aulas encontradas.
+    Quantidade máxima de aulas exibidas.
 */
 const LIMITE_AULAS = 8;
 
 /*
-    Procuramos aulas dentro dos próximos 45 dias.
-
-    Isso evita problemas com alunos que tenham,
-    por exemplo, apenas uma aula por semana.
+    Procuramos ocorrências dentro
+    dos próximos 45 dias.
 */
 const DIAS_PARA_PROCURAR = 45;
 
 /*
-    Regra da escola:
-    15 minutos ou mais = pode solicitar reposição.
+    Prazo mínimo para solicitar reposição.
 */
 const PRAZO_REPOSICAO_MINUTOS = 15;
 
@@ -58,27 +76,34 @@ const PRAZO_REPOSICAO_MINUTOS = 15;
    4) MENSAGENS
 ===================================================== */
 
-function mostrarMensagem(texto, ok = true) {
-
+function mostrarMensagem(
+    texto,
+    ok = true
+) {
     if (!msgAusencia) {
         return;
     }
 
-    msgAusencia.textContent = texto;
+    msgAusencia.textContent =
+        texto;
 
-    msgAusencia.style.display = "block";
+    msgAusencia.style.display =
+        "block";
 
-    msgAusencia.style.background = ok
-        ? "#e8f5e9"
-        : "#ffebee";
+    msgAusencia.style.background =
+        ok
+            ? "#e8f5e9"
+            : "#ffebee";
 
-    msgAusencia.style.color = ok
-        ? "#1b5e20"
-        : "#b71c1c";
+    msgAusencia.style.color =
+        ok
+            ? "#1b5e20"
+            : "#b71c1c";
 
-    msgAusencia.style.border = ok
-        ? "1px solid #a5d6a7"
-        : "1px solid #ef9a9a";
+    msgAusencia.style.border =
+        ok
+            ? "1px solid #a5d6a7"
+            : "1px solid #ef9a9a";
 
     window.scrollTo({
         top: 0,
@@ -87,65 +112,93 @@ function mostrarMensagem(texto, ok = true) {
 }
 
 function esconderMensagem() {
-
     if (!msgAusencia) {
         return;
     }
 
-    msgAusencia.style.display = "none";
+    msgAusencia.style.display =
+        "none";
 
-    msgAusencia.textContent = "";
+    msgAusencia.textContent =
+        "";
 }
 
 /* =====================================================
-   5) TEXTO SEGURO
+   5) ESCAPAR HTML
 ===================================================== */
 
-function escaparHtml(texto) {
-
-    return String(texto ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+function escaparHtml(
+    texto
+) {
+    return String(
+        texto ?? ""
+    )
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 }
 
 /* =====================================================
    6) DATAS
 ===================================================== */
 
-/*
-    Cria YYYY-MM-DD usando o horário local.
+function formatarDataISO(
+    data
+) {
+    const ano =
+        data.getFullYear();
 
-    Isso é importante no Beehive para não termos
-    novamente o problema de a data voltar um dia
-    por causa de UTC/fuso horário.
-*/
-function formatarDataISO(data) {
+    const mes =
+        String(
+            data.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
 
-    const ano = data.getFullYear();
+    const dia =
+        String(
+            data.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
 
-    const mes = String(
-        data.getMonth() + 1
-    ).padStart(2, "0");
-
-    const dia = String(
-        data.getDate()
-    ).padStart(2, "0");
-
-    return `${ano}-${mes}-${dia}`;
+    return (
+        `${ano}-${mes}-${dia}`
+    );
 }
 
-function criarDataLocal(dataISO) {
-
+function criarDataLocal(
+    dataISO
+) {
     const [
         ano,
         mes,
         dia
-    ] = String(dataISO)
-        .split("-")
-        .map(Number);
+    ] =
+        String(
+            dataISO
+        )
+            .split("-")
+            .map(Number);
 
     return new Date(
         ano,
@@ -158,66 +211,80 @@ function criarDataLocal(dataISO) {
     );
 }
 
-function formatarDataBR(dataISO) {
-
-    const data = criarDataLocal(dataISO);
+function formatarDataBR(
+    dataISO
+) {
+    const data =
+        criarDataLocal(
+            dataISO
+        );
 
     return new Intl.DateTimeFormat(
         "pt-BR",
         {
-            weekday: "long",
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric"
+            weekday:
+                "long",
+
+            day:
+                "2-digit",
+
+            month:
+                "2-digit",
+
+            year:
+                "numeric"
         }
-    ).format(data);
+    ).format(
+        data
+    );
 }
 
-function formatarHora(hora) {
-
+function formatarHora(
+    hora
+) {
     if (!hora) {
         return "";
     }
 
-    return String(hora).slice(0, 5);
+    return String(
+        hora
+    ).slice(
+        0,
+        5
+    );
 }
 
-/*
-    Junta:
-
-    2026-08-31
-    +
-    18:00
-
-    formando um Date LOCAL:
-
-    31/08/2026 18:00
-
-    Sem converter para UTC.
-*/
 function criarDataHoraLocal(
     dataISO,
     hora
 ) {
-
     const [
         ano,
         mes,
         dia
-    ] = String(dataISO)
-        .split("-")
-        .map(Number);
+    ] =
+        String(
+            dataISO
+        )
+            .split("-")
+            .map(Number);
 
-    const partesHora = String(hora)
-        .split(":");
+    const partesHora =
+        String(
+            hora || ""
+        ).split(":");
 
-    const horas = Number(
-        partesHora[0] || 0
-    );
+    const horas =
+        Number(
+            partesHora[0] ||
+            0
+        );
 
-    const minutos = Number(
-        partesHora[1] || 0
-    );
+    const minutos =
+        Number(
+            partesHora[1] ||
+            0
+        );
 
     return new Date(
         ano,
@@ -231,174 +298,85 @@ function criarDataHoraLocal(
 }
 
 /* =====================================================
-   7) IDENTIFICAR ALUNO
-===================================================== */
-
-function obterAlunoIdSalvo() {
-
-    return (
-        localStorage.getItem("alunoId") ||
-        localStorage.getItem("aluno_id") ||
-        localStorage.getItem("idAluno") ||
-        sessionStorage.getItem("alunoId") ||
-        sessionStorage.getItem("aluno_id") ||
-        sessionStorage.getItem("idAluno")
-    );
-}
-
-async function identificarAluno() {
-
-    const idSalvo = obterAlunoIdSalvo();
-
-    if (idSalvo) {
-
-        const numero = Number(idSalvo);
-
-        if (Number.isFinite(numero)) {
-            alunoId = numero;
-            return;
-        }
-
-    }
-
-    /*
-        Segurança extra.
-
-        Caso o ID não esteja no localStorage,
-        tentamos descobrir pelo login atual.
-    */
-
-    const {
-        data: authData,
-        error: erroAuth
-    } = await supabase.auth.getUser();
-
-    if (
-        erroAuth ||
-        !authData?.user?.email
-    ) {
-
-        console.error(
-            "Erro ao identificar usuário:",
-            erroAuth
-        );
-
-        throw new Error(
-            "Não foi possível identificar o aluno conectado."
-        );
-    }
-
-    const email = String(
-        authData.user.email
-    )
-        .trim()
-        .toLowerCase();
-
-    const {
-        data: aluno,
-        error: erroAluno
-    } = await supabase
-        .from("aluno")
-        .select("id, nome, email")
-        .ilike("email", email)
-        .maybeSingle();
-
-    if (
-        erroAluno ||
-        !aluno?.id
-    ) {
-
-        console.error(
-            "Erro ao localizar aluno:",
-            erroAluno
-        );
-
-        throw new Error(
-            "Não foi possível localizar seu cadastro de aluno."
-        );
-    }
-
-    alunoId = Number(aluno.id);
-
-    localStorage.setItem(
-        "alunoId",
-        String(alunoId)
-    );
-}
-
-/* =====================================================
-   8) MATRÍCULAS ATIVAS
+   7) CARREGAR MATRÍCULAS ATIVAS
 ===================================================== */
 
 async function carregarMatriculasAtivas() {
-
     const {
         data,
         error
-    } = await supabase
-        .from("matricula")
-        .select(`
-            id,
-            aluno_id,
-            materia_id,
-            modulo_id,
-            professor_id,
-            ativa,
-
-            materia:materia_id (
-                id,
-                nome
-            ),
-
-            modulo:modulo_id (
-                id,
-                nome
-            ),
-
-            professor:professor_id (
-                id,
-                nome
+    } =
+        await supabase
+            .from(
+                "matricula"
             )
-        `)
-        .eq(
-            "aluno_id",
-            alunoId
-        )
-        .eq(
-            "ativa",
-            true
-        );
+            .select(`
+                id,
+                aluno_id,
+                materia_id,
+                modulo_id,
+                professor_id,
+                ativa,
+
+                materia:materia_id (
+                    id,
+                    nome
+                ),
+
+                modulo:modulo_id (
+                    id,
+                    nome
+                ),
+
+                professor:professor_id (
+                    id,
+                    nome
+                )
+            `)
+            .eq(
+                "aluno_id",
+                alunoId
+            )
+            .eq(
+                "ativa",
+                true
+            );
 
     if (error) {
-
         console.error(
             "Erro ao carregar matrículas:",
             error
         );
 
         throw new Error(
-            "Não foi possível carregar seus cursos."
+            "Não foi possível carregar suas matrículas."
         );
     }
 
-    matriculasAtivas = data || [];
+    matriculasAtivas =
+        data || [];
 }
 
 /* =====================================================
-   9) HORÁRIOS DO ALUNO
+   8) CARREGAR HORÁRIOS
 ===================================================== */
 
 async function carregarHorariosAtivos() {
+    const matriculaIds =
+        matriculasAtivas
+            .map(
+                matricula =>
+                    Number(
+                        matricula.id
+                    )
+            )
+            .filter(
+                Number.isFinite
+            );
 
-    const matriculaIds = matriculasAtivas
-        .map(
-            matricula =>
-                Number(matricula.id)
-        )
-        .filter(Number.isFinite);
-
-    if (!matriculaIds.length) {
-
+    if (
+        !matriculaIds.length
+    ) {
         horariosAtivos = [];
 
         return;
@@ -407,47 +385,51 @@ async function carregarHorariosAtivos() {
     const {
         data,
         error
-    } = await supabase
-        .from("aluno_horario_aula")
-        .select(`
-            id,
-            aluno_id,
-            matricula_id,
-            materia_id,
-            modulo_id,
-            professor_id,
-            dia_semana,
-            hora_inicio,
-            hora_fim,
-            ativo
-        `)
-        .eq(
-            "aluno_id",
-            alunoId
-        )
-        .in(
-            "matricula_id",
-            matriculaIds
-        )
-        .eq(
-            "ativo",
-            true
-        )
-        .order(
-            "dia_semana",
-            {
-                ascending: true
-            }
-        )
-        .order(
-            "hora_inicio",
-            {
-                ascending: true
-            }
-        );
+    } =
+        await supabase
+            .from(
+                "aluno_horario_aula"
+            )
+            .select(`
+                id,
+                aluno_id,
+                matricula_id,
+                materia_id,
+                modulo_id,
+                professor_id,
+                dia_semana,
+                hora_inicio,
+                hora_fim,
+                ativo
+            `)
+            .eq(
+                "aluno_id",
+                alunoId
+            )
+            .in(
+                "matricula_id",
+                matriculaIds
+            )
+            .eq(
+                "ativo",
+                true
+            )
+            .order(
+                "dia_semana",
+                {
+                    ascending:
+                        true
+                }
+            )
+            .order(
+                "hora_inicio",
+                {
+                    ascending:
+                        true
+                }
+            );
 
     if (error) {
-
         console.error(
             "Erro ao carregar horários:",
             error
@@ -458,92 +440,84 @@ async function carregarHorariosAtivos() {
         );
     }
 
-    /*
-        A matrícula é a referência principal.
+    horariosAtivos =
+        (data || [])
+            .map(
+                horario => {
+                    const matricula =
+                        matriculasAtivas
+                            .find(
+                                item =>
+                                    Number(
+                                        item.id
+                                    ) ===
+                                    Number(
+                                        horario
+                                            .matricula_id
+                                    )
+                            );
 
-        Se algum horário antigo estiver com professor,
-        matéria ou módulo desatualizado, usamos os
-        dados atuais da matrícula.
-    */
+                    if (
+                        !matricula
+                    ) {
+                        return null;
+                    }
 
-    horariosAtivos = (data || [])
-        .map(horario => {
+                    return {
+                        ...horario,
 
-            const matricula =
-                matriculasAtivas.find(
-                    item =>
-                        Number(item.id) ===
-                        Number(horario.matricula_id)
-                );
+                        aluno_id:
+                            matricula
+                                .aluno_id,
 
-            if (!matricula) {
-                return null;
-            }
+                        materia_id:
+                            matricula
+                                .materia_id,
 
-            return {
+                        modulo_id:
+                            matricula
+                                .modulo_id,
 
-                ...horario,
+                        professor_id:
+                            matricula
+                                .professor_id,
 
-                aluno_id:
-                    matricula.aluno_id,
+                        materia:
+                            matricula
+                                .materia,
 
-                materia_id:
-                    matricula.materia_id,
+                        modulo:
+                            matricula
+                                .modulo,
 
-                modulo_id:
-                    matricula.modulo_id,
-
-                professor_id:
-                    matricula.professor_id,
-
-                materia:
-                    matricula.materia,
-
-                modulo:
-                    matricula.modulo,
-
-                professor:
-                    matricula.professor
-
-            };
-
-        })
-        .filter(Boolean);
+                        professor:
+                            matricula
+                                .professor
+                    };
+                }
+            )
+            .filter(Boolean);
 }
 
 /* =====================================================
-   10) MONTAR PRÓXIMAS AULAS
+   9) MONTAR PRÓXIMAS AULAS
 ===================================================== */
 
 function montarProximasAulas() {
+    const agora =
+        new Date();
 
-    const agora = new Date();
-
-    const ocorrencias = [];
-
-    /*
-        O banco utiliza:
-
-        1 = segunda
-        2 = terça
-        3 = quarta
-        4 = quinta
-        5 = sexta
-        6 = sábado
-
-        O JavaScript usa a mesma numeração
-        de segunda a sábado.
-
-        Domingo = 0.
-    */
+    const ocorrencias =
+        [];
 
     for (
         let offset = 0;
-        offset <= DIAS_PARA_PROCURAR;
+        offset <=
+        DIAS_PARA_PROCURAR;
         offset++
     ) {
-
-        const data = new Date();
+        const data =
+            new Date();
 
         data.setHours(
             12,
@@ -553,16 +527,24 @@ function montarProximasAulas() {
         );
 
         data.setDate(
-            data.getDate() + offset
+            data.getDate() +
+            offset
         );
 
+        /*
+            JavaScript:
+
+            domingo = 0
+            segunda = 1
+            terça = 2
+            quarta = 3
+            quinta = 4
+            sexta = 5
+            sábado = 6
+        */
         const diaSemana =
             data.getDay();
 
-        /*
-            O Beehive atualmente trabalha
-            com horários de segunda a sábado.
-        */
         if (
             diaSemana < 1 ||
             diaSemana > 6
@@ -571,32 +553,39 @@ function montarProximasAulas() {
         }
 
         const horariosDoDia =
-            horariosAtivos.filter(
-                horario =>
-                    Number(
-                        horario.dia_semana
-                    ) === diaSemana
-            );
+            horariosAtivos
+                .filter(
+                    horario =>
+                        Number(
+                            horario
+                                .dia_semana
+                        ) ===
+                        diaSemana
+                );
 
-        if (!horariosDoDia.length) {
+        if (
+            !horariosDoDia
+                .length
+        ) {
             continue;
         }
 
         const dataISO =
-            formatarDataISO(data);
+            formatarDataISO(
+                data
+            );
 
         horariosDoDia.forEach(
             horario => {
-
                 const inicio =
                     criarDataHoraLocal(
                         dataISO,
-                        horario.hora_inicio
+                        horario
+                            .hora_inicio
                     );
 
                 /*
-                    Aula já começou:
-                    não aparece como próxima aula.
+                    Se já começou, não mostra.
                 */
                 if (
                     inicio.getTime() <=
@@ -606,7 +595,6 @@ function montarProximasAulas() {
                 }
 
                 ocorrencias.push({
-
                     ...horario,
 
                     data_aula:
@@ -614,18 +602,22 @@ function montarProximasAulas() {
 
                     dataHoraInicio:
                         inicio
-
                 });
-
             }
         );
-
     }
 
     ocorrencias.sort(
-        (a, b) =>
-            a.dataHoraInicio.getTime() -
-            b.dataHoraInicio.getTime()
+        (
+            a,
+            b
+        ) =>
+            a
+                .dataHoraInicio
+                .getTime() -
+            b
+                .dataHoraInicio
+                .getTime()
     );
 
     return ocorrencias.slice(
@@ -635,104 +627,120 @@ function montarProximasAulas() {
 }
 
 /* =====================================================
-   11) AVISOS JÁ REGISTRADOS
+   10) CARREGAR AVISOS EXISTENTES
 ===================================================== */
 
 async function carregarAvisosExistentes(
     proximasAulas
 ) {
-
     if (
         !alunoId ||
         !proximasAulas.length
     ) {
-
-        avisosExistentes = [];
+        avisosExistentes =
+            [];
 
         return;
     }
 
     const primeiraData =
-        proximasAulas[0].data_aula;
+        proximasAulas[0]
+            .data_aula;
 
     const ultimaData =
         proximasAulas[
-            proximasAulas.length - 1
+            proximasAulas.length -
+            1
         ].data_aula;
 
     const {
         data,
         error
-    } = await supabase
-        .from("aviso_ausencia")
-        .select(`
-            id,
-            aluno_id,
-            matricula_id,
-            horario_aula_id,
-            professor_id,
-            data_aula,
-            hora_inicio,
-            hora_fim,
-            tipo_solicitacao,
-            dentro_prazo_reposicao,
-            antecedencia_minutos,
-            status,
-            criado_em
-        `)
-        .eq(
-            "aluno_id",
-            alunoId
-        )
-        .gte(
-            "data_aula",
-            primeiraData
-        )
-        .lte(
-            "data_aula",
-            ultimaData
-        )
-        .neq(
-            "status",
-            "cancelado"
-        );
+    } =
+        await supabase
+            .from(
+                "aviso_ausencia"
+            )
+            .select(`
+                id,
+                aluno_id,
+                matricula_id,
+                horario_aula_id,
+                professor_id,
+                data_aula,
+                hora_inicio,
+                hora_fim,
+                tipo_solicitacao,
+                dentro_prazo_reposicao,
+                antecedencia_minutos,
+                status,
+                criado_em
+            `)
+            .eq(
+                "aluno_id",
+                alunoId
+            )
+            .gte(
+                "data_aula",
+                primeiraData
+            )
+            .lte(
+                "data_aula",
+                ultimaData
+            )
+            .neq(
+                "status",
+                "cancelado"
+            );
 
     if (error) {
-
         console.error(
             "Erro ao carregar avisos existentes:",
             error
         );
 
-        avisosExistentes = [];
+        avisosExistentes =
+            [];
 
         return;
     }
 
-    avisosExistentes = data || [];
+    avisosExistentes =
+        data || [];
 }
 
-function encontrarAvisoDaAula(aula) {
+function encontrarAvisoDaAula(
+    aula
+) {
+    return avisosExistentes
+        .find(
+            aviso =>
+                Number(
+                    aviso
+                        .horario_aula_id
+                ) ===
+                    Number(
+                        aula.id
+                    ) &&
 
-    return avisosExistentes.find(
-        aviso =>
-            Number(
-                aviso.horario_aula_id
-            ) === Number(aula.id) &&
-            String(
-                aviso.data_aula
-            ) === String(
-                aula.data_aula
-            )
-    );
+                String(
+                    aviso
+                        .data_aula
+                ) ===
+                    String(
+                        aula
+                            .data_aula
+                    )
+        );
 }
 
 /* =====================================================
-   12) PRAZO
+   11) REGRA DOS 15 MINUTOS
 ===================================================== */
 
-function calcularAntecedenciaMinutos(aula) {
-
+function calcularAntecedenciaMinutos(
+    aula
+) {
     const agora =
         new Date();
 
@@ -747,101 +755,128 @@ function calcularAntecedenciaMinutos(aula) {
         agora.getTime();
 
     return Math.floor(
-        diferencaMs / 60000
+        diferencaMs /
+        60000
     );
 }
 
-function podeSolicitarReposicao(aula) {
-
+function podeSolicitarReposicao(
+    aula
+) {
     return (
-        calcularAntecedenciaMinutos(aula) >=
+        calcularAntecedenciaMinutos(
+            aula
+        ) >=
         PRAZO_REPOSICAO_MINUTOS
     );
 }
 
 /* =====================================================
-   13) TEXTO DO AVISO EXISTENTE
+   12) TEXTO DO TIPO
 ===================================================== */
 
 function textoTipoSolicitacao(
     tipo
 ) {
-
-    if (tipo === "reposicao") {
-        return "Reposição solicitada";
+    if (
+        tipo ===
+        "reposicao"
+    ) {
+        return (
+            "Reposição solicitada"
+        );
     }
 
-    return "Gravação solicitada";
+    return (
+        "Gravação solicitada"
+    );
 }
 
 /* =====================================================
-   14) RENDERIZAR AULAS
+   13) RENDERIZAR AULAS
 ===================================================== */
 
 function renderizarProximasAulas(
     proximasAulas
 ) {
-
-    if (!listaProximasAulas) {
+    if (
+        !listaProximasAulas
+    ) {
         return;
     }
 
-    listaProximasAulas.innerHTML = "";
+    listaProximasAulas
+        .innerHTML =
+        "";
 
-    if (!proximasAulas.length) {
+    if (
+        !proximasAulas.length
+    ) {
+        listaProximasAulas
+            .innerHTML = `
+                <div
+                    class="
+                        card
+                        estado-vazio-ausencia
+                    "
+                >
 
-        listaProximasAulas.innerHTML = `
-            <div class="card estado-vazio-ausencia">
+                    <div class="icone">
+                        📅
+                    </div>
 
-                <div class="icone">
-                    📅
+                    <h2>
+                        Nenhuma aula encontrada
+                    </h2>
+
+                    <p>
+                        Não encontramos próximas aulas
+                        cadastradas para suas matrículas ativas.
+                    </p>
+
                 </div>
-
-                <h2>
-                    Nenhuma aula encontrada
-                </h2>
-
-                <p>
-                    Não encontramos próximas aulas
-                    cadastradas para suas matrículas ativas.
-                </p>
-
-            </div>
-        `;
+            `;
 
         return;
     }
 
     proximasAulas.forEach(
-        (aula, indice) => {
-
+        (
+            aula,
+            indice
+        ) => {
             const aviso =
-                encontrarAvisoDaAula(aula);
-
-            const curso =
-                aula.materia?.nome ||
-                "Curso";
-
-            const modulo =
-                aula.modulo?.nome ||
-                "";
-
-            const professor =
-                aula.professor?.nome ||
-                "Professor não informado";
-
-            const dentroPrazo =
-                podeSolicitarReposicao(aula);
-
-            const antecedencia =
-                calcularAntecedenciaMinutos(
+                encontrarAvisoDaAula(
                     aula
                 );
 
-            let badgeHtml = "";
+            const curso =
+                aula
+                    .materia
+                    ?.nome ||
+                "Curso";
+
+            const modulo =
+                aula
+                    .modulo
+                    ?.nome ||
+                "";
+
+            const professor =
+                aula
+                    .professor
+                    ?.nome ||
+                "Professor não informado";
+
+            const dentroPrazo =
+                podeSolicitarReposicao(
+                    aula
+                );
+
+            let badgeHtml =
+                "";
 
             if (aviso) {
-
                 badgeHtml = `
                     <span
                         class="
@@ -852,9 +887,9 @@ function renderizarProximasAulas(
                         ✓ Ausência informada
                     </span>
                 `;
-
-            } else if (dentroPrazo) {
-
+            } else if (
+                dentroPrazo
+            ) {
                 badgeHtml = `
                     <span
                         class="
@@ -865,9 +900,7 @@ function renderizarProximasAulas(
                         Reposição disponível
                     </span>
                 `;
-
             } else {
-
                 badgeHtml = `
                     <span
                         class="
@@ -878,22 +911,12 @@ function renderizarProximasAulas(
                         Somente gravação
                     </span>
                 `;
-
             }
 
-            const card =
-                document.createElement("article");
-
-            card.className =
-                "card-aula-ausencia";
-
-            card.dataset.indice =
-                String(indice);
-
-            let conteudoAviso = "";
+            let conteudoAviso =
+                "";
 
             if (aviso) {
-
                 conteudoAviso = `
                     <div
                         class="aviso-regra-ausencia"
@@ -902,22 +925,33 @@ function renderizarProximasAulas(
                             margin-bottom:0;
                         "
                     >
+
                         <strong>
                             Aviso já registrado
                         </strong>
 
                         ${escaparHtml(
                             textoTipoSolicitacao(
-                                aviso.tipo_solicitacao
+                                aviso
+                                    .tipo_solicitacao
                             )
                         )}.
 
                         A escola já recebeu seu aviso
                         para esta aula.
+
                     </div>
                 `;
-
             }
+
+            const card =
+                document
+                    .createElement(
+                        "article"
+                    );
+
+            card.className =
+                "card-aula-ausencia";
 
             card.innerHTML = `
 
@@ -928,7 +962,9 @@ function renderizarProximasAulas(
                     <div>
 
                         <h2>
-                            ${escaparHtml(curso)}
+                            ${escaparHtml(
+                                curso
+                            )}
                         </h2>
 
                         <p
@@ -936,10 +972,15 @@ function renderizarProximasAulas(
                         >
                             ${
                                 modulo
-                                    ? `${escaparHtml(modulo)} · `
+                                    ? `${escaparHtml(
+                                        modulo
+                                    )} · `
                                     : ""
                             }
-                            ${escaparHtml(professor)}
+
+                            ${escaparHtml(
+                                professor
+                            )}
                         </p>
 
                         <p
@@ -947,19 +988,26 @@ function renderizarProximasAulas(
                         >
                             ${escaparHtml(
                                 formatarDataBR(
-                                    aula.data_aula
+                                    aula
+                                        .data_aula
                                 )
                             )}
+
                             ·
+
                             ${escaparHtml(
                                 formatarHora(
-                                    aula.hora_inicio
+                                    aula
+                                        .hora_inicio
                                 )
                             )}
+
                             às
+
                             ${escaparHtml(
                                 formatarHora(
-                                    aula.hora_fim
+                                    aula
+                                        .hora_fim
                                 )
                             )}
                         </p>
@@ -981,11 +1029,14 @@ function renderizarProximasAulas(
 
                                 <button
                                     type="button"
+
                                     class="
                                         btn
                                         btn-informar-ausencia
                                     "
+
                                     data-acao="abrir"
+
                                     data-indice="${indice}"
                                 >
                                     Informar que vou faltar
@@ -995,26 +1046,22 @@ function renderizarProximasAulas(
 
                             <div
                                 id="opcoes-${indice}"
+
                                 class="box-opcoes-ausencia"
-                                style="display:none;"
+
+                                style="
+                                    display:none;
+                                "
                             ></div>
                         `
                         : ""
                 }
-
             `;
 
-            /*
-                Guardamos a antecedência apenas para
-                facilitar diagnóstico durante testes.
-            */
-            card.dataset.antecedencia =
-                String(antecedencia);
-
-            listaProximasAulas.appendChild(
-                card
-            );
-
+            listaProximasAulas
+                .appendChild(
+                    card
+                );
         }
     );
 
@@ -1024,65 +1071,75 @@ function renderizarProximasAulas(
 }
 
 /* =====================================================
-   15) ABRIR OPÇÕES DA AULA
+   14) ABRIR OPÇÕES
 ===================================================== */
 
 function abrirOpcoes(
     aula,
     indice
 ) {
-
     esconderMensagem();
 
     /*
-        Recalculamos o prazo no momento do clique.
-
-        Isso é importante porque a página pode ter
-        ficado aberta durante vários minutos.
+        Recalculamos aqui porque a página
+        pode estar aberta há algum tempo.
     */
     const dentroPrazo =
-        podeSolicitarReposicao(aula);
+        podeSolicitarReposicao(
+            aula
+        );
 
     const box =
-        document.getElementById(
-            `opcoes-${indice}`
-        );
+        document
+            .getElementById(
+                `opcoes-${indice}`
+            );
 
     if (!box) {
         return;
     }
 
     /*
-        Fecha caixas de outras aulas.
+        Fecha outras opções abertas.
     */
     document
         .querySelectorAll(
             ".box-opcoes-ausencia"
         )
-        .forEach(item => {
+        .forEach(
+            item => {
+                if (
+                    item !== box
+                ) {
+                    item.style.display =
+                        "none";
 
-            if (item !== box) {
-                item.style.display = "none";
-                item.innerHTML = "";
+                    item.innerHTML =
+                        "";
+                }
             }
-
-        });
+        );
 
     if (dentroPrazo) {
-
         box.innerHTML = `
 
             <h3>
                 Como você prefere seguir?
             </h3>
 
-            <div class="opcoes-ausencia">
+            <div
+                class="opcoes-ausencia"
+            >
 
-                <label class="opcao-ausencia">
+                <label
+                    class="opcao-ausencia"
+                >
 
                     <input
                         type="radio"
+
                         name="tipoAusencia-${indice}"
+
                         value="gravacao"
                     >
 
@@ -1102,11 +1159,15 @@ function abrirOpcoes(
 
                 </label>
 
-                <label class="opcao-ausencia">
+                <label
+                    class="opcao-ausencia"
+                >
 
                     <input
                         type="radio"
+
                         name="tipoAusencia-${indice}"
+
                         value="reposicao"
                     >
 
@@ -1134,8 +1195,11 @@ function abrirOpcoes(
 
                 <button
                     type="button"
+
                     class="btn"
+
                     data-acao="confirmar"
+
                     data-indice="${indice}"
                 >
                     Confirmar ausência
@@ -1143,19 +1207,19 @@ function abrirOpcoes(
 
                 <button
                     type="button"
+
                     class="btn-secundario-ausencia"
+
                     data-acao="cancelar"
+
                     data-indice="${indice}"
                 >
                     Voltar
                 </button>
 
             </div>
-
         `;
-
     } else {
-
         box.innerHTML = `
 
             <div
@@ -1184,8 +1248,11 @@ function abrirOpcoes(
 
                 <button
                     type="button"
+
                     class="btn"
+
                     data-acao="confirmar-gravacao"
+
                     data-indice="${indice}"
                 >
                     Confirmar ausência
@@ -1193,20 +1260,22 @@ function abrirOpcoes(
 
                 <button
                     type="button"
+
                     class="btn-secundario-ausencia"
+
                     data-acao="cancelar"
+
                     data-indice="${indice}"
                 >
                     Voltar
                 </button>
 
             </div>
-
         `;
-
     }
 
-    box.style.display = "block";
+    box.style.display =
+        "block";
 
     adicionarEventosInternos(
         aula,
@@ -1215,55 +1284,60 @@ function abrirOpcoes(
 }
 
 /* =====================================================
-   16) EVENTOS DOS CARDS
+   15) EVENTOS DOS CARDS
 ===================================================== */
 
 function adicionarEventosBotoes(
     proximasAulas
 ) {
-
     document
         .querySelectorAll(
             '[data-acao="abrir"]'
         )
-        .forEach(botao => {
+        .forEach(
+            botao => {
+                botao.addEventListener(
+                    "click",
+                    () => {
+                        const indice =
+                            Number(
+                                botao
+                                    .dataset
+                                    .indice
+                            );
 
-            botao.addEventListener(
-                "click",
-                () => {
+                        const aula =
+                            proximasAulas[
+                                indice
+                            ];
 
-                    const indice =
-                        Number(
-                            botao.dataset.indice
+                        if (!aula) {
+                            return;
+                        }
+
+                        abrirOpcoes(
+                            aula,
+                            indice
                         );
-
-                    const aula =
-                        proximasAulas[indice];
-
-                    if (!aula) {
-                        return;
                     }
-
-                    abrirOpcoes(
-                        aula,
-                        indice
-                    );
-
-                }
-            );
-
-        });
+                );
+            }
+        );
 }
+
+/* =====================================================
+   16) EVENTOS INTERNOS
+===================================================== */
 
 function adicionarEventosInternos(
     aula,
     indice
 ) {
-
     const box =
-        document.getElementById(
-            `opcoes-${indice}`
-        );
+        document
+            .getElementById(
+                `opcoes-${indice}`
+            );
 
     if (!box) {
         return;
@@ -1274,71 +1348,69 @@ function adicionarEventosInternos(
             '[data-acao="cancelar"]'
         );
 
-    btnCancelar?.addEventListener(
-        "click",
-        () => {
+    btnCancelar
+        ?.addEventListener(
+            "click",
+            () => {
+                box.style.display =
+                    "none";
 
-            box.style.display = "none";
-
-            box.innerHTML = "";
-
-        }
-    );
+                box.innerHTML =
+                    "";
+            }
+        );
 
     const btnConfirmar =
         box.querySelector(
             '[data-acao="confirmar"]'
         );
 
-    btnConfirmar?.addEventListener(
-        "click",
-        async () => {
+    btnConfirmar
+        ?.addEventListener(
+            "click",
+            async () => {
+                const radio =
+                    box.querySelector(
+                        `input[name="tipoAusencia-${indice}"]:checked`
+                    );
 
-            const radio =
-                box.querySelector(
-                    `input[name="tipoAusencia-${indice}"]:checked`
+                if (!radio) {
+                    mostrarMensagem(
+                        "Escolha se deseja gravação ou reposição.",
+                        false
+                    );
+
+                    return;
+                }
+
+                await registrarAviso(
+                    aula,
+                    radio.value,
+                    btnConfirmar
                 );
-
-            if (!radio) {
-
-                mostrarMensagem(
-                    "Escolha se deseja gravação ou reposição.",
-                    false
-                );
-
-                return;
             }
-
-            await registrarAviso(
-                aula,
-                radio.value,
-                btnConfirmar
-            );
-
-        }
-    );
+        );
 
     const btnConfirmarGravacao =
         box.querySelector(
             '[data-acao="confirmar-gravacao"]'
         );
 
-    btnConfirmarGravacao?.addEventListener(
-        "click",
-        async () => {
-
-            await registrarAviso(
-                aula,
-                "gravacao",
-                btnConfirmarGravacao
-            );
-
-        }
-    );
+    btnConfirmarGravacao
+        ?.addEventListener(
+            "click",
+            async () => {
+                await registrarAviso(
+                    aula,
+                    "gravacao",
+                    btnConfirmarGravacao
+                );
+            }
+        );
 }
 
 /* =====================================================
-   17) REGISTRAR AUSÊNCIA
+   17) REGISTRAR AVISO
 ===================================================== */
 
 async function registrarAviso(
@@ -1346,7 +1418,6 @@ async function registrarAviso(
     tipoSolicitado,
     botao
 ) {
-
     esconderMensagem();
 
     if (
@@ -1355,7 +1426,6 @@ async function registrarAviso(
         !aula?.matricula_id ||
         !aula?.data_aula
     ) {
-
         mostrarMensagem(
             "Não foi possível identificar os dados desta aula.",
             false
@@ -1365,11 +1435,8 @@ async function registrarAviso(
     }
 
     /*
-        Mais uma vez recalculamos o prazo.
-
-        Assim o aluno não consegue abrir a caixa
-        às 17:40 e clicar em reposição às 17:50
-        para uma aula das 18:00.
+        Recalculamos novamente no momento
+        EXATO da confirmação.
     */
     const antecedencia =
         calcularAntecedenciaMinutos(
@@ -1384,59 +1451,58 @@ async function registrarAviso(
         tipoSolicitado;
 
     /*
-        Segurança da regra.
-
-        Mesmo que alguém altere manualmente o HTML
-        no navegador, reposição fora do prazo
-        nunca será registrada.
+        Segurança:
+        reposição fora do prazo nunca
+        será gravada como reposição.
     */
     if (
         !dentroPrazo &&
-        tipoSolicitado === "reposicao"
+        tipoSolicitado ===
+            "reposicao"
     ) {
-
         tipoFinal =
             "gravacao";
     }
 
     if (botao) {
-
-        botao.disabled = true;
+        botao.disabled =
+            true;
 
         botao.textContent =
             "Registrando...";
-
     }
 
     try {
-
         /*
-            Primeiro verificamos novamente se já existe
-            um aviso para esta ocorrência.
+            Confere se já existe.
         */
-
         const {
             data: existente,
-            error: erroConsulta
-        } = await supabase
-            .from("aviso_ausencia")
-            .select("id")
-            .eq(
-                "aluno_id",
-                alunoId
-            )
-            .eq(
-                "horario_aula_id",
-                aula.id
-            )
-            .eq(
-                "data_aula",
-                aula.data_aula
-            )
-            .maybeSingle();
+            error:
+                erroConsulta
+        } =
+            await supabase
+                .from(
+                    "aviso_ausencia"
+                )
+                .select(
+                    "id"
+                )
+                .eq(
+                    "aluno_id",
+                    alunoId
+                )
+                .eq(
+                    "horario_aula_id",
+                    aula.id
+                )
+                .eq(
+                    "data_aula",
+                    aula.data_aula
+                )
+                .maybeSingle();
 
         if (erroConsulta) {
-
             console.error(
                 "Erro ao verificar aviso:",
                 erroConsulta
@@ -1447,8 +1513,9 @@ async function registrarAviso(
             );
         }
 
-        if (existente?.id) {
-
+        if (
+            existente?.id
+        ) {
             mostrarMensagem(
                 "Você já informou ausência para esta aula.",
                 false
@@ -1460,20 +1527,27 @@ async function registrarAviso(
         }
 
         const registro = {
-
             aluno_id:
-                Number(alunoId),
+                Number(
+                    alunoId
+                ),
 
             matricula_id:
-                Number(aula.matricula_id),
+                Number(
+                    aula
+                        .matricula_id
+                ),
 
             horario_aula_id:
-                Number(aula.id),
+                Number(
+                    aula.id
+                ),
 
             professor_id:
                 aula.professor_id
                     ? Number(
-                        aula.professor_id
+                        aula
+                            .professor_id
                     )
                     : null,
 
@@ -1484,7 +1558,8 @@ async function registrarAviso(
                 aula.hora_inicio,
 
             hora_fim:
-                aula.hora_fim || null,
+                aula.hora_fim ||
+                null,
 
             tipo_solicitacao:
                 tipoFinal,
@@ -1500,34 +1575,34 @@ async function registrarAviso(
 
             status:
                 "pendente"
-
         };
 
         const {
             error
-        } = await supabase
-            .from("aviso_ausencia")
-            .insert(registro);
+        } =
+            await supabase
+                .from(
+                    "aviso_ausencia"
+                )
+                .insert(
+                    registro
+                );
 
         if (error) {
-
             console.error(
                 "Erro ao registrar ausência:",
                 error
             );
 
             /*
-                Código PostgreSQL 23505 =
-                violação de UNIQUE.
-
-                Pode acontecer se o aluno clicar
-                duas vezes muito rapidamente.
+                23505 = registro duplicado.
             */
             if (
-                String(error.code) ===
+                String(
+                    error.code
+                ) ===
                 "23505"
             ) {
-
                 mostrarMensagem(
                     "Você já informou ausência para esta aula.",
                     false
@@ -1544,35 +1619,28 @@ async function registrarAviso(
         }
 
         if (
-            tipoFinal === "reposicao"
+            tipoFinal ===
+            "reposicao"
         ) {
-
             mostrarMensagem(
                 "Ausência informada com sucesso. Sua solicitação de reposição foi registrada."
             );
-
         } else if (
             dentroPrazo
         ) {
-
             mostrarMensagem(
                 "Ausência informada com sucesso. O professor será avisado de que a aula deverá ser gravada."
             );
-
         } else {
-
             mostrarMensagem(
                 "Ausência informada com sucesso. Como o prazo para reposição já havia expirado, a aula deverá ser gravada."
             );
-
         }
 
         await carregarTudo(
             false
         );
-
     } catch (erro) {
-
         console.error(
             "Erro ao registrar aviso de ausência:",
             erro
@@ -1583,21 +1651,19 @@ async function registrarAviso(
             "Ocorreu um erro ao registrar sua ausência.",
             false
         );
-
     } finally {
-
         if (
             botao &&
-            document.body.contains(botao)
+            document.body.contains(
+                botao
+            )
         ) {
-
-            botao.disabled = false;
+            botao.disabled =
+                false;
 
             botao.textContent =
                 "Confirmar ausência";
-
         }
-
     }
 }
 
@@ -1608,49 +1674,64 @@ async function registrarAviso(
 async function carregarTudo(
     limparMensagem = true
 ) {
-
-    if (limparMensagem) {
+    if (
+        limparMensagem
+    ) {
         esconderMensagem();
     }
 
-    if (listaProximasAulas) {
-
-        listaProximasAulas.innerHTML = `
-            <div class="card">
-                Carregando suas próximas aulas...
-            </div>
-        `;
-
+    if (
+        listaProximasAulas
+    ) {
+        listaProximasAulas
+            .innerHTML = `
+                <div class="card">
+                    Carregando suas próximas aulas...
+                </div>
+            `;
     }
 
     try {
-
-        if (!alunoId) {
-            await identificarAluno();
+        if (
+            !alunoId ||
+            !Number.isFinite(
+                alunoId
+            )
+        ) {
+            throw new Error(
+                "Não foi possível identificar seu cadastro de aluno."
+            );
         }
 
         await carregarMatriculasAtivas();
 
-        if (!matriculasAtivas.length) {
+        if (
+            !matriculasAtivas.length
+        ) {
+            listaProximasAulas
+                .innerHTML = `
+                    <div
+                        class="
+                            card
+                            estado-vazio-ausencia
+                        "
+                    >
 
-            listaProximasAulas.innerHTML = `
-                <div class="card estado-vazio-ausencia">
+                        <div class="icone">
+                            🎓
+                        </div>
 
-                    <div class="icone">
-                        🎓
+                        <h2>
+                            Nenhuma matrícula ativa
+                        </h2>
+
+                        <p>
+                            Você não possui matrícula ativa
+                            no momento.
+                        </p>
+
                     </div>
-
-                    <h2>
-                        Nenhuma matrícula ativa
-                    </h2>
-
-                    <p>
-                        Você não possui matrícula ativa
-                        no momento.
-                    </p>
-
-                </div>
-            `;
+                `;
 
             return;
         }
@@ -1667,38 +1748,45 @@ async function carregarTudo(
         renderizarProximasAulas(
             proximasAulas
         );
-
     } catch (erro) {
-
         console.error(
             "Erro ao carregar tela de ausência:",
             erro
         );
 
-        listaProximasAulas.innerHTML = `
-            <div class="card estado-vazio-ausencia">
+        if (
+            listaProximasAulas
+        ) {
+            listaProximasAulas
+                .innerHTML = `
+                    <div
+                        class="
+                            card
+                            estado-vazio-ausencia
+                        "
+                    >
 
-                <div class="icone">
-                    ⚠️
-                </div>
+                        <div class="icone">
+                            ⚠️
+                        </div>
 
-                <h2>
-                    Não foi possível carregar suas aulas
-                </h2>
+                        <h2>
+                            Não foi possível carregar suas aulas
+                        </h2>
 
-                <p>
-                    Tente novamente em alguns instantes.
-                </p>
+                        <p>
+                            Tente novamente em alguns instantes.
+                        </p>
 
-            </div>
-        `;
+                    </div>
+                `;
+        }
 
         mostrarMensagem(
             erro?.message ||
             "Ocorreu um erro ao carregar suas aulas.",
             false
         );
-
     }
 }
 
