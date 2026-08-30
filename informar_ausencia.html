@@ -142,6 +142,39 @@
             font-size: 16px;
         }
 
+        .campo-justificativa {
+            margin-bottom: 16px;
+        }
+
+        .campo-justificativa label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 700;
+        }
+
+        .campo-justificativa textarea {
+            width: 100%;
+            min-height: 90px;
+            padding: 11px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.18);
+            border-radius: 10px;
+            font: inherit;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .campo-justificativa textarea:focus {
+            outline: 2px solid rgba(0, 0, 0, 0.12);
+            outline-offset: 2px;
+        }
+
+        .campo-ajuda {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
         .opcoes-ausencia {
             display: grid;
             gap: 10px;
@@ -186,6 +219,23 @@
             line-height: 1.55;
         }
 
+        .aviso-registrado {
+            margin-top: 15px;
+            padding: 14px 16px;
+            background: #f8f9ff;
+            border: 1px solid #d9def8;
+            border-radius: 11px;
+            line-height: 1.55;
+        }
+
+        .aviso-registrado p {
+            margin: 6px 0 0;
+        }
+
+        .justificativa-registrada {
+            margin-top: 8px;
+        }
+
         .botoes-confirmacao-ausencia {
             display: flex;
             gap: 10px;
@@ -201,6 +251,21 @@
             padding: 10px 16px;
             font-weight: 600;
             cursor: pointer;
+        }
+
+        .btn-cancelar-aviso {
+            margin-top: 13px;
+            border: 1px solid #d92d20;
+            background: #ffffff;
+            color: #b42318;
+            border-radius: 8px;
+            padding: 9px 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-cancelar-aviso:hover {
+            background: #fff1f0;
         }
 
         .mensagem-ausencia {
@@ -238,6 +303,10 @@
             }
 
             .btn-informar-ausencia {
+                width: 100%;
+            }
+
+            .btn-cancelar-aviso {
                 width: 100%;
             }
 
