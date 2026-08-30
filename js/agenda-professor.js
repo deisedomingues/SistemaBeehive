@@ -358,6 +358,70 @@ function aplicarStatusDeRegistro(horarios, aulasRegistradas) {
   });
 }
 
+
+/* =====================================================
+   AVISOS DE AUSÊNCIA
+===================================================== */
+async function buscarAvisosAusenciaNoPeriodo(dataInicial, dataFinal) {
+  const { data, error } = await supabase
+    .from("aviso_ausencia")
+    .select(`
+      id,
+      aluno_id,
+      matricula_id,
+      horario_aula_id,
+      professor_id,
+      data_aula,
+      hora_inicio,
+      hora_fim,
+      justificativa,
+      tipo_solicitacao,
+      dentro_prazo_reposicao,
+      antecedencia_minutos,
+      status,
+      criado_em
+    `)
+    .eq("professor_id", professorAtualId)
+    .eq("status", "pendente")
+    .gte("data_aula", dataInicial)
+    .lte("data_aula", dataFinal);
+
+  if (error) {
+    console.error("Erro ao buscar avisos de ausência:", error);
+    throw new Error("Erro ao carregar avisos de ausência.");
+  }
+
+  return data || [];
+}
+
+function criarMapaAvisosAusencia(avisos) {
+  const mapa = new Map();
+
+  (avisos || []).forEach((aviso) => {
+    const chave = `${Number(aviso.horario_aula_id)}|${aviso.data_aula}`;
+    mapa.set(chave, aviso);
+  });
+
+  return mapa;
+}
+
+function aplicarAvisosAusencia(horarios, dataISO, mapaAvisos) {
+  return (horarios || []).map((horario) => {
+    const chave = `${Number(horario.id)}|${dataISO}`;
+
+    return {
+      ...horario,
+      aviso_ausencia: mapaAvisos.get(chave) || null
+    };
+  });
+}
+
+function textoSolicitacaoAusencia(tipo) {
+  return tipo === "reposicao"
+    ? "Aluno prefere reposição"
+    : "Gravar esta aula";
+}
+
 /* =====================================================
    RENDER
 ===================================================== */
@@ -374,6 +438,7 @@ function criarCardHorario(item, dataISO, opcoes = {}) {
   const linkGoogleAgenda = montarLinkGoogleAgenda(item, dataISO);
 
   const matriculaId = item.matricula_id;
+  const avisoAusencia = item.aviso_ausencia || null;
 
   let htmlStatus = "";
 
@@ -409,8 +474,66 @@ function criarCardHorario(item, dataISO, opcoes = {}) {
     `
     : "";
 
+  let htmlAvisoAusencia = "";
+
+  if (avisoAusencia) {
+    const tipoTexto = textoSolicitacaoAusencia(
+      avisoAusencia.tipo_solicitacao
+    );
+
+    const justificativa =
+      avisoAusencia.justificativa ||
+      "Justificativa não informada.";
+
+    const fundoAviso =
+      avisoAusencia.tipo_solicitacao === "reposicao"
+        ? "#eef4ff"
+        : "#fff4e5";
+
+    const bordaAviso =
+      avisoAusencia.tipo_solicitacao === "reposicao"
+        ? "#b9ccf5"
+        : "#f6d59a";
+
+    const corAviso =
+      avisoAusencia.tipo_solicitacao === "reposicao"
+        ? "#234a91"
+        : "#7a4b00";
+
+    htmlAvisoAusencia = `
+      <div
+        style="
+          margin-top:11px;
+          padding:10px 12px;
+          border:1px solid ${bordaAviso};
+          background:${fundoAviso};
+          color:${corAviso};
+          border-radius:9px;
+          font-size:12.5px;
+          line-height:1.5;
+        "
+      >
+        <div style="font-weight:800; margin-bottom:4px;">
+          ⚠️ Aluno informou que vai faltar
+        </div>
+
+        <div>
+          <strong>Justificativa:</strong>
+          ${escaparHtml(justificativa)}
+        </div>
+
+        <div style="margin-top:3px;">
+          <strong>Solicitação:</strong>
+          ${escaparHtml(tipoTexto)}
+        </div>
+      </div>
+    `;
+  }
+
   const card = document.createElement("div");
-  card.style.border = "1px solid #f1e4a7";
+  card.style.border = avisoAusencia
+    ? "1px solid #e0b24f"
+    : "1px solid #f1e4a7";
   card.style.background = "#fffdf4";
   card.style.borderRadius = "12px";
   card.style.padding = "12px";
@@ -451,6 +574,8 @@ function criarCardHorario(item, dataISO, opcoes = {}) {
         </a>
       </div>
     </div>
+
+    ${htmlAvisoAusencia}
   `;
 
   const linkDetalhes = card.querySelector(".link-detalhes-aluno");
@@ -552,14 +677,44 @@ async function carregarAgenda() {
   `;
 
   const hojeISO = obterDataHojeLocalISO();
+  const dataFinalISO = obterDataISOComOffset(6);
+
+  /*
+    Carrega de uma vez todos os avisos de ausência
+    que podem aparecer na agenda de hoje e dos
+    próximos dias.
+  */
+  const avisosAusencia = await buscarAvisosAusenciaNoPeriodo(
+    hojeISO,
+    dataFinalISO
+  );
+
+  const mapaAvisosAusencia =
+    criarMapaAvisosAusencia(avisosAusencia);
+
   const hoje = new Date();
   const diaSemanaHoje = hoje.getDay();
 
   const horariosHoje = await buscarHorariosPorDia(diaSemanaHoje);
   const aulasHoje = await buscarAulasRegistradasNaData(hojeISO);
-  const horariosHojeComStatus = aplicarStatusDeRegistro(horariosHoje, aulasHoje);
 
-  renderizarHoje(horariosHojeComStatus, hojeISO);
+  const horariosHojeComStatus =
+    aplicarStatusDeRegistro(
+      horariosHoje,
+      aulasHoje
+    );
+
+  const horariosHojeComAvisos =
+    aplicarAvisosAusencia(
+      horariosHojeComStatus,
+      hojeISO,
+      mapaAvisosAusencia
+    );
+
+  renderizarHoje(
+    horariosHojeComAvisos,
+    hojeISO
+  );
 
   const proximosDias = [];
 
@@ -577,10 +732,17 @@ async function carregarAgenda() {
 
     const horarios = await buscarHorariosPorDia(diaSemana);
 
+    const horariosComAvisos =
+      aplicarAvisosAusencia(
+        horarios,
+        dataISO,
+        mapaAvisosAusencia
+      );
+
     proximosDias.push({
       dataISO,
       diaSemana,
-      horarios
+      horarios: horariosComAvisos
     });
   }
 

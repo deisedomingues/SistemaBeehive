@@ -510,6 +510,191 @@ function montarMateriaModuloAvaliacao(item) {
 }
 
 /* ======================
+   Avisos de ausência
+====================== */
+function montarTextoAusencia(item) {
+  const aluno =
+    item.aluno_nome ||
+    "Um aluno";
+
+  const data =
+    formatarDataBR(
+      item.data_aula
+    );
+
+  const horaInicio =
+    formatarHora(
+      item.hora_inicio
+    );
+
+  const horaFim =
+    formatarHora(
+      item.hora_fim
+    );
+
+  const horario =
+    horaFim
+      ? `${horaInicio} às ${horaFim}`
+      : horaInicio;
+
+  return (
+    `${aluno} informou que não poderá comparecer ` +
+    `à aula de ${data}, das ${horario}.`
+  );
+}
+
+function textoSolicitacaoAusencia(tipo) {
+  if (tipo === "reposicao") {
+    return "O aluno prefere solicitar reposição.";
+  }
+
+  return "O aluno solicitou que a aula seja gravada.";
+}
+
+/* ======================
+   Consultas de avisos de ausência
+====================== */
+async function buscarAvisosAusenciaProfessor() {
+  const hoje = hojeISO();
+
+  const {
+    data: avisos,
+    error
+  } = await supabase
+    .from("aviso_ausencia")
+    .select(`
+      id,
+      aluno_id,
+      matricula_id,
+      horario_aula_id,
+      professor_id,
+      data_aula,
+      hora_inicio,
+      hora_fim,
+      justificativa,
+      tipo_solicitacao,
+      dentro_prazo_reposicao,
+      antecedencia_minutos,
+      status,
+      criado_em
+    `)
+    .eq(
+      "professor_id",
+      professorId
+    )
+    .gte(
+      "data_aula",
+      hoje
+    )
+    .order(
+      "data_aula",
+      { ascending: true }
+    )
+    .order(
+      "hora_inicio",
+      { ascending: true }
+    );
+
+  if (error) {
+    console.error(
+      "Erro ao buscar avisos de ausência:",
+      error
+    );
+
+    throw error;
+  }
+
+  const listaAvisos =
+    avisos || [];
+
+  if (!listaAvisos.length) {
+    return [];
+  }
+
+  const alunosIds = [
+    ...new Set(
+      listaAvisos
+        .map((item) =>
+          Number(item.aluno_id)
+        )
+        .filter(Boolean)
+    )
+  ];
+
+  const mapaAlunos =
+    await buscarAlunosPorIds(
+      alunosIds
+    );
+
+  return listaAvisos.map(
+    (aviso) => {
+      const aluno =
+        mapaAlunos.get(
+          Number(aviso.aluno_id)
+        );
+
+      return {
+        tipo_notificacao:
+          "ausencia",
+
+        notificacao_id:
+          `ausencia_${aviso.id}`,
+
+        aviso_ausencia_id:
+          aviso.id,
+
+        aluno_id:
+          aviso.aluno_id || null,
+
+        aluno_nome:
+          aluno?.nome ||
+          "Aluno não informado",
+
+        matricula_id:
+          aviso.matricula_id || null,
+
+        horario_aula_id:
+          aviso.horario_aula_id || null,
+
+        data_aula:
+          aviso.data_aula || null,
+
+        hora_inicio:
+          aviso.hora_inicio || null,
+
+        hora_fim:
+          aviso.hora_fim || null,
+
+        justificativa:
+          aviso.justificativa || null,
+
+        tipo_solicitacao:
+          aviso.tipo_solicitacao ||
+          "gravacao",
+
+        dentro_prazo_reposicao:
+          Boolean(
+            aviso.dentro_prazo_reposicao
+          ),
+
+        antecedencia_minutos:
+          aviso.antecedencia_minutos ?? null,
+
+        status_aviso:
+          aviso.status ||
+          "pendente",
+
+        criado_em:
+          aviso.criado_em || null,
+
+        ordenacao:
+          `${aviso.data_aula || "0000-00-00"} ${aviso.hora_inicio || "00:00"}`
+      };
+    }
+  );
+}
+
+/* ======================
    Badge
 ====================== */
 function atualizarBadge(total) {
@@ -595,9 +780,10 @@ function renderizarEstadoVazio() {
 
         <p>
           Quando um aluno agendar uma reposição,
-          plantão de dúvidas, aula instrumental
-          ou informar que realizou uma avaliação,
-          o aviso aparecerá nesta tela.
+          plantão de dúvidas, aula instrumental,
+          informar uma ausência ou avisar que
+          realizou uma avaliação, o aviso aparecerá
+          nesta tela.
         </p>
       </div>
     </article>
@@ -1516,15 +1702,18 @@ async function buscarAvaliacoesRealizadasProfessor() {
 async function buscarTodasNotificacoesProfessor() {
   const [
     agendamentos,
-    avaliacoes
+    avaliacoes,
+    ausencias
   ] = await Promise.all([
     buscarAgendamentosAtivosProfessor(),
-    buscarAvaliacoesRealizadasProfessor()
+    buscarAvaliacoesRealizadasProfessor(),
+    buscarAvisosAusenciaProfessor()
   ]);
 
   return [
     ...agendamentos,
-    ...avaliacoes
+    ...avaliacoes,
+    ...ausencias
   ].sort((a, b) => {
     const dataA = String(
       a.ordenacao || ""
@@ -1878,6 +2067,159 @@ function renderizarCardAvaliacao(item) {
   return card;
 }
 
+function renderizarCardAusencia(item) {
+  const card =
+    document.createElement("article");
+
+  card.className =
+    "card-admin card-professor notificacao-professor-card";
+
+  const visto = estaVisto(
+    item.notificacao_id
+  );
+
+  const mensagem =
+    montarTextoAusencia(item);
+
+  const statusVisualHTML = visto
+    ? `
+      <span
+        style="
+          display:inline-flex;
+          padding:4px 9px;
+          border-radius:999px;
+          background:#e8f5e9;
+          color:#1b5e20;
+          font-size:12px;
+          font-weight:bold;
+        "
+      >
+        Visto
+      </span>
+    `
+    : `
+      <span
+        style="
+          display:inline-flex;
+          padding:4px 9px;
+          border-radius:999px;
+          background:#c62828;
+          color:white;
+          font-size:12px;
+          font-weight:bold;
+        "
+      >
+        Novo
+      </span>
+    `;
+
+  const solicitacao =
+    textoSolicitacaoAusencia(
+      item.tipo_solicitacao
+    );
+
+  const justificativaHTML =
+    item.justificativa
+      ? `
+        <p>
+          <strong>Justificativa:</strong>
+          ${escaparHTML(item.justificativa)}
+        </p>
+      `
+      : `
+        <p>
+          <strong>Justificativa:</strong>
+          Não informada.
+        </p>
+      `;
+
+  const antecedenciaHTML =
+    item.antecedencia_minutos !== null
+      ? `
+        <p style="font-size:14px; opacity:0.85;">
+          Aviso enviado com
+          <strong>${escaparHTML(item.antecedencia_minutos)} minuto(s)</strong>
+          de antecedência.
+        </p>
+      `
+      : "";
+
+  card.innerHTML = `
+    <div class="card-admin-icone">
+      ${visto ? "✅" : "⚠️"}
+    </div>
+
+    <div class="card-admin-conteudo">
+
+      <div
+        style="
+          display:flex;
+          align-items:center;
+          gap:8px;
+          flex-wrap:wrap;
+          margin-bottom:4px;
+        "
+      >
+        <h2 style="margin:0;">
+          Aviso de ausência
+        </h2>
+
+        ${statusVisualHTML}
+      </div>
+
+      <p>
+        <strong>
+          ${escaparHTML(mensagem)}
+        </strong>
+      </p>
+
+      ${justificativaHTML}
+
+      <p>
+        <strong>Solicitação:</strong>
+        ${escaparHTML(solicitacao)}
+      </p>
+
+      ${antecedenciaHTML}
+
+      <p
+        style="
+          font-size:14px;
+          opacity:0.9;
+        "
+      >
+        Este aviso continuará aparecendo enquanto o aluno mantiver
+        a informação de ausência. Se ele cancelar o aviso antes da aula,
+        esta notificação desaparecerá automaticamente.
+      </p>
+
+      <div
+        style="
+          display:flex;
+          gap:8px;
+          flex-wrap:wrap;
+          margin-top:12px;
+        "
+      >
+        <button
+          type="button"
+          class="btn-principal btn-marcar-visto"
+          data-notificacao-id="${escaparHTML(item.notificacao_id)}"
+          ${visto ? "disabled" : ""}
+        >
+          ${
+            visto
+              ? "Já visto"
+              : "Marcar como visto"
+          }
+        </button>
+      </div>
+    </div>
+  `;
+
+  return card;
+}
+
 function renderizarNotificacoes(
   notificacoes
 ) {
@@ -1923,10 +2265,30 @@ function renderizarNotificacoes(
   }
 
   notificacoesAtuais.forEach((item) => {
-    const card =
-      item.tipo_notificacao === "avaliacao"
-        ? renderizarCardAvaliacao(item)
-        : renderizarCardAgendamento(item);
+    let card;
+
+    if (
+      item.tipo_notificacao ===
+      "avaliacao"
+    ) {
+      card =
+        renderizarCardAvaliacao(
+          item
+        );
+    } else if (
+      item.tipo_notificacao ===
+      "ausencia"
+    ) {
+      card =
+        renderizarCardAusencia(
+          item
+        );
+    } else {
+      card =
+        renderizarCardAgendamento(
+          item
+        );
+    }
 
     listaNotificacoesProfessor.appendChild(
       card

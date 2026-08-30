@@ -48,7 +48,8 @@ const LIMITE_AULAS = 8;
 
 const DIAS_PARA_PROCURAR = 45;
 
-const PRAZO_REPOSICAO_MINUTOS = 15;
+
+const PRAZO_REPOSICAO_MINUTOS = 10;
 
 /* =====================================================
    4) MENSAGENS
@@ -1100,7 +1101,7 @@ function abrirOpcoes(
 
                 <br><br>
 
-                Como faltam menos de 15 minutos
+                Como faltam menos de 10 minutos
                 para o início da aula, não é mais
                 possível solicitar reposição.
 

@@ -549,6 +549,39 @@ async function buscarTotalAvaliacoesNovasProfessorHome() {
   return avaliacoesNovas.length;
 }
 
+
+/* ======================
+   Avisos de ausência
+====================== */
+
+async function buscarTotalAvisosAusenciaProfessorHome() {
+  const hoje = hojeISOHome();
+
+  const {
+    count,
+    error
+  } = await supabase
+    .from("aviso_ausencia")
+    .select("id", {
+      count: "exact",
+      head: true
+    })
+    .eq("professor_id", professorId)
+    .eq("status", "pendente")
+    .gte("data_aula", hoje);
+
+  if (error) {
+    console.error(
+      "Erro ao buscar avisos de ausência do professor:",
+      error
+    );
+
+    throw error;
+  }
+
+  return Number(count || 0);
+}
+
 /* ======================
    Resumo de notificações
 ====================== */
@@ -563,10 +596,12 @@ async function carregarResumoNotificacoesProfessor() {
   try {
     const [
       totalAgendamentosNovos,
-      totalAvaliacoesNovas
+      totalAvaliacoesNovas,
+      totalAvisosAusencia
     ] = await Promise.all([
       buscarTotalAgendamentosNovosProfessorHome(),
-      buscarTotalAvaliacoesNovasProfessorHome()
+      buscarTotalAvaliacoesNovasProfessorHome(),
+      buscarTotalAvisosAusenciaProfessorHome()
     ]);
 
     const total =
@@ -575,13 +610,16 @@ async function carregarResumoNotificacoesProfessor() {
       ) +
       Number(
         totalAvaliacoesNovas || 0
+      ) +
+      Number(
+        totalAvisosAusencia || 0
       );
 
     atualizarBadgeNotificacoes(total);
 
     if (total === 0) {
       textoCardNotificacoesProfessor.textContent =
-        "Nenhuma nova notificação. Agendamentos e avaliações realizadas aparecerão aqui.";
+        "Nenhuma nova notificação. Agendamentos, avaliações e avisos de ausência aparecerão aqui.";
 
       return;
     }
@@ -604,7 +642,7 @@ async function carregarResumoNotificacoesProfessor() {
     atualizarBadgeNotificacoes(0);
 
     textoCardNotificacoesProfessor.textContent =
-      "Veja novos agendamentos e avaliações informadas como realizadas pelos alunos.";
+      "Veja novos agendamentos, avaliações e avisos de ausência dos alunos.";
   }
 }
 
