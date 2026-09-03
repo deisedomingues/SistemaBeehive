@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Beehive | Notificações Pedagógicas</title>
+
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  />
+</head>
+
+<body>
+
+  <div class="overlay"></div>
+
+  <main class="container home-admin-page">
+
+    <div class="topo-acoes-admin topo-acoes-duplo">
+
+      <a
+        href="home-pedagogico.html"
+        class="link-voltar-admin"
+      >
+        ← Voltar
+      </a>
+
+      <button
+        id="btnSair"
+        class="btn-sair-admin"
+        type="button"
+      >
+        Sair
+      </button>
+
+    </div>
+
+    <img
+      src="images/logo.png"
+      alt="Beehive Escola de Idiomas"
+      class="logo logo-admin-centralizada"
+    >
+
+    <section class="cabecalho-admin-central">
+
+      <h1>
+        Notificações
+      </h1>
+
+      <p class="subtitulo-admin">
+        Acompanhe os avisos de ausência enviados
+        pelos alunos.
+      </p>
+
+    </section>
+
+    <section
+      style="
+        margin-bottom:18px;
+      "
+    >
+
+      <div
+        style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:10px;
+          flex-wrap:wrap;
+        "
+      >
+
+        <div>
+
+          <div
+            style="
+              display:flex;
+              align-items:center;
+              gap:8px;
+              flex-wrap:wrap;
+            "
+          >
+
+            <h2
+              style="
+                margin:0;
+                font-size:18px;
+              "
+            >
+              Avisos de ausência
+            </h2>
+
+            <span
+              id="badgeNotificacoesPedagogico"
+              style="
+                display:none;
+                min-width:22px;
+                height:22px;
+                padding:0 6px;
+                border-radius:999px;
+                background:#c62828;
+                color:#ffffff;
+                font-size:12px;
+                font-weight:700;
+                align-items:center;
+                justify-content:center;
+              "
+            >
+              0
+            </span>
+
+          </div>
+
+          <p
+            id="textoNotificacoesPedagogico"
+            style="
+              margin:6px 0 0;
+              opacity:0.85;
+            "
+          >
+            Carregando notificações...
+          </p>
+
+        </div>
+
+        <div
+          style="
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+          "
+        >
+
+          <button
+            id="btnAtualizarNotificacoesPedagogico"
+            class="btn-secundario"
+            type="button"
+          >
+            Atualizar
+          </button>
+
+          <button
+            id="btnMarcarTodasVistas"
+            class="btn-principal"
+            type="button"
+          >
+            Marcar todas como vistas
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <section
+      id="listaNotificacoesPedagogico"
+      class="painel-admin-cards"
+      style="
+        grid-template-columns:1fr;
+      "
+    >
+
+      <article
+        class="
+          card-admin
+          card-professor
+          notificacao-professor-card
+        "
+      >
+
+        <div class="card-admin-icone">
+          ⏳
+        </div>
+
+        <div class="card-admin-conteudo">
+
+          <h2>
+            Carregando...
+          </h2>
+
+          <p>
+            Aguarde enquanto buscamos os avisos
+            de ausência dos alunos.
+          </p>
+
+        </div>
+
+      </article>
+
+    </section>
+
+  </main>
+
+  <script
+    type="module"
+    src="js/notificacao-pedagogico.js"
+  ></script>
+
+</body>
+
+</html>
