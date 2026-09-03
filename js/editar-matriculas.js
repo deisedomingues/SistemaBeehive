@@ -77,7 +77,7 @@ function mostrarMensagem(texto, ok = true) {
   setTimeout(() => {
     msg.style.display = "none";
     msg.textContent = "";
-  }, 2600);
+  }, 4000);
 }
 
 function criarOption(value, label) {
@@ -320,6 +320,85 @@ function preencherProfessoresPorMateria(materiaId, professorAtual = "") {
     });
 
   professorSel.value = professorAtual || "";
+}
+
+// =====================
+// Sincronização matrícula x horários
+// =====================
+async function sincronizarHorariosAtivosDaMatricula(
+  matriculaId,
+  professorId,
+  moduloId,
+  exigirHorario = true
+) {
+  const { data, error } = await supabase
+    .from("aluno_horario_aula")
+    .update({
+      professor_id: Number(professorId),
+      modulo_id: Number(moduloId)
+    })
+    .eq("matricula_id", Number(matriculaId))
+    .eq("ativo", true)
+    .select("id, matricula_id, professor_id, modulo_id");
+
+  if (error) {
+    console.error("Erro ao sincronizar horários da matrícula:", error);
+    return {
+      ok: false,
+      quantidade: 0,
+      erro: error
+    };
+  }
+
+  const quantidade = Array.isArray(data) ? data.length : 0;
+
+  if (exigirHorario && quantidade === 0) {
+    console.error(
+      `Nenhum horário ativo foi atualizado para a matrícula ${matriculaId}. ` +
+      "Verifique as políticas RLS da tabela aluno_horario_aula."
+    );
+
+    return {
+      ok: false,
+      quantidade: 0,
+      erro: null
+    };
+  }
+
+  console.log(
+    `Horários sincronizados para a matrícula ${matriculaId}:`,
+    data || []
+  );
+
+  return {
+    ok: true,
+    quantidade,
+    erro: null
+  };
+}
+
+async function restaurarDadosPrincipaisDaMatricula(
+  matriculaId,
+  moduloIdAnterior,
+  professorIdAnterior
+) {
+  const { error } = await supabase
+    .from("matricula")
+    .update({
+      modulo_id: Number(moduloIdAnterior),
+      professor_id: Number(professorIdAnterior)
+    })
+    .eq("id", Number(matriculaId));
+
+  if (error) {
+    console.error(
+      "Não foi possível restaurar professor/módulo anteriores da matrícula:",
+      error
+    );
+    return false;
+  }
+
+  return true;
 }
 
 // =====================
@@ -840,6 +919,9 @@ formEditar.addEventListener("submit", async (e) => {
 
   const hojeISO = new Date().toISOString().slice(0, 10);
 
+  // =====================
+  // Novo curso
+  // =====================
   if (modoCriacao) {
     const materiaId = materiaSel.value;
     const moduloId = moduloSel.value;
@@ -918,6 +1000,12 @@ formEditar.addEventListener("submit", async (e) => {
     return;
   }
 
+  const moduloAnteriorId = matriculaAtual.modulo?.id;
+  const professorAnteriorId = matriculaAtual.professor?.id;
+
+  // =====================
+  // Rematrícula
+  // =====================
   if (modoRematriculaEdicao) {
     const { error } = await supabase
       .from("matricula")
@@ -939,7 +1027,33 @@ formEditar.addEventListener("submit", async (e) => {
       return;
     }
 
-    mostrarMensagem("Rematrícula salva com sucesso.");
+    /*
+      Na rematrícula, pode acontecer de não existir nenhum horário ativo
+      ainda. Por isso não bloqueamos a operação caso a quantidade seja zero,
+      mas, se houver horários ativos, eles serão sincronizados.
+    */
+    const sync = await sincronizarHorariosAtivosDaMatricula(
+      matriculaAtual.id,
+      novoProfessorId,
+      novoModuloId,
+      false
+    );
+
+    if (!sync.ok) {
+      console.error("Falha ao sincronizar horários na rematrícula:", sync);
+
+      mostrarMensagem(
+        "A rematrícula foi salva, mas houve erro ao sincronizar os horários. Verifique o console.",
+        false
+      );
+      return;
+    }
+
+    mostrarMensagem(
+      sync.quantidade > 0
+        ? `Rematrícula salva e ${sync.quantidade} horário(s) sincronizado(s).`
+        : "Rematrícula salva. Não havia horários ativos para sincronizar."
+    );
 
     const midAtual = matriculaAtual.id;
 
@@ -962,6 +1076,9 @@ formEditar.addEventListener("submit", async (e) => {
     return;
   }
 
+  // =====================
+  // Edição normal
+  // =====================
   const { error } = await supabase
     .from("matricula")
     .update({
@@ -979,7 +1096,48 @@ formEditar.addEventListener("submit", async (e) => {
     return;
   }
 
-  mostrarMensagem("Alterações salvas.");
+  /*
+    A agenda do professor usa aluno_horario_aula.professor_id.
+    Portanto, mudar apenas matricula.professor_id deixa os dados inconsistentes.
+    Aqui sincronizamos obrigatoriamente todos os horários ATIVOS da matrícula.
+  */
+  const sync = await sincronizarHorariosAtivosDaMatricula(
+    matriculaAtual.id,
+    novoProfessorId,
+    novoModuloId,
+    true
+  );
+
+  if (!sync.ok) {
+    /*
+      A matrícula já foi alterada, mas os horários não.
+      Tentamos restaurar professor e módulo anteriores para não deixar
+      matrícula e agenda apontando para professores diferentes.
+    */
+    const restaurou = await restaurarDadosPrincipaisDaMatricula(
+      matriculaAtual.id,
+      moduloAnteriorId,
+      professorAnteriorId
+    );
+
+    if (restaurou) {
+      mostrarMensagem(
+        "Não foi possível atualizar os horários do aluno. A alteração de professor/módulo foi desfeita. Verifique a política RLS de aluno_horario_aula.",
+        false
+      );
+    } else {
+      mostrarMensagem(
+        "ATENÇÃO: a matrícula foi alterada, mas os horários não foram atualizados e não foi possível desfazer automaticamente. Verifique a tabela aluno_horario_aula.",
+        false
+      );
+    }
+
+    return;
+  }
+
+  mostrarMensagem(
+    `Alterações salvas. ${sync.quantidade} horário(s) sincronizado(s) com a matrícula.`
+  );
 
   const midAtual = matriculaAtual.id;
 
