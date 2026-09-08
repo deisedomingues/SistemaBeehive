@@ -19,6 +19,7 @@ const eventosConfirmadosSemParticipacaoEl = document.getElementById(
 
 const filtroBusca = document.getElementById("filtroBusca");
 const filtroSituacao = document.getElementById("filtroSituacao");
+const btnLimparFiltros = document.getElementById("btnLimparFiltros");
 
 /* =========================================================
    ESTADO
@@ -568,6 +569,24 @@ async function cancelarEvento(eventoId) {
 }
 
 /* =========================================================
+   ORDENAÇÃO
+========================================================= */
+function obterTimestampEvento(evento) {
+  if (!evento?.data_evento) {
+    return 0;
+  }
+
+  const hora = evento.hora_evento || "00:00:00";
+  const dataHora = new Date(`${evento.data_evento}T${hora}`);
+
+  if (Number.isNaN(dataHora.getTime())) {
+    return 0;
+  }
+
+  return dataHora.getTime();
+}
+
+/* =========================================================
    RENDER
 ========================================================= */
 function montarDetalhesEvento(evento) {
@@ -754,8 +773,21 @@ function montarDetalhesEvento(evento) {
 function renderizarEventos() {
   const lista = obterEventosFiltrados();
 
-  const futuros = lista.filter((evento) => obterSituacaoEvento(evento) === "ativo");
-  const historico = lista.filter((evento) => obterSituacaoEvento(evento) !== "ativo");
+  /*
+    Próximos eventos:
+    do mais próximo para o mais distante.
+  */
+  const futuros = lista
+    .filter((evento) => obterSituacaoEvento(evento) === "ativo")
+    .sort((a, b) => obterTimestampEvento(a) - obterTimestampEvento(b));
+
+  /*
+    Histórico:
+    ordem decrescente, portanto o evento mais recente aparece no topo.
+  */
+  const historico = lista
+    .filter((evento) => obterSituacaoEvento(evento) !== "ativo")
+    .sort((a, b) => obterTimestampEvento(b) - obterTimestampEvento(a));
 
   if (!gridEventosFuturos || !listaHistoricoEventos) {
     return;
@@ -878,4 +910,22 @@ if (filtroBusca) {
 
 if (filtroSituacao) {
   filtroSituacao.addEventListener("change", renderizarEventos);
+}
+
+if (btnLimparFiltros) {
+  btnLimparFiltros.addEventListener("click", () => {
+    if (filtroBusca) {
+      filtroBusca.value = "";
+    }
+
+    if (filtroSituacao) {
+      filtroSituacao.value = "todos";
+    }
+
+    renderizarEventos();
+
+    if (filtroBusca) {
+      filtroBusca.focus();
+    }
+  });
 }

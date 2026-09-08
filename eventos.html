@@ -6,12 +6,24 @@
   <link rel="stylesheet" href="css/style.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
+
 <body>
 
   <div class="overlay"></div>
 
   <main class="container container-eventos-admin">
+
+    <!-- VOLTAR NO TOPO -->
+    <a
+      href="home-pedagogico.html"
+      class="link-voltar"
+      style="display:inline-block; margin-bottom:16px;"
+    >
+      ← Voltar
+    </a>
+
     <h1 style="margin-bottom: 8px;">Eventos</h1>
+
     <p style="margin-bottom: 18px; opacity: 0.9;">
       Visualize os eventos cadastrados, acompanhe confirmações e crie novos eventos.
     </p>
@@ -20,15 +32,28 @@
 
     <!-- AÇÕES PRINCIPAIS -->
     <section class="card" style="margin-bottom: 16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div
+        style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:12px;
+          flex-wrap:wrap;
+        "
+      >
         <div>
           <h2 style="margin-bottom:6px;">Central de eventos</h2>
+
           <p style="margin:0; opacity:0.85;">
             Acompanhe eventos ativos, encerrados, cancelados e registros de participação.
           </p>
         </div>
 
-        <a href="criar-evento.html" class="btn" style="text-decoration:none; display:inline-block;">
+        <a
+          href="criar-evento.html"
+          class="btn"
+          style="text-decoration:none; display:inline-block;"
+        >
           + Criar novo evento
         </a>
       </div>
@@ -36,6 +61,7 @@
 
     <!-- RESUMO -->
     <section class="resumo-eventos-topo">
+
       <div class="card card-resumo-evento">
         <h3>Total</h3>
         <p id="totalEventos">0</p>
@@ -55,34 +81,65 @@
         <h3>Confirmados sem participação</h3>
         <p id="eventosConfirmadosSemParticipacao">0</p>
       </div>
+
     </section>
 
     <!-- FILTROS -->
     <section class="card" style="margin-bottom: 20px;">
-      <h2 style="margin-bottom: 12px;">Filtros</h2>
+
+      <div
+        style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:12px;
+          flex-wrap:wrap;
+          margin-bottom:12px;
+        "
+      >
+        <h2 style="margin:0;">Filtros</h2>
+
+        <button
+          type="button"
+          id="btnLimparFiltros"
+          class="btn"
+          style="width:auto;"
+        >
+          Limpar filtros
+        </button>
+      </div>
 
       <div class="filtros-eventos-admin">
+
         <label>
-          Buscar por título
-          <input type="text" id="filtroBusca" placeholder="Ex: imersão, oficina, workshop..." />
+          Buscar
+          <input
+            type="search"
+            id="filtroBusca"
+            placeholder="Título, tipo, professor ou local..."
+          />
         </label>
 
         <label>
           Situação
           <select id="filtroSituacao">
             <option value="todos">Todos</option>
-            <option value="ativos">Somente ativos/futuros</option>
-            <option value="encerrados">Somente encerrados/cancelados</option>
+            <option value="ativos">Somente ativos / futuros</option>
+            <option value="encerrados">Encerrados ou cancelados</option>
           </select>
         </label>
+
       </div>
     </section>
 
     <!-- FUTUROS -->
     <section class="secao-eventos-admin">
+
       <div class="topo-secao-eventos-admin">
         <h2>Próximos eventos</h2>
-        <p>Cards compactos com as ações principais.</p>
+        <p>
+          Os eventos mais próximos aparecem primeiro.
+        </p>
       </div>
 
       <div id="gridEventosFuturos" class="grid-eventos-admin">
@@ -90,13 +147,17 @@
           <p style="margin:0;">Carregando eventos...</p>
         </div>
       </div>
+
     </section>
 
     <!-- HISTÓRICO -->
     <section class="secao-eventos-admin">
+
       <div class="topo-secao-eventos-admin">
         <h2>Histórico</h2>
-        <p>Eventos encerrados ou cancelados. Clique em “Ver detalhes” para expandir.</p>
+        <p>
+          Os eventos mais recentes aparecem primeiro. Clique em “Ver mais” para consultar os detalhes.
+        </p>
       </div>
 
       <div id="listaHistoricoEventos" class="lista-historico-eventos">
@@ -104,9 +165,18 @@
           <p style="margin:0;">Carregando histórico...</p>
         </div>
       </div>
+
     </section>
 
-    <a href="home-pedagogico.html" class="link-voltar">← Voltar</a>
+    <!-- VOLTAR TAMBÉM NO FINAL -->
+    <a
+      href="home-pedagogico.html"
+      class="link-voltar"
+      style="display:inline-block; margin-top:20px;"
+    >
+      ← Voltar
+    </a>
+
   </main>
 
   <script type="module" src="js/eventos.js"></script>
