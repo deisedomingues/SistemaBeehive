@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Criar Comunicados | Beehive</title>
+  <title>Gerenciar Comunicados | Beehive</title>
 
   <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -17,85 +17,229 @@
     </a>
 
     <section class="cabecalho-pagina">
-      <h1>Criar comunicado</h1>
+      <h1>Gerenciar comunicados</h1>
       <p class="subtitulo">
-        Publique avisos para todos os alunos ou para públicos específicos.
+        Crie, edite e acompanhe os avisos publicados para os alunos.
       </p>
     </section>
 
-    <form id="form-comunicado" class="form">
-
-      <label>
-        Título do comunicado
-        <input type="text" id="titulo" required placeholder="Ex: Aula especial de música" />
-      </label>
-
-      <label>
-        Texto do comunicado
-        <textarea id="texto" rows="6" required placeholder="Ex: Este mês teremos aula de música. Participem!"></textarea>
-      </label>
-
-      <label>
-        Público-alvo
-        <select id="publicoAlvo" required>
-          <option value="todos">Todos os alunos</option>
-          <option value="materia">Alunos de uma matéria</option>
-          <option value="modulo_exato">Alunos de um módulo específico</option>
-          <option value="modulo_a_partir">Alunos a partir de um módulo</option>
-        </select>
-      </label>
-
-      <div id="blocoMateria" style="display:none;">
-        <label>
-          Matéria
-          <select id="materiaId">
-            <option value="">Selecione a matéria</option>
-          </select>
-        </label>
+    <!-- RESUMO -->
+    <section
+      class="card"
+      style="
+        margin-bottom:24px;
+        display:grid;
+        grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+        gap:12px;
+      "
+    >
+      <div>
+        <strong id="resumoAtivos" style="font-size:1.4rem;">0</strong>
+        <div class="subtitulo">Ativos</div>
       </div>
 
-      <div id="blocoModulo" style="display:none;">
-        <label>
-          Módulo
-          <select id="moduloId">
-            <option value="">Selecione o módulo</option>
-          </select>
-        </label>
-
-        <p id="textoAjudaModulo" class="subtitulo"></p>
+      <div>
+        <strong id="resumoAgendados" style="font-size:1.4rem;">0</strong>
+        <div class="subtitulo">Com expiração</div>
       </div>
 
-      <label>
-        Imagem do comunicado, opcional
-        <input type="file" id="imagem" accept="image/*" />
-      </label>
+      <div>
+        <strong id="resumoHistorico" style="font-size:1.4rem;">0</strong>
+        <div class="subtitulo">No histórico</div>
+      </div>
+    </section>
 
-      <label>
-        Data de expiração, opcional
-        <input type="date" id="dataExpiracao" />
-      </label>
-
-      <label style="display:flex; flex-direction:row; gap:8px; align-items:center;">
-        <input type="checkbox" id="ativo" checked style="width:auto; margin:0;" />
-        Comunicado ativo
-      </label>
-
-      <button type="submit" class="btn">
-        Salvar comunicado
-      </button>
-
-      <div id="msg" style="display:none; margin-top:12px;"></div>
-    </form>
-
-    <section style="margin-top:32px;">
-      <div class="cabecalho-pagina">
-        <h2>Comunicados ativos</h2>
-        <p class="subtitulo">
-          Veja os comunicados publicados e, quando disponível, quem visualizou.
+    <!-- FORMULÁRIO -->
+    <section class="card" style="margin-bottom:28px;">
+      <div class="cabecalho-pagina" style="margin-bottom:18px;">
+        <h2 id="tituloFormulario">Novo comunicado</h2>
+        <p id="subtituloFormulario" class="subtitulo">
+          Publique um aviso para todos os alunos ou para um público específico.
         </p>
       </div>
 
-      <div id="listaComunicadosAtivos"></div>
+      <form id="form-comunicado" class="form">
+
+        <label>
+          Título do comunicado
+          <input
+            type="text"
+            id="titulo"
+            maxlength="120"
+            required
+            placeholder="Ex: Recesso escolar"
+          />
+        </label>
+
+        <label>
+          Texto do comunicado
+          <textarea
+            id="texto"
+            rows="6"
+            maxlength="3000"
+            required
+            placeholder="Digite aqui a mensagem que os alunos receberão."
+          ></textarea>
+        </label>
+
+        <div
+          id="contadorTexto"
+          class="subtitulo"
+          style="text-align:right; margin-top:-8px;"
+        >
+          0 / 3000
+        </div>
+
+        <label>
+          Público-alvo
+          <select id="publicoAlvo" required>
+            <option value="todos">Todos os alunos</option>
+            <option value="materia">Alunos de uma matéria</option>
+            <option value="modulo_exato">Alunos de um módulo específico</option>
+            <option value="modulo_a_partir">Alunos a partir de um módulo</option>
+          </select>
+        </label>
+
+        <div id="blocoMateria" style="display:none;">
+          <label>
+            Matéria
+            <select id="materiaId">
+              <option value="">Selecione a matéria</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="blocoModulo" style="display:none;">
+          <label>
+            Módulo
+            <select id="moduloId">
+              <option value="">Selecione o módulo</option>
+            </select>
+          </label>
+
+          <p id="textoAjudaModulo" class="subtitulo"></p>
+        </div>
+
+        <label>
+          Imagem do comunicado, opcional
+          <input type="file" id="imagem" accept="image/*" />
+        </label>
+
+        <div id="blocoImagemAtual" style="display:none; margin-top:-4px;">
+          <p class="subtitulo" style="margin-bottom:8px;">
+            Imagem atual
+          </p>
+
+          <img
+            id="previewImagemAtual"
+            src=""
+            alt="Imagem atual do comunicado"
+            style="
+              display:block;
+              width:min(100%, 360px);
+              max-height:240px;
+              object-fit:cover;
+              border-radius:12px;
+              margin-bottom:10px;
+            "
+          />
+
+          <button
+            type="button"
+            id="btnRemoverImagem"
+            class="btn"
+            style="width:auto;"
+          >
+            Remover imagem
+          </button>
+        </div>
+
+        <label>
+          Data de expiração, opcional
+          <input type="date" id="dataExpiracao" />
+        </label>
+
+        <p class="subtitulo" style="margin-top:-8px;">
+          Ao expirar, o comunicado deixa de aparecer para o aluno, mas permanece no histórico.
+        </p>
+
+        <label style="display:flex; flex-direction:row; gap:8px; align-items:center;">
+          <input
+            type="checkbox"
+            id="ativo"
+            checked
+            style="width:auto; margin:0;"
+          />
+          Comunicado ativo
+        </label>
+
+        <div
+          style="
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+            align-items:center;
+          "
+        >
+          <button type="submit" id="btnSalvar" class="btn">
+            Publicar comunicado
+          </button>
+
+          <button
+            type="button"
+            id="btnCancelarEdicao"
+            class="btn"
+            style="display:none; width:auto;"
+          >
+            Cancelar edição
+          </button>
+        </div>
+
+        <div id="msg" style="display:none; margin-top:12px;"></div>
+      </form>
+    </section>
+
+    <!-- LISTAGEM -->
+    <section>
+      <div class="cabecalho-pagina">
+        <h2>Comunicados publicados</h2>
+        <p class="subtitulo">
+          Consulte os avisos atuais e o histórico de publicações.
+        </p>
+      </div>
+
+      <!-- FILTROS -->
+      <div
+        class="card"
+        style="
+          margin-bottom:16px;
+          display:grid;
+          grid-template-columns:minmax(180px, 1fr) minmax(160px, 220px);
+          gap:12px;
+          align-items:end;
+        "
+      >
+        <label style="margin:0;">
+          Buscar
+          <input
+            type="search"
+            id="buscaComunicado"
+            placeholder="Digite parte do título ou texto"
+          />
+        </label>
+
+        <label style="margin:0;">
+          Exibir
+          <select id="filtroStatus">
+            <option value="ativos">Ativos</option>
+            <option value="todos">Todos</option>
+            <option value="expirados">Expirados</option>
+            <option value="inativos">Desativados</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="listaComunicados"></div>
     </section>
 
   </main>
