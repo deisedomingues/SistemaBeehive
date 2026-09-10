@@ -3,522 +3,261 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Beehive Idiomas — inglês e espanhol com aulas ao vivo, acompanhamento próximo e organização digital para o aluno." />
+  <meta name="theme-color" content="#f5c842" />
 
-  <title>Beehive Idiomas | Escola de Idiomas</title>
+  <title>Beehive Idiomas | Inglês e Espanhol</title>
 
-  <link rel="stylesheet" href="css/apresentacao.css" />
-
+  <link rel="stylesheet" href="css/apresentacao.css?v=20260910-3" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 
-<body class="pagina-apresentacao-bee">
-
-  <nav class="navbar-apresentacao">
-    <div class="nav-conteudo">
-
-      <a href="#inicio" class="nav-logo-area">
+<body>
+  <nav class="site-nav" aria-label="Navegação principal">
+    <div class="nav-inner">
+      <a href="#inicio" class="brand" aria-label="Beehive Idiomas - início">
         <img src="images/logo.png" alt="Beehive Idiomas">
-
-        <div class="nav-logo-texto">
-          <strong>Beehive Idiomas</strong>
-          <small>Escola de Idiomas</small>
-        </div>
+        <span class="brand-copy">
+          <strong>Beehive</strong>
+          <small>Idiomas</small>
+        </span>
       </a>
 
-      <button class="menu-toggle-apresentacao" id="menuToggleApresentacao" aria-label="Abrir menu">
-        <i class="fa-solid fa-bars"></i>
+      <button class="menu-toggle" id="menuToggleApresentacao" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuApresentacao">
+        <span></span><span></span>
       </button>
 
-      <ul class="menu-apresentacao" id="menuApresentacao">
-        <li><a href="#quem-somos">Quem somos</a></li>
-        <li><a href="#cursos">Cursos</a></li>
-        <li><a href="#diferenciais">Diferenciais</a></li>
-        <li><a href="#empresas">Empresas</a></li>
-        <li><a href="#contato">Contato</a></li>
-        <li><a href="index.html" class="btn-login-topo">Fazer login</a></li>
-      </ul>
-
+      <div class="nav-links" id="menuApresentacao">
+        <a href="#sobre">A Beehive</a>
+        <a href="#cursos">Cursos</a>
+        <a href="#plataforma">Área do aluno</a>
+        <a href="#contato">Contato</a>
+        <a href="index.html" class="nav-login">Entrar na área do aluno <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
     </div>
   </nav>
 
-  <header class="hero-apresentacao" id="inicio">
-    <div class="hero-conteudo">
+  <header class="hero" id="inicio">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow">INGLÊS • ESPANHOL • AULAS AO VIVO</p>
 
-      <div class="hero-texto">
         <h1>
-          Idiomas para quem quer aprender com leveza, prática e acompanhamento.
+          Idioma se aprende
+          <span>em movimento.</span>
         </h1>
 
-        <p>
-          A Beehive Idiomas oferece cursos de inglês e espanhol com aulas ao vivo,
-          materiais de apoio e uma área do aluno pensada para organizar a rotina de estudos.
+        <p class="hero-lead">
+          Aulas próximas, acompanhamento de verdade e uma rotina organizada para você aprender com mais confiança — e menos complicação.
         </p>
 
-        <div class="botoes-hero">
-          <a href="#" target="_blank" class="btn-apresentacao btn-primario-bee" id="btnWhatsappTopo">
+        <div class="hero-actions">
+          <a href="#" class="button button-dark" id="btnWhatsappTopo" target="_blank" rel="noopener">
             <i class="fa-brands fa-whatsapp"></i>
-            Falar no WhatsApp
+            Falar com a Beehive
           </a>
 
-          <a href="#" target="_blank" class="btn-apresentacao btn-secundario-bee" id="btnOrcamento">
-            <i class="fa-solid fa-file-lines"></i>
-            Solicitar orçamento
+          <a href="#cursos" class="text-link">
+            Ver os cursos
+            <span aria-hidden="true">↘</span>
           </a>
-        </div>
-
-        <div class="mini-info-hero">
-          <span><i class="fa-solid fa-check"></i> Inglês</span>
-          <span><i class="fa-solid fa-check"></i> Espanhol</span>
-          <span><i class="fa-solid fa-check"></i> Aulas ao vivo</span>
-          <span><i class="fa-solid fa-check"></i> Área do aluno</span>
         </div>
       </div>
 
-      <div class="hero-card-visual">
-        <img src="images/logo.png" alt="Logo Beehive Idiomas" class="logo-grande">
-
-        <div class="card-destaque-hero">
-          <i class="fa-solid fa-bee"></i>
-          <h2>Bem-vindo(a) à colmeia!</h2>
-          <p>
-            Um ambiente de aprendizado acolhedor para desenvolver comunicação,
-            confiança e autonomia em outro idioma.
-          </p>
+      <div class="hero-brand-art" aria-hidden="true">
+        <span class="hero-word">BEE</span>
+        <div class="bee-flight-path path-one"></div>
+        <div class="bee-flight-path path-two"></div>
+        <div class="hex hex-a"></div>
+        <div class="hex hex-b"></div>
+        <div class="hex hex-c"></div>
+        <img src="images/bee-hero.svg" alt="" class="hero-bee">
+        <div class="hero-stamp">
+          <strong>B!</strong>
+          <span>LEARN.<br>MOVE.<br>CONNECT.</span>
         </div>
       </div>
-
     </div>
+
+    <a class="hero-scroll" href="#sobre" aria-label="Ir para a próxima seção">
+      <span>DESCUBRA</span>
+      <i class="fa-solid fa-arrow-down"></i>
+    </a>
   </header>
 
   <main>
-
-    <section class="section-apresentacao" id="quem-somos">
-      <div class="section-header-apresentacao">
-        <span>Sobre a escola</span>
-        <h2>Quem somos</h2>
-        <p>
-          Conheça a proposta da Beehive Idiomas e a forma como acompanhamos cada aluno.
-        </p>
-      </div>
-
-      <div class="quem-somos-box">
-
-        <div class="quem-somos-imagem"></div>
-
-        <div class="quem-somos-texto">
-          <h3>Ensino próximo, organizado e conectado à rotina do aluno.</h3>
-
-          <p>
-            Fundada em [ANO], a Beehive Idiomas nasceu com o propósito de oferecer
-            um ensino de idiomas mais humano, acessível e eficiente.
-          </p>
-
-          <p>
-            Trabalhamos com acompanhamento individual, aulas ao vivo, materiais de apoio
-            e recursos digitais para que o aluno tenha mais clareza sobre sua evolução.
-          </p>
-
-          <ul class="lista-diferenciais">
-            <li>
-              <i class="fa-solid fa-circle-check"></i>
-              Acompanhamento próximo durante a jornada de aprendizado.
-            </li>
-
-            <li>
-              <i class="fa-solid fa-circle-check"></i>
-              Aulas planejadas conforme nível, objetivo e rotina.
-            </li>
-
-            <li>
-              <i class="fa-solid fa-circle-check"></i>
-              Sistema próprio com calendário, materiais, avaliações e avisos.
-            </li>
-          </ul>
-        </div>
-
+    <section class="ticker" aria-label="Destaques da escola">
+      <div class="ticker-track">
+        <span>INGLÊS</span><b>✦</b><span>ESPANHOL</span><b>✦</b><span>AULAS AO VIVO</span><b>✦</b><span>ACOMPANHAMENTO</span><b>✦</b><span>ÁREA DO ALUNO</span><b>✦</b>
+        <span>INGLÊS</span><b>✦</b><span>ESPANHOL</span><b>✦</b><span>AULAS AO VIVO</span><b>✦</b><span>ACOMPANHAMENTO</span><b>✦</b><span>ÁREA DO ALUNO</span><b>✦</b>
       </div>
     </section>
 
-    <section class="section-apresentacao" id="cursos">
-      <div class="section-header-apresentacao">
-        <span>Nossos cursos</span>
-        <h2>Inglês e espanhol para diferentes objetivos</h2>
-        <p>
-          Cursos para quem está começando, quer continuar evoluindo ou precisa desenvolver
-          mais segurança para se comunicar.
-        </p>
+    <section class="about section-shell" id="sobre">
+      <div class="about-intro">
+        <p class="eyebrow">A BEEHIVE</p>
+        <h2>Aprender bem começa por se sentir à vontade para tentar.</h2>
       </div>
 
-      <div class="cursos-grid">
+      <div class="about-detail">
+        <p class="about-big-text">
+          Aqui, o idioma não fica preso ao material didático. Ele entra na conversa, na rotina e nos objetivos de cada aluno.
+        </p>
 
-        <article class="curso-card">
-          <h3>Inglês</h3>
-
-          <p>
-            Curso voltado ao desenvolvimento gradual da comunicação, vocabulário,
-            compreensão e prática do idioma.
-          </p>
-
-          <div class="curso-tags">
-            <span>Iniciante</span>
-            <span>Intermediário</span>
-            <span>Avançado</span>
-            <span>Conversação</span>
+        <div class="about-notes">
+          <div>
+            <strong>Aulas ao vivo</strong>
+            <p>Contato direto com professores para praticar, perguntar, corrigir e evoluir.</p>
           </div>
-        </article>
-
-        <article class="curso-card">
-          <h3>Espanhol</h3>
-
-          <p>
-            Aprendizado com abordagem prática para desenvolver fala, escrita,
-            compreensão e confiança em situações reais.
-          </p>
-
-          <div class="curso-tags">
-            <span>Iniciante</span>
-            <span>Intermediário</span>
-            <span>Conversação</span>
-            <span>Prática guiada</span>
+          <div>
+            <strong>Acompanhamento próximo</strong>
+            <p>Uma jornada com orientação e clareza sobre o que vem depois.</p>
           </div>
-        </article>
-
+          <div>
+            <strong>Organização digital</strong>
+            <p>Agenda, materiais, avisos, eventos e avaliações reunidos em um mesmo ambiente.</p>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="section-apresentacao" id="diferenciais">
-      <div class="section-header-apresentacao">
-        <span>Por que escolher a Beehive?</span>
-        <h2>Nossos diferenciais</h2>
-        <p>
-          Recursos que tornam a experiência do aluno mais clara, organizada e completa.
-        </p>
-      </div>
+    <section class="courses" id="cursos">
+      <div class="section-shell courses-shell">
+        <div class="courses-heading">
+          <p class="eyebrow">CURSOS</p>
+          <h2>Do primeiro “hello” à conversa que flui.</h2>
+          <p>Escolha o idioma. A Beehive acompanha o caminho.</p>
+        </div>
 
-      <div class="grid-cards">
+        <div class="course-lines">
+          <article class="course-line">
+            <div class="course-index">01</div>
+            <div class="course-title">
+              <span>EN</span>
+              <h3>Inglês</h3>
+            </div>
+            <p>Comunicação, vocabulário, compreensão e prática em diferentes níveis.</p>
+            <div class="course-levels">Iniciante · Intermediário · Avançado · Conversação</div>
+          </article>
 
-        <article class="card-apresentacao">
-          <i class="fa-solid fa-chalkboard-user"></i>
-          <h3>Aulas ao vivo</h3>
-          <p>
-            Encontros com professores preparados para orientar, corrigir e acompanhar
-            o desenvolvimento do aluno.
-          </p>
-        </article>
-
-        <article class="card-apresentacao">
-          <i class="fa-solid fa-laptop"></i>
-          <h3>Área do aluno</h3>
-          <p>
-            Acesso a calendário, aulas ao vivo, playlist, materiais de estudo,
-            avaliações, eventos e comunicados.
-          </p>
-        </article>
-
-        <article class="card-apresentacao">
-          <i class="fa-solid fa-calendar-check"></i>
-          <h3>Organização acadêmica</h3>
-          <p>
-            Acompanhamento de presenças, reposições, avisos importantes e evolução
-            dentro do curso.
-          </p>
-        </article>
-
+          <article class="course-line course-line-dark">
+            <div class="course-index">02</div>
+            <div class="course-title">
+              <span>ES</span>
+              <h3>Espanhol</h3>
+            </div>
+            <p>Fala, escrita e compreensão com prática guiada e acompanhamento contínuo.</p>
+            <div class="course-levels">Iniciante · Intermediário · Conversação · Prática guiada</div>
+          </article>
+        </div>
       </div>
     </section>
 
-    <section class="section-apresentacao section-empresas" id="empresas">
-      <div class="section-header-apresentacao">
-        <span>Parcerias e convênios</span>
-        <h2>Alunos de empresas parceiras já aprendem com a Beehive</h2>
-        <p>
-          A escola também atende colaboradores de empresas parceiras, com uma jornada
-          de aprendizado organizada e acessível.
+    <section class="platform" id="plataforma">
+      <div class="section-shell platform-copy">
+        <div>
+          <p class="eyebrow">EXPERIÊNCIA DO ALUNO</p>
+          <h2>Uma escola organizada também fora da sala de aula.</h2>
+        </div>
+
+        <p class="platform-lead">
+          A Beehive conta com um sistema próprio. O aluno entra e encontra o que precisa sem depender de mensagens espalhadas ou várias ferramentas diferentes.
         </p>
       </div>
 
-      <div
-        class="empresas-faixa"
-        style="
-          display: flex !important;
-          flex-direction: row !important;
-          flex-wrap: nowrap !important;
-          justify-content: center !important;
-          align-items: center !important;
-          gap: 10px !important;
-          max-width: 520px !important;
-          margin: 22px auto 0 !important;
-          overflow: hidden !important;
-        "
-      >
-
-        <div
-          class="empresa-logo-card"
-          style="
-            width: 66px !important;
-            height: 42px !important;
-            min-width: 66px !important;
-            max-width: 66px !important;
-            min-height: 42px !important;
-            max-height: 42px !important;
-            padding: 6px !important;
-            margin: 0 !important;
-            background: #ffffff !important;
-            border: 1px solid rgba(217, 154, 0, 0.18) !important;
-            border-radius: 10px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            overflow: hidden !important;
-          "
-        >
-          <img
-            src="images/logo.png"
-            alt="Empresa parceira"
-            style="
-              width: auto !important;
-              height: auto !important;
-              max-width: 42px !important;
-              max-height: 24px !important;
-              min-width: 0 !important;
-              min-height: 0 !important;
-              object-fit: contain !important;
-              display: block !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            "
-          >
+      <div class="platform-stage">
+        <div class="platform-caption platform-caption-left">
+          <span>01</span>
+          <strong>Rotina em um só lugar</strong>
+          <p>Comunicados, eventos e próximos compromissos.</p>
         </div>
 
-        <div
-          class="empresa-logo-card"
-          style="
-            width: 66px !important;
-            height: 42px !important;
-            min-width: 66px !important;
-            max-width: 66px !important;
-            min-height: 42px !important;
-            max-height: 42px !important;
-            padding: 6px !important;
-            margin: 0 !important;
-            background: #ffffff !important;
-            border: 1px solid rgba(217, 154, 0, 0.18) !important;
-            border-radius: 10px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            overflow: hidden !important;
-          "
-        >
-          <img
-            src="images/logo.png"
-            alt="Empresa parceira"
-            style="
-              width: auto !important;
-              height: auto !important;
-              max-width: 42px !important;
-              max-height: 24px !important;
-              min-width: 0 !important;
-              min-height: 0 !important;
-              object-fit: contain !important;
-              display: block !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            "
-          >
+        <div class="screen-frame">
+          <div class="screen-topbar">
+            <div class="screen-dots"><i></i><i></i><i></i></div>
+            <span>beehiveidiomas.com</span>
+            <div></div>
+          </div>
+          <img src="images/Tela.PNG" alt="Tela real da área do aluno da Beehive Idiomas">
         </div>
 
-        <div
-          class="empresa-logo-card"
-          style="
-            width: 66px !important;
-            height: 42px !important;
-            min-width: 66px !important;
-            max-width: 66px !important;
-            min-height: 42px !important;
-            max-height: 42px !important;
-            padding: 6px !important;
-            margin: 0 !important;
-            background: #ffffff !important;
-            border: 1px solid rgba(217, 154, 0, 0.18) !important;
-            border-radius: 10px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            overflow: hidden !important;
-          "
-        >
-          <img
-            src="images/logo.png"
-            alt="Empresa parceira"
-            style="
-              width: auto !important;
-              height: auto !important;
-              max-width: 42px !important;
-              max-height: 24px !important;
-              min-width: 0 !important;
-              min-height: 0 !important;
-              object-fit: contain !important;
-              display: block !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            "
-          >
+        <div class="platform-caption platform-caption-right">
+          <span>02</span>
+          <strong>Informação clara</strong>
+          <p>Materiais, avaliações e acesso às aulas sem complicação.</p>
         </div>
-
-        <div
-          class="empresa-logo-card"
-          style="
-            width: 66px !important;
-            height: 42px !important;
-            min-width: 66px !important;
-            max-width: 66px !important;
-            min-height: 42px !important;
-            max-height: 42px !important;
-            padding: 6px !important;
-            margin: 0 !important;
-            background: #ffffff !important;
-            border: 1px solid rgba(217, 154, 0, 0.18) !important;
-            border-radius: 10px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            overflow: hidden !important;
-          "
-        >
-          <img
-            src="images/logo.png"
-            alt="Empresa parceira"
-            style="
-              width: auto !important;
-              height: auto !important;
-              max-width: 42px !important;
-              max-height: 24px !important;
-              min-width: 0 !important;
-              min-height: 0 !important;
-              object-fit: contain !important;
-              display: block !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            "
-          >
-        </div>
-
-        <div
-          class="empresa-logo-card"
-          style="
-            width: 66px !important;
-            height: 42px !important;
-            min-width: 66px !important;
-            max-width: 66px !important;
-            min-height: 42px !important;
-            max-height: 42px !important;
-            padding: 6px !important;
-            margin: 0 !important;
-            background: #ffffff !important;
-            border: 1px solid rgba(217, 154, 0, 0.18) !important;
-            border-radius: 10px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            overflow: hidden !important;
-          "
-        >
-          <img
-            src="images/logo.png"
-            alt="Empresa parceira"
-            style="
-              width: auto !important;
-              height: auto !important;
-              max-width: 42px !important;
-              max-height: 24px !important;
-              min-width: 0 !important;
-              min-height: 0 !important;
-              object-fit: contain !important;
-              display: block !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            "
-          >
-        </div>
-
       </div>
     </section>
 
-    <section class="section-apresentacao" id="contato">
-      <div class="section-header-apresentacao">
-        <span>Contato</span>
-        <h2>Fale com a Beehive</h2>
-        <p>
-          Tire dúvidas, conheça os cursos ou solicite uma proposta personalizada.
-        </p>
+    <section class="contact section-shell" id="contato">
+      <div class="contact-heading">
+        <p class="eyebrow">CONTATO</p>
+        <h2>Começa com uma conversa.</h2>
       </div>
 
-      <div class="contato-grid">
+      <div class="contact-body">
+        <p>
+          Quer entender qual curso combina melhor com o seu momento? Fale diretamente com a Beehive.
+        </p>
 
-        <div class="contato-item-bee contato-clicavel">
+        <div class="contact-links">
+          <a href="#" id="linkWhatsappContato" target="_blank" rel="noopener" class="contact-row">
+            <span class="contact-icon whatsapp"><i class="fa-brands fa-whatsapp"></i></span>
+            <span class="contact-label">
+              <small>ABRE DIRETAMENTE O WHATSAPP</small>
+              <strong>Conversar com a Beehive</strong>
+            </span>
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+
+          <a href="https://www.instagram.com/beehive.idiomas/" target="_blank" rel="noopener" class="contact-row">
+            <span class="contact-icon instagram"><i class="fa-brands fa-instagram"></i></span>
+            <span class="contact-label">
+              <small>ABRE O PERFIL NO INSTAGRAM</small>
+              <strong>@beehive.idiomas</strong>
+            </span>
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing">
+      <div class="closing-inner">
+        <div class="closing-bee-wrap" aria-hidden="true">
+          <img src="images/bee-hero.svg" alt="" class="closing-bee">
+          <div class="closing-path"></div>
+        </div>
+
+        <p class="eyebrow eyebrow-light">BEEHIVE IDIOMAS</p>
+        <h2>Seu próximo idioma<br>pode começar <em>agora.</em></h2>
+        <a href="#" id="btnWhatsappFinal" target="_blank" rel="noopener" class="button button-yellow">
           <i class="fa-brands fa-whatsapp"></i>
-          <h3>WhatsApp</h3>
-          <a id="linkWhatsappContato" href="#" target="_blank">
-            Enviar mensagem
-            <i class="fa-solid fa-arrow-up-right-from-square"></i>
-          </a>
-        </div>
-
-        <div class="contato-item-bee contato-clicavel">
-          <i class="fa-brands fa-instagram"></i>
-          <h3>Instagram</h3>
-          <a href="https://www.instagram.com/beehive.idiomas/" target="_blank">
-            @beehive.idiomas
-            <i class="fa-solid fa-arrow-up-right-from-square"></i>
-          </a>
-        </div>
-
-        <div class="contato-item-bee contato-clicavel">
-          <i class="fa-solid fa-file-signature"></i>
-          <h3>Orçamento</h3>
-          <a id="linkFormsContato" href="#" target="_blank">
-            Solicitar orçamento
-            <i class="fa-solid fa-arrow-up-right-from-square"></i>
-          </a>
-        </div>
-
+          Falar no WhatsApp
+        </a>
       </div>
     </section>
-
-    <section class="section-apresentacao">
-      <div class="cta-final">
-        <h2>Quer fazer parte da nossa colmeia?</h2>
-
-        <p>
-          Fale com a equipe da Beehive Idiomas e descubra qual curso combina
-          melhor com seus objetivos.
-        </p>
-
-        <div class="botoes-hero botoes-centralizados">
-          <a href="#" target="_blank" class="btn-apresentacao btn-secundario-bee" id="btnWhatsappFinal">
-            <i class="fa-brands fa-whatsapp"></i>
-            Quero mais informações
-          </a>
-
-          <a href="#" target="_blank" class="btn-apresentacao btn-contorno-claro" id="btnOrcamentoFinal">
-            <i class="fa-solid fa-file-lines"></i>
-            Solicitar orçamento
-          </a>
-        </div>
-      </div>
-    </section>
-
   </main>
 
-  <footer class="footer-apresentacao">
-    <p>© 2026 • Beehive Idiomas • Escola de Idiomas</p>
+  <footer class="footer">
+    <div class="footer-inner">
+      <a href="#inicio" class="footer-brand">
+        <img src="images/logo.png" alt="Beehive Idiomas">
+        <span><strong>Beehive</strong><small>Idiomas</small></span>
+      </a>
+      <p>Inglês · Espanhol · Aulas ao vivo</p>
+      <p>© 2026 Beehive Idiomas</p>
+    </div>
   </footer>
 
-  <script src="js/apresentacao.js"></script>
+  <a href="#" target="_blank" rel="noopener" class="whatsapp-float" id="whatsappFlutuante" aria-label="Falar com a Beehive pelo WhatsApp">
+    <i class="fa-brands fa-whatsapp"></i>
+    <span>Fale com a gente</span>
+  </a>
+
+  <script src="js/apresentacao.js?v=20260910-3"></script>
 </body>
 </html>
