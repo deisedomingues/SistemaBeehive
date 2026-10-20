@@ -232,7 +232,7 @@ function coletarFaixas(recorrente) {
   if (recorrente) {
     for (let i = 0; i < faixas.length; i++) {
       for (let j = i + 1; j < faixas.length; j++) {
-        const diasEmComum = faixas[i].dias.some((dia) => faixas[j].dias.includes(dia));
+        const diasEmComum = !recorrente || faixas[i].dias.some((dia) => faixas[j].dias.includes(dia));
         if (
           diasEmComum &&
           horariosSeSobrepoem(
