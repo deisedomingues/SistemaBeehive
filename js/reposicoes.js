@@ -280,7 +280,7 @@ function criarCardReposicao(horario, status, detalhes = {}) {
         </div>
 
         <div style="font-size:14px; margin-bottom:4px;">
-          <strong>Curso:</strong> ${escaparHtml(horario.materia?.nome || "-")}
+          <strong>Cursos:</strong> ${escaparHtml((detalhes.cursos || [horario.materia?.nome || "-"]).join(", "))}
         </div>
 
         ${
@@ -305,7 +305,7 @@ function criarCardReposicao(horario, status, detalhes = {}) {
           ${badgeTexto}
         </span>
 
-        <button class="btnExcluir btn" data-id="${horario.id}" type="button">x</button>
+        <button class="btnExcluir btn" data-id="${horario.id}" data-ids="${escaparHtml((detalhes.ids || [horario.id]).join(","))}" type="button">x</button>
       </div>
     </div>
   `;
@@ -456,17 +456,39 @@ async function carregarReposicoes() {
     disponiveis.push(h);
   });
 
-  atualizarContadores(disponiveis.length, escolhidas.length);
+  const gruposPorHorario = new Map();
+  disponiveis.forEach((h) => {
+    const chave = [
+      h.professor_id,
+      h.data,
+      formatarHora(h.hora_inicio),
+      formatarHora(h.hora_fim)
+    ].join("|");
 
-  if (!disponiveis.length) {
+    if (!gruposPorHorario.has(chave)) gruposPorHorario.set(chave, []);
+    gruposPorHorario.get(chave).push(h);
+  });
+
+  const disponiveisAgrupados = [...gruposPorHorario.values()].map((grupo) => ({
+    ...grupo[0],
+    cursos: [...new Set(grupo.map((h) => h.materia?.nome || "Curso"))],
+    ids: grupo.map((h) => h.id)
+  }));
+
+  atualizarContadores(disponiveisAgrupados.length, escolhidas.length);
+
+  if (!disponiveisAgrupados.length) {
     listaReposicoesDisponiveis.innerHTML = `
       <p style="margin:0; opacity:0.8;">
         Nenhum horário disponível no momento.
       </p>
     `;
   } else {
-    disponiveis.forEach((h) => {
-      const card = criarCardReposicao(h, "disponivel");
+    disponiveisAgrupados.forEach((h) => {
+      const card = criarCardReposicao(h, "disponivel", {
+        cursos: h.cursos,
+        ids: h.ids
+      });
       listaReposicoesDisponiveis.appendChild(card);
     });
   }
@@ -499,14 +521,14 @@ async function carregarReposicoes() {
 function ativarExclusao() {
   document.querySelectorAll(".btnExcluir").forEach((btn) => {
     btn.onclick = () => {
-      const id = btn.dataset.id;
+      const ids = (btn.dataset.ids || btn.dataset.id).split(",").filter(Boolean);
       const card = btn.closest(".card-reposicao-item");
 
       mostrarPopupConfirmacao("Deseja excluir este horário?", async () => {
         const { error } = await supabase
           .from("horarios_reposicao")
           .delete()
-          .eq("id", id);
+          .in("id", ids);
 
         if (error) {
           console.error(error);
