@@ -1,64 +1,60 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Inserir Horários de Reposição | Beehive</title>
-    <link rel="stylesheet" href="css/style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Inserir horários de reposição | Beehive</title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-
 <body>
+  <div class="overlay"></div>
+  <main class="container">
+    <h1>Disponibilidade para agendamentos</h1>
+    <p style="margin-bottom:18px;opacity:.9;">
+      Informe quando a professora pode atender. O sistema cria blocos de 40 minutos,
+      pula as aulas regulares e disponibiliza os horários para os cursos selecionados.
+    </p>
 
-    <div class="overlay"></div>
+    <form id="formHorario">
+      <label for="professor">Professora</label>
+      <select id="professor" required></select>
 
-    <main class="container">
+      <fieldset style="margin:16px 0;padding:12px;border:1px solid #ddd;border-radius:10px;">
+        <legend>Cursos que podem usar estes horários</legend>
+        <p style="margin:0 0 8px;opacity:.8;">Marque um ou mais cursos. A mesma faixa pode atender a qualquer curso marcado.</p>
+        <div id="listaMaterias">Escolha a professora primeiro.</div>
+      </fieldset>
 
-        <h1>Inserir horários de reposição</h1>
+      <label style="display:flex;align-items:center;gap:8px;margin:14px 0;">
+        <input type="checkbox" id="recorrente" checked>
+        Repetir toda semana
+      </label>
 
-        <p style="margin-bottom: 18px; opacity: 0.9;">
-            Cadastre novos horários para que os alunos possam agendar suas reposições.
-        </p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <label for="dataInicio">A partir de
+          <input type="date" id="dataInicio" required>
+        </label>
+        <label id="grupoDataFim" for="dataFim">Repetir até
+          <input type="date" id="dataFim" required>
+        </label>
+      </div>
 
-        <form id="formHorario">
+      <h3 style="margin:18px 0 8px;">Faixas de horário</h3>
+      <p style="margin:0 0 12px;opacity:.8;">
+        Para cada faixa, marque os dias e informe o início e o fim. Você pode adicionar mais faixas para horários diferentes.
+      </p>
+      <div id="faixasContainer"></div>
+      <button type="button" id="addFaixa" class="btn">+ Adicionar faixa</button>
 
-            <label for="professor">Professor</label>
-            <select id="professor" required></select>
-            <br><br>
+      <div style="margin-top:18px;">
+        <button type="submit" id="btnSalvar" class="btn">Gerar horários disponíveis</button>
+      </div>
+    </form>
 
-            <label for="materia">Curso</label>
-            <select id="materia" required></select>
-            <br><br>
-
-            <label for="data">Data</label>
-            <input type="date" id="data" required>
-            <br><br>
-
-            <h4>Horários</h4>
-
-            <div id="horariosContainer"></div>
-            <br>
-
-            <button type="button" id="addHorario" class="btn">
-                + Adicionar horário
-            </button>
-
-            <br><br>
-
-            <button type="submit" class="btn">Salvar horários</button>
-
-        </form>
-
-        <p id="msg"></p>
-
-        <br>
-
-        <a href="reposicoes.html" class="link-voltar">← Voltar para reposições</a>
-
-    </main>
-
-    <script type="module" src="js/criar_horarios_reposicao.js"></script>
-
+    <p id="msg" role="status" aria-live="polite"></p>
+    <br>
+    <a href="reposicoes.html" class="link-voltar">← Voltar para agendamentos</a>
+  </main>
+  <script type="module" src="js/criar_horarios_reposicao.js"></script>
 </body>
-
 </html>
