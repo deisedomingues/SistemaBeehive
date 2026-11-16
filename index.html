@@ -10,7 +10,7 @@
     href="css/style.css"
   />
 
-  <link rel="stylesheet" href="css/login.css?v=20261116-1" />
+  <link rel="stylesheet" href="css/login.css?v=20261116-3" />
 
   <meta
     name="viewport"
@@ -23,125 +23,117 @@
   <!-- camada de fundo -->
   <div class="overlay"></div>
 
-  <!-- abelhinhas decorativas -->
-  <img
-    src="images/AbelhinhaAmarela.png"
-    alt=""
-    class="bee bee-top-left"
-  >
+  <div class="login-layout">
+    <img class="login-bee login-bee-left" src="images/abelha-login.jpg" alt="" />
+    <img class="login-bee login-bee-right" src="images/abelha-login.jpg" alt="" />
 
-  <img
-    src="images/AbelhinhaAmarela.png"
-    alt=""
-    class="bee bee-bottom-right"
-  >
+    <main class="container login-card">
 
-  <main class="container login-card">
+      <!-- logo -->
+      <img
+        src="images/logo.png"
+        alt="Beehive Escola de Idiomas"
+        class="logo"
+      >
 
-    <!-- logo -->
-    <img
-      src="images/logo.png"
-      alt="Beehive Escola de Idiomas"
-      class="logo"
-    >
-
-    <!-- mensagem de boas-vindas -->
-    <h1
-      style="
-        font-size: 20px;
-        margin-bottom: 6px;
-      "
-    >
-      Seja bem-vindo(a)!
-    </h1>
-
-    <p
-      style="
-        font-size: 14px;
-        margin-bottom: 18px;
-        color: #333;
-      "
-    >
-      Faça login para continuar
-    </p>
-
-    <!-- mensagem do sistema -->
-    <div
-      id="msg"
-      role="status"
-      style="
-        display: none;
-        margin-bottom: 10px;
-        padding: 10px;
-        border-radius: 8px;
-      "
-    ></div>
-
-    <!-- formulário -->
-    <form
-      class="form"
-      id="form-login"
-    >
-
-      <label style="margin-bottom: 10px;">
-        E-mail
-
-        <input
-          type="email"
-          id="email"
-          required
-          autocomplete="email"
-          placeholder="Digite seu e-mail"
-          style="padding: 10px;"
-        >
-      </label>
-
-      <label style="margin-bottom: 6px;">
-        Senha
-
-        <input
-          type="password"
-          id="senha"
-          required
-          autocomplete="current-password"
-          placeholder="Digite sua senha"
-          style="padding: 10px;"
-        >
-      </label>
-
-      <!-- recuperação de senha -->
-      <div
+      <!-- mensagem de boas-vindas -->
+      <h1
         style="
-          display: flex;
-          justify-content: flex-end;
-          margin-bottom: 16px;
+          font-size: 20px;
+          margin-bottom: 6px;
         "
       >
-        <a
-          href="esqueci-senha.html"
+        Seja bem-vindo(a)!
+      </h1>
+
+      <p
+        style="
+          font-size: 14px;
+          margin-bottom: 18px;
+          color: #333;
+        "
+      >
+        Faça login para continuar
+      </p>
+
+      <!-- mensagem do sistema -->
+      <div
+        id="msg"
+        role="status"
+        style="
+          display: none;
+          margin-bottom: 10px;
+          padding: 10px;
+          border-radius: 8px;
+        "
+      ></div>
+
+      <!-- formulário -->
+      <form
+        class="form"
+        id="form-login"
+      >
+
+        <label style="margin-bottom: 10px;">
+          E-mail
+
+          <input
+            type="email"
+            id="email"
+            required
+            autocomplete="email"
+            placeholder="Digite seu e-mail"
+            style="padding: 10px;"
+          >
+        </label>
+
+        <label style="margin-bottom: 6px;">
+          Senha
+
+          <input
+            type="password"
+            id="senha"
+            required
+            autocomplete="current-password"
+            placeholder="Digite sua senha"
+            style="padding: 10px;"
+          >
+        </label>
+
+        <!-- recuperação de senha -->
+        <div
           style="
-            font-size: 13px;
-            color: #5f5534;
-            font-weight: 600;
-            text-decoration: underline;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 16px;
           "
         >
-          Esqueci minha senha
-        </a>
-      </div>
+          <a
+            href="esqueci-senha.html"
+            style="
+              font-size: 13px;
+              color: #5f5534;
+              font-weight: 600;
+              text-decoration: underline;
+            "
+          >
+            Esqueci minha senha
+          </a>
+        </div>
 
-      <button
-        type="submit"
-        class="btn"
-        id="btnEntrar"
-        style="padding: 12px;"
-      >
-        Entrar
-      </button>
+        <button
+          type="submit"
+          class="btn"
+          id="btnEntrar"
+          style="padding: 12px;"
+        >
+          Entrar
+        </button>
 
-    </form>
+      </form>
 
-  </main>
+    </main>
+  </div>
 
   <script
     type="module"
