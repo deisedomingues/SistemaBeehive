@@ -1,0 +1,88 @@
+.busca-alunos {
+  margin: 0 auto 22px;
+  padding: clamp(14px, 3vw, 24px);
+  border: 1px solid #e8d9ad;
+  border-radius: var(--beehive-raio-painel);
+  background: var(--beehive-superficie);
+  text-align: left;
+  scroll-margin-top: 16px;
+}
+
+.busca-alunos h2 {
+  margin-bottom: 12px;
+  font-size: 1.2rem;
+}
+
+.busca-alunos__filtros {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 10px 16px;
+}
+
+.busca-alunos :is(input, select, button, a) {
+  min-height: var(--beehive-altura-controle);
+  font-size: 1rem;
+}
+
+.busca-alunos :is(input, select, button, a):focus-visible {
+  outline: 2px solid var(--beehive-foco);
+  outline-offset: 2px;
+}
+
+.busca-alunos__estado:not(:empty) {
+  margin-top: 10px;
+}
+
+.busca-alunos__lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.busca-alunos__lista > li {
+  margin-top: 10px;
+  padding: 12px 0 0;
+  border-top: 1px solid #e8d9ad;
+}
+
+.busca-alunos__lista h3 {
+  font-size: 1rem;
+}
+
+.busca-alunos__curso,
+.busca-alunos__acoes {
+  display: flex;
+  align-items: center;
+  gap: 0 14px;
+  flex-wrap: wrap;
+}
+
+.busca-alunos__curso {
+  justify-content: space-between;
+}
+
+.busca-alunos__curso p {
+  color: var(--beehive-texto-acao);
+}
+
+.busca-alunos__lista a {
+  display: inline-flex;
+  align-items: center;
+  color: var(--beehive-texto-acao);
+  font-weight: 650;
+}
+
+.busca-alunos [data-busca-mais] {
+  margin-top: 12px;
+}
+
+@media (max-width: 620px) {
+  .busca-alunos__filtros {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .busca-alunos__curso {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

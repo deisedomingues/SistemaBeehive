@@ -1,11 +1,12 @@
 import { supabase } from "./supabase.js";
 import { exigirAdmin } from "./guard.js";
+import { iniciarBuscaAlunos } from "./busca-alunos.js";
 
 /* =====================================================
    1) ACESSO
 ===================================================== */
 
-await exigirAdmin();
+const perfil = await exigirAdmin();
 
 /* =====================================================
    2) ELEMENTOS
@@ -301,4 +302,5 @@ if (btnSair) {
    11) INICIAR
 ===================================================== */
 
+iniciarBuscaAlunos("pedagogico", perfil?.user.id);
 await carregarResumoNotificacoesPedagogico();
