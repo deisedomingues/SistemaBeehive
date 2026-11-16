@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indicadores da escola | Beehive</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/navegacao.css">
+  <link rel="stylesheet" href="css/indicadores-escola.css">
+</head>
+<body>
+  <main class="container indicadores">
+    <a href="home-admin.html" class="beehive-voltar">← Voltar</a>
+    <h1>Indicadores da escola</h1>
+    <form class="indicadores-filtros" id="form-periodo">
+      <label>Data inicial <input id="inicio" type="date" required></label>
+      <label>Data final <input id="fim" type="date" required></label>
+      <button class="btn" type="submit">Aplicar período</button>
+    </form>
+    <p id="indicadores-status" role="status"></p>
+
+    <div id="indicadores-resultado" hidden>
+      <dl id="indicadores-totais" class="indicadores-totais" aria-label="Resumo do período"></dl>
+      <section class="indicadores-card">
+        <h2>Entradas e saídas por mês</h2>
+        <details>
+          <summary>Como as entradas e saídas são calculadas</summary>
+          <p>A entrada usa a primeira data de matrícula disponível. A saída é contada quando um curso termina e o aluno fica sem outro curso em andamento naquela data. O Beehive sobrescrevia datas ao rematricular, então parte do histórico pode estar incompleta. Os totais contam pessoas distintas no período, e uma pessoa pode aparecer em mais de um mês.</p>
+        </details>
+        <div id="movimento-mensal" class="indicadores-movimento"></div>
+      </section>
+
+      <div class="indicadores-grade">
+        <section class="indicadores-card">
+          <h2>Alunos com mais faltas</h2>
+          <p class="indicadores-nota">A proporção usa as aulas registradas como presente ou ausente.</p>
+          <div id="ranking-faltas"></div>
+        </section>
+        <section class="indicadores-card">
+          <h2>Alunos mais ativos no sistema</h2>
+          <p id="cobertura-acessos" class="indicadores-nota"></p>
+          <div id="ranking-uso"></div>
+        </section>
+        <section class="indicadores-card">
+          <h2>Alunos por curso</h2>
+          <p class="indicadores-nota">No fim do período. Alunos de dois cursos aparecem nos dois.</p>
+          <dl id="indicadores-cursos" class="indicadores-lista"></dl>
+          <h3>Vínculos por matrícula</h3>
+          <dl id="indicadores-modalidades" class="indicadores-lista"></dl>
+        </section>
+        <section class="indicadores-card">
+          <h2>Aulas, reposições e avaliações</h2>
+          <dl id="indicadores-rotina" class="indicadores-lista"></dl>
+          <p class="indicadores-nota">Em aulas coletivas, a presença é contada por aluno. Reposições agendadas usam a data do horário reservado.</p>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="js/indicadores-escola.js"></script>
+</body>
+</html>
