@@ -18,7 +18,10 @@ let modulosPorMateria = {};
 // =====================================================
 // mensagem visual
 // =====================================================
-function mostrarMensagem(texto, ok = true) {
+let temporizadorMensagem;
+
+function mostrarMensagem(texto, ok = true, campo = null) {
+  clearTimeout(temporizadorMensagem);
   msg.textContent = texto;
   msg.style.display = "block";
   msg.style.padding = "10px 12px";
@@ -31,7 +34,15 @@ function mostrarMensagem(texto, ok = true) {
   msg.style.backgroundColor = ok ? "#e8f5e9" : "#ffebee";
   msg.style.color = ok ? "#1b5e20" : "#b71c1c";
 
-  setTimeout(() => {
+  if (campo) {
+    campo.setAttribute("aria-invalid", "true");
+    campo.addEventListener("input", () => campo.removeAttribute("aria-invalid"), { once: true });
+    campo.focus();
+  }
+
+  if (!ok) return;
+
+  temporizadorMensagem = setTimeout(() => {
     msg.style.display = "none";
     msg.textContent = "";
   }, 5000);
@@ -337,11 +348,6 @@ function adicionarLinhaHorario(boxCurso, horario = {}) {
 
   const linha = document.createElement("div");
   linha.className = "linha-horario-aula";
-  linha.style.display = "grid";
-  linha.style.gridTemplateColumns = "1.4fr 1fr 1fr auto";
-  linha.style.gap = "8px";
-  linha.style.alignItems = "end";
-  linha.style.marginBottom = "8px";
 
   linha.innerHTML = `
     <label style="margin-bottom:0;">
@@ -430,13 +436,15 @@ function coletarHorariosDoCurso(boxCurso) {
     }
 
     if (!diaSemana || !horaInicio || !horaFim) {
-      throw new Error(
-        "Preencha dia, início e fim em todos os horários adicionados."
-      );
+      throw Object.assign(new Error("Preencha dia, início e fim em todos os horários adicionados."), {
+        campo: linha.querySelector(!diaSemana ? ".horario-dia" : !horaInicio ? ".horario-inicio" : ".horario-fim")
+      });
     }
 
     if (horaFim <= horaInicio) {
-      throw new Error("O horário final precisa ser maior que o horário inicial.");
+      throw Object.assign(new Error("O horário final precisa ser maior que o horário inicial."), {
+        campo: linha.querySelector(".horario-fim")
+      });
     }
 
     horarios.push({
@@ -509,15 +517,10 @@ function adicionarCurso() {
 
   const wrapper = document.createElement("div");
   wrapper.className = "curso-box";
-  wrapper.style.border = "1px solid #f1e4a7";
-  wrapper.style.background = "#fffdf4";
-  wrapper.style.borderRadius = "12px";
-  wrapper.style.padding = "12px";
-  wrapper.style.marginBottom = "10px";
 
   wrapper.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:10px; flex-wrap:wrap;">
-      <strong class="curso-titulo" style="font-size:13px; color:#5f4b00;">
+      <strong class="curso-titulo">
         Curso
       </strong>
 
@@ -530,22 +533,22 @@ function adicionarCurso() {
       </button>
     </div>
 
-    <label style="margin-bottom:8px;">
+    <label>
       Curso
       <select class="materia" required style="padding:8px;"></select>
     </label>
 
-    <label style="margin-bottom:8px;">
+    <label>
       Módulo
       <select class="modulo" required disabled style="padding:8px;"></select>
     </label>
 
-    <label style="margin-bottom:8px;">
+    <label>
       Professor(a)
       <select class="professor" required disabled style="padding:8px;"></select>
     </label>
 
-    <label style="margin-bottom:8px;">
+    <label>
       Empresa ou equipe deste curso
       <select class="empresaCurso" required style="padding:8px;"></select>
     </label>
@@ -562,10 +565,9 @@ function adicionarCurso() {
     <div style="text-align:right; margin-bottom:10px;">
       <button
         type="button"
-        class="btn-add-horario"
-        style="background-color:#FFF5CC; border:1px solid #F1BC32; color:#000; padding:5px 10px; border-radius:8px; font-size:11.5px; cursor:pointer;"
+        class="btn-add-horario formulario-secundario"
       >
-        + adicionar horário
+        + Adicionar horário
       </button>
     </div>
 
@@ -575,7 +577,7 @@ function adicionarCurso() {
       </p>
     </div>
 
-    <label style="margin-bottom:8px;">
+    <label class="campo-largo">
       Link da aula ao vivo (Zoom)
       <input
         type="text"
@@ -585,7 +587,7 @@ function adicionarCurso() {
       />
     </label>
 
-    <label style="margin-bottom:0;">
+    <label class="campo-largo">
       Link da playlist (YouTube)
       <input
         type="text"
@@ -646,21 +648,23 @@ btnAddCurso.addEventListener("click", () => {
 // =====================================================
 function validarCursosAntesDeSalvar(cursos) {
   if (!cursos.length) {
-    mostrarMensagem("Adicione pelo menos um curso para o aluno.", false);
+    mostrarMensagem("Adicione pelo menos um curso para o aluno.", false, btnAddCurso);
     return false;
   }
 
-  for (const curso of cursos) {
+  for (const [indice, curso] of cursos.entries()) {
+    const caixa = obterCursoBoxes()[indice];
     if (!curso.materia_id || !curso.modulo_id || !curso.professor_id) {
       mostrarMensagem(
-        "Preencha corretamente os campos de curso, módulo e professor(a).",
-        false
+        "Preencha os campos de curso, módulo e professor(a).",
+        false,
+        caixa.querySelector(!curso.materia_id ? ".materia" : !curso.modulo_id ? ".modulo" : ".professor")
       );
       return false;
     }
 
     if (!curso.empresa_cnpj) {
-      mostrarMensagem("Selecione a empresa, equipe ou opção particular de cada curso.", false);
+      mostrarMensagem("Selecione a empresa, equipe ou opção particular de cada curso.", false, caixa.querySelector(".empresaCurso"));
       return false;
     }
 
@@ -844,7 +848,7 @@ form.addEventListener("submit", async (e) => {
   const observacao = document.getElementById("observacao").value.trim();
 
   if (!nome) {
-    mostrarMensagem("Preencha o nome do aluno.", false);
+    mostrarMensagem("Preencha o nome do aluno.", false, document.getElementById("nome"));
     return;
   }
 
@@ -853,7 +857,7 @@ form.addEventListener("submit", async (e) => {
   try {
     cursos = montarCursosDaTela();
   } catch (erro) {
-    mostrarMensagem(erro.message, false);
+    mostrarMensagem(erro.message, false, erro.campo);
     return;
   }
 

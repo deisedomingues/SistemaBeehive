@@ -1,0 +1,129 @@
+.container.formulario-academico {
+  width: min(100%, 860px);
+  max-width: 860px;
+  margin: 24px auto;
+  padding: clamp(16px, 4vw, 34px);
+  text-align: left;
+}
+
+.formulario-academico > h1 {
+  margin: 16px 0 0;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.formulario-academico h2 {
+  font-size: 1.15rem;
+}
+
+.formulario-academico > .beehive-voltar {
+  margin-top: 0;
+}
+
+.formulario-academico .formulario-grade,
+.formulario-academico .curso-box {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  align-items: start;
+}
+
+.formulario-academico .campo-largo,
+.formulario-academico .curso-box > :not(label) {
+  grid-column: 1 / -1;
+}
+
+.formulario-academico .curso-box {
+  padding: 16px;
+  border: 1px solid #e8d9ad;
+  border-radius: var(--beehive-raio-painel);
+  background: #fffdf7;
+}
+
+.formulario-academico .curso-box + .curso-box {
+  margin-top: 12px;
+}
+
+.formulario-academico .linha-horario-aula {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1.4fr) repeat(2, minmax(5rem, 1fr)) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.formulario-academico .linha-horario-aula + .linha-horario-aula {
+  margin-top: 10px;
+}
+
+.formulario-academico label {
+  min-width: 0;
+  font-weight: 600;
+}
+
+.formulario-academico :is(input, select, textarea) {
+  min-width: 0;
+  min-height: var(--beehive-altura-controle);
+  font-size: 1rem;
+}
+
+.formulario-academico :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--beehive-foco);
+  outline-offset: 2px;
+}
+
+.formulario-academico [aria-invalid="true"] {
+  border-color: #b71c1c;
+}
+
+.formulario-academico button {
+  min-height: var(--beehive-altura-controle);
+}
+
+.formulario-academico button[type="submit"] {
+  justify-self: end;
+  align-self: flex-end;
+  width: auto;
+  min-width: 160px;
+}
+
+.formulario-academico .formulario-ajuda {
+  color: var(--beehive-texto-acao);
+  line-height: 1.4;
+}
+
+.formulario-academico > .formulario-etapa {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #e8d9ad;
+  border-radius: var(--beehive-raio-painel);
+}
+
+@media (max-width: 620px) {
+  .container.formulario-academico {
+    margin: 12px auto;
+  }
+
+  .formulario-academico .formulario-grade,
+  .formulario-academico .curso-box,
+  .formulario-academico .linha-horario-aula {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .formulario-academico button[type="submit"] {
+    width: 100%;
+  }
+}
+
+.formulario-academico .formulario-secundario {
+  padding: 8px 14px;
+  border: 1px solid var(--beehive-borda);
+  border-radius: var(--beehive-raio-controle);
+  background: var(--beehive-mel-claro);
+  color: var(--beehive-texto-acao);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.formulario-academico :is(input, select):user-invalid {
+  border-color: #b71c1c;
+}

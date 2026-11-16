@@ -6,18 +6,20 @@
   <link rel="stylesheet" href="css/style.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="css/navegacao.css">
+  <link rel="stylesheet" href="css/formularios-academicos.css">
 </head>
 <body>
 
   <div class="overlay"></div>
 
-  <main class="container container-resumo">
-    <h1>Editar Matrículas</h1>
+  <main class="container container-resumo formulario-academico">
+    <a href="menu-edicoes.html" class="link-voltar beehive-voltar">← Voltar</a>
+    <h1>Editar matrículas</h1>
 
-    <div id="msg" style="display:none;"></div>
+    <div id="msg" role="status" style="display:none;"></div>
 
-    <section class="card" style="margin-bottom:16px;">
-      <h2>1) Escolha o aluno</h2>
+    <section class="formulario-etapa">
+      <h2>Aluno</h2>
 
       <form class="form" style="margin-top:10px;">
         <label for="selectAluno">
@@ -29,8 +31,8 @@
       </form>
     </section>
 
-    <section class="card">
-      <h2>2) Gerenciar matrícula</h2>
+    <section class="formulario-etapa">
+      <h2>Matrícula</h2>
 
       <div
         id="resumoAluno"
@@ -44,7 +46,7 @@
 
       <div>
         <label for="selectMatricula">
-          Selecione abaixo o curso que deseja gerenciar ou clique em "adicionar curso" para matricular o aluno em outra disciplina.
+          Curso do aluno
           <select id="selectMatricula" disabled>
             <option value="">Selecione um aluno acima</option>
           </select>
@@ -87,9 +89,9 @@
           </button>
         </div>
 
-        <form class="form" id="formEditar" style="margin-top:10px;">
+        <form class="form formulario-grade" id="formEditar" style="margin-top:10px;">
           <label for="materia">
-            Matéria
+            Curso
             <select id="materia" disabled>
               <option value="">—</option>
             </select>
@@ -116,14 +118,9 @@
             </select>
           </label>
 
-          <div style="margin: 8px 0 6px 0; padding: 10px 12px; border: 1px solid #f1d98a; border-left: 4px solid #F1BC32; border-radius: 10px; background: #fff8e8;">
-            <p style="margin:0; font-size:13px; line-height:1.45; color:#6b5200;">
-              <strong>Links deste curso:</strong> você pode editar abaixo o acesso da
-              <strong>aula ao vivo</strong> e da <strong>playlist gravada</strong>.
-            </p>
-          </div>
+          <h4 class="campo-largo">Links do curso</h4>
 
-          <label for="linkZoom">
+          <label for="linkZoom" class="campo-largo">
             Link da aula ao vivo (Zoom)
             <input
               type="text"
@@ -134,7 +131,7 @@
             />
           </label>
 
-          <label for="linkYoutube">
+          <label for="linkYoutube" class="campo-largo">
             Link da playlist (YouTube)
             <input
               type="text"
@@ -145,11 +142,11 @@
             />
           </label>
 
-          <div style="font-size:13px; opacity:0.85; margin-top:2px;">
+          <div class="campo-largo" style="font-size:13px; opacity:0.85; margin-top:2px;">
             <span id="infoMatricula">—</span>
           </div>
 
-          <button type="submit" class="btn" id="btnSalvar" disabled>
+          <button type="submit" class="btn campo-largo" id="btnSalvar" disabled>
             Salvar alterações
           </button>
         </form>
@@ -183,7 +180,6 @@
 
     </section>
 
-    <a href="menu-edicoes.html" class="link-voltar beehive-voltar">← Voltar</a>
   </main>
 
   <script type="module" src="js/editar-matriculas.js"></script>
