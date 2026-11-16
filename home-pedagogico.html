@@ -15,6 +15,7 @@
     href="css/style.css"
   />
   <link rel="stylesheet" href="css/navegacao.css">
+  <link rel="stylesheet" href="css/cabecalho-departamento.css">
 </head>
 
 <body>
@@ -22,44 +23,21 @@
   <div class="overlay"></div>
 
   <main class="container home-admin-page">
-
-    <div class="topo-acoes-admin topo-acoes-duplo">
-
-      <a
-        href="home-admin.html"
-        class="link-voltar-admin beehive-voltar"
-      >
-        ← Voltar
-      </a>
-
-      <button
-        id="btnSair"
-        class="btn-sair-admin"
-        type="button"
-      >
-        Sair
-      </button>
-
-    </div>
-
-    <img
-      src="images/logo.png"
-      alt="Beehive Escola de Idiomas"
-      class="logo logo-admin-centralizada"
-    >
-
-    <section class="cabecalho-admin-central">
-
-      <h1>
-        Área Pedagógica
-      </h1>
-
-      <p class="subtitulo-admin">
-        Gerencie cadastros, matrículas, aulas,
-        eventos e acompanhamentos acadêmicos.
-      </p>
-
-    </section>
+    <header class="cabecalho-departamento">
+      <div class="cabecalho-departamento__identidade">
+        <span class="cabecalho-departamento__logo">
+          <img src="images/logo.png" alt="Beehive Idiomas" width="112" height="112">
+        </span>
+        <div>
+          <h1>Área Pedagógica</h1>
+          <p>Gerencie cadastros, matrículas, aulas, eventos e acompanhamentos acadêmicos.</p>
+        </div>
+      </div>
+      <div class="cabecalho-departamento__acoes">
+        <a href="home-admin.html" class="beehive-voltar">← Voltar</a>
+        <button id="btnSair" class="btn-sair-admin" type="button">Sair</button>
+      </div>
+    </header>
 
     <section class="painel-admin-cards">
 
