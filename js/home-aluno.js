@@ -1714,8 +1714,7 @@ if (alunoId && !professoraVisualizandoComoAluno) {
 
 async function registrarAcessoDiario() {
   try {
-    const { error } = await supabase.from("aluno_acesso_diario")
-      .upsert({ aluno_id: alunoId }, { onConflict: "dia,aluno_id", ignoreDuplicates: true });
+    const { error } = await supabase.rpc("registrar_acesso_aluno");
     if (error) throw error;
   } catch (erro) {
     console.warn("Não foi possível contabilizar o acesso de hoje.", erro);
