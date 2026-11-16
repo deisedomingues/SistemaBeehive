@@ -70,19 +70,19 @@ body.login-page {
 .login-bee {
   position: absolute;
   z-index: 3;
-  width: clamp(34px, 9vw, 66px);
+  width: clamp(40px, 10vw, 78px);
   mix-blend-mode: multiply;
   pointer-events: none;
 }
 
 .login-bee-left {
-  top: 27%;
+  top: 22%;
   left: 0;
   transform: rotate(65deg);
 }
 
 .login-bee-right {
-  top: 32%;
+  top: 39%;
   right: 0;
   transform: rotate(-65deg);
 }
