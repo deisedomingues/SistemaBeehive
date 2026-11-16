@@ -14,6 +14,8 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0"
   >
+  <link rel="stylesheet" href="css/cabecalho-departamento.css">
+  <link rel="stylesheet" href="css/home-aluno.css">
 </head>
 
 <body>
@@ -22,129 +24,44 @@
 
   <main class="container home-aluno-page">
 
-    <!-- =======================================
-         TOPO DA PÁGINA
-    ======================================== -->
-    <header class="topo-site-aluno">
-
-      <div class="marca-topo-aluno">
-        <img
-          src="images/logo.png"
-          alt="Beehive Escola de Idiomas"
-          class="logo-topo-aluno"
-        >
-
-        <div class="marca-topo-texto">
-          <strong>Beehive</strong>
-          <span>Escola de Idiomas</span>
+    <header class="cabecalho-departamento cabecalho-aluno">
+      <div class="cabecalho-departamento__identidade">
+        <span class="cabecalho-departamento__logo">
+          <img src="images/logo.png" alt="Beehive Idiomas" width="112" height="112">
+        </span>
+        <div>
+          <p class="rotulo-admin">Área do aluno</p>
+          <h1 id="saudacao">Olá!</h1>
         </div>
       </div>
 
-      <a
-        href="configuracoes-aluno.html"
-        class="btn-configuracoes-icone"
-        aria-label="Abrir configurações"
-        title="Configurações"
-      >
-        ⚙️
-      </a>
-
+      <div class="cabecalho-departamento__acoes">
+        <div id="blocoTrocarPerfil" class="cabecalho-aluno__perfil" style="display: none;">
+          <label for="selectPerfilVisualizacao">Visualizar como</label>
+          <select id="selectPerfilVisualizacao">
+            <option value="professor">Professor</option>
+            <option value="aluno" selected>Aluno</option>
+          </select>
+        </div>
+        <a href="configuracoes-aluno.html" class="btn-configuracoes-icone"
+          aria-label="Abrir configurações" title="Configurações">⚙️</a>
+      </div>
     </header>
 
-    <!-- =======================================
-         SAUDAÇÃO
-    ======================================== -->
-    <section class="cabecalho-site-aluno">
-
-      <p class="rotulo-admin">
-        Área do aluno
-      </p>
-
-      <h1
-        id="saudacao"
-        class="saudacao-titulo-aluno"
-      >
-        Olá!
-      </h1>
-
-      <p class="subtitulo-site-aluno">
-        Escolha uma opção para continuar na sua área.
-      </p>
-
-    </section>
-
-    <!-- =======================================
-         SELETOR DE VISUALIZAÇÃO
-         Só aparece para professora-aluna
-    ======================================== -->
-    <section
-      id="blocoTrocarPerfil"
-      class="seletor-perfil-inline seletor-perfil-site-professor"
-      style="display: none;"
-    >
-      <label
-        for="selectPerfilVisualizacao"
-        class="label-seletor-inline"
-      >
-        Visualizar como:
-      </label>
-
-      <select
-        id="selectPerfilVisualizacao"
-        class="select-seletor-inline"
-      >
-        <option value="professor">
-          Professor
-        </option>
-
-        <option
-          value="aluno"
-          selected
-        >
-          Aluno
-        </option>
-      </select>
-    </section>
-
-    <!-- =======================================
-         CURSO SELECIONADO
-    ======================================== -->
-    <section
-      id="blocoCursoAtual"
-      class="card"
-      style="margin-bottom: 18px; display: none;"
-    >
-      <h2 style="margin-bottom: 10px;">
-        Curso selecionado
-      </h2>
-
-      <p
-        id="textoCursoAtual"
-        style="
-          margin-top: 0;
-          margin-bottom: 12px;
-          opacity: 0.9;
-        "
-      >
-        Carregando seus cursos...
-      </p>
-
-      <label
-        for="selectMatricula"
-        id="labelSelectMatricula"
-        style="display: none;"
-      >
-        Escolha o curso que deseja visualizar
-
-        <select
-          id="selectMatricula"
-          style="margin-top: 6px;"
-        >
-          <option value="">
-            Selecione
-          </option>
-        </select>
-      </label>
+    <section id="blocoCursoAtual" class="curso-atual-aluno" style="display: none;"
+      aria-label="Curso selecionado">
+      <div class="curso-atual-aluno__linha">
+        <div>
+          <h2>Curso selecionado</h2>
+          <p id="textoCursoAtual" role="status">Carregando seus cursos...</p>
+        </div>
+        <label for="selectMatricula" id="labelSelectMatricula" style="display: none;">
+          Trocar curso
+          <select id="selectMatricula">
+            <option value="">Selecione</option>
+          </select>
+        </label>
+      </div>
     </section>
 
     <!-- =======================================

@@ -1,0 +1,85 @@
+.home-aluno-page .cabecalho-aluno,
+.home-aluno-page .curso-atual-aluno {
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: var(--beehive-superficie);
+  border: 1px solid #e8d9ad;
+  border-radius: var(--beehive-raio-painel);
+}
+
+.cabecalho-aluno .cabecalho-departamento__identidade {
+  flex: 1 1 200px;
+}
+
+.cabecalho-aluno .rotulo-admin {
+  margin: 0 0 3px;
+  font-size: 0.75rem;
+}
+
+.cabecalho-aluno h1,
+.curso-atual-aluno p {
+  overflow-wrap: anywhere;
+}
+
+.cabecalho-aluno__perfil,
+.curso-atual-aluno__linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.cabecalho-aluno .cabecalho-departamento__acoes {
+  max-width: 100%;
+}
+
+.cabecalho-aluno__perfil label {
+  font-weight: 600;
+}
+
+.cabecalho-aluno__perfil select,
+.curso-atual-aluno select {
+  min-height: var(--beehive-altura-controle);
+  min-width: 0;
+  background: var(--beehive-superficie);
+}
+
+.cabecalho-aluno__perfil select {
+  width: 125px;
+  margin-top: 0;
+}
+
+.cabecalho-aluno .btn-configuracoes-icone {
+  min-width: var(--beehive-altura-controle);
+  min-height: var(--beehive-altura-controle);
+  box-shadow: none;
+}
+
+.curso-atual-aluno__linha {
+  justify-content: space-between;
+}
+
+.curso-atual-aluno__linha > * {
+  min-width: 0;
+}
+
+.curso-atual-aluno h2 {
+  font-size: 0.95rem;
+  margin: 0 0 4px;
+}
+
+.curso-atual-aluno p {
+  color: var(--beehive-texto-acao);
+  font-size: 0.9rem;
+}
+
+.curso-atual-aluno label {
+  flex: 0 1 260px;
+  font-weight: 600;
+}
+
+@media (max-width: 660px) {
+  .curso-atual-aluno label {
+    flex-basis: 100%;
+  }
+}
