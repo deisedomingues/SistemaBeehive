@@ -1,3 +1,4 @@
+import { criarAvisosAnteriores } from "./avisos-anteriores.js";
 import { supabase } from "./supabase.js";
 import { exigirAdmin } from "./guard.js";
 
@@ -52,7 +53,6 @@ const FUSO_HORARIO =
   "America/Sao_Paulo";
 
 let notificacoesAtuais = [];
-let mostrarAnteriores = false;
 
 /* =====================================================
    4) SEGURANÇA PARA TEXTO
@@ -330,10 +330,7 @@ async function buscarAvisosAusencia() {
         status,
         criado_em
       `)
-      .eq(
-        "status",
-        "pendente"
-      )
+      .or(`status.eq.pendente,and(status.eq.processado,data_aula.lt.${hojeISO()})`)
       .order(
         "data_aula",
         {
@@ -1070,40 +1067,13 @@ function renderizarEstadoVazio() {
    18) RENDERIZAR
 ===================================================== */
 
-function adicionarBotaoAnteriores(totalAnteriores) {
-  if (!listaNotificacoesPedagogico || totalAnteriores <= 0) {
-    return;
-  }
-
-  const wrapper = document.createElement("div");
-  wrapper.style.cssText = `
-    display:flex;
-    justify-content:center;
-    margin:8px 0 14px;
-  `;
-
-  const botao = document.createElement("button");
-  botao.type = "button";
-  botao.className = "btn-secundario";
-  botao.textContent = mostrarAnteriores
-    ? "Ocultar anteriores"
-    : `Ver anteriores (${totalAnteriores})`;
-
-  botao.addEventListener("click", () => {
-    mostrarAnteriores = !mostrarAnteriores;
-    renderizarNotificacoes(notificacoesAtuais);
-  });
-
-  wrapper.appendChild(botao);
-  listaNotificacoesPedagogico.appendChild(wrapper);
-}
-
 function renderizarNotificacoes(
   notificacoes
 ) {
   notificacoesAtuais =
     notificacoes || [];
 
+  const historicoAberto = listaNotificacoesPedagogico.querySelector(".avisos-anteriores")?.open;
   listaNotificacoesPedagogico.innerHTML = "";
 
   if (!notificacoesAtuais.length) {
@@ -1157,23 +1127,12 @@ function renderizarNotificacoes(
     );
   });
 
-  adicionarBotaoAnteriores(avisosAnteriores.length);
-
-  if (mostrarAnteriores && avisosAnteriores.length > 0) {
-    const titulo = document.createElement("div");
-    titulo.innerHTML = `
-      <h2 style="margin:6px 0 10px; font-size:18px;">
-        Avisos anteriores
-      </h2>
-    `;
-    listaNotificacoesPedagogico.appendChild(titulo);
-
-    avisosAnteriores.forEach((item) => {
-      listaNotificacoesPedagogico.appendChild(
-        renderizarCardAusencia(item)
-      );
-    });
-  }
+  const historico = criarAvisosAnteriores(
+    avisosAnteriores,
+    renderizarCardAusencia,
+    historicoAberto ?? false
+  );
+  if (historico) listaNotificacoesPedagogico.appendChild(historico);
 
   document
     .querySelectorAll(".btn-marcar-visto")

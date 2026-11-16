@@ -1,3 +1,4 @@
+import { criarAvisosAnteriores } from "./avisos-anteriores.js";
 import { supabase } from "./supabase.js";
 import { exigirProfessor } from "./guard.js";
 
@@ -582,10 +583,7 @@ async function buscarAvisosAusenciaProfessor() {
       "professor_id",
       professorId
     )
-    .gte(
-      "data_aula",
-      hoje
-    )
+    .or(`data_aula.gte.${hoje},status.in.(pendente,processado)`)
     .order(
       "data_aula",
       { ascending: true }
@@ -2233,67 +2231,53 @@ function renderizarNotificacoes(
   notificacoesAtuais =
     notificacoes || [];
 
-  listaNotificacoesProfessor.innerHTML =
-    "";
+  const historicoAberto = listaNotificacoesProfessor.querySelector(".avisos-anteriores")?.open;
+  listaNotificacoesProfessor.innerHTML = "";
 
   if (!notificacoesAtuais.length) {
     renderizarEstadoVazio();
     return;
   }
 
-  const totalNovas =
-    notificacoesAtuais.filter(
-      (item) =>
-        !estaVisto(item.notificacao_id)
-    ).length;
-
-  atualizarBadge(totalNovas);
-
-  const total =
-    notificacoesAtuais.length;
-
-  if (totalNovas > 0) {
-    textoNotificacoesProfessor.textContent =
-      totalNovas === 1
-        ? `Você tem 1 nova notificação e ${total} notificação(ões) ativa(s) no total.`
-        : `Você tem ${totalNovas} novas notificações e ${total} notificação(ões) ativa(s) no total.`;
-  } else {
-    textoNotificacoesProfessor.textContent =
-      total === 1
-        ? "Você tem 1 notificação ativa já vista."
-        : `Você tem ${total} notificações ativas já vistas.`;
-  }
+  const hoje = hojeISO();
+  const atuais = [];
+  const ausenciasAnteriores = [];
 
   notificacoesAtuais.forEach((item) => {
-    let card;
-
-    if (
-      item.tipo_notificacao ===
-      "avaliacao"
-    ) {
-      card =
-        renderizarCardAvaliacao(
-          item
-        );
-    } else if (
-      item.tipo_notificacao ===
-      "ausencia"
-    ) {
-      card =
-        renderizarCardAusencia(
-          item
-        );
-    } else {
-      card =
-        renderizarCardAgendamento(
-          item
-        );
-    }
-
-    listaNotificacoesProfessor.appendChild(
-      card
-    );
+    const ausenciaAnterior = item.tipo_notificacao === "ausencia" &&
+      item.data_aula && item.data_aula < hoje;
+    (ausenciaAnterior ? ausenciasAnteriores : atuais).push(item);
   });
+
+  const totalNovas = atuais.filter((item) => !estaVisto(item.notificacao_id)).length;
+  atualizarBadge(totalNovas);
+
+  const total = atuais.length;
+  const resumo = total === 1 ? "1 notificação ativa" : `${total} notificações ativas`;
+  if (total === 0) {
+    textoNotificacoesProfessor.textContent = "Nenhuma notificação ativa.";
+  } else if (totalNovas > 0) {
+    const novas = totalNovas === 1 ? "1 nova" : `${totalNovas} novas`;
+    textoNotificacoesProfessor.textContent = `${resumo} · ${novas}`;
+  } else {
+    textoNotificacoesProfessor.textContent = resumo;
+  }
+
+  atuais.forEach((item) => {
+    const card = item.tipo_notificacao === "avaliacao"
+      ? renderizarCardAvaliacao(item)
+      : item.tipo_notificacao === "ausencia"
+        ? renderizarCardAusencia(item)
+        : renderizarCardAgendamento(item);
+    listaNotificacoesProfessor.appendChild(card);
+  });
+
+  const historico = criarAvisosAnteriores(
+    ausenciasAnteriores,
+    renderizarCardAusencia,
+    historicoAberto ?? false
+  );
+  if (historico) listaNotificacoesProfessor.appendChild(historico);
 
   document
     .querySelectorAll(".btn-marcar-visto")
