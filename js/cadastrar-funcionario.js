@@ -7,6 +7,7 @@ if (await exigirAdmin()) {
   const msg = document.getElementById("msg");
 
   const nome = document.getElementById("nome");
+  const funcao = document.getElementById("funcao");
   const emailInstitucional = document.getElementById("emailInstitucional");
   const telefone = document.getElementById("telefone");
   const dataNascimento = document.getElementById("dataNascimento");
@@ -36,6 +37,7 @@ if (await exigirAdmin()) {
 
     const novoFuncionario = {
       nome: nomeFuncionario,
+      funcao: limparTexto(funcao.value),
       email_institucional: limparTexto(emailInstitucional.value),
       telefone: limparTexto(telefone.value),
       data_nascimento: dataNascimento.value || null,
