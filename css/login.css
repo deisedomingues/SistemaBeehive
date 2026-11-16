@@ -39,38 +39,10 @@ body.login-page {
   background: var(--beehive-superficie);
 }
 
-.login-brand {
-  position: relative;
-  display: grid;
-  place-items: center;
-  height: 116px;
-  max-width: 294px;
-  margin: 0 auto 14px;
-  overflow: hidden;
-}
-
 .login-card .logo {
-  position: absolute;
-  width: 180px;
-  max-width: 100%;
-  margin: 0;
-}
-
-.login-bee {
-  position: absolute;
-  width: clamp(32px, 9vw, 52px);
-}
-
-.login-bee-left {
-  left: 5%;
-  top: 15%;
-  transform: rotate(-16deg);
-}
-
-.login-bee-right {
-  right: 5%;
-  bottom: 12%;
-  transform: rotate(14deg);
+  width: 130px;
+  display: block;
+  margin: 0 auto 8px;
 }
 
 .login-card .form {
