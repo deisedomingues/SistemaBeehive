@@ -16,6 +16,9 @@ const cardAulaColetiva = document.getElementById("cardAulaColetiva");
 const avisoAulaColetiva = document.getElementById("avisoAulaColetiva");
 
 const selectMatricula = document.getElementById("matricula");
+const rotuloMatricula = document.getElementById("rotuloMatricula");
+const campoEquipeAula = document.getElementById("campoEquipeAula");
+const selectEquipeAula = document.getElementById("equipeAula");
 const listaAlunosBox = document.getElementById("listaAlunos");
 const alunosSelecionadosDiv = document.getElementById("alunosSelecionados");
 
@@ -48,6 +51,8 @@ const reposicaoComCustoGeral = document.getElementById("reposicaoComCusto");
 let msg = document.getElementById("msg");
 
 let matriculasLista = [];
+const turmasDisponiveis = new Map();
+let atualizandoParticipantes = false;
 let materiaColetivaId = null;
 let moduloColetivoId = null;
 
@@ -197,11 +202,14 @@ function atualizarCardsTipoAula() {
     avisoAulaColetiva.style.display = isColetivo ? "block" : "none";
   }
 
+  campoEquipeAula.hidden = !isColetivo || !turmasDisponiveis.size;
+  rotuloMatricula.textContent = isColetivo ? "Adicionar aluno manualmente" : "Aluno (curso)";
+
   const optionPadrao = selectMatricula.querySelector('option[value=""]');
 
   if (optionPadrao) {
     optionPadrao.textContent = isColetivo
-      ? "Selecione os alunos participantes"
+      ? "Selecione um participante"
       : "Selecione o aluno";
   }
 }
@@ -315,6 +323,7 @@ function limparCamposAuxiliaresGerais() {
 }
 
 function limparEstadoColetivo() {
+  selectEquipeAula.value = "";
   matriculasLista = [];
   materiaColetivaId = null;
   moduloColetivoId = null;
@@ -722,6 +731,8 @@ async function carregarMatriculas() {
       id,
       materia_id,
       modulo_id,
+      empresa_cnpj,
+      empresa:empresa_cnpj(nome,tipo_cadastro),
       aluno:aluno_id(nome),
       materia:materia_id(nome),
       modulo:modulo_id(nome)
@@ -752,7 +763,29 @@ async function carregarMatriculas() {
       opt.dataset.materiaNome = m.materia?.nome || "Curso não informado";
       opt.dataset.moduloNome = m.modulo?.nome || "Módulo não informado";
       selectMatricula.appendChild(opt);
+
+      if (m.empresa?.tipo_cadastro === "equipe" && m.empresa_cnpj && m.materia_id && m.modulo_id) {
+        const chave = JSON.stringify([m.empresa_cnpj, m.materia_id, m.modulo_id]);
+        if (!turmasDisponiveis.has(chave)) {
+          turmasDisponiveis.set(chave, {
+            nome: m.empresa.nome,
+            materia: opt.dataset.materiaNome,
+            modulo: opt.dataset.moduloNome,
+            alunos: []
+          });
+        }
+        turmasDisponiveis.get(chave).alunos.push(opt);
+      }
     });
+
+  const turmas = [...turmasDisponiveis].sort(([, a], [, b]) =>
+    a.nome.localeCompare(b.nome, "pt-BR") || a.materia.localeCompare(b.materia, "pt-BR") ||
+    a.modulo.localeCompare(b.modulo, "pt-BR")
+  );
+  for (const [chave, turma] of turmas) {
+    const quantidade = turma.alunos.length === 1 ? "1 aluno" : `${turma.alunos.length} alunos`;
+    selectEquipeAula.add(new Option(`${turma.nome} · ${turma.materia} · ${turma.modulo} · ${quantidade}`, chave));
+  }
 
   atualizarCardsTipoAula();
 }
@@ -1005,6 +1038,7 @@ async function renderizarAlunosColetivo() {
       <button
         type="button"
         class="btn-remover-aluno"
+        aria-label="Remover ${escaparHTML(aluno.nome)}"
         data-index="${index}"
       >
         ✕
@@ -1022,6 +1056,7 @@ async function renderizarAlunosColetivo() {
 
       <select
         class="status-individual"
+        aria-label="Status de ${escaparHTML(aluno.nome)}"
         data-index="${index}"
         style="width:100%; margin-top:8px; padding:8px; border-radius:6px;"
       >
@@ -1183,6 +1218,61 @@ async function alternarTipoAula() {
   esconderCampoReposicaoComCusto();
 }
 
+function criarParticipante(opcao) {
+  return {
+    id: opcao.value,
+    nome: opcao.textContent,
+    materiaId: opcao.dataset.materiaId,
+    materiaNome: opcao.dataset.materiaNome,
+    moduloAtual: opcao.dataset.moduloAtual,
+    moduloNome: opcao.dataset.moduloNome,
+    status: STATUS.PRESENTE,
+    aulaGravada: true,
+    precisaReposicao: false,
+    justificativa: "",
+    aulaOriginalId: null,
+    reposicaoComCusto: false,
+    duracaoSegundos: null
+  };
+}
+
+async function aplicarParticipantes(participantes, prepararModulo) {
+  if (atualizandoParticipantes) return;
+  atualizandoParticipantes = true;
+  const controles = [selectEquipeAula, selectMatricula, aulaIndividualRadio, aulaColetivaRadio];
+  controles.forEach((controle) => { controle.disabled = true; });
+  alunosSelecionadosDiv.inert = true;
+
+  try {
+    if (prepararModulo) {
+      const { materiaId, moduloAtual } = participantes[0];
+      await carregarModulos(materiaId, moduloAtual);
+      materiaColetivaId = materiaId;
+      moduloColetivoId = moduloAtual;
+      moduloAula.value = moduloAtual;
+    }
+
+    matriculasLista = participantes;
+    listaAlunosBox.style.display = "block";
+    await renderizarAlunosColetivo();
+    await atualizarParteAutomatica();
+  } finally {
+    selectMatricula.value = "";
+    alunosSelecionadosDiv.inert = false;
+    controles.forEach((controle) => { controle.disabled = false; });
+    atualizandoParticipantes = false;
+  }
+}
+
+selectEquipeAula.addEventListener("change", async () => {
+  const turma = turmasDisponiveis.get(selectEquipeAula.value);
+  if (!turma) return;
+
+  const atuais = new Map(matriculasLista.map((aluno) => [aluno.id, aluno]));
+  await aplicarParticipantes(turma.alunos.map((opcao) =>
+    atuais.get(opcao.value) || criarParticipante(opcao)), true);
+});
+
 aulaIndividualRadio.addEventListener("change", alternarTipoAula);
 aulaColetivaRadio.addEventListener("change", alternarTipoAula);
 
@@ -1206,9 +1296,6 @@ selectMatricula.addEventListener("change", async () => {
 
   const materiaId = opt.dataset.materiaId;
   const moduloAtual = opt.dataset.moduloAtual;
-  const materiaNome = opt.dataset.materiaNome;
-  const moduloNome = opt.dataset.moduloNome;
-
   if (ehAulaColetiva()) {
     const jaExiste = matriculasLista.find((a) => String(a.id) === String(id));
 
@@ -1218,56 +1305,19 @@ selectMatricula.addEventListener("change", async () => {
       return;
     }
 
-    if (matriculasLista.length === 0) {
-      materiaColetivaId = materiaId;
-      moduloColetivoId = moduloAtual;
-
-      await carregarModulos(materiaId, moduloAtual);
-      moduloAula.value = moduloAtual;
-    } else {
-      if (String(materiaId) !== String(materiaColetivaId)) {
-        mostrarMensagem(
-          "Em aula coletiva, todos os alunos precisam ser do mesmo curso.",
-          false
-        );
-        selectMatricula.value = "";
-        return;
-      }
-
-      if (String(moduloAtual) !== String(moduloColetivoId)) {
-        mostrarMensagem(
-          "Em aula coletiva, todos os alunos precisam ser do mesmo módulo.",
-          false
-        );
-        selectMatricula.value = "";
-        return;
-      }
+    if (matriculasLista.length && materiaId !== materiaColetivaId) {
+      mostrarMensagem("Em aula coletiva, todos os alunos precisam ser do mesmo curso.", false);
+      selectMatricula.value = "";
+      return;
     }
 
-    const novoAluno = {
-      id,
-      nome: opt.textContent,
-      materiaId,
-      materiaNome,
-      moduloAtual,
-      moduloNome,
-      status: STATUS.PRESENTE,
-      aulaGravada: true,
-      precisaReposicao: false,
-      justificativa: "",
-      aulaOriginalId: null,
-      reposicaoComCusto: false,
-      duracaoSegundos: null
-    };
+    if (matriculasLista.length && moduloAtual !== moduloColetivoId) {
+      mostrarMensagem("Em aula coletiva, todos os alunos precisam ser do mesmo módulo.", false);
+      selectMatricula.value = "";
+      return;
+    }
 
-    matriculasLista.push(novoAluno);
-
-    listaAlunosBox.style.display = "block";
-    await renderizarAlunosColetivo();
-    await atualizarParteAutomatica();
-
-    selectMatricula.value = "";
-    atualizarCardsTipoAula();
+    await aplicarParticipantes([...matriculasLista, criarParticipante(opt)], !matriculasLista.length);
     return;
   }
 
@@ -1356,6 +1406,7 @@ function montarRegistroBase({
 ========================================== */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (atualizandoParticipantes) return;
 
   const professorId = professorIdLogado();
   const moduloId = Number(moduloAula.value);

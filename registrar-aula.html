@@ -46,12 +46,20 @@
         </div>
 
         <small id="avisoAulaColetiva" class="aviso-aula-coletiva" style="display:none;">
-          Selecione os alunos participantes da aula coletiva. Todos precisam ser do mesmo curso e módulo.
+          Selecione uma equipe ou adicione os participantes manualmente. Confira o status de cada aluno antes de salvar.
         </small>
       </div>
 
+      <div id="campoEquipeAula" hidden>
+        <label for="equipeAula">Equipe</label>
+        <select id="equipeAula" aria-describedby="ajudaEquipeAula">
+          <option value="">Selecionar alunos manualmente</option>
+        </select>
+        <small id="ajudaEquipeAula">Ao escolher uma equipe, a lista é substituída pelos alunos daquela turma. Você pode ajustar os participantes abaixo.</small>
+      </div>
+
       <label>
-        Aluno (curso)
+        <span id="rotuloMatricula">Aluno (curso)</span>
         <select id="matricula">
           <option value="">Carregando alunos...</option>
         </select>
