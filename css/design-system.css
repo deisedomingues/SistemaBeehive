@@ -1,0 +1,16 @@
+:root {
+  --beehive-fundo: #fff8e6;
+  --beehive-superficie: #fff;
+  --beehive-texto: #2c210e;
+  --beehive-texto-acao: #483300;
+  --beehive-mel: #fdcc0c;
+  --beehive-mel-ativo: #e0aa1f;
+  --beehive-mel-claro: #fff1c8;
+  --beehive-borda: #b49b62;
+  --beehive-foco: #6c4e06;
+  --beehive-fonte: Arial, sans-serif;
+  --beehive-raio-controle: 10px;
+  --beehive-raio-painel: 16px;
+  --beehive-altura-controle: 44px;
+  --beehive-sombra-painel: 0 8px 24px rgba(44, 33, 14, 0.12);
+}

@@ -1,3 +1,5 @@
+@import url("design-system.css");
+
 /* =========================================================
    1) RESET E BASE GLOBAL
 ========================================================= */
@@ -5,7 +7,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: Arial, sans-serif;
+  font-family: var(--beehive-fonte);
 }
 
 img {
@@ -18,10 +20,8 @@ img {
 ========================================================= */
 body {
   min-height: 100vh;
-  background-color: #fff5cc;
-  background-image: url("../images/FundoColmeiaEscuro.png");
-  background-size: cover;
-  background-position: center;
+  background: var(--beehive-fundo);
+  color: var(--beehive-texto);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -29,10 +29,7 @@ body {
 }
 
 .overlay {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(255, 245, 204, 0.9);
-  z-index: 1;
+  display: none;
 }
 
 /* =========================================================
@@ -41,13 +38,13 @@ body {
 .container {
   position: relative;
   z-index: 2;
-  background-color: #ffffff;
+  background-color: var(--beehive-superficie);
   padding: 40px;
-  border-radius: 16px;
+  border-radius: var(--beehive-raio-painel);
   text-align: center;
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--beehive-sombra-painel);
 }
 
 .container-resumo {
@@ -134,19 +131,19 @@ h1 {
 }
 
 .btn {
-  background-color: #fdcc0c;
-  color: #000;
+  background-color: var(--beehive-mel);
+  color: var(--beehive-texto);
   text-decoration: none;
   padding: 14px;
-  border-radius: 10px;
+  border-radius: var(--beehive-raio-controle);
   font-weight: bold;
-  transition: 0.3s;
+  transition: background-color 0.2s ease;
   border: none;
   cursor: pointer;
 }
 
 .btn:hover {
-  background-color: #e0aa1f;
+  background-color: var(--beehive-mel-ativo);
 }
 
 .link-voltar {
@@ -740,9 +737,6 @@ textarea[readonly] {
 .pagina-painel-academico {
   margin: 0;
   min-height: 100vh;
-  background:
-    linear-gradient(rgba(255, 245, 204, 0.88), rgba(255, 245, 204, 0.88)),
-    url("../images/FundoColmeiaEscuro.png") center/cover no-repeat fixed;
 }
 
 .painel-wrap {
@@ -946,9 +940,6 @@ textarea[readonly] {
 ========================================================= */
 .pagina-resumo-professor {
   min-height: 100vh;
-  background:
-    linear-gradient(rgba(255, 245, 204, 0.9), rgba(255, 245, 204, 0.9)),
-    url("../images/FundoColmeiaEscuro.png") center/cover no-repeat fixed;
 }
 
 .container-resumo-professor {
@@ -4367,15 +4358,8 @@ textarea[readonly] {
 
 .pagina-eventos-admin {
   min-height: 100vh;
-  background:
-    linear-gradient(rgba(255, 245, 204, 0.9), rgba(255, 245, 204, 0.9)),
-    url("../images/FundoColmeiaEscuro.png") center/cover no-repeat fixed;
   display: block;
   padding: 28px 16px;
-}
-
-.pagina-eventos-admin .overlay {
-  display: none;
 }
 
 .pagina-eventos-admin .container-eventos-admin {
@@ -4653,15 +4637,6 @@ textarea[readonly] {
 body:has(.home-aluno-page) {
   display: block;
   padding: 0;
-  background-color: #fff8dc;
-  background-image: none;
-}
-
-/*
-  Nesta página não utilizaremos o fundo escuro em colmeia.
-*/
-body:has(.home-aluno-page) .overlay {
-  display: none;
 }
 
 /*
@@ -4887,15 +4862,6 @@ body:has(.home-aluno-page) .overlay {
 body:has(.home-aluno-page) {
   display: block;
   padding: 0;
-  background-color: #fff8dc;
-  background-image: none;
-}
-
-/*
-  O fundo decorativo antigo não será exibido nesta home.
-*/
-body:has(.home-aluno-page) .overlay {
-  display: none;
 }
 
 /*
@@ -5177,15 +5143,6 @@ body:has(.home-aluno-page) .overlay {
 body:has(.home-professor-page) {
   display: block;
   padding: 0;
-  background-color: #fff8dc;
-  background-image: none;
-}
-
-/*
-  Remove o fundo decorativo antigo somente nesta home.
-*/
-body:has(.home-professor-page) .overlay {
-  display: none;
 }
 
 /*
