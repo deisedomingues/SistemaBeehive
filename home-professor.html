@@ -14,6 +14,8 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0"
   >
+  <link rel="stylesheet" href="css/cabecalho-departamento.css">
+  <link rel="stylesheet" href="css/home-professor.css">
 </head>
 
 <body>
@@ -22,106 +24,32 @@
 
   <main class="container home-professor-page">
 
-    <!-- =======================================
-         TOPO DA PÁGINA
-    ======================================== -->
-    <header class="topo-site-professor">
-
-      <div class="marca-topo-professor">
-        <img
-          src="images/logo.png"
-          alt="Beehive Escola de Idiomas"
-          class="logo-topo-professor"
-        >
-
-        <div class="marca-topo-texto-professor">
-          <strong>Beehive</strong>
-          <span>Escola de Idiomas</span>
+    <header class="cabecalho-departamento cabecalho-professor">
+      <div class="cabecalho-departamento__identidade">
+        <span class="cabecalho-departamento__logo">
+          <img src="images/logo.png" alt="Beehive Idiomas" width="112" height="112">
+        </span>
+        <div>
+          <p class="rotulo-admin">Área do professor</p>
+          <h1 id="saudacao">Olá!</h1>
         </div>
       </div>
 
-      <a
-        href="configuracoes-professor.html"
-        class="btn-configuracoes-professor-icone"
-        aria-label="Abrir configurações"
-        title="Configurações"
-      >
-        ⚙️
-      </a>
-
+      <div class="cabecalho-departamento__acoes">
+        <div class="cabecalho-professor__perfil">
+          <label for="selectPerfilVisualizacao">Visualizar como</label>
+          <select id="selectPerfilVisualizacao">
+            <option value="professor" selected>Professor</option>
+            <option value="aluno" id="optionAluno">Aluno</option>
+          </select>
+        </div>
+        <a href="configuracoes-professor.html" class="btn-configuracoes-professor-icone"
+          aria-label="Abrir configurações" title="Configurações">⚙️</a>
+      </div>
     </header>
 
-    <!-- =======================================
-         SAUDAÇÃO
-    ======================================== -->
-    <section class="cabecalho-site-professor">
-
-      <p class="rotulo-admin">
-        Área do professor
-      </p>
-
-      <h1
-        id="saudacao"
-        class="saudacao-titulo-professor"
-      >
-        Olá!
-      </h1>
-
-      <p class="subtitulo-site-professor">
-        Escolha uma opção para continuar no sistema.
-      </p>
-
-    </section>
-
-    <!--
-      Este elemento continua no HTML porque o JavaScript
-      atual utiliza o id tituloProfessor.
-      Ele ficará visualmente escondido pelo CSS.
-    -->
-    <h2
-      id="tituloProfessor"
-      class="titulo-professor-oculto"
-    >
-      Bem-vindo(a)
-    </h2>
-
-    <!-- =======================================
-         SELETOR DE PERFIL
-    ======================================== -->
-    <section class="seletor-perfil-inline seletor-perfil-site-professor">
-
-      <label
-        for="selectPerfilVisualizacao"
-        class="label-seletor-inline"
-      >
-        Visualizar como:
-      </label>
-
-      <select
-        id="selectPerfilVisualizacao"
-        class="select-seletor-inline"
-      >
-        <option
-          value="professor"
-          selected
-        >
-          Professor
-        </option>
-
-        <option
-          value="aluno"
-          id="optionAluno"
-        >
-          Aluno
-        </option>
-      </select>
-
-    </section>
-
-    <p
-      id="infoPerfilAluno"
-      class="info-perfil-aluno-inline"
-    ></p>
+    <h2 id="tituloProfessor" class="titulo-professor-oculto">Bem-vindo(a)</h2>
+    <p id="infoPerfilAluno" class="info-perfil-aluno-inline" role="status"></p>
 
     <!-- =======================================
          CARDS DO PROFESSOR
