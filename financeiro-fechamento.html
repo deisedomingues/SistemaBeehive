@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fechamento e pagamentos | Beehive</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/navegacao.css">
+  <link rel="stylesheet" href="css/financeiro.css">
+</head>
+<body>
+  <main class="container financeiro">
+    <a href="home-financeiro.html" class="beehive-voltar">← Voltar</a>
+    <h1 id="titulo">Fechamento e pagamentos</h1>
+    <nav aria-label="Área de fechamento">
+      <a href="financeiro-fechamento.html">Pagamentos</a> ·
+      <a href="financeiro-fechamento.html?aba=resumo">Resumo geral</a>
+    </nav>
+    <section class="financeiro-painel">
+      <form id="filtros" class="form financeiro-grade">
+        <label>Mês de referência <input id="mes" type="month" required></label>
+        <label id="campo-filtro">Situação do pagamento
+          <select id="filtro">
+            <option value="">Todos</option><option value="pendente">Pendentes</option><option value="pago">Pagos</option>
+          </select>
+        </label>
+      </form>
+      <p id="mensagem" role="status"></p>
+      <dl id="totais" class="financeiro-kpis"></dl>
+    </section>
+    <section id="pagamentos" aria-labelledby="titulo-lista">
+      <h2 id="titulo-lista">Valores por favorecido</h2>
+      <label>Data do pagamento <input id="data-pagamento" type="date" required></label>
+      <p>Use “Marcar como pago” após efetuar o pagamento.</p>
+      <div id="lista" class="financeiro-lista"></div>
+    </section>
+  </main>
+  <script type="module" src="js/financeiro-fechamento.js"></script>
+</body>
+</html>

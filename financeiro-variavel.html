@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custos variáveis | Beehive</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/navegacao.css">
+  <link rel="stylesheet" href="css/financeiro.css">
+</head>
+<body>
+  <main class="container financeiro">
+    <a href="home-financeiro.html" class="beehive-voltar">← Voltar</a>
+    <h1 id="titulo">Custos variáveis</h1>
+    <p>Despesas pontuais da escola.</p>
+    <section class="financeiro-painel">
+      <h2 id="titulo-form">Novo custo variável</h2>
+      <form id="form-custo" class="form financeiro-grade">
+        <label>Data da despesa <input name="data" type="date" required></label>
+        <label>Valor (R$) <input name="valor" type="number" min="0.01" step="0.01" required></label>
+        <label class="campo-largo">Descrição <input name="descricao" maxlength="200" required></label>
+        <label class="campo-largo">Referência (opcional) <input name="referencia" maxlength="120"></label>
+        <button class="btn" type="submit">Registrar despesa</button>
+        <button class="beehive-voltar" id="cancelar-edicao" type="button" hidden>Cancelar edição</button>
+      </form>
+      <p id="mensagem" role="status"></p>
+    </section>
+    <section aria-labelledby="titulo-lista">
+      <h2 id="titulo-lista">Despesas do mês</h2>
+      <label>Mês <input id="mes" type="month" required></label>
+      <p id="total" role="status"></p>
+      <div id="lista" class="financeiro-lista"></div>
+    </section>
+  </main>
+  <script type="module" src="js/financeiro-variavel.js"></script>
+</body>
+</html>

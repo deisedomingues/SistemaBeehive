@@ -1,84 +1,40 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Financeiro Fixos | Beehive</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custos fixos | Beehive</title>
+  <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/navegacao.css">
+  <link rel="stylesheet" href="css/financeiro.css">
 </head>
 <body>
-
-  <div class="overlay"></div>
-
-  <main class="container container-resumo">
-
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
-      <div>
-        <h1 style="margin-bottom:6px;">Financeiro fixos</h1>
-        <p style="margin:0; opacity:0.9;">
-          Consulta dos custos fixos cadastrados para a Beehive.
-        </p>
-      </div>
-
-      <a href="home-financeiro.html" class="btn-secundario beehive-voltar" style="text-decoration:none;">
-        ← Voltar
-      </a>
-    </div>
-
-    <section class="card" style="margin-bottom:16px;">
-      <p style="margin:0; line-height:1.5;">
-        Esta tela é apenas informativa e utiliza como base os custos fixos cadastrados diretamente no banco de dados,
-        com seus respectivos valores, formas de pagamento e observações.
-      </p>
+  <main class="container financeiro">
+    <a href="home-financeiro.html" class="beehive-voltar">← Voltar</a>
+    <h1 id="titulo">Custos fixos</h1>
+    <p>Pagamentos recorrentes, como remuneração mensal e ajuda de internet.</p>
+    <section class="financeiro-painel">
+      <h2 id="titulo-form">Novo custo fixo</h2>
+      <form id="form-custo" class="form financeiro-grade">
+        <label>Favorecido <select name="pessoa"><option value="">Outro favorecido</option></select></label>
+        <label id="campo-nome">Nome do favorecido <input name="nome" required maxlength="160"></label>
+        <label class="campo-largo">Descrição <input name="descricao" required maxlength="200"></label>
+        <label>Início da vigência <input name="inicio" type="date" required></label>
+        <label>Fim da vigência (opcional) <input name="fim" type="date"></label>
+        <label>Valor da primeira parcela (R$) <input name="valor1" type="number" min="0.01" step="0.01" required></label>
+        <label>Dia de vencimento <input name="dia1" type="number" min="1" max="31" required></label>
+        <label>Valor da segunda parcela (opcional) <input name="valor2" type="number" min="0.01" step="0.01"></label>
+        <label>Dia da segunda parcela (opcional) <input name="dia2" type="number" min="1" max="31"></label>
+        <label class="campo-largo">Observação (opcional) <textarea name="observacao" rows="2"></textarea></label>
+        <button class="btn" type="submit" disabled>Salvar custo fixo</button>
+      </form>
+      <p id="mensagem" role="status"></p>
     </section>
-
-    <section class="card" style="margin-bottom:16px;">
-      <h2 style="margin-bottom:12px;">Filtros</h2>
-
-      <div class="form-grid">
-        <div>
-          <label for="filtroTipo">Tipo</label>
-          <select id="filtroTipo">
-            <option value="">Todos</option>
-            <option value="administrativo">Administrativo</option>
-            <option value="professor">Professor</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="filtroStatus">Status</label>
-          <select id="filtroStatus">
-            <option value="">Todos</option>
-            <option value="ativo">Ativos</option>
-            <option value="inativo">Inativos</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="filtroNome">Pessoa</label>
-          <input type="text" id="filtroNome" placeholder="Buscar por nome..." />
-        </div>
-      </div>
+    <section aria-labelledby="titulo-lista">
+      <h2 id="titulo-lista">Custos cadastrados</h2>
+      <div id="lista" class="financeiro-lista">Carregando custos…</div>
     </section>
-
-    <div id="msg" style="display:none; margin-bottom:12px;"></div>
-
-    <section class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
-        <h2 style="margin:0;">Custos fixos cadastrados</h2>
-        <span id="contadorFixos" style="font-size:14px; opacity:0.8;">Carregando...</span>
-      </div>
-
-      <div id="listaFixos" style="display:grid; gap:12px;">
-        <p>Carregando custos fixos...</p>
-      </div>
-    </section>
-
   </main>
-
-  <script src="js/supabaseClient.js"></script>
-  <script src="js/guard.js"></script>
-  <script src="js/financeiro-fixos.js"></script>
+  <script type="module" src="js/financeiro-fixos.js"></script>
 </body>
 </html>
