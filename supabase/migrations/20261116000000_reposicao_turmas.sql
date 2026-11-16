@@ -1,7 +1,42 @@
 begin;
 
 alter table public.empresaparceira
-  add column bloqueia_reposicao boolean not null default false;
+  add column tipo_cadastro text not null default 'empresa'
+    constraint empresaparceira_tipo_cadastro_check
+    check (tipo_cadastro in ('empresa', 'equipe'));
+
+-- As matrículas existentes usam empresa_cnpj como referência. Para cadastros
+-- sem CNPJ, o banco preenche essa chave com um identificador interno.
+create sequence public.empresaparceira_codigo_interno_seq maxvalue 999999;
+
+create function public.preencher_codigo_empresaparceira()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if nullif(trim(new.cnpj), '') is null then
+    loop
+      new.cnpj := '00000000' ||
+        lpad(nextval('public.empresaparceira_codigo_interno_seq'::regclass)::text, 6, '0');
+
+      exit when not exists (
+        select 1 from public.empresaparceira as cadastro
+        where cadastro.cnpj = new.cnpj
+      );
+    end loop;
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger preencher_codigo_empresaparceira
+  before insert on public.empresaparceira
+  for each row execute function public.preencher_codigo_empresaparceira();
+
+revoke all on function public.preencher_codigo_empresaparceira() from public;
 
 -- Campo calculado da matrícula. A API recebe apenas a configuração booleana.
 create function public.reposicao_bloqueada(matricula public.matricula)
@@ -12,7 +47,7 @@ security definer
 set search_path = ''
 as $$
   select coalesce((
-    select empresa.bloqueia_reposicao
+    select empresa.tipo_cadastro = 'equipe'
     from public.empresaparceira as empresa
     where empresa.cnpj = ($1).empresa_cnpj
   ), false);

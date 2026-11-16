@@ -546,7 +546,7 @@ function adicionarCurso() {
     </label>
 
     <label style="margin-bottom:8px;">
-      Empresa deste curso
+      Empresa ou equipe deste curso
       <select class="empresaCurso" required style="padding:8px;"></select>
     </label>
 
@@ -660,7 +660,7 @@ function validarCursosAntesDeSalvar(cursos) {
     }
 
     if (!curso.empresa_cnpj) {
-      mostrarMensagem("Selecione a empresa de cada curso.", false);
+      mostrarMensagem("Selecione a empresa, equipe ou opção particular de cada curso.", false);
       return false;
     }
 

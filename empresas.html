@@ -21,60 +21,39 @@
 
     <form class="form" id="form-empresa">
 
-      <label style="margin-bottom:8px;">
-        CNPJ
-        <input
-          type="text"
-          id="cnpj"
-          placeholder="Ex: 12.345.678/0001-99"
-          required
-          style="padding:8px;"
-        />
+      <label for="tipo-cadastro">
+        Tipo de cadastro
+        <select id="tipo-cadastro" name="tipo_cadastro">
+          <option value="empresa">Empresa</option>
+          <option value="equipe">Equipe</option>
+        </select>
       </label>
 
-      <label style="margin-bottom:8px;">
+      <label for="nome">
         Nome da empresa ou equipe
-        <input
-          type="text"
-          id="nome"
-          placeholder="Ex: Empresa ABC ou Turma 1"
-          required
-          style="padding:8px;"
-        />
+        <input type="text" id="nome" name="nome" placeholder="Ex: Empresa ABC" required>
       </label>
 
-      <label style="margin-bottom:8px;">
-        E-mail (opcional)
-        <input
-          type="email"
-          id="email"
-          placeholder="Ex: contato@empresa.com"
-          style="padding:8px;"
-        />
-      </label>
+      <div id="campos-empresa">
+        <label for="cnpj">
+          CNPJ (opcional)
+          <input type="text" id="cnpj" name="cnpj" placeholder="Ex: 12.345.678/0001-99">
+        </label>
 
-      <label style="margin-bottom:8px;">
-        Telefone (opcional)
-        <input
-          type="text"
-          id="telefone"
-          placeholder="Ex: (11) 99999-9999"
-          style="padding:8px;"
-        />
-      </label>
+        <label for="email">
+          E-mail (opcional)
+          <input type="email" id="email" name="email" placeholder="Ex: contato@empresa.com">
+        </label>
 
-      <label style="margin-bottom:10px;">
+        <label for="telefone">
+          Telefone (opcional)
+          <input type="text" id="telefone" name="telefone" placeholder="Ex: (11) 99999-9999">
+        </label>
+      </div>
+
+      <label for="observacao">
         Observação (opcional)
-        <textarea
-          id="observacao"
-          placeholder="Ex: empresa exige relatório todo dia 05..."
-          style="padding:8px; min-height:80px; resize:vertical;"
-        ></textarea>
-      </label>
-
-      <label>
-        <input type="checkbox" id="bloqueia-reposicao">
-        Turma com gravação em caso de falta e sem agendamento de reposição
+        <textarea id="observacao" name="observacao" rows="3"></textarea>
       </label>
 
       <button
