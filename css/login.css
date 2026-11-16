@@ -1,0 +1,61 @@
+body.login-page {
+  padding: 24px 12px;
+  align-items: safe center;
+}
+
+.login-page .login-card {
+  --ponta: clamp(22px, calc(25vw - 62px), 96px);
+  --hexagono: polygon(
+    var(--ponta) 0, calc(100% - var(--ponta)) 0, 100% 50%,
+    calc(100% - var(--ponta)) 100%, var(--ponta) 100%, 0 50%
+  );
+
+  isolation: isolate;
+  width: 100%;
+  max-width: 560px;
+  padding: clamp(32px, 7vw, 44px) calc(var(--ponta) + 12px);
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(0 8px 18px rgba(44, 33, 14, .15));
+}
+
+.login-card::before,
+.login-card::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  clip-path: var(--hexagono);
+}
+
+.login-card::before {
+  inset: 0;
+  z-index: -2;
+  background: var(--beehive-mel);
+}
+
+.login-card::after {
+  inset: 2px;
+  z-index: -1;
+  background: var(--beehive-superficie);
+}
+
+.login-card .logo {
+  width: 130px;
+  display: block;
+  margin: 0 auto 8px;
+}
+
+.login-card .form {
+  max-width: 320px;
+  margin-inline: auto;
+}
+
+.login-card input,
+.login-card .btn {
+  min-height: var(--beehive-altura-controle);
+}
+
+.login-card :focus-visible {
+  outline: 2px solid var(--beehive-foco);
+  outline-offset: 2px;
+}
