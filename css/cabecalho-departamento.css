@@ -1,0 +1,62 @@
+.cabecalho-departamento {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-bottom: 16px;
+}
+
+.cabecalho-departamento__identidade,
+.cabecalho-departamento__acoes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cabecalho-departamento__identidade {
+  flex: 1 1 360px;
+  min-width: 0;
+}
+
+.cabecalho-departamento__acoes {
+  flex-wrap: wrap;
+}
+
+.cabecalho-departamento__logo {
+  position: relative;
+  flex: 0 0 50px;
+  height: 60px;
+  overflow: hidden;
+}
+
+/* Recorta as margens brancas do arquivo original para alinhar a marca ao título. */
+.cabecalho-departamento__logo img {
+  position: absolute;
+  width: 112px;
+  max-width: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-48%, -52%);
+}
+
+.cabecalho-departamento h1 {
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  margin: 0;
+}
+
+.cabecalho-departamento p {
+  margin: 3px 0 0;
+  color: #655635;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.cabecalho-departamento .beehive-voltar {
+  margin: 0;
+}
+
+.cabecalho-departamento + .painel-admin-cards {
+  margin-top: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
