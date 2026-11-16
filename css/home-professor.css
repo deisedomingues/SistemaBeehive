@@ -1,0 +1,55 @@
+.home-professor-page .cabecalho-professor {
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: var(--beehive-superficie);
+  border: 1px solid #e8d9ad;
+  border-radius: var(--beehive-raio-painel);
+}
+
+.cabecalho-professor .cabecalho-departamento__identidade {
+  flex-basis: 290px;
+}
+
+.cabecalho-professor .rotulo-admin {
+  margin: 0 0 3px;
+  font-size: 0.75rem;
+}
+
+.cabecalho-professor h1 {
+  overflow-wrap: anywhere;
+}
+
+.cabecalho-professor__perfil {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cabecalho-professor__perfil label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cabecalho-professor__perfil select {
+  width: 125px;
+  min-height: var(--beehive-altura-controle);
+  margin-top: 0;
+  background: var(--beehive-superficie);
+}
+
+.cabecalho-professor .btn-configuracoes-professor-icone {
+  min-width: var(--beehive-altura-controle);
+  min-height: var(--beehive-altura-controle);
+  box-shadow: none;
+}
+
+@media (max-width: 660px) {
+  .cabecalho-professor .cabecalho-departamento__acoes {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .cabecalho-professor__perfil {
+    flex-wrap: wrap;
+  }
+}
