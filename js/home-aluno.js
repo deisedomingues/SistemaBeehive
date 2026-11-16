@@ -1707,3 +1707,16 @@ if (btnSair) {
 }
 
 carregarAluno();
+
+if (alunoId && !professoraVisualizandoComoAluno) {
+  void registrarAcessoDiario();
+}
+
+async function registrarAcessoDiario() {
+  try {
+    const { error } = await supabase.rpc("registrar_acesso_aluno");
+    if (error) throw error;
+  } catch (erro) {
+    console.warn("Não foi possível contabilizar o acesso de hoje.", erro);
+  }
+}
