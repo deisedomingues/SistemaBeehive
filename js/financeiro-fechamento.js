@@ -23,20 +23,6 @@ function consolidar(pessoas, aulas, fixos, lancamentos, pagamentos, inicio, fim)
 
   const cadastro = new Map(pessoas.map((p) => [p.chave, p]));
   for (const p of pessoas) if (p.ativo && p.tipo === "funcionario") linha(p.chave, p.nome, p.tipo);
-  let semProfessor = 0;
-  for (const aula of aulas) {
-    if (!aula.professor_id) {
-      semProfessor++;
-      continue;
-    }
-    const chave = `professor:${aula.professor_id}`;
-    const item = linha(chave, cadastro.get(chave)?.nome || `Professor(a) #${aula.professor_id}`, "professor");
-    if (aula.duracao_segundos_salva == null || (aula.valor_hora == null && Number(aula.duracao_segundos_salva) > 0)) {
-      item.pendencias++;
-    }
-    item.aulas += calcularValorItem(aula);
-  }
-
   const porCusto = new Map();
   for (const lancamento of lancamentos) {
     const chave = String(lancamento.financeiro_fixo_id);
@@ -44,6 +30,7 @@ function consolidar(pessoas, aulas, fixos, lancamentos, pagamentos, inicio, fim)
     registros.push(lancamento);
     porCusto.set(chave, registros);
   }
+  const regimesFixos = new Map();
   for (const fixo of fixos) {
     const registros = porCusto.get(String(fixo.id)) || [];
     if (!registros.length && (
@@ -51,6 +38,13 @@ function consolidar(pessoas, aulas, fixos, lancamentos, pagamentos, inicio, fim)
       (fixo.data_fim && fixo.data_fim < inicio)
     )) continue;
 
+    if (fixo.substitui_hora_aula && (fixo.ativo || fixo.data_fim)
+      && (!registros.length || registros.some((r) => r.status !== "cancelado"))) {
+      const chaveProfessor = String(fixo.professor_id);
+      const vigencias = regimesFixos.get(chaveProfessor) || [];
+      vigencias.push(fixo);
+      regimesFixos.set(chaveProfessor, vigencias);
+    }
     const chave = fixo.professor_id ? `professor:${fixo.professor_id}`
       : fixo.funcionario_id ? `funcionario:${fixo.funcionario_id}` : `fixo:${fixo.id}`;
     const tipo = chave.split(":")[0];
@@ -60,6 +54,24 @@ function consolidar(pessoas, aulas, fixos, lancamentos, pagamentos, inicio, fim)
       : centavos(fixo.valor_mensal);
     item.pagoFixo += registros.filter((r) => r.status === "pago").reduce((soma, r) => soma + centavos(r.valor), 0);
   }
+  let semProfessor = 0;
+  for (const aula of aulas) {
+    if (!aula.professor_id) {
+      semProfessor++;
+      continue;
+    }
+    const regimes = regimesFixos.get(String(aula.professor_id)) || [];
+    if (regimes.some((fixo) => aula.data_aula >= fixo.data_inicio &&
+      (!fixo.data_fim || aula.data_aula <= fixo.data_fim))) continue;
+
+    const chave = `professor:${aula.professor_id}`;
+    const item = linha(chave, cadastro.get(chave)?.nome || `Professor(a) #${aula.professor_id}`, "professor");
+    if (aula.duracao_segundos_salva == null || (aula.valor_hora == null && Number(aula.duracao_segundos_salva) > 0)) {
+      item.pendencias++;
+    }
+    item.aulas += calcularValorItem(aula);
+  }
+
   for (const pagamento of pagamentos) {
     linha(pagamento.beneficiario, pagamento.nome, pagamento.beneficiario.split(":")[0]).pagamento = pagamento;
   }
@@ -81,7 +93,7 @@ async function carregarMes(inicio, fim) {
     carregarPessoas(),
     carregarItensHoraAula({ inicio, fim }),
     carregarPaginas(() => supabase.from("financeiro_fixo")
-      .select("id,pessoa_nome,professor_id,funcionario_id,valor_mensal,ativo,data_inicio,data_fim").order("id")),
+      .select("id,pessoa_nome,professor_id,funcionario_id,valor_mensal,ativo,data_inicio,data_fim,substitui_hora_aula").order("id")),
     carregarPaginas(() => supabase.from("financeiro_fixo_lancamento")
       .select("id,financeiro_fixo_id,valor,status").eq("competencia", inicio).order("id")),
     carregarPaginas(() => supabase.from("financeiro_pagamento_mensal")

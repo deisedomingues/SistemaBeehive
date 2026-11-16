@@ -18,6 +18,13 @@
       <form id="form-custo" class="form financeiro-grade">
         <label>Favorecido <select name="pessoa"><option value="">Outro favorecido</option></select></label>
         <label id="campo-nome">Nome do favorecido <input name="nome" required maxlength="160"></label>
+        <label id="campo-regime" class="campo-largo" hidden>
+          Como este fixo entra no fechamento do professor
+          <select name="regime">
+            <option value="somar">Somar à hora-aula (ex.: ajuda de internet)</option>
+            <option value="substituir">Substituir a hora-aula pela remuneração fixa</option>
+          </select>
+        </label>
         <label class="campo-largo">Descrição <input name="descricao" required maxlength="200"></label>
         <label>Início da vigência <input name="inicio" type="date" required></label>
         <label>Fim da vigência (opcional) <input name="fim" type="date"></label>

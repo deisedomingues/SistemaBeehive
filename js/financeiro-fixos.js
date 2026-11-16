@@ -19,11 +19,12 @@ async function iniciar() {
   function sincronizarNome() {
     nome.disabled = Boolean(pessoa.value);
     document.getElementById("campo-nome").hidden = nome.disabled;
+    document.getElementById("campo-regime").hidden = !pessoa.value.startsWith("professor:");
   }
 
   async function listar() {
     const fixos = await carregarPaginas(() => supabase.from("financeiro_fixo")
-      .select("id,pessoa_nome,descricao,valor_mensal,data_inicio,data_fim,ativo,observacao,financeiro_fixo_parcela(numero_parcela,dia_vencimento,valor)")
+      .select("id,pessoa_nome,descricao,valor_mensal,data_inicio,data_fim,ativo,observacao,substitui_hora_aula,financeiro_fixo_parcela(numero_parcela,dia_vencimento,valor)")
       .order("id", { ascending: false }));
     lista.replaceChildren();
     if (!fixos.length) lista.textContent = "Nenhum custo fixo cadastrado.";
@@ -40,6 +41,7 @@ async function iniciar() {
         info.append(novoElemento("p", parcelas.sort((a,b) => a.numero_parcela-b.numero_parcela)
           .map((p) => `${moeda.format(p.valor)} no dia ${p.dia_vencimento}`).join(" + "), "secundario"));
       }
+      if (fixo.substitui_hora_aula) info.append(novoElemento("p", "Substitui a hora-aula durante a vigência.", "secundario"));
       if (fixo.observacao) info.append(novoElemento("p", fixo.observacao, "secundario"));
       const valor = novoElemento("strong", `${moeda.format(fixo.valor_mensal)} / mês`);
       linha.append(info, valor);
@@ -92,7 +94,7 @@ async function iniciar() {
 
     salvar.disabled = true;
     try {
-      const { error } = await supabase.rpc("cadastrar_custo_fixo", {
+      const { error } = await supabase.rpc("cadastrar_custo_fixo_com_regime", {
         p_nome: nomeFavorecido,
         p_descricao: descricao,
         p_inicio: dados.get("inicio"),
@@ -101,7 +103,8 @@ async function iniciar() {
         p_funcionario_id: favorecido?.tipo === "funcionario" ? favorecido.id : null,
         p_dias: [Number(dados.get("dia1")), ...(dia2 ? [Number(dia2)] : [])],
         p_valores: [Number(dados.get("valor1")), ...(valor2 ? [Number(valor2)] : [])],
-        p_observacao: dados.get("observacao")
+        p_observacao: dados.get("observacao"),
+        p_substitui_hora_aula: favorecido?.tipo === "professor" && dados.get("regime") === "substituir"
       });
       if (error) throw error;
       form.reset();
