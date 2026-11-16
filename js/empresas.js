@@ -51,7 +51,7 @@ form.addEventListener("submit", async (e) => {
         .maybeSingle();
 
     if (existente) {
-        mostrarMensagem("Empresa já cadastrada", false);
+        mostrarMensagem("Já existe um cadastro com esse CNPJ", false);
         return;
     }
 
@@ -65,16 +65,17 @@ form.addEventListener("submit", async (e) => {
             nome,
             email: email || null,
             telefone: telefone || null,
-            observacao: observacao || null
+            observacao: observacao || null,
+            bloqueia_reposicao: document.getElementById("bloqueia-reposicao").checked
         });
 
     if (error) {
         console.error(error);
-        mostrarMensagem("Erro ao salvar empresa", false);
+        mostrarMensagem("Erro ao salvar o cadastro", false);
         return;
     }
 
-    mostrarMensagem("Empresa cadastrada com sucesso");
+    mostrarMensagem("Cadastro salvo com sucesso");
 
     form.reset();
 });

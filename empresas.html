@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Cadastrar Empresa | Beehive</title>
+  <title>Cadastrar empresas ou equipes | Beehive</title>
 
   <link rel="stylesheet" href="css/style.css" />
 
@@ -16,7 +16,7 @@
   <main class="container">
 
     <h1 style="margin-bottom: 12px;">
-      Cadastrar Empresa Parceira
+      Cadastrar empresas ou equipes
     </h1>
 
     <form class="form" id="form-empresa">
@@ -33,11 +33,11 @@
       </label>
 
       <label style="margin-bottom:8px;">
-        Nome da empresa
+        Nome da empresa ou equipe
         <input
           type="text"
           id="nome"
-          placeholder="Ex: Empresa ABC"
+          placeholder="Ex: Empresa ABC ou Turma 1"
           required
           style="padding:8px;"
         />
@@ -72,12 +72,17 @@
         ></textarea>
       </label>
 
+      <label>
+        <input type="checkbox" id="bloqueia-reposicao">
+        Turma com gravação em caso de falta e sem agendamento de reposição
+      </label>
+
       <button
         type="submit"
         class="btn"
         style="margin-top:6px; padding:12px;"
       >
-        Salvar empresa
+        Salvar cadastro
       </button>
 
     </form>

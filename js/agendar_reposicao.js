@@ -26,6 +26,7 @@ let tipoAgendamentoSelecionado = "Reposição";
 // WhatsApp da escola
 // =============================
 const TELEFONE_ESCOLA = "5511956177084";
+const MENSAGEM_REPOSICAO_TURMA = "Este curso é em turma. Se faltar, você poderá assistir à gravação da aula.";
 const MENSAGEM_CANCELAMENTO = "Olá! Gostaria de cancelar um agendamento.";
 
 function gerarLinkWhatsApp() {
@@ -568,6 +569,7 @@ async function buscarMatriculasAtivas(alunoId) {
       modulo_id,
       professor_id,
       ativa,
+      reposicao_bloqueada,
       materia:materia_id (
         id,
         nome
@@ -775,6 +777,8 @@ function renderizarAulasPendentes(aulasLivres, agendamentosAtivos) {
         <strong>Escolha abaixo</strong> qual aula deseja repor.
       </p>
     `;
+  } else if (matriculaSelecionada.reposicao_bloqueada) {
+    html += `<p>${MENSAGEM_REPOSICAO_TURMA}</p>`;
   } else if (possuiReposicoesJaAgendadas) {
     html += `
       <p>
@@ -931,6 +935,14 @@ async function carregarPendencias() {
   if (tipoAgendamentoSelecionado !== "Reposição") {
     aulasPendentes = [];
     aulaSelecionadaId = null;
+    renderizarAulasPendentes([], agendamentosAtivosMatricula);
+    return;
+  }
+
+  if (matriculaSelecionada.reposicao_bloqueada) {
+    aulasPendentes = [];
+    aulaSelecionadaId = null;
+    textoSelecao.textContent = "Reposição indisponível para este curso.";
     renderizarAulasPendentes([], agendamentosAtivosMatricula);
     return;
   }
@@ -1149,6 +1161,11 @@ async function buscarHorariosLivres() {
 // Renderizar horários disponíveis
 // =============================
 async function carregarHorariosDisponiveis() {
+  if (tipoAgendamentoSelecionado === "Reposição" && matriculaSelecionada.reposicao_bloqueada) {
+    listaReposicoes.innerHTML = "";
+    return;
+  }
+
   if (tipoAgendamentoSelecionado === "Reposição" && !aulaSelecionadaId) {
     if (aulasPendentes.length > 0) {
       listaReposicoes.innerHTML = `
@@ -1269,6 +1286,11 @@ async function carregarHorariosDisponiveis() {
 function ativarEscolhaHorario() {
   document.querySelectorAll(".btnEscolherHorario").forEach((btn) => {
     btn.addEventListener("click", async () => {
+      if (tipoAgendamentoSelecionado === "Reposição" && matriculaSelecionada.reposicao_bloqueada) {
+        mostrarMensagem(MENSAGEM_REPOSICAO_TURMA, true);
+        return;
+      }
+
       if (tipoAgendamentoSelecionado === "Reposição" && !aulaSelecionadaId) {
         mostrarMensagem("Selecione uma aula pendente primeiro.", true);
         return;
@@ -1461,7 +1483,10 @@ function ativarEscolhaHorario() {
 
       } catch (err) {
         console.error("Erro ao agendar:", err);
-        mostrarMensagem("Erro ao realizar agendamento.", true);
+        const mensagem = err.message === "O agendamento de reposição está bloqueado para esta turma."
+          ? MENSAGEM_REPOSICAO_TURMA
+          : "Erro ao realizar agendamento.";
+        mostrarMensagem(mensagem, true);
       } finally {
         btn.disabled = false;
         btn.textContent = "Agendar este horário";

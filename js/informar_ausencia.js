@@ -243,6 +243,7 @@ async function carregarMatriculasAtivas() {
                 modulo_id,
                 professor_id,
                 ativa,
+                reposicao_bloqueada,
 
                 materia:materia_id (
                     id,
@@ -383,6 +384,9 @@ async function carregarHorariosAtivos() {
 
                         professor_id:
                             matricula.professor_id,
+
+                        reposicao_bloqueada:
+                            matricula.reposicao_bloqueada,
 
                         materia:
                             matricula.materia,
@@ -618,6 +622,7 @@ function podeSolicitarReposicao(
     aula
 ) {
     return (
+        !aula.reposicao_bloqueada &&
         calcularAntecedenciaMinutos(
             aula
         ) >=
@@ -1094,19 +1099,17 @@ function abrirOpcoes(
                 class="aviso-prazo-expirado"
             >
 
-                <strong>
-                    O prazo para solicitar reposição
-                    já expirou.
-                </strong>
-
-                <br><br>
-
-                Como faltam menos de 10 minutos
-                para o início da aula, não é mais
-                possível solicitar reposição.
-
-                Sua aula será gravada e disponibilizada
-                na sua playlist do YouTube.
+                ${aula.reposicao_bloqueada ? `
+                    <strong>Aula em grupo</strong>
+                    <br><br>
+                    Você pode informar a ausência e assistir à gravação depois.
+                ` : `
+                    <strong>O prazo para solicitar reposição já expirou.</strong>
+                    <br><br>
+                    Como faltam menos de 10 minutos para o início da aula,
+                    não é mais possível solicitar reposição.
+                    Sua aula será gravada e disponibilizada na sua playlist do YouTube.
+                `}
 
             </div>
 
@@ -1333,7 +1336,7 @@ async function registrarAviso(
         tipoSolicitado;
 
     if (
-        !dentroPrazo &&
+        (!dentroPrazo || aula.reposicao_bloqueada) &&
         tipoSolicitado ===
         "reposicao"
     ) {
@@ -1424,6 +1427,10 @@ async function registrarAviso(
                 throw new Error(
                     "Você já informou ausência para esta aula."
                 );
+            }
+
+            if (error.message === "Esta turma permite aviso de ausência com gravação.") {
+                throw new Error("Esta turma permite aviso de ausência com gravação. Atualize a página e confirme a ausência.");
             }
 
             throw new Error(
