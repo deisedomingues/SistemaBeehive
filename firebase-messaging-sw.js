@@ -15,6 +15,9 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
+  // Neste fluxo o Firebase já exibe o push e usa o link enviado pelo servidor.
+  if (payload.data?.tipo === "aviso_ausencia_professor" && payload.notification) return;
+
   const titulo =
     payload.notification?.title ||
     payload.data?.title ||
@@ -38,6 +41,8 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 self.addEventListener("notificationclick", (event) => {
+  if (event.notification?.data?.FCM_MSG?.data?.tipo === "aviso_ausencia_professor") return;
+
   event.notification.close();
 
   const url =
