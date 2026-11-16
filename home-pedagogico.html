@@ -15,6 +15,7 @@
     href="css/style.css"
   />
   <link rel="stylesheet" href="css/navegacao.css">
+  <link rel="stylesheet" href="css/busca-alunos.css">
 </head>
 
 <body>
@@ -59,6 +60,27 @@
         eventos e acompanhamentos acadêmicos.
       </p>
 
+    </section>
+
+    <section id="busca-alunos" class="busca-alunos" aria-labelledby="titulo-busca-alunos" hidden>
+      <h2 id="titulo-busca-alunos">Buscar aluno</h2>
+      <form class="busca-alunos__filtros" role="search" aria-label="Buscar aluno">
+        <label>
+          Nome do aluno
+          <input type="search" placeholder="Digite parte do nome" autocomplete="off">
+        </label>
+        <label>
+          Situação da matrícula
+          <select>
+            <option value="todos">Todas</option>
+            <option value="ativas">Ativas</option>
+            <option value="inativas">Inativas</option>
+          </select>
+        </label>
+      </form>
+      <p class="busca-alunos__estado" role="status"></p>
+      <ul class="busca-alunos__lista" aria-label="Alunos encontrados"></ul>
+      <button class="btn" type="button" data-busca-mais hidden>Mostrar mais alunos</button>
     </section>
 
     <section class="painel-admin-cards">
