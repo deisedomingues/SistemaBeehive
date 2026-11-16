@@ -1,7 +1,11 @@
+import {
+  carregarItensHoraAula, formatarSegundosParaCampo, normalizarDuracaoSegundos,
+  deveAplicarValorColetivo, obterValorHoraAplicado, calcularValorItem
+} from "./financeiro-aulas-dados.js";
 import { supabase } from "./supabase.js";
 import { exigirAdmin } from "./guard.js";
 
-await exigirAdmin();
+if (!await exigirAdmin()) throw new Error("Acesso administrativo necessário.");
 
 // ======================================================
 // ELEMENTOS DA TELA
@@ -54,7 +58,7 @@ const resumoValor = document.getElementById(
 // ======================================================
 
 let professoresCache = [];
-let valoresHoraProfessor = [];
+let todosItens = [];
 let itensFinanceiroCache = [];
 
 // ======================================================
@@ -99,12 +103,6 @@ function escaparHtml(valor) {
     .replaceAll("'", "&#039;");
 }
 
-function normalizarTexto(valor) {
-  return String(valor || "")
-    .trim()
-    .toLocaleLowerCase("pt-BR");
-}
-
 function formatarData(dataIso) {
   if (!dataIso) {
     return "-";
@@ -135,23 +133,6 @@ function formatarParte(parte) {
   return `Parte ${Number(parte || 1)}`;
 }
 
-function preencherDias() {
-  filtroDia.innerHTML = `
-    <option value="">
-      Todos os dias
-    </option>
-  `;
-
-  for (let dia = 1; dia <= 31; dia++) {
-    const option = document.createElement("option");
-
-    option.value = String(dia);
-    option.textContent = String(dia);
-
-    filtroDia.appendChild(option);
-  }
-}
-
 function preencherAnos() {
   filtroAno.innerHTML = `
     <option value="">
@@ -173,36 +154,6 @@ function preencherAnos() {
 
     filtroAno.appendChild(option);
   }
-}
-
-// ======================================================
-// DATAS
-// ======================================================
-
-function ehSabado(dataIso) {
-  if (!dataIso) {
-    return false;
-  }
-
-  const [ano, mes, dia] = String(dataIso)
-    .split("-")
-    .map(Number);
-
-  if (
-    !ano ||
-    !mes ||
-    !dia
-  ) {
-    return false;
-  }
-
-  const dataLocal = new Date(
-    ano,
-    mes - 1,
-    dia
-  );
-
-  return dataLocal.getDay() === 6;
 }
 
 // ======================================================
@@ -316,49 +267,6 @@ function converterTempoDigitadoParaSegundos(
   );
 }
 
-function formatarSegundosParaCampo(
-  valorSegundos
-) {
-  if (
-    valorSegundos === null ||
-    valorSegundos === undefined ||
-    valorSegundos === ""
-  ) {
-    return "";
-  }
-
-  const total = Number(valorSegundos);
-
-  if (Number.isNaN(total)) {
-    return "";
-  }
-
-  const horas = Math.floor(
-    total / 3600
-  );
-
-  const resto = total % 3600;
-
-  const minutos = Math.floor(
-    resto / 60
-  );
-
-  const segundos = resto % 60;
-
-  if (horas > 0) {
-    return (
-      `${horas}:` +
-      `${String(minutos).padStart(2, "0")}:` +
-      `${String(segundos).padStart(2, "0")}`
-    );
-  }
-
-  return (
-    `${minutos}:` +
-    `${String(segundos).padStart(2, "0")}`
-  );
-}
-
 function formatarSegundosResumo(
   totalSegundos
 ) {
@@ -392,114 +300,9 @@ function formatarSegundosResumo(
   );
 }
 
-function normalizarDuracaoSegundos(valor) {
-  if (
-    valor === "" ||
-    valor === null ||
-    valor === undefined
-  ) {
-    return null;
-  }
-
-  const numero = Number(valor);
-
-  if (
-    Number.isNaN(numero) ||
-    numero < 0
-  ) {
-    return null;
-  }
-
-  return numero;
-}
-
 // ======================================================
 // REGRAS DE EVENTOS E CÁLCULO
 // ======================================================
-
-function ehEvento(aulaOuItem) {
-  const statusNormalizado = normalizarTexto(
-    aulaOuItem?.status
-  );
-
-  const possuiEventoId =
-    aulaOuItem?.evento_id !== null &&
-    aulaOuItem?.evento_id !== undefined &&
-    aulaOuItem?.evento_id !== "";
-
-  return (
-    statusNormalizado === "evento" ||
-    possuiEventoId
-  );
-}
-
-function obterValorHoraDaMateria(
-  materiaId
-) {
-  const registro = valoresHoraProfessor.find(
-    (item) => {
-      return (
-        Number(item.materia_id) ===
-        Number(materiaId)
-      );
-    }
-  );
-
-  return Number(
-    registro?.valor_hora || 0
-  );
-}
-
-function deveAplicarValorColetivo(
-  item
-) {
-  /*
-    Evento é sempre coletivo.
-
-    Também recebem o valor coletivo:
-    - aulas marcadas como coletivas;
-    - aulas individuais realizadas no sábado.
-  */
-  return (
-    Boolean(item.eh_evento) ||
-    Boolean(item.aula_coletiva) ||
-    Boolean(item.aula_sabado)
-  );
-}
-
-function obterValorHoraAplicado(
-  item
-) {
-  const valorHoraBase = Number(
-    item.valor_hora || 0
-  );
-
-  if (
-    deveAplicarValorColetivo(item)
-  ) {
-    return valorHoraBase * 1.5;
-  }
-
-  return valorHoraBase;
-}
-
-function calcularValorItem(item) {
-  const segundos = Number(
-    item.duracao_segundos || 0
-  );
-
-  if (!segundos) {
-    return 0;
-  }
-
-  const valorHoraAplicado =
-    obterValorHoraAplicado(item);
-
-  return (
-    valorHoraAplicado /
-    3600
-  ) * segundos;
-}
 
 function obterEstadoMinutagem(item) {
   const salvo = normalizarDuracaoSegundos(
@@ -584,58 +387,6 @@ function atualizarResumo() {
 // FILTROS
 // ======================================================
 
-function aplicarFiltrosLocais(aulas) {
-  const dia = filtroDia.value;
-  const mes = filtroMes.value;
-  const ano = filtroAno.value;
-
-  return aulas.filter((aula) => {
-    if (!aula.data_aula) {
-      return false;
-    }
-
-    const [anoAula, mesAula, diaAula] =
-      aula.data_aula.split("-");
-
-    if (
-      dia &&
-      Number(diaAula) !== Number(dia)
-    ) {
-      return false;
-    }
-
-    if (
-      mes &&
-      Number(mesAula) !== Number(mes)
-    ) {
-      return false;
-    }
-
-    if (
-      ano &&
-      Number(anoAula) !== Number(ano)
-    ) {
-      return false;
-    }
-
-    return true;
-  });
-}
-
-function ordenarNomes(lista) {
-  return [...lista].sort(
-    (a, b) => {
-      return a.localeCompare(
-        b,
-        "pt-BR",
-        {
-          sensitivity: "base"
-        }
-      );
-    }
-  );
-}
-
 function aplicarFiltroMinutagem(itens) {
   const tipoFiltro =
     filtroMinutagem.value;
@@ -660,358 +411,6 @@ function aplicarFiltroMinutagem(itens) {
 
     return true;
   });
-}
-
-// ======================================================
-// AGRUPAMENTO
-// ======================================================
-
-function montarChaveParticipante(aula) {
-  const alunoId =
-    aula?.matricula?.aluno?.id;
-
-  if (alunoId) {
-    return `aluno_${alunoId}`;
-  }
-
-  const matriculaId =
-    aula?.matricula?.id;
-
-  if (matriculaId) {
-    return `matricula_${matriculaId}`;
-  }
-
-  return `aula_${aula.id}`;
-}
-
-function montarChaveGrupo(aula) {
-  const professorId =
-    Number(aula.professor_id || 0);
-
-  if (
-    ehEvento(aula) &&
-    aula.evento_id
-  ) {
-    /*
-      Um evento aparece uma única vez por professor,
-      mesmo tendo vários registros de participantes.
-    */
-    return (
-      `evento_${aula.evento_id}` +
-      `_professor_${professorId}`
-    );
-  }
-
-  if (
-    ehEvento(aula) &&
-    !aula.evento_id
-  ) {
-    /*
-      Compatibilidade para registros antigos de evento
-      que eventualmente não possuam evento_id.
-    */
-    const conteudoNormalizado =
-      normalizarTexto(
-        aula.conteudo || "evento"
-      )
-        .replace(/\s+/g, "_")
-        .replace(/[^a-z0-9_áéíóúãõâêôç]/gi, "");
-
-    return (
-      `evento_sem_id_` +
-      `${professorId}_` +
-      `${aula.data_aula}_` +
-      `${conteudoNormalizado}`
-    );
-  }
-
-  if (aula.grupo_aula_id) {
-    return (
-      `grupo_${aula.grupo_aula_id}` +
-      `_professor_${professorId}`
-    );
-  }
-
-  return `aula_${aula.id}`;
-}
-
-function criarItemBase({
-  aula,
-  chave,
-  materiaId,
-  materiaNome,
-  valorHoraBase,
-  nomeAluno,
-  chaveAluno,
-  aulaEhEvento,
-  aulaEhSabado,
-  ehColetiva
-}) {
-  return {
-    tipo: aulaEhEvento
-      ? "evento"
-      : ehColetiva
-        ? "coletiva"
-        : aulaEhSabado
-          ? "individual_sabado"
-          : "individual",
-
-    chave,
-
-    evento_id:
-      aula.evento_id || null,
-
-    grupo_aula_id:
-      aula.grupo_aula_id || null,
-
-    aula_coletiva:
-      Boolean(ehColetiva),
-
-    aula_sabado:
-      Boolean(aulaEhSabado),
-
-    eh_evento:
-      Boolean(aulaEhEvento),
-
-    ids_aula: [
-      Number(aula.id)
-    ],
-
-    professor_id:
-      aula.professor_id,
-
-    data_aula:
-      aula.data_aula,
-
-    status:
-      aula.status,
-
-    conteudo:
-      aula.conteudo || "",
-
-    parte:
-      aula.parte || 1,
-
-    materia_id:
-      materiaId,
-
-    materia_nome:
-      materiaNome,
-
-    alunos: [
-      nomeAluno
-    ],
-
-    chaves_alunos: [
-      chaveAluno
-    ],
-
-    quantidade_alunos:
-      1,
-
-    duracao_segundos:
-      aula.duracao_segundos ?? "",
-
-    duracao_segundos_salva:
-      aula.duracao_segundos ?? null,
-
-    duracao_input:
-      formatarSegundosParaCampo(
-        aula.duracao_segundos
-      ),
-
-    valor_hora:
-      valorHoraBase,
-
-    editando:
-      false
-  };
-}
-function agruparAulasParaFinanceiro(
-  aulas
-) {
-  const grupos = new Map();
-
-  for (const aula of aulas) {
-    const materiaId =
-      aula?.matricula?.materia_id ||
-      null;
-
-    const valorHoraBase =
-      obterValorHoraDaMateria(
-        materiaId
-      );
-
-    const nomeAluno =
-      aula?.matricula?.aluno?.nome ||
-      "Aluno não identificado";
-
-    const chaveAluno =
-      montarChaveParticipante(aula);
-
-    const materiaNome =
-      aula?.matricula?.materia?.nome ||
-      "Matéria não identificada";
-
-    const aulaEhEvento =
-      ehEvento(aula);
-
-    const aulaEhSabado =
-      ehSabado(aula.data_aula);
-
-    /*
-      Todo evento é tratado como coletivo,
-      mesmo que aula_coletiva esteja false ou null.
-    */
-    const ehColetiva =
-      Boolean(aula.aula_coletiva) ||
-      aulaEhEvento;
-
-    const deveAgrupar =
-      ehColetiva ||
-      Boolean(aula.grupo_aula_id);
-
-    const chave =
-      deveAgrupar
-        ? montarChaveGrupo(aula)
-        : `aula_${aula.id}`;
-
-    if (!grupos.has(chave)) {
-      grupos.set(
-        chave,
-        criarItemBase({
-          aula,
-          chave,
-          materiaId,
-          materiaNome,
-          valorHoraBase,
-          nomeAluno,
-          chaveAluno,
-          aulaEhEvento,
-          aulaEhSabado,
-          ehColetiva
-        })
-      );
-
-      continue;
-    }
-
-    const grupo = grupos.get(chave);
-
-    if (
-      !grupo.ids_aula.includes(
-        Number(aula.id)
-      )
-    ) {
-      grupo.ids_aula.push(
-        Number(aula.id)
-      );
-    }
-
-    grupo.aula_sabado =
-      grupo.aula_sabado ||
-      aulaEhSabado;
-
-    /*
-      Adiciona o participante apenas uma vez.
-
-      Isso evita duplicação caso existam dois registros
-      relacionados ao mesmo aluno.
-    */
-    if (
-      !grupo.chaves_alunos.includes(
-        chaveAluno
-      )
-    ) {
-      grupo.chaves_alunos.push(
-        chaveAluno
-      );
-
-      grupo.alunos.push(
-        nomeAluno
-      );
-    }
-
-    /*
-      Se um dos registros já possuir minutagem,
-      ela será utilizada pelo grupo inteiro.
-    */
-    if (
-      (
-        grupo.duracao_segundos === "" ||
-        grupo.duracao_segundos === null ||
-        grupo.duracao_segundos === undefined
-      ) &&
-      aula.duracao_segundos !== null &&
-      aula.duracao_segundos !== undefined
-    ) {
-      grupo.duracao_segundos =
-        aula.duracao_segundos;
-
-      grupo.duracao_input =
-        formatarSegundosParaCampo(
-          aula.duracao_segundos
-        );
-    }
-
-    if (
-      (
-        grupo.duracao_segundos_salva === "" ||
-        grupo.duracao_segundos_salva === null ||
-        grupo.duracao_segundos_salva === undefined
-      ) &&
-      aula.duracao_segundos !== null &&
-      aula.duracao_segundos !== undefined
-    ) {
-      grupo.duracao_segundos_salva =
-        aula.duracao_segundos;
-    }
-
-    /*
-      Mantém um conteúdo válido caso o primeiro
-      registro esteja sem descrição.
-    */
-    if (
-      !grupo.conteudo &&
-      aula.conteudo
-    ) {
-      grupo.conteudo =
-        aula.conteudo;
-    }
-  }
-
-  const itens = [
-    ...grupos.values()
-  ].map((item) => {
-    const alunosOrdenados =
-      ordenarNomes(item.alunos);
-
-    return {
-      ...item,
-
-      alunos:
-        alunosOrdenados,
-
-      quantidade_alunos:
-        item.chaves_alunos.length || 1
-    };
-  });
-
-  return itens.sort(
-    (a, b) => {
-      const dataA =
-        `${a.data_aula || ""}-` +
-        `${String(a.parte || 1).padStart(2, "0")}`;
-
-      const dataB =
-        `${b.data_aula || ""}-` +
-        `${String(b.parte || 1).padStart(2, "0")}`;
-
-      return dataB.localeCompare(
-        dataA
-      );
-    }
-  );
 }
 
 // ======================================================
@@ -1247,6 +646,9 @@ function renderItensFinanceiro() {
             "
           >
             ${escaparHtml(item.materia_nome)}
+          </span>
+          <span>
+            ${escaparHtml(professoresCache.find((p) => String(p.id) === String(item.professor_id))?.nome || "Professor não identificado")}
           </span>
 
           ${montarBadgesExtras(item)}
@@ -1496,9 +898,7 @@ function renderItensFinanceiro() {
               margin-top:4px;
             "
           >
-            ${formatarMoeda(
-              valorHoraAplicado
-            )}
+            ${item.valor_hora == null ? "Não cadastrada" : formatarMoeda(valorHoraAplicado)}
           </div>
         </div>
 
@@ -1767,8 +1167,7 @@ async function carregarProfessores() {
   const { data, error } =
     await supabase
       .from("professor")
-      .select("id, nome")
-      .eq("ativo", true)
+      .select("id, nome, ativo")
       .order(
         "nome",
         {
@@ -1784,7 +1183,7 @@ async function carregarProfessores() {
 
     filtroProfessor.innerHTML = `
       <option value="">
-        Erro ao carregar
+        Todos
       </option>
     `;
 
@@ -1801,7 +1200,7 @@ async function carregarProfessores() {
 
   filtroProfessor.innerHTML = `
     <option value="">
-      Selecione
+      Todos
     </option>
   `;
 
@@ -1814,7 +1213,7 @@ async function carregarProfessores() {
         professor.id;
 
       option.textContent =
-        professor.nome;
+        professor.ativo ? professor.nome : `${professor.nome} · Inativo`;
 
       filtroProfessor.appendChild(
         option
@@ -1823,224 +1222,35 @@ async function carregarProfessores() {
   );
 }
 
-async function carregarValoresHoraProfessor(
-  professorId
-) {
-  const { data, error } =
-    await supabase
-      .from("professor_materia")
-      .select(
-        "materia_id, valor_hora"
-      )
-      .eq(
-        "professor_id",
-        professorId
-      );
-
-  if (error) {
-    console.error(
-      "Erro ao carregar valores/hora:",
-      error
-    );
-
-    valoresHoraProfessor = [];
-
-    return false;
-  }
-
-  valoresHoraProfessor =
-    data || [];
-
-  return true;
-}
-
 async function buscarAulas() {
-  const professorId =
-    Number(
-      filtroProfessor.value
-    );
-
-  if (!professorId) {
-    mostrarMensagem(
-      "Selecione um professor.",
-      false
-    );
-
-    return;
-  }
-
+  const data = filtroDia.value;
+  const mes = filtroMes.value;
+  const ano = filtroAno.value;
+  const professorId = filtroProfessor.value;
   btnBuscar.disabled = true;
-  btnBuscar.textContent =
-    "Buscando...";
-
-  listaAulas.innerHTML = `
-    <div
-      style="
-        opacity:0.8;
-        font-size:13px;
-      "
-    >
-      Carregando aulas e eventos...
-    </div>
-  `;
-
+  btnBuscar.textContent = "Buscando…";
+  listaAulas.textContent = "Carregando aulas e eventos…";
+  todosItens = [];
   itensFinanceiroCache = [];
-  valoresHoraProfessor = [];
-
   atualizarResumo();
 
   try {
-    const okValores =
-      await carregarValoresHoraProfessor(
-        professorId
-      );
-
-    if (!okValores) {
-      listaAulas.innerHTML = `
-        <div
-          style="
-            opacity:0.8;
-            font-size:13px;
-          "
-        >
-          Erro ao carregar os valores do professor.
-        </div>
-      `;
-
-      mostrarMensagem(
-        "Erro ao carregar o valor/hora do professor.",
-        false
-      );
-
-      atualizarResumo();
-
-      return;
-    }
-
-    const { data, error } =
-      await supabase
-        .from("aula")
-        .select(`
-          id,
-          data_aula,
-          status,
-          conteudo,
-          duracao_segundos,
-          aula_gravada,
-          professor_id,
-          parte,
-          evento_id,
-          aula_coletiva,
-          grupo_aula_id,
-          quantidade_alunos,
-
-          matricula:matricula_id (
-            id,
-            professor_id,
-            materia_id,
-
-            aluno:aluno_id (
-              id,
-              nome
-            ),
-
-            materia:materia_id (
-              nome
-            )
-          )
-        `)
-        .or(
-          "aula_gravada.eq.true,status.eq.Evento,evento_id.not.is.null"
-        )
-        .order(
-          "data_aula",
-          {
-            ascending: false
-          }
-        )
-        .order(
-          "parte",
-          {
-            ascending: false
-          }
-        );
-
-    if (error) {
-      throw error;
-    }
-
-    /*
-      Usa professor_id registrado na aula sempre que existir.
-
-      Para registros antigos sem professor_id,
-      usa o professor atual da matrícula como alternativa.
-    */
-    const aulasProfessor =
-      (data || []).filter(
-        (aula) => {
-          const professorDaAula =
-            aula.professor_id
-              ? Number(
-                  aula.professor_id
-                )
-              : null;
-
-          const professorDaMatricula =
-            aula?.matricula?.professor_id
-              ? Number(
-                  aula.matricula.professor_id
-                )
-              : null;
-
-          if (professorDaAula) {
-            return (
-              professorDaAula ===
-              professorId
-            );
-          }
-
-          return (
-            professorDaMatricula ===
-            professorId
-          );
-        }
-      );
-
-    const aulasFiltradas =
-      aplicarFiltrosLocais(
-        aulasProfessor
-      );
-
-    const itensAgrupados =
-      agruparAulasParaFinanceiro(
-        aulasFiltradas
-      );
-
-    itensFinanceiroCache =
-      aplicarFiltroMinutagem(
-        itensAgrupados
-      );
-
+    const inicio = ano ? `${ano}-${(mes || "1").padStart(2, "0")}-01` : undefined;
+    const fim = ano ? new Date(Date.UTC(Number(ano) + (mes ? 0 : 1), Number(mes || 0), 1))
+      .toISOString().slice(0, 10) : undefined;
+    const itens = await carregarItensHoraAula({ data, inicio, fim, professorId });
+    todosItens = !data && mes && !ano
+      ? itens.filter((item) => Number(item.data_aula.slice(5, 7)) === Number(mes))
+      : itens;
+    itensFinanceiroCache = aplicarFiltroMinutagem(todosItens);
     renderItensFinanceiro();
   } catch (error) {
-    console.error(
-      "Erro ao buscar aulas e eventos:",
-      error
-    );
-
-    itensFinanceiroCache = [];
-
-    renderItensFinanceiro();
-
-    mostrarMensagem(
-      "Erro ao buscar as aulas e os eventos.",
-      false
-    );
+    console.error("Erro ao buscar aulas e eventos:", error);
+    listaAulas.textContent = "Não foi possível carregar as aulas e os eventos.";
+    mostrarMensagem("Erro ao buscar as aulas e os eventos.", false);
   } finally {
     btnBuscar.disabled = false;
-
-    btnBuscar.textContent =
-      "Buscar aulas e eventos";
+    btnBuscar.textContent = "Buscar aulas e eventos";
   }
 }
 
@@ -2152,6 +1362,7 @@ async function salvarDuracaoItem(
       true
     );
 
+    itensFinanceiroCache = aplicarFiltroMinutagem(todosItens);
     renderItensFinanceiro();
   } catch (error) {
     console.error(
@@ -2185,6 +1396,7 @@ btnBuscar.addEventListener(
 filtroProfessor.addEventListener(
   "change",
   () => {
+    todosItens = [];
     itensFinanceiroCache = [];
 
     listaAulas.innerHTML = `
@@ -2206,8 +1418,17 @@ filtroProfessor.addEventListener(
 // INICIALIZAÇÃO
 // ======================================================
 
+filtroMinutagem.addEventListener("change", () => {
+  if (btnBuscar.disabled) return;
+  itensFinanceiroCache = aplicarFiltroMinutagem(todosItens);
+  renderItensFinanceiro();
+});
+
+filtroDia.addEventListener("change", () => {
+  filtroMes.disabled = filtroAno.disabled = Boolean(filtroDia.value);
+});
+
 function inicializarPagina() {
-  preencherDias();
   preencherAnos();
 
   const hoje = new Date();

@@ -1,198 +1,137 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  if (typeof exigirAdmin === "function") {
-    await exigirAdmin();
+import { supabase } from "./supabase.js";
+import { exigirAdmin } from "./guard.js";
+import { carregarPaginas } from "./financeiro-aulas-dados.js";
+import { carregarPessoas, dataBR, hojeFinanceiro, moeda, novoElemento } from "./financeiro-comum.js";
+
+if (await exigirAdmin()) iniciar();
+
+async function iniciar() {
+  const form = document.getElementById("form-custo");
+  const lista = document.getElementById("lista");
+  const msg = document.getElementById("mensagem");
+  const pessoa = form.elements.pessoa;
+  const nome = form.elements.nome;
+  const salvar = form.querySelector("button");
+  let pessoas = [];
+
+  form.elements.inicio.value = hojeFinanceiro();
+  pessoa.addEventListener("change", sincronizarNome);
+  function sincronizarNome() {
+    nome.disabled = Boolean(pessoa.value);
+    document.getElementById("campo-nome").hidden = nome.disabled;
+    document.getElementById("campo-regime").hidden = !pessoa.value.startsWith("professor:");
   }
 
-  const listaFixos = document.getElementById("listaFixos");
-  const contadorFixos = document.getElementById("contadorFixos");
-  const msg = document.getElementById("msg");
-
-  const filtroTipo = document.getElementById("filtroTipo");
-  const filtroStatus = document.getElementById("filtroStatus");
-  const filtroNome = document.getElementById("filtroNome");
-
-  let fixos = [];
-  let parcelas = [];
-
-  function mostrarMsg(texto, tipo = "erro") {
-    msg.style.display = "block";
-    msg.textContent = texto;
-    msg.className = tipo === "erro" ? "msg-erro" : "msg-sucesso";
-  }
-
-  function formatarMoeda(valor) {
-    const numero = Number(valor || 0);
-
-    return numero.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL"
-    });
-  }
-
-  function formatarData(data) {
-    if (!data) return "Não informado";
-
-    const partes = data.split("-");
-    if (partes.length !== 3) return data;
-
-    return `${partes[2]}/${partes[1]}/${partes[0]}`;
-  }
-
-  function formatarTipo(tipo) {
-    if (tipo === "administrativo") return "Administrativo";
-    if (tipo === "professor") return "Professor";
-    return tipo || "Não informado";
-  }
-
-  function formatarFormaPagamento(forma) {
-    if (forma === "unica") return "Parcela única";
-    if (forma === "duas_parcelas") return "Duas parcelas";
-    return forma || "Não informado";
-  }
-
-  function montarTextoParcelas(fixo) {
-    const parcelasDoFixo = parcelas
-      .filter((parcela) => parcela.financeiro_fixo_id === fixo.id)
-      .sort((a, b) => a.numero_parcela - b.numero_parcela);
-
-    if (!parcelasDoFixo.length) {
-      return "Parcelas não cadastradas.";
+  async function listar() {
+    const fixos = await carregarPaginas(() => supabase.from("financeiro_fixo")
+      .select("id,pessoa_nome,descricao,valor_mensal,data_inicio,data_fim,ativo,observacao,substitui_hora_aula,financeiro_fixo_parcela(numero_parcela,dia_vencimento,valor)")
+      .order("id", { ascending: false }));
+    lista.replaceChildren();
+    if (!fixos.length) lista.textContent = "Nenhum custo fixo cadastrado.";
+    for (const fixo of fixos) {
+      const linha = novoElemento("article", undefined, "financeiro-linha");
+      const info = novoElemento("div");
+      info.append(
+        novoElemento("h3", fixo.pessoa_nome),
+        novoElemento("p", fixo.descricao),
+        novoElemento("p", `Vigência: ${dataBR(fixo.data_inicio)}${fixo.data_fim ? " a " + dataBR(fixo.data_fim) : " em diante"}${fixo.ativo ? "" : " · Inativo"}`, "secundario")
+      );
+      const parcelas = fixo.financeiro_fixo_parcela || [];
+      if (parcelas.length) {
+        info.append(novoElemento("p", parcelas.sort((a,b) => a.numero_parcela-b.numero_parcela)
+          .map((p) => `${moeda.format(p.valor)} no dia ${p.dia_vencimento}`).join(" + "), "secundario"));
+      }
+      if (fixo.substitui_hora_aula) info.append(novoElemento("p", "Substitui a hora-aula durante a vigência.", "secundario"));
+      if (fixo.observacao) info.append(novoElemento("p", fixo.observacao, "secundario"));
+      const valor = novoElemento("strong", `${moeda.format(fixo.valor_mensal)} / mês`);
+      linha.append(info, valor);
+      if (fixo.ativo && !fixo.data_fim) {
+        const encerrar = novoElemento("button", "Encerrar vigência", "btn");
+        encerrar.type = "button";
+        encerrar.addEventListener("click", async () => {
+          const data = prompt("Último dia da vigência (AAAA-MM-DD)", hojeFinanceiro());
+          if (data === null) return;
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || data < fixo.data_inicio) {
+            msg.textContent = "Informe uma data válida, a partir do início da vigência.";
+            return;
+          }
+          encerrar.disabled = true;
+          try {
+            const { data: alterado, error } = await supabase.from("financeiro_fixo")
+              .update({ data_fim: data }).eq("id", fixo.id).is("data_fim", null).select("id").maybeSingle();
+            if (error || !alterado) throw error || new Error("Vigência já atualizada.");
+            msg.textContent = "Vigência encerrada.";
+            await listar();
+          } catch (erro) {
+            console.error(erro);
+            msg.textContent = "Não foi possível concluir a alteração da vigência.";
+            encerrar.disabled = false;
+          }
+        });
+        linha.append(encerrar);
+      }
+      lista.append(linha);
     }
-
-    return parcelasDoFixo
-      .map((parcela) => {
-        return `${formatarMoeda(parcela.valor)} no dia ${parcela.dia_vencimento}`;
-      })
-      .join(" + ");
   }
 
-  function aplicarFiltros() {
-    const tipoSelecionado = filtroTipo.value;
-    const statusSelecionado = filtroStatus.value;
-    const nomeDigitado = filtroNome.value.trim().toLowerCase();
-
-    return fixos.filter((fixo) => {
-      const passaTipo = !tipoSelecionado || fixo.tipo === tipoSelecionado;
-
-      const passaStatus =
-        !statusSelecionado ||
-        (statusSelecionado === "ativo" && fixo.ativo) ||
-        (statusSelecionado === "inativo" && !fixo.ativo);
-
-      const passaNome =
-        !nomeDigitado ||
-        fixo.pessoa_nome.toLowerCase().includes(nomeDigitado);
-
-      return passaTipo && passaStatus && passaNome;
-    });
-  }
-
-  function renderizarFixos() {
-    const fixosFiltrados = aplicarFiltros();
-
-    contadorFixos.textContent =
-      fixosFiltrados.length === 1
-        ? "1 registro"
-        : `${fixosFiltrados.length} registros`;
-
-    if (!fixosFiltrados.length) {
-      listaFixos.innerHTML = `
-        <p style="margin:0;">
-          Nenhum custo fixo encontrado com os filtros selecionados.
-        </p>
-      `;
+  form.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    const dados = new FormData(form);
+    const favorecido = pessoas.find((p) => p.chave === pessoa.value);
+    const valor2 = dados.get("valor2");
+    const dia2 = dados.get("dia2");
+    if (Boolean(valor2) !== Boolean(dia2)) {
+      msg.textContent = "Informe o valor e o dia da segunda parcela, ou deixe ambos em branco.";
+      form.elements[valor2 ? "dia2" : "valor2"].focus();
+      return;
+    }
+    const nomeFavorecido = favorecido?.nome || nome.value.trim();
+    const descricao = dados.get("descricao").trim();
+    if (!nomeFavorecido || !descricao || (dados.get("fim") && dados.get("fim") < dados.get("inicio"))) {
+      msg.textContent = "Confira o nome, a descrição e as datas da vigência.";
       return;
     }
 
-    listaFixos.innerHTML = fixosFiltrados
-      .map((fixo) => {
-        const statusTexto = fixo.ativo ? "Ativo" : "Inativo";
-        const observacao = fixo.observacao
-          ? fixo.observacao
-          : "Sem observações.";
-
-        const dataFim = fixo.data_fim
-          ? formatarData(fixo.data_fim)
-          : "Sem data final";
-
-        return `
-          <article style="border:1px solid rgba(0,0,0,0.08); border-radius:14px; padding:14px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-              <div>
-                <strong style="font-size:18px;">${fixo.pessoa_nome}</strong>
-                <p style="margin:4px 0 0 0; opacity:0.8;">
-                  ${formatarTipo(fixo.tipo)} • ${fixo.descricao}
-                </p>
-              </div>
-
-              <span style="font-size:13px; font-weight:700;">
-                ${statusTexto}
-              </span>
-            </div>
-
-            <p style="margin:0 0 6px 0;">
-              <strong>Valor mensal:</strong> ${formatarMoeda(fixo.valor_mensal)}
-            </p>
-
-            <p style="margin:0 0 6px 0;">
-              <strong>Forma de pagamento:</strong> ${formatarFormaPagamento(fixo.forma_pagamento)}
-            </p>
-
-            <p style="margin:0 0 6px 0;">
-              <strong>Parcelas:</strong> ${montarTextoParcelas(fixo)}
-            </p>
-
-            <p style="margin:0 0 6px 0;">
-              <strong>Vigência:</strong> ${formatarData(fixo.data_inicio)} até ${dataFim}
-            </p>
-
-            <p style="margin:0;">
-              <strong>Observação:</strong> ${observacao}
-            </p>
-          </article>
-        `;
-      })
-      .join("");
-  }
-
-  async function carregarDados() {
-    listaFixos.innerHTML = "<p>Carregando custos fixos...</p>";
-
-    const { data: dadosFixos, error: erroFixos } = await supabase
-      .from("financeiro_fixo")
-      .select("*")
-      .order("ativo", { ascending: false })
-      .order("tipo", { ascending: true })
-      .order("pessoa_nome", { ascending: true });
-
-    if (erroFixos) {
-      console.error(erroFixos);
-      mostrarMsg("Erro ao carregar os custos fixos.");
-      listaFixos.innerHTML = "<p>Não foi possível carregar os custos fixos.</p>";
-      return;
+    salvar.disabled = true;
+    try {
+      const { error } = await supabase.rpc("cadastrar_custo_fixo_com_regime", {
+        p_nome: nomeFavorecido,
+        p_descricao: descricao,
+        p_inicio: dados.get("inicio"),
+        p_fim: dados.get("fim") || null,
+        p_professor_id: favorecido?.tipo === "professor" ? favorecido.id : null,
+        p_funcionario_id: favorecido?.tipo === "funcionario" ? favorecido.id : null,
+        p_dias: [Number(dados.get("dia1")), ...(dia2 ? [Number(dia2)] : [])],
+        p_valores: [Number(dados.get("valor1")), ...(valor2 ? [Number(valor2)] : [])],
+        p_observacao: dados.get("observacao"),
+        p_substitui_hora_aula: favorecido?.tipo === "professor" && dados.get("regime") === "substituir"
+      });
+      if (error) throw error;
+      form.reset();
+      sincronizarNome();
+      form.elements.inicio.value = hojeFinanceiro();
+      msg.textContent = "Custo fixo cadastrado.";
+      try { await listar(); } catch (erro) {
+        console.error(erro);
+        lista.textContent = "O custo foi salvo. Recarregue a página para atualizar a lista.";
+      }
+    } catch (erro) {
+      console.error(erro);
+      msg.textContent = "Não foi possível cadastrar o custo fixo.";
+    } finally {
+      salvar.disabled = false;
     }
+  });
 
-    const { data: dadosParcelas, error: erroParcelas } = await supabase
-      .from("financeiro_fixo_parcela")
-      .select("*")
-      .order("numero_parcela", { ascending: true });
-
-    if (erroParcelas) {
-      console.error(erroParcelas);
-      mostrarMsg("Erro ao carregar as parcelas dos custos fixos.");
-      listaFixos.innerHTML = "<p>Não foi possível carregar as parcelas.</p>";
-      return;
+  try {
+    pessoas = await carregarPessoas();
+    for (const p of pessoas.filter((x) => x.ativo)) {
+      pessoa.add(new Option(`${p.nome} · ${p.tipo === "professor" ? "Professor(a)" : "Funcionário(a)"}`, p.chave));
     }
-
-    fixos = dadosFixos || [];
-    parcelas = dadosParcelas || [];
-
-    renderizarFixos();
+    salvar.disabled = false;
+    await listar();
+  } catch (erro) {
+    console.error(erro);
+    lista.textContent = "Não foi possível carregar os custos ou os favorecidos.";
   }
-
-  filtroTipo.addEventListener("change", renderizarFixos);
-  filtroStatus.addEventListener("change", renderizarFixos);
-  filtroNome.addEventListener("input", renderizarFixos);
-
-  await carregarDados();
-});
+}

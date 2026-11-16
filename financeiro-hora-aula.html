@@ -36,9 +36,7 @@
     </h1>
 
     <p style="margin-bottom:18px; opacity:0.9;">
-      Selecione o professor e o período desejado para informar a
-      duração das aulas e dos eventos e visualizar uma prévia do
-      valor a receber.
+      Escolha um dia ou período para conferir aulas, eventos e minutagem. O filtro de professor é opcional.
     </p>
 
     <div
@@ -86,16 +84,8 @@
         </label>
 
         <label>
-          Dia
-
-          <select
-            id="filtroDia"
-            style="margin-top:6px;"
-          >
-            <option value="">
-              Todos os dias
-            </option>
-          </select>
+          Dia específico
+          <input id="filtroDia" type="date">
         </label>
 
         <label>
@@ -180,7 +170,7 @@
             style="margin-top:6px;"
           >
             <option value="">
-              Todas
+              Todos
             </option>
 
             <option value="sem">

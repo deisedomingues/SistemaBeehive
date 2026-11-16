@@ -1,7 +1,7 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  if (typeof exigirAdmin === "function") {
-    await exigirAdmin();
-  }
+import { supabase } from "./supabase.js";
+import { exigirAdmin } from "./guard.js";
+
+if (await exigirAdmin()) {
 
   const form = document.getElementById("formFuncionario");
   const msg = document.getElementById("msg");
@@ -64,4 +64,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.reset();
     ativo.value = "true";
   });
-});
+}
