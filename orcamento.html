@@ -31,6 +31,8 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
   />
 
+  <link rel="stylesheet" href="css/design-system.css">
+
   <style>
     :root {
       --amarelo: #d99a00;
@@ -40,7 +42,6 @@
       --texto: #514d43;
       --texto-claro: #746e61;
       --branco: #ffffff;
-      --fundo: #fffdf7;
       --borda: #e9e0ce;
       --vermelho: #b54848;
       --sombra: 0 14px 38px rgba(77, 64, 31, 0.1);
@@ -60,13 +61,7 @@
       min-height: 100vh;
       color: var(--texto);
       font-family: "Inter", sans-serif;
-      background:
-        radial-gradient(
-          circle at top right,
-          rgba(217, 154, 0, 0.13),
-          transparent 30%
-        ),
-        var(--fundo);
+      background: var(--beehive-fundo);
     }
 
     button,

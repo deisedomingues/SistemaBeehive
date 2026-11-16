@@ -1,3 +1,5 @@
+@import url("design-system.css");
+
 :root {
   --yellow: #f4c542;
   --yellow-strong: #e3a900;
@@ -25,7 +27,7 @@ html {
 }
 
 body {
-  background: var(--cream);
+  background: var(--beehive-fundo);
   color: var(--ink);
   font-family: var(--sans);
   font-size: 18px;

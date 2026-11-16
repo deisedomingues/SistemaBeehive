@@ -1,18 +1,20 @@
+@import url("design-system.css");
+
 /* O mesmo controle em formulários, áreas administrativas e telas de consulta. */
 .beehive-voltar.beehive-voltar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  min-height: 44px;
+  min-height: var(--beehive-altura-controle);
   width: fit-content;
   max-width: 100%;
   box-sizing: border-box;
   padding: 0.55rem 0.95rem;
-  border: 1px solid #b49b62;
-  border-radius: 10px;
-  background: #fff;
-  color: #483300;
+  border: 1px solid var(--beehive-borda);
+  border-radius: var(--beehive-raio-controle);
+  background: var(--beehive-superficie);
+  color: var(--beehive-texto-acao);
   font: inherit;
   font-size: 0.9375rem;
   font-weight: 650;
@@ -23,15 +25,15 @@
 }
 
 .beehive-voltar.beehive-voltar:hover {
-  background: #fff5d8;
+  background: var(--beehive-mel-claro);
   border-color: #8e702b;
-  color: #483300;
+  color: var(--beehive-texto-acao);
   text-decoration: none;
 }
 
 .beehive-voltar.beehive-voltar:focus-visible,
 .avisos-anteriores > summary:focus-visible {
-  outline: 2px solid #6c4e06;
+  outline: 2px solid var(--beehive-foco);
   outline-offset: 3px;
 }
 
@@ -39,12 +41,12 @@
   margin-top: 1rem;
   border: 1px solid #d7cdb4;
   border-radius: 12px;
-  background: #fff;
-  color: #483300;
+  background: var(--beehive-superficie);
+  color: var(--beehive-texto-acao);
 }
 
 .avisos-anteriores > summary {
-  min-height: 44px;
+  min-height: var(--beehive-altura-controle);
   box-sizing: border-box;
   padding: 0.7rem 0.9rem;
   border-radius: inherit;
@@ -53,7 +55,7 @@
 }
 
 .avisos-anteriores > summary:hover {
-  background: #fff5d8;
+  background: var(--beehive-mel-claro);
 }
 
 .avisos-anteriores-lista {
