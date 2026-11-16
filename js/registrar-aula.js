@@ -1194,7 +1194,7 @@ inputDataAula.addEventListener("change", async () => {
   }
 });
 
-selectMatricula.addEventListener("change", async () => {
+async function selecionarMatricula() {
   const id = selectMatricula.value;
 
   if (!id) {
@@ -1277,7 +1277,9 @@ selectMatricula.addEventListener("change", async () => {
   if (selectStatusGeral.value === STATUS.REPOSICAO) {
     await carregarAulasPendentesGeral();
   }
-});
+}
+
+selectMatricula.addEventListener("change", selecionarMatricula);
 
 selectStatusGeral.addEventListener("change", async () => {
   await aplicarRegrasStatusGeral();
@@ -1570,7 +1572,11 @@ form.addEventListener("submit", async (e) => {
   mostrarMensagem("Aula(s) registrada(s) com sucesso!");
 
   setTimeout(() => {
-    location.reload();
+    if (new URLSearchParams(location.search).get("origem") === "agenda-hoje") {
+      location.replace("home-professor.html");
+    } else {
+      location.reload();
+    }
   }, 1500);
 });
 
@@ -1583,6 +1589,27 @@ async function iniciar() {
   setarDataHoje();
 
   await carregarMatriculas();
+
+  const origem = new URLSearchParams(location.search);
+  if (origem.get("origem") === "agenda-hoje") {
+    const idsDisponiveis = new Set([...selectMatricula.options].map((opt) => opt.value));
+    const matriculas = [...new Set(origem.getAll("matricula"))]
+      .filter((id) => id && idsDisponiveis.has(id));
+    const data = origem.get("data");
+
+    if (data && /^\d{4}-\d{2}-\d{2}$/.test(data) && matriculas.length) {
+      inputDataAula.value = data;
+      if (matriculas.length > 1) {
+        aulaColetivaRadio.checked = true;
+        await alternarTipoAula();
+      }
+
+      for (const id of matriculas) {
+        selectMatricula.value = id;
+        await selecionarMatricula();
+      }
+    }
+  }
 
   await aplicarRegrasStatusGeral();
   atualizarCardsTipoAula();
