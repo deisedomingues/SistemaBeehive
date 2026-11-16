@@ -1,14 +1,11 @@
 import { supabase } from "./supabase.js";
 import { exigirAdmin } from "./guard.js";
-import { iniciarBuscaAlunos } from "./busca-alunos.js";
 
 const perfil = await exigirAdmin();
 
 if (!perfil) {
   throw new Error("Acesso negado: usuário não é admin.");
 }
-
-iniciarBuscaAlunos("admin", perfil.user.id);
 
 const btnSair = document.getElementById("btnSair");
 const tituloAdmin = document.getElementById("tituloAdmin");

@@ -1,18 +1,9 @@
 import { supabase } from "./supabase.js";
 import { exigirAdmin } from "./guard.js";
 
-import { origemBuscaAlunos, prepararRetornoBusca } from "./navegacao-busca-alunos.js";
-
 await exigirAdmin();
 
-const parametros = new URLSearchParams(location.search);
-const origemBusca = origemBuscaAlunos(parametros);
-prepararRetornoBusca(origemBusca, 'a.beehive-voltar[href="resumo-geral.html"]');
-
-const matriculaBusca = origemBusca ? parametros.get("matricula_id") : null;
-const matriculaId = matriculaBusca && /^\d+$/.test(matriculaBusca)
-  ? matriculaBusca
-  : localStorage.getItem("matriculaSelecionada");
+const matriculaId = localStorage.getItem("matriculaSelecionada");
 
 // ===============================
 // ELEMENTOS
@@ -634,11 +625,8 @@ function abrirEdicaoDaAula(aulaId) {
     String(aulaId)
   );
 
-  const destino = new URLSearchParams({ id: aulaId });
-  if (origemBusca) {
-    destino.set("return_url", `detalhes-aluno-admin.html?${parametros}`);
-  }
-  window.location.href = `editar-aula-admin.html?${destino}`;
+  window.location.href =
+    `editar-aula-admin.html?id=${encodeURIComponent(aulaId)}`;
 }
 
 function renderAulas(aulasOriginais) {

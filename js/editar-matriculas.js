@@ -1,4 +1,3 @@
-import { origemBuscaAlunos, prepararRetornoBusca } from "./navegacao-busca-alunos.js";
 import { supabase } from "./supabase.js";
 import { exigirAdmin } from "./guard.js";
 
@@ -13,10 +12,6 @@ const CNPJ_ALUNO_PARTICULAR = "00000000000000";
 // Elementos da tela
 // =====================
 const msg = document.getElementById("msg");
-
-const parametros = new URLSearchParams(location.search);
-const origemBusca = origemBuscaAlunos(parametros);
-prepararRetornoBusca(origemBusca, 'a.beehive-voltar[href="menu-edicoes.html"]');
 
 const selectAluno = document.getElementById("selectAluno");
 const selectMatricula = document.getElementById("selectMatricula");
@@ -501,8 +496,7 @@ async function carregarBases() {
     selectAluno.appendChild(criarOption(a.id, a.nome));
   });
 
-  const alunoDaBusca = origemBusca ? parametros.get("aluno_id") : null;
-  const alunoPreSelecionado = alunoDaBusca || localStorage.getItem("alunoSelecionadoAdmin");
+  const alunoPreSelecionado = localStorage.getItem("alunoSelecionadoAdmin");
 
   if (alunoPreSelecionado) {
     const existe = alunosCache.some(
@@ -511,15 +505,10 @@ async function carregarBases() {
 
     if (existe) {
       selectAluno.value = alunoPreSelecionado;
-      await selecionarAluno();
-      const matriculaDaBusca = alunoDaBusca && parametros.get("matricula_id");
-      if (selectAluno.value === alunoPreSelecionado && matriculaDaBusca && matriculasAluno.some((m) => String(m.id) === matriculaDaBusca)) {
-        selectMatricula.value = matriculaDaBusca;
-        selectMatricula.dispatchEvent(new Event("change"));
-      }
+      selectAluno.dispatchEvent(new Event("change"));
     }
 
-    if (!alunoDaBusca) localStorage.removeItem("alunoSelecionadoAdmin");
+    localStorage.removeItem("alunoSelecionadoAdmin");
   }
 }
 
@@ -817,7 +806,7 @@ materiaSel.addEventListener("change", () => {
 // =====================
 // Eventos principais
 // =====================
-async function selecionarAluno() {
+selectAluno.addEventListener("change", async () => {
   const alunoId = selectAluno.value;
 
   resetEdicao();
@@ -831,16 +820,12 @@ async function selecionarAluno() {
     return;
   }
 
-  const matriculas = await carregarMatriculasDoAluno(alunoId);
-  if (selectAluno.value !== alunoId) return;
-  matriculasAluno = matriculas;
+  matriculasAluno = await carregarMatriculasDoAluno(alunoId);
 
   preencherSelectMatriculas();
   preencherResumoDeCursos();
   atualizarVisibilidadeBotaoAdicionarCurso();
-}
-
-selectAluno.addEventListener("change", selecionarAluno);
+});
 
 selectMatricula.addEventListener("change", () => {
   const mid = selectMatricula.value;
