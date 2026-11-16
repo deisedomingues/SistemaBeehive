@@ -1,5 +1,6 @@
 import { supabase } from "./supabase.js";
 import { exigirProfessor } from "./guard.js";
+import { iniciarAgendaHoje } from "./agenda-hoje.js";
 
 await exigirProfessor();
 
@@ -924,4 +925,9 @@ btnSair?.addEventListener(
    Iniciar
 ====================== */
 
-await carregarProfessor();
+if (professorId) {
+  await Promise.all([
+    carregarProfessor(),
+    iniciarAgendaHoje(professorId)
+  ]);
+}

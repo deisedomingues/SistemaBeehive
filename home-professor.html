@@ -14,6 +14,7 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0"
   >
+  <link rel="stylesheet" href="css/agenda-hoje.css">
 </head>
 
 <body>
@@ -122,6 +123,15 @@
       id="infoPerfilAluno"
       class="info-perfil-aluno-inline"
     ></p>
+
+    <section class="agenda-hoje" aria-labelledby="agenda-hoje-titulo">
+      <header class="agenda-hoje-cabecalho">
+        <h2 id="agenda-hoje-titulo">Agenda de hoje</h2>
+        <a href="agenda-professor.html">Ver agenda completa</a>
+      </header>
+      <p id="agenda-hoje-status" role="status">Carregando aulas…</p>
+      <ul id="agenda-hoje-lista" class="agenda-hoje-lista" hidden></ul>
+    </section>
 
     <!-- =======================================
          CARDS DO PROFESSOR
