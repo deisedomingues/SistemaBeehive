@@ -62,7 +62,10 @@ let modoRematriculaEdicao = false;
 // =====================
 // Helpers UI
 // =====================
-function mostrarMensagem(texto, ok = true) {
+let temporizadorMensagem;
+
+function mostrarMensagem(texto, ok = true, campo = null) {
+  clearTimeout(temporizadorMensagem);
   msg.textContent = texto;
   msg.style.display = "block";
   msg.style.padding = "10px 12px";
@@ -74,7 +77,15 @@ function mostrarMensagem(texto, ok = true) {
   msg.style.color = ok ? "#1b5e20" : "#b71c1c";
   msg.style.border = ok ? "1px solid #66bb6a" : "1px solid #ef5350";
 
-  setTimeout(() => {
+  if (campo) {
+    campo.setAttribute("aria-invalid", "true");
+    campo.addEventListener("input", () => campo.removeAttribute("aria-invalid"), { once: true });
+    campo.focus();
+  }
+
+  if (!ok) return;
+
+  temporizadorMensagem = setTimeout(() => {
     msg.style.display = "none";
     msg.textContent = "";
   }, 4000);
@@ -913,7 +924,7 @@ formEditar.addEventListener("submit", async (e) => {
   const alunoId = selectAluno.value;
 
   if (!alunoId) {
-    mostrarMensagem("Selecione um aluno.", false);
+    mostrarMensagem("Selecione um aluno.", false, selectAluno);
     return;
   }
 
@@ -932,7 +943,7 @@ formEditar.addEventListener("submit", async (e) => {
     const linkYoutube = linkYoutubeInput.value.trim();
 
     if (!materiaId || !moduloId || !professorId) {
-      mostrarMensagem("Preencha matéria, módulo e professor(a).", false);
+      mostrarMensagem("Preencha matéria, módulo e professor(a).", false, !materiaId ? materiaSel : !moduloId ? moduloSel : professorSel);
       return;
     }
 
@@ -984,7 +995,7 @@ formEditar.addEventListener("submit", async (e) => {
   }
 
   if (!matriculaAtual) {
-    mostrarMensagem("Selecione uma matrícula para editar.", false);
+    mostrarMensagem("Selecione uma matrícula para editar.", false, selectMatricula);
     return;
   }
 
@@ -996,7 +1007,7 @@ formEditar.addEventListener("submit", async (e) => {
   const novoLinkYoutube = linkYoutubeInput.value.trim();
 
   if (!novoModuloId || !novoProfessorId) {
-    mostrarMensagem("Selecione módulo e professor(a).", false);
+    mostrarMensagem("Selecione módulo e professor(a).", false, !novoModuloId ? moduloSel : professorSel);
     return;
   }
 
