@@ -17,16 +17,16 @@
       <div>
         <h1 style="margin-bottom:6px;">Cadastrar funcionário</h1>
         <p style="margin:0; opacity:0.9;">
-          Registre os dados dos funcionários administrativos da Beehive.
+          Registre os dados dos funcionários da Beehive.
         </p>
       </div>
 
-      <a href="menu-cadastros.html" class="btn-secundario beehive-voltar" style="text-decoration:none;">
+      <a href="home-financeiro.html" class="btn-secundario beehive-voltar" style="text-decoration:none;">
         ← Voltar
       </a>
     </div>
 
-    <div id="msg" style="display:none; margin-bottom:12px;"></div>
+    <div id="msg" role="status" style="display:none; margin-bottom:12px;"></div>
 
     <section class="card">
       <form id="formFuncionario">
@@ -35,6 +35,11 @@
           <div>
             <label for="nome">Nome *</label>
             <input type="text" id="nome" required placeholder="Ex.: Sergio" />
+          </div>
+
+          <div>
+            <label for="funcao">Função (opcional)</label>
+            <input type="text" id="funcao" maxlength="120" placeholder="Ex.: Desenvolvedora de sistemas" />
           </div>
 
           <div>
