@@ -60,6 +60,15 @@ form.addEventListener("submit", async (e) => {
         return;
     }
 
+    if (registro.cnpj) {
+        registro.cnpj = registro.cnpj.replace(/[.\/\s-]/g, "").toUpperCase();
+        if (!/^[A-Z0-9]{12}[0-9]{2}$/.test(registro.cnpj)) {
+            mostrarMensagem("Informe um CNPJ de 14 caracteres ou deixe o campo vazio.", false);
+            document.getElementById("cnpj").focus();
+            return;
+        }
+    }
+
     botaoSalvar.disabled = true;
     try {
         const { error } = await supabase.from("empresaparceira").insert(registro);
