@@ -1,5 +1,6 @@
 import { supabase } from "./supabase.js";
 import { exigirProfessor } from "./guard.js";
+import { MAX_AVALIACOES_POR_MODULO, resolverAvaliacoesPrevistas } from "./avaliacoes-modulo.js";
 
 await exigirProfessor();
 
@@ -643,91 +644,24 @@ function obterResumoAvaliacoesModuloAtual() {
   const totalAulasValidas =
     contarAulasValidasModuloAtual();
 
-  const avaliacoesEsperadas = Math.floor(
-    totalAulasValidas / 14
+  const avaliacoesEsperadas = Math.min(
+    MAX_AVALIACOES_POR_MODULO,
+    Math.floor(totalAulasValidas / 14)
   );
 
-  const notasAvaliacao =
-    obterNotasDeAvaliacaoModuloAtual();
-
-  const numerosComNota = new Set();
-
-  let notasSemNumeroDisponiveis = 0;
-
-  notasAvaliacao.forEach((nota) => {
-    const numero = extrairNumeroAvaliacaoDaNota(nota);
-
-    if (numero) {
-      numerosComNota.add(numero);
-    } else {
-      /*
-        Mantemos compatibilidade com o histórico antigo.
-
-        Muitas notas antigas foram gravadas apenas como
-        "Avaliação", "Progress Check" ou "Evaluación",
-        sem indicar se eram a avaliação 1 ou 2.
-
-        Para DESCOBRIR qual avaliação já foi realizada no módulo,
-        essas notas continuam contando em ordem.
-
-        IMPORTANTE:
-        isso NÃO autoriza concluir automaticamente uma avaliação
-        enviada ao aluno. A conclusão de uma avaliação enviada
-        é tratada separadamente e exige número identificável.
-      */
-      notasSemNumeroDisponiveis++;
-    }
+  const notasAvaliacao = obterNotasDeAvaliacaoModuloAtual();
+  const { totalResolvidas, numerosPendentes } = resolverAvaliacoesPrevistas({
+    avaliacoesEsperadas,
+    notasAvaliacao,
+    extrairNumeroAvaliacaoDaNota,
+    obterEnvio: obterEnvioAvaliacaoAtual,
+    statusAvaliacaoConcluida
   });
 
-  const numerosPendentes = [];
-
-  let totalResolvidas = 0;
-
-  for (
-    let numeroAvaliacao = 1;
-    numeroAvaliacao <= avaliacoesEsperadas;
-    numeroAvaliacao++
-  ) {
-    const envio =
-      obterEnvioAvaliacaoAtual(numeroAvaliacao);
-
-    const temNotaComEsseNumero =
-      numerosComNota.has(numeroAvaliacao);
-
-    const envioJaConcluido =
-      statusAvaliacaoConcluida(envio?.status);
-
-    if (temNotaComEsseNumero || envioJaConcluido) {
-      totalResolvidas++;
-      continue;
-    }
-
-    /*
-      Compatibilidade com notas antigas sem número.
-
-      Exemplo:
-      existe uma nota "Avaliação" no módulo, então ela resolve
-      a primeira avaliação ainda não resolvida da sequência.
-
-      Essa regra serve SOMENTE para calcular qual PC já aconteceu.
-      Ela não muda status de avaliacao_aluno para "Concluída".
-    */
-    if (notasSemNumeroDisponiveis > 0) {
-      notasSemNumeroDisponiveis--;
-      totalResolvidas++;
-      continue;
-    }
-
-    numerosPendentes.push(numeroAvaliacao);
-  }
-
-  const proximoMarco =
-    (avaliacoesEsperadas + 1) * 14;
-
-  const faltamParaProximaPrevisao = Math.max(
-    0,
-    proximoMarco - totalAulasValidas
-  );
+  const faltamParaProximaPrevisao =
+    avaliacoesEsperadas < MAX_AVALIACOES_POR_MODULO
+      ? (avaliacoesEsperadas + 1) * 14 - totalAulasValidas
+      : null;
 
   return {
     totalAulasValidas,
@@ -1116,9 +1050,13 @@ function atualizarCardAulasValidasEAvaliacao() {
       `${resumo.avaliacoesEsperadas} avaliação(ões) ` +
       `prevista(s) pelo sistema • ` +
       `${resumo.totalResolvidas} avaliação(ões) ` +
-      `já resolvida(s). ` +
-      `Faltam ${resumo.faltamParaProximaPrevisao} ` +
-      `aula(s) válida(s) para a próxima previsão.`;
+      `já resolvida(s).`;
+
+    if (resumo.faltamParaProximaPrevisao !== null) {
+      textoAvaliacaoPendente.textContent +=
+        ` Faltam ${resumo.faltamParaProximaPrevisao} ` +
+        `aula(s) válida(s) para a próxima previsão.`;
+    }
   }
 
   atualizarBotaoEnviarAvaliacaoAluno();
@@ -3186,12 +3124,11 @@ btnEnviarAvaliacaoAluno?.addEventListener(
       btnEnviarAvaliacaoAluno.textContent =
         textoOriginal;
 
-      mostrarMensagem(
-        "Não foi possível enviar a avaliação. " +
-          "Confira se o formulário está cadastrado " +
-          "e ativo no Supabase.",
-        false
-      );
+      if (textoEnvioAvaliacaoAluno) {
+        textoEnvioAvaliacaoAluno.textContent =
+          "Não foi possível enviar a avaliação. Confira se o formulário está ativo no Supabase.";
+        textoEnvioAvaliacaoAluno.style.display = "block";
+      }
     }
   }
 );

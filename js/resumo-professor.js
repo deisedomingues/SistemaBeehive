@@ -1,5 +1,6 @@
 import { supabase } from "./supabase.js";
 import { exigirProfessor } from "./guard.js";
+import { MAX_AVALIACOES_POR_MODULO, resolverAvaliacoesPrevistas } from "./avaliacoes-modulo.js";
 
 await exigirProfessor();
 
@@ -1871,7 +1872,6 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
   const notasAvaliacaoPorMatricula =
     {};
 
-  const numerosNotasPorMatricula =
     {};
 
   notasDoSistema.forEach(
@@ -1914,32 +1914,7 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
         ] = [];
       }
 
-      if (
-        !numerosNotasPorMatricula[
-          chaveMatricula
-        ]
-      ) {
-        numerosNotasPorMatricula[
-          chaveMatricula
-        ] = new Set();
-      }
-
-      notasAvaliacaoPorMatricula[
-        chaveMatricula
-      ].push(nota);
-
-      const numeroAvaliacaoDaNota =
-        extrairNumeroAvaliacaoDaNota(
-          nota
-        );
-
-      if (numeroAvaliacaoDaNota) {
-        numerosNotasPorMatricula[
-          chaveMatricula
-        ].add(
-          numeroAvaliacaoDaNota
-        );
-      }
+      notasAvaliacaoPorMatricula[chaveMatricula].push(nota);
     }
   );
 
@@ -1996,117 +1971,22 @@ async function carregarPendenciasAvaliacaoPorMatricula() {
           chaveMatricula
         ] || 0;
 
-      /*
-        Cada módulo possui somente
-        duas avaliações.
+      const avaliacoesEsperadas = Math.min(
+        MAX_AVALIACOES_POR_MODULO,
+        Math.floor(totalAulasValidas / 14)
+      );
 
-        Inglês:
-        - Progress Check 1
-        - Progress Check 2
-
-        Espanhol:
-        - Evaluación 1
-        - Evaluación 2
-
-        Mesmo que existam mais de
-        28 aulas válidas no módulo,
-        não será criada uma avaliação 3.
-      */
-
-      const avaliacoesEsperadas =
-        Math.min(
-          2,
-          Math.floor(
-            totalAulasValidas / 14
-          )
-        );
-
-      const notasAvaliacao =
-        notasAvaliacaoPorMatricula[
-          chaveMatricula
-        ] || [];
-
-      const numerosComNota =
-        numerosNotasPorMatricula[
-          chaveMatricula
-        ] || new Set();
-
-      /*
-        Notas antigas podem estar
-        cadastradas somente como
-        "Avaliação", sem o número.
-
-        Nesses casos, a quantidade
-        é usada como fallback para
-        não criar uma pendência falsa.
-      */
-
-      let notasSemNumeroDisponiveis =
-        notasAvaliacao.filter(
-          (nota) =>
-            !extrairNumeroAvaliacaoDaNota(
-              nota
-            )
-        ).length;
-
-      let totalResolvidas = 0;
-
-      const numerosPendentes = [];
-
-      for (
-        let numeroAvaliacao = 1;
-        numeroAvaliacao <=
-          avaliacoesEsperadas;
-        numeroAvaliacao++
-      ) {
-        const chave =
-          chaveAvaliacao({
-            matriculaId:
-              meta.matriculaId,
-
-            moduloId:
-              meta.moduloId,
-
-            numeroAvaliacao
-          });
-
-        const envio =
-          mapaEnvios[chave] ||
-          null;
-
-        const temNotaComEsseNumero =
-          numerosComNota.has(
-            numeroAvaliacao
-          );
-
-        const envioJaConcluido =
-          statusAvaliacaoConcluida(
-            envio?.status
-          );
-
-        if (
-          temNotaComEsseNumero ||
-          envioJaConcluido
-        ) {
-          totalResolvidas++;
-
-          continue;
-        }
-
-        if (
-          notasSemNumeroDisponiveis >
-          0
-        ) {
-          notasSemNumeroDisponiveis--;
-          totalResolvidas++;
-
-          continue;
-        }
-
-        numerosPendentes.push(
+      const { totalResolvidas, numerosPendentes } = resolverAvaliacoesPrevistas({
+        avaliacoesEsperadas,
+        notasAvaliacao: notasAvaliacaoPorMatricula[chaveMatricula] || [],
+        extrairNumeroAvaliacaoDaNota,
+        obterEnvio: (numeroAvaliacao) => mapaEnvios[chaveAvaliacao({
+          matriculaId: meta.matriculaId,
+          moduloId: meta.moduloId,
           numeroAvaliacao
-        );
-      }
+        })],
+        statusAvaliacaoConcluida
+      });
 
       auditoria.push({
         matriculaId,
